@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pytesseract
 from PIL import Image
+pytesseract.pytesseract.tesseract_cmd = r"C:/Program Files/Tesseract-OCR/tesseract.exe"
 
 try:
     from pdf2image import convert_from_path

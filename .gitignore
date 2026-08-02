@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Data - real financial reports should NOT be pushed to a public repo
+data/samples/*
+data/output/*
+!data/samples/.gitkeep
+!data/output/.gitkeep
+!data/samples/sample_report.png
+
+# OS/editor junk
+.DS_Store
+.vscode/

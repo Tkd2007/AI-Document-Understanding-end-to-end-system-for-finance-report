@@ -32,7 +32,7 @@ def load_pages(file_path: str) -> list[Image.Image]:
         if convert_from_path is None:
             raise RuntimeError("pdf2image is not installed")
         # dpi=300 for better OCR quality (slower than the default dpi)
-        return convert_from_path(str(path), dpi=300)
+        return convert_from_path(str(path), dpi=300, poppler_path=r"C:/poppler/poppler-26.02.0/Library/bin")
     else:
         return [Image.open(path)]
 

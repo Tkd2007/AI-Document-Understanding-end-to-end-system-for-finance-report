@@ -67,3 +67,89 @@ def call_vlm(base64_image: str, prompt: str) -> str:
         ]
     )
     return response.choices[0].message.content
+
+
+def parse_response(text: str) -> dict | None:
+    """
+    Chuyển chuỗi text mà VLM trả về thành dict Python thật sự.
+
+    Xử lý trường hợp model bọc thêm ```json ... ``` quanh JSON
+    (dù prompt đã dặn không làm vậy, model vẫn hay làm).
+
+    Quyết định thiết kế: KHÔNG crash chương trình khi parse lỗi.
+    Lý do thực tế: 1 báo cáo có thể 50+ trang, nếu 1 trang model
+    trả về rác thì không nên làm dừng toàn bộ các trang còn lại.
+    Thay vào đó: in cảnh báo + trả về None, để nơi gọi tự quyết
+    định bỏ qua trang đó.
+    """
+    cleaned = text.strip()
+
+    if cleaned.startswith("```"):
+        # bỏ dòng đầu (``` hoặc ```json) và dòng cuối (```)
+        lines = cleaned.split("\n")
+        lines = lines[1:]
+        if lines and lines[-1].strip().startswith("```"):
+            lines = lines[:-1]
+        cleaned = "\n".join(lines).strip()
+
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError as e:
+        print(f"[WARNING] Không parse được JSON từ VLM: {e}")
+        print(f"Nội dung nhận được (raw): {text!r}")
+        return None
+
+
+def extract_fields_from_document(file_path: str) -> dict:
+    """
+    Chạy VLM trên từng trang của document, gộp kết quả lại thành 1 dict.
+
+    1 báo cáo tài chính thường nhiều trang: Tổng tài sản nằm ở trang
+    Bảng cân đối kế toán, Doanh thu thuần/Lợi nhuận sau thuế nằm ở
+    trang Báo cáo KQKD khác. Nên với mỗi field, lấy giá trị non-null
+    ĐẦU TIÊN tìm thấy qua các trang (field nào trang trước không có,
+    trang sau tìm tiếp; đã có rồi thì không ghi đè).
+    """
+    pages = load_pages(file_path)
+    prompt = build_prompt()
+
+    final_result = {
+        "tong_tai_san": None,
+        "doanh_thu_thuan": None,
+        "loi_nhuan_sau_thue": None,
+    }
+
+    for i, page_img in enumerate(pages, start=1):
+        base64_image = encode_image_to_base64(page_img)
+        raw_text = call_vlm(base64_image, prompt)
+        page_result = parse_response(raw_text)
+
+        if page_result is None:
+            print(f"--- Page {i}/{len(pages)}: bỏ qua (parse lỗi) ---")
+            continue
+
+        for key in final_result:
+            if final_result[key] is None and page_result.get(key) is not None:
+                final_result[key] = page_result[key]
+
+        print(f"--- Page {i}/{len(pages)}: {page_result} ---")
+
+    return final_result
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python extract_vlm.py <file_path>")
+        sys.exit(1)
+
+    input_path = sys.argv[1]
+    result = extract_fields_from_document(input_path)
+
+    out_path = Path("data/output") / (Path(input_path).stem + "_vlm.json")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(result, f, ensure_ascii=False, indent=2)
+
+    print(result)
+    print(f"\nKết quả đã lưu tại: {out_path}")

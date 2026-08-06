@@ -134,6 +134,13 @@ def extract_fields_from_document(file_path: str) -> dict:
 
         print(f"--- Page {i}/{len(pages)}: {page_result} ---")
 
+        """
+        Check nếu đã có hết tất cả dữ liệu cần thiết thì dừng
+        """
+        if all(value is not None for value in final_result.values()):
+            print(f"--- Đã tìm đủ cả 3 field, dừng sớm ở trang {i}/{len(pages)} ---")
+            break
+
     return final_result
 
 

@@ -12,11 +12,15 @@ Usage:
 """
 
 import sys
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 import pytesseract
 from PIL import Image
-pytesseract.pytesseract.tesseract_cmd = r"C:/Program Files/Tesseract-OCR/tesseract.exe"
+pytesseract.pytesseract.tesseract_cmd = os.getenv("TESSERACT_PATH")
 
 try:
     from pdf2image import convert_from_path
@@ -32,7 +36,7 @@ def load_pages(file_path: str) -> list[Image.Image]:
         if convert_from_path is None:
             raise RuntimeError("pdf2image is not installed")
         # dpi=300 for better OCR quality (slower than the default dpi)
-        return convert_from_path(str(path), dpi=300, poppler_path=r"C:/poppler/poppler-26.02.0/Library/bin")
+        return convert_from_path(str(path), dpi=300, poppler_path=os.getenv("POPPLER_PATH"))
     else:
         return [Image.open(path)]
 

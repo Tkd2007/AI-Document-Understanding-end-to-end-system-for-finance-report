@@ -9,7 +9,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, UploadFile, File
 
-from extract_vlm import extract_fields_from_document
+from router import route_document
 
 app = FastAPI()
 
@@ -23,8 +23,8 @@ async def extract(file: UploadFile = File(...)):
     with open(save_path, "wb") as f:
         f.write(contents)
 
-    result = extract_fields_from_document(str(save_path))
-    return result
+    result = route_document(str(save_path))
+    return validate_result(result)
 
 
 def validate_result(result: dict) -> dict:

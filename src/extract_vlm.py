@@ -17,6 +17,7 @@ from openai import OpenAI
 from PIL import Image
 
 from ocr_baseline import load_pages   # tái sử dụng hàm cũ, không viết lại
+from fields_config import FIELD_MAP
 
 load_dotenv()
 
@@ -36,12 +37,13 @@ def encode_image_to_base64(image: Image.Image) -> str:
 
 
 def build_prompt() -> str:
-    return """Bạn là một hệ thống trích xuất dữ liệu tài chính tự động.
+    field_lines = "\n".join(f'- "{key}": tương ứng với dòng "{name}"' for key, name in FIELD_MAP.items())
+    json_template = ", ".join(f'"{key}": <số hoặc null>' for key in FIELD_MAP)
+
+    return f"""Bạn là một hệ thống trích xuất dữ liệu tài chính tự động.
 Nhiệm vụ: nhìn vào ảnh trang báo cáo tài chính được cung cấp, tìm và trích xuất các chỉ tiêu sau:
 
-- "tong_tai_san": tương ứng với dòng "Tổng tài sản" (thường nằm trong Bảng cân đối kế toán, mục TÀI SẢN)
-- "doanh_thu_thuan": tương ứng với dòng "Doanh thu thuần" (thường nằm trong Báo cáo kết quả hoạt động kinh doanh)
-- "loi_nhuan_sau_thue": tương ứng với dòng "Lợi nhuận sau thuế" hoặc "Lợi nhuận sau thuế TNDN" (thường ở cuối Báo cáo kết quả hoạt động kinh doanh)
+{field_lines}
 
 QUY TẮC BẮT BUỘC:
 1. Chỉ trả về đúng 1 object JSON, KHÔNG thêm bất kỳ lời giải thích, lời chào, hay markdown (không dùng dấu ```) nào trước/sau JSON.
@@ -50,7 +52,7 @@ QUY TẮC BẮT BUỘC:
 4. Chỉ lấy số liệu của kỳ báo cáo gần nhất (cột đầu tiên), không lấy số liệu kỳ so sánh trước đó.
 
 Trả về đúng format JSON sau, không có gì khác:
-{"tong_tai_san": <số hoặc null>, "doanh_thu_thuan": <số hoặc null>, "loi_nhuan_sau_thue": <số hoặc null>}"""
+{{{json_template}}}"""
 
 
 def call_vlm(base64_image: str, prompt: str) -> str:
@@ -113,11 +115,7 @@ def extract_fields_from_document(file_path: str) -> dict:
     pages = load_pages(file_path)
     prompt = build_prompt()
 
-    final_result = {
-        "tong_tai_san": None,
-        "doanh_thu_thuan": None,
-        "loi_nhuan_sau_thue": None,
-    }
+    final_result = {key: None for key in FIELD_MAP}
 
     for i, page_img in enumerate(pages, start=1):
         base64_image = encode_image_to_base64(page_img)
@@ -138,7 +136,7 @@ def extract_fields_from_document(file_path: str) -> dict:
         Check nếu đã có hết tất cả dữ liệu cần thiết thì dừng
         """
         if all(value is not None for value in final_result.values()):
-            print(f"--- Đã tìm đủ cả 3 field, dừng sớm ở trang {i}/{len(pages)} ---")
+            print(f"--- Đã tìm đủ cả {len(FIELD_MAP)} field, dừng sớm ở trang {i}/{len(pages)} ---")
             break
 
     return final_result

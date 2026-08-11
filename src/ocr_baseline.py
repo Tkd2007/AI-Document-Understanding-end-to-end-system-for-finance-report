@@ -13,20 +13,41 @@ Usage:
 import sys
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
-import easyocr
 import numpy as np
 from PIL import Image
 
-reader = easyocr.Reader(['vi', 'en'])
+from layout_detection import get_table_regions
+
+LANGUAGES = ["vi", "en"]
+PDF_DPI = 300
+
+_reader = None
 
 try:
     from pdf2image import convert_from_path
 except ImportError:
     convert_from_path = None
+
+
+def get_reader():
+    """
+    Khởi tạo EasyOCR ở lần gọi đầu tiên rồi tái sử dụng.
+
+    Trước đây reader được tạo ngay lúc import. Vì extract_vlm.py cũng
+    import module này (để dùng load_pages/load_table_regions), chạy nhánh
+    VLM thuần vẫn phải chờ nạp xong model OCR không dùng tới.
+    """
+    global _reader
+    if _reader is None:
+        import easyocr
+
+        _reader = easyocr.Reader(LANGUAGES)
+    return _reader
 
 
 def load_pages(file_path: str) -> list[Image.Image]:
@@ -36,29 +57,68 @@ def load_pages(file_path: str) -> list[Image.Image]:
     if path.suffix.lower() == ".pdf":
         if convert_from_path is None:
             raise RuntimeError("pdf2image is not installed")
-        return convert_from_path(str(path), dpi=300, poppler_path=os.getenv("POPPLER_PATH"))
+        return convert_from_path(
+            str(path), dpi=PDF_DPI, poppler_path=os.getenv("POPPLER_PATH")
+        )
     else:
         return [Image.open(path)]
 
 
-def ocr_page(image: Image.Image) -> str:
+def load_table_regions(file_path: str) -> list[dict]:
+    """
+    Load document, chạy layout detection, trả về các vùng bảng theo trang:
+        [{"page": 1, "regions": [Image, ...]}, ...]
+    Chỉ gồm những trang thực sự có bảng.
+
+    Tách riêng khỏi ocr_document() để router.py tính MỘT LẦN rồi dùng
+    chung cho cả nhánh OCR lẫn nhánh VLM. Convert PDF ở 300 DPI và chạy
+    YOLO là hai việc đắt nhất trong pipeline; trước đây mỗi nhánh tự làm
+    lại từ đầu nên báo cáo 54 trang bị xử lý hai lượt.
+    """
+    pages = load_pages(file_path)
+    total = len(pages)
+    results = []
+
+    for i, page_img in enumerate(pages, start=1):
+        regions = get_table_regions(page_img)
+
+        if not regions:
+            print(f"--- Page {i}/{total}: không có bảng, bỏ qua ---")
+            continue
+
+        results.append({"page": i, "regions": regions})
+        print(f"--- Page {i}/{total}: tìm thấy {len(regions)} bảng ---")
+
+    return results
+
+
+def ocr_image(image: Image.Image) -> str:
     image_array = np.array(image)
-    results = reader.readtext(image_array, detail=0)
+    results = get_reader().readtext(image_array, detail=0)
     return "\n".join(results)
+
+
+def ocr_regions(pages: list[dict]) -> list[dict]:
+    """
+    OCR các vùng bảng đã cắt sẵn bởi load_table_regions().
+    Format: [{"page": 1, "text": "..."}, ...]
+    """
+    results = []
+
+    for page in pages:
+        text = "\n".join(ocr_image(region) for region in page["regions"])
+        results.append({"page": page["page"], "text": text})
+        print(f"--- OCR page {page['page']}: {len(text)} characters ---")
+
+    return results
 
 
 def ocr_document(file_path: str) -> list[dict]:
     """
-    Run OCR on the whole document, return results per page.
+    Run layout detection + OCR on the whole document, return results per page.
     Format: [{"page": 1, "text": "..."}, ...]
     """
-    pages = load_pages(file_path)
-    results = []
-    for i, page_img in enumerate(pages, start=1):
-        text = ocr_page(page_img)
-        results.append({"page": i, "text": text})
-        print(f"--- Page {i}/{len(pages)}: {len(text)} characters ---")
-    return results
+    return ocr_regions(load_table_regions(file_path))
 
 
 if __name__ == "__main__":

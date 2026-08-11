@@ -6,32 +6,74 @@ Runs DocLayout-YOLO on a page image to find table regions. Used to
 region on pages that have one — reducing noise/size before OCR/VLM.
 """
 
-from doclayout_yolo import YOLOv10
 from PIL import Image
 
-model = YOLOv10.from_pretrained("juliozhao/DocLayout-YOLO-DocStructBench")
+
+# Tham số theo khuyến nghị của DocLayout-YOLO. Ngưỡng conf để thấp hơn
+# mặc định vì bảng trong BCTC thường không kẻ khung đầy đủ, để mặc định
+# hay bị sót cả bảng.
+IMAGE_SIZE = 1024
+CONFIDENCE = 0.2
+
+# Nới thêm vài pixel quanh box trước khi cắt: YOLO hay bám sát mép làm
+# mất chữ số ở cột ngoài cùng bên phải, đúng cột chứa giá trị cần lấy.
+PADDING = 8
+
+_model = None
+MODEL_ID = "juliozhao/DocLayout-YOLO-DocStructBench"
+MODEL_FILENAME = "doclayout_yolo_docstructbench_imgsz1024.pt"
 
 
-def get_table_region(image: Image.Image) -> Image.Image | None:
-    results = model.predict(image)
-    result = results[0]
+def get_model():
+    """
+    Nạp model ở lần gọi đầu tiên rồi tái sử dụng.
 
-    table_boxes = []   # bước 2: list rỗng chứa toạ độ box là bảng
+    Trước đây model được nạp ngay lúc import module, nên bất kỳ file nào
+    import layout_detection cũng phải chờ nạp checkpoint — kể cả khi lượt
+    chạy đó không hề dùng tới layout detection.
+    """
+    global _model
+    if _model is None:
+        from doclayout_yolo import YOLOv10
+        from huggingface_hub import hf_hub_download
 
-    for box in result.boxes:   # bước 3: lặp qua từng box phát hiện được
-        class_name = model.names[int(box.cls)]
-        if class_name == "table":
-            x1, y1, x2, y2 = box.xyxy[0]
-            table_boxes.append((int(x1), int(y1), int(x2), int(y2)))
+        filepath = hf_hub_download(repo_id=MODEL_ID, filename=MODEL_FILENAME)
+        _model = YOLOv10(filepath)
+    return _model
 
-    if not table_boxes:   # bước 4
-        return None
 
-    # bước 5: tính toạ độ bao trọn tất cả box trong table_boxes
-    x1 = min(box[0] for box in table_boxes)   # x1 nhỏ nhất trong tất cả box
-    y1 = min(box[1] for box in table_boxes)   # y1 nhỏ nhất
-    x2 = max(box[2] for box in table_boxes)   # x2 lớn nhất
-    y2 = max(box[3] for box in table_boxes)   # y2 lớn nhất
+def get_table_regions(image: Image.Image) -> list[Image.Image]:
+    """
+    Trả về danh sách ảnh đã cắt, mỗi ảnh là một vùng bảng, sắp xếp từ
+    trên xuống dưới. Trả về list rỗng nếu trang không có bảng nào.
 
-    # bước 6: crop và return
-    return image.crop((x1, y1, x2, y2))
+    Trả về NHIỀU vùng thay vì gộp tất cả thành một bounding box duy nhất:
+    trang có hai bảng nằm ở đầu và cuối thì vùng gộp sẽ ôm trọn cả phần
+    văn bản ở giữa — đúng thứ mà việc cắt bảng muốn loại bỏ.
+    """
+    model = get_model()
+    result = model.predict(image, imgsz=IMAGE_SIZE, conf=CONFIDENCE)[0]
+
+    boxes = []
+    for box in result.boxes:
+        if model.names[int(box.cls)] != "table":
+            continue
+        x1, y1, x2, y2 = (int(value) for value in box.xyxy[0])
+        boxes.append((x1, y1, x2, y2))
+
+    boxes.sort(key=lambda box: box[1])   # theo y1: từ trên xuống dưới
+
+    width, height = image.size
+    regions = []
+
+    for x1, y1, x2, y2 in boxes:
+        # clamp về trong khung ảnh, tránh crop ra ngoài biên
+        crop_box = (
+            max(0, x1 - PADDING),
+            max(0, y1 - PADDING),
+            min(width, x2 + PADDING),
+            min(height, y2 + PADDING),
+        )
+        regions.append(image.crop(crop_box))
+
+    return regions

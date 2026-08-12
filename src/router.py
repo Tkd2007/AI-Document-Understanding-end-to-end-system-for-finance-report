@@ -6,6 +6,7 @@ Routes between OCR Pipeline (cheap, fast) and VLM Pipeline
 extraction found all required fields.
 """
 import json
+import sys
 
 from pathlib import Path
 from ocr_baseline import iter_table_regions, ocr_page_regions

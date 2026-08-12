@@ -13,9 +13,11 @@ Mọi quy tắc đều đọc từ fields_config.py chứ không hardcode tên f
 import re
 
 from fields_config import (
+    FIELD_IDENTITIES,
     FIELD_MAP,
     FIELD_RELATIONS,
     FIELD_RULES,
+    IDENTITY_TOLERANCE_RATIO,
     REVENUE_TO_ASSETS_LIMIT,
 )
 
@@ -102,7 +104,26 @@ def validate_result(result: dict) -> dict:
         if abs(smaller) > abs(larger):
             warnings.append(f"{message} ({smaller:,} > {larger:,})")
 
-    # 4. Tỷ lệ doanh thu / tổng tài sản
+    # 4. Đẳng thức kế toán — kiểm tra chặt nhất trong cả hàm.
+    #    Các check ở trên chỉ bắt được lỗi thô; đẳng thức thì lệch một
+    #    chữ số ở BẤT KỲ field nào trong nhóm là lộ ngay. Đây là thứ bắt
+    #    được kiểu sai nguy hiểm nhất: giá trị đọc ra trông hợp lý, đúng
+    #    thứ bậc, nhưng thực ra lấy nhầm dòng.
+    for parts, total_key, message in FIELD_IDENTITIES:
+        total = data.get(total_key)
+        values = [data.get(key) for key in parts]
+
+        if total is None or any(value is None for value in values):
+            continue
+
+        actual = sum(values)
+        tolerance = abs(total) * IDENTITY_TOLERANCE_RATIO
+
+        if abs(actual - total) > tolerance:
+            diff = actual - total
+            warnings.append(f"{message} — lệch {diff:,} ({actual:,} vs {total:,})")
+
+    # 5. Tỷ lệ doanh thu / tổng tài sản
     doanh_thu = data.get("doanh_thu_thuan")
     tong_tai_san = data.get("tong_tai_san")
     if doanh_thu is not None and tong_tai_san is not None and tong_tai_san > 0:
@@ -112,7 +133,7 @@ def validate_result(result: dict) -> dict:
                 f"(gấp hơn {REVENUE_TO_ASSETS_LIMIT} lần)"
             )
 
-    # 5. Thiếu chỉ tiêu bắt buộc
+    # 6. Thiếu chỉ tiêu bắt buộc
     missing_required = [
         field_label(key)
         for key, rules in FIELD_RULES.items()

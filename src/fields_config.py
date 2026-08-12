@@ -4,16 +4,68 @@ Single source of truth cho các chỉ tiêu cần trích xuất.
 FIELD_MAP là danh sách field chuẩn, dùng chung cho cả hai nhánh: nhánh
 VLM đưa thẳng vào prompt, nhánh regex dùng làm schema kết quả.
 
-FIELD_ALIASES và FIELD_EXCLUDE chỉ phục vụ nhánh regex, vì regex khớp
-chữ theo mặt chữ nên phải liệt kê sẵn mọi cách gọi. Nhánh VLM không cần
-hai bảng này — model tự hiểu ngữ nghĩa của dòng.
+FIELD_ALIASES, FIELD_EXCLUDE và FIELD_LINE_CODES chỉ phục vụ nhánh regex,
+vì regex khớp chữ theo mặt chữ nên phải liệt kê sẵn mọi cách gọi. Nhánh
+VLM không cần các bảng này — model tự hiểu ngữ nghĩa của dòng.
+
+FIELD_RULES gắn quy tắc kiểm tra vào chính định nghĩa field, để thêm một
+field mới chỉ cần sửa file này chứ không phải lục lại validation.py.
 """
 
 FIELD_MAP = {
+    # --- B01a-DN: Báo cáo tình hình tài chính (bảng cân đối kế toán) ---
+    "tai_san_ngan_han": "Tài sản ngắn hạn",
+    "hang_ton_kho": "Hàng tồn kho",
+    "tai_san_dai_han": "Tài sản dài hạn",
     "tong_tai_san": "Tổng tài sản",
+    "no_phai_tra": "Nợ phải trả",
+    "von_chu_so_huu": "Vốn chủ sở hữu",
+
+    # --- B02a-DN: Báo cáo kết quả hoạt động kinh doanh ---
     "doanh_thu_thuan": "Doanh thu thuần",
+    "gia_von_hang_ban": "Giá vốn hàng bán",
+    "loi_nhuan_gop": "Lợi nhuận gộp",
+    "loi_nhuan_truoc_thue": "Lợi nhuận trước thuế",
     "loi_nhuan_sau_thue": "Lợi nhuận sau thuế",
 }
+
+# Quy tắc kiểm tra gắn với từng field.
+#
+#   allow_negative — số âm có phải dấu hiệu đọc sai không? Lợi nhuận âm
+#     là doanh nghiệp lỗ, hoàn toàn bình thường. Tổng tài sản âm thì chắc
+#     chắn là lỗi.
+#   required — field bắt buộc phải có thì kết quả mới được coi là đạt.
+#     Không đánh dấu tất cả là required: càng nhiều field bắt buộc thì
+#     càng dễ phải fallback VLM chỉ vì một chỉ tiêu phụ không tìm thấy.
+FIELD_RULES = {
+    "tai_san_ngan_han":     {"allow_negative": False, "required": False},
+    "hang_ton_kho":         {"allow_negative": False, "required": False},
+    "tai_san_dai_han":      {"allow_negative": False, "required": False},
+    "tong_tai_san":         {"allow_negative": False, "required": True},
+    "no_phai_tra":          {"allow_negative": False, "required": False},
+    "von_chu_so_huu":       {"allow_negative": True,  "required": False},
+    "doanh_thu_thuan":      {"allow_negative": False, "required": True},
+    "gia_von_hang_ban":     {"allow_negative": False, "required": False},
+    "loi_nhuan_gop":        {"allow_negative": True,  "required": False},
+    "loi_nhuan_truoc_thue": {"allow_negative": True,  "required": False},
+    "loi_nhuan_sau_thue":   {"allow_negative": True,  "required": True},
+}
+
+# Quan hệ số học giữa các field, dùng để bắt lỗi đọc nhầm dòng/nhầm cột.
+# Mỗi mục: (field nhỏ hơn, field lớn hơn, mô tả).
+# Chỉ kiểm tra khi cả hai field đều có giá trị.
+FIELD_RELATIONS = [
+    ("tai_san_ngan_han", "tong_tai_san", "Tài sản ngắn hạn không thể lớn hơn Tổng tài sản"),
+    ("tai_san_dai_han", "tong_tai_san", "Tài sản dài hạn không thể lớn hơn Tổng tài sản"),
+    ("hang_ton_kho", "tai_san_ngan_han", "Hàng tồn kho không thể lớn hơn Tài sản ngắn hạn"),
+    ("no_phai_tra", "tong_tai_san", "Nợ phải trả không thể lớn hơn Tổng tài sản"),
+    ("gia_von_hang_ban", "doanh_thu_thuan", "Giá vốn hàng bán không thể lớn hơn Doanh thu thuần"),
+    ("loi_nhuan_sau_thue", "loi_nhuan_truoc_thue", "Lợi nhuận sau thuế không thể lớn hơn Lợi nhuận trước thuế"),
+]
+
+# Doanh thu một kỳ lớn hơn tổng tài sản gấp nhiều lần là bất thường với
+# doanh nghiệp sản xuất — thường là dấu hiệu đọc nhầm dòng hoặc nhầm cột.
+REVENUE_TO_ASSETS_LIMIT = 10
 
 # Các cách gọi khác nhau của cùng một chỉ tiêu trong báo cáo thật.
 #
@@ -23,9 +75,24 @@ FIELD_MAP = {
 # "Lợi nhuận sau thuế chưa phân phối" trên bảng cân đối kế toán — một
 # chỉ tiêu hoàn toàn khác nhưng trùng tiền tố.
 FIELD_ALIASES = {
+    "tai_san_ngan_han": [
+        "Tài sản ngắn hạn",
+    ],
+    "hang_ton_kho": [
+        "Hàng tồn kho",
+    ],
+    "tai_san_dai_han": [
+        "Tài sản dài hạn",
+    ],
     "tong_tai_san": [
         "Tổng cộng tài sản",
         "Tổng tài sản",
+    ],
+    "no_phai_tra": [
+        "Nợ phải trả",
+    ],
+    "von_chu_so_huu": [
+        "Vốn chủ sở hữu",
     ],
     "doanh_thu_thuan": [
         "Doanh thu thuần về bán hàng và cung cấp dịch vụ",
@@ -33,6 +100,18 @@ FIELD_ALIASES = {
         # vẫn đủ đặc trưng để không lẫn với dòng doanh thu trong thuyết minh.
         "Doanh thu thuần về bán",
         "Doanh thu thuần",
+    ],
+    "gia_von_hang_ban": [
+        "Giá vốn hàng bán và dịch vụ cung cấp",
+        "Giá vốn hàng bán",
+    ],
+    "loi_nhuan_gop": [
+        "Lợi nhuận gộp về bán hàng và cung cấp dịch vụ",
+        "Lợi nhuận gộp",
+    ],
+    "loi_nhuan_truoc_thue": [
+        "Lợi nhuận kế toán trước thuế",
+        "Lợi nhuận trước thuế",
     ],
     "loi_nhuan_sau_thue": [
         "Lợi nhuận sau thuế thu nhập doanh nghiệp",
@@ -49,10 +128,52 @@ FIELD_EXCLUDE = {
         "chưa phân",        # "Lợi nhuận sau thuế chưa phân phối" (bảng cân đối)
         "được trích chia",  # "...được trích chia cổ tức cho các cổ đông"
     ],
+    "tai_san_ngan_han": [
+        "khác",             # "Tài sản ngắn hạn khác"
+    ],
+    "tai_san_dai_han": [
+        "khác",             # "Tài sản dài hạn khác"
+    ],
+    "no_phai_tra": [
+        "người bán",        # "Phải trả người bán"
+        "người lao",        # "Phải trả người lao động"
+    ],
 }
 
+# Mã số dòng theo mẫu biểu Bộ Tài chính (Thông tư 99/2025/TT-BTC).
+#
+# Mã số đáng tin hơn tên chữ: OCR đọc chữ số gần như không sai, còn chữ
+# tiếng Việt có dấu thì hay hỏng ("TỔNG TÀI SẢN" -> "TỖNG TÀISẢN").
+#
+# CẢNH BÁO: mã số chỉ duy nhất TRONG một mẫu biểu, không phải toàn tài
+# liệu. Mã "10" là Doanh thu thuần ở B02a nhưng là Biến động hàng tồn kho
+# ở B03a; mã "20", "30", "50" cũng trùng tương tự. Nên mỗi field phải đi
+# kèm mẫu biểu của nó, và chỉ dùng mã khi trang đúng mẫu đó.
+FIELD_LINE_CODES = {
+    "tai_san_ngan_han":     ("B01a", "100"),
+    "hang_ton_kho":         ("B01a", "140"),
+    "tai_san_dai_han":      ("B01a", "200"),
+    "tong_tai_san":         ("B01a", "280"),
+    "no_phai_tra":          ("B01a", "300"),
+    "von_chu_so_huu":       ("B01a", "400"),
+    "doanh_thu_thuan":      ("B02a", "10"),
+    "gia_von_hang_ban":     ("B02a", "11"),
+    "loi_nhuan_gop":        ("B02a", "20"),
+    "loi_nhuan_truoc_thue": ("B02a", "50"),
+    "loi_nhuan_sau_thue":   ("B02a", "60"),
+}
 
-# Chỉ tiêu mà giá trị âm là dấu hiệu bất thường. Lợi nhuận sau thuế cố ý
-# KHÔNG nằm ở đây: doanh nghiệp lỗ là chuyện bình thường, và prompt VLM
-# được yêu cầu giữ nguyên dấu âm nên số âm ở đó là kết quả đúng.
-NON_NEGATIVE_FIELDS = ("tong_tai_san", "doanh_thu_thuan")
+# Dấu hiệu nhận biết trang thuộc mẫu biểu nào.
+#
+# OCR đọc "Mẫu B 01a - DN" ra đủ kiểu biến thể vì chữ số và chữ cái nhìn
+# giống nhau: trên báo cáo VNM, EasyOCR trả về "Mâu B Ola" — số 0 thành
+# chữ O, số 1 thành chữ l thường. Nên chữ số nào cũng phải liệt kê kèm
+# các chữ cái dễ nhầm với nó.
+_ZERO = r"[O0o]"      # 0 hay bị đọc thành O hoa hoặc o thường
+_ONE = r"[1lI|]"      # 1 hay bị đọc thành l thường, I hoa, hoặc gạch đứng
+
+FORM_MARKERS = {
+    "B01a": rf"B\s*{_ZERO}\s*{_ONE}\s*a",
+    "B02a": rf"B\s*{_ZERO}\s*2\s*a",
+    "B03a": rf"B\s*{_ZERO}\s*3\s*a",
+}

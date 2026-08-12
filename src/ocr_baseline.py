@@ -12,6 +12,7 @@ Usage:
 
 import sys
 import os
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -39,7 +40,7 @@ def get_reader():
     Khởi tạo EasyOCR ở lần gọi đầu tiên rồi tái sử dụng.
 
     Trước đây reader được tạo ngay lúc import. Vì extract_vlm.py cũng
-    import module này (để dùng load_pages/load_table_regions), chạy nhánh
+    import module này (để dùng load_pages/iter_table_regions), chạy nhánh
     VLM thuần vẫn phải chờ nạp xong model OCR không dùng tới.
     """
     global _reader
@@ -64,35 +65,33 @@ def load_pages(file_path: str) -> list[Image.Image]:
         return [Image.open(path)]
 
 
-def load_table_regions(file_path: str) -> list[dict]:
+def iter_table_regions(file_path: str) -> Iterator[dict]:
     """
-    Load document, chạy layout detection, trả về các vùng bảng theo trang:
-        [{"page": 1, "regions": [Image, ...]}, ...]
-    mỗi trang trả về các vùng bảng tìm được; nếu không tìm thấy bảng nào 
-    thì trả về nguyên trang gốc (fail open — để không mất dữ liệu ở trang 
-    mà YOLO nhận nhầm).
+    Generator: chạy layout detection cho TỪNG trang, yield từng trang một:
+        {"page": 1, "regions": [Image, ...]}
 
-    Tách riêng khỏi ocr_document() để router.py tính MỘT LẦN rồi dùng
-    chung cho cả nhánh OCR lẫn nhánh VLM. Convert PDF ở 300 DPI và chạy
-    YOLO là hai việc đắt nhất trong pipeline; trước đây mỗi nhánh tự làm
-    lại từ đầu nên báo cáo 54 trang bị xử lý hai lượt.
+    Mỗi trang trả về các vùng bảng tìm được; nếu không tìm thấy bảng nào
+    thì trả về nguyên trang gốc (fail open — để không mất dữ liệu ở trang
+    mà YOLO nhận nhầm là plain text).
+
+    Dùng generator thay vì trả về list: YOLO chỉ chạy khi người gọi thực
+    sự cần tới trang đó. Nếu tìm đủ field ở trang 10 rồi dừng thì 45 trang
+    còn lại không hề bị chạy YOLO — đây là phần tiết kiệm lớn nhất, vì
+    YOLO là một trong hai việc đắt nhất pipeline (cùng với convert PDF).
     """
     pages = load_pages(file_path)
     total = len(pages)
-    results = []
 
     for i, page_img in enumerate(pages, start=1):
         regions = get_table_regions(page_img)
 
         if not regions:
             print(f"--- Page {i}/{total}: không có bảng, dùng nguyên trang ---")
-            results.append({"page": i, "regions": [page_img]})
+            yield {"page": i, "regions": [page_img]}
             continue
 
-        results.append({"page": i, "regions": regions})
         print(f"--- Page {i}/{total}: tìm thấy {len(regions)} bảng ---")
-
-    return results
+        yield {"page": i, "regions": regions}
 
 
 def ocr_image(image: Image.Image) -> str:
@@ -101,19 +100,25 @@ def ocr_image(image: Image.Image) -> str:
     return "\n".join(results)
 
 
-def ocr_regions(pages: list[dict]) -> list[dict]:
+def ocr_page_regions(page: dict) -> dict:
     """
-    OCR các vùng bảng đã cắt sẵn bởi load_table_regions().
+    OCR các vùng bảng của MỘT trang.
+    Nhận {"page": 1, "regions": [...]}, trả {"page": 1, "text": "..."}.
+
+    Tách ra khỏi ocr_regions() để router.py gọi được theo từng trang khi
+    duyệt generator, thay vì phải gom hết mọi trang lại rồi mới OCR.
+    """
+    text = "\n".join(ocr_image(region) for region in page["regions"])
+    print(f"--- OCR page {page['page']}: {len(text)} characters ---")
+    return {"page": page["page"], "text": text}
+
+
+def ocr_regions(pages: Iterable[dict]) -> list[dict]:
+    """
+    OCR nhiều trang đã cắt sẵn bởi iter_table_regions().
     Format: [{"page": 1, "text": "..."}, ...]
     """
-    results = []
-
-    for page in pages:
-        text = "\n".join(ocr_image(region) for region in page["regions"])
-        results.append({"page": page["page"], "text": text})
-        print(f"--- OCR page {page['page']}: {len(text)} characters ---")
-
-    return results
+    return [ocr_page_regions(page) for page in pages]
 
 
 def ocr_document(file_path: str) -> list[dict]:
@@ -121,7 +126,7 @@ def ocr_document(file_path: str) -> list[dict]:
     Run layout detection + OCR on the whole document, return results per page.
     Format: [{"page": 1, "text": "..."}, ...]
     """
-    return ocr_regions(load_table_regions(file_path))
+    return ocr_regions(iter_table_regions(file_path))
 
 
 if __name__ == "__main__":

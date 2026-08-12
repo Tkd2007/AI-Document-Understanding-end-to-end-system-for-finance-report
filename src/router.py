@@ -12,7 +12,7 @@ from pathlib import Path
 from ocr_baseline import iter_table_regions, ocr_page_regions
 from extract_baseline import extract_all_fields
 from extract_vlm import extract_fields_from_regions
-from validation import validate_result
+from validation import validate_result, has_required_fields
 
 from fields_config import FIELD_MAP
 
@@ -65,12 +65,15 @@ def is_acceptable(result: dict) -> bool:
     Kết quả có đáng tin để dừng sớm / khỏi cần fallback VLM không?
 
     Hai điều kiện, cả hai đều phải đạt:
-    1. Đủ field (không còn None nào)
-    2. Validate không sinh warning — chỉ kiểm tra "có giá trị" là chưa đủ,
+    1. Đủ các field BẮT BUỘC (theo FIELD_RULES). Field bổ sung thiếu vẫn
+       chấp nhận được — danh sách chỉ tiêu càng dài thì càng dễ thiếu một
+       chỉ tiêu phụ, và nếu bắt đủ hết mới cho qua thì lần nào cũng phải
+       fallback sang VLM.
+    2. Validate không sinh warning. Chỉ kiểm tra "có giá trị" là chưa đủ,
        vì regex có thể bắt trúng một con số SAI (không phải None) và
        router sẽ tin dùng luôn mà không bao giờ gọi VLM.
     """
-    if not all(value is not None for value in result.values()):
+    if not has_required_fields(result):
         return False
 
     return not validate_result(result)["warnings"]

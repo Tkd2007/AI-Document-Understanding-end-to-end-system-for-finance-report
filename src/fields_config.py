@@ -63,6 +63,44 @@ FIELD_RELATIONS = [
     ("loi_nhuan_sau_thue", "loi_nhuan_truoc_thue", "Lợi nhuận sau thuế không thể lớn hơn Lợi nhuận trước thuế"),
 ]
 
+# Đẳng thức kế toán. Chặt hơn FIELD_RELATIONS ở trên rất nhiều: bất đẳng
+# thức chỉ bắt được lỗi thô (A lớn hơn B), còn đẳng thức thì lệch một chữ
+# số là lộ ngay. Trên báo cáo VNM Q1/2026, cả hai đẳng thức dưới đây khớp
+# tới từng đồng — nên nếu một lần chạy nào đó không khớp, gần như chắc
+# chắn có field bị đọc sai chứ không phải báo cáo sai.
+#
+# Mỗi mục: (danh sách field cộng lại, field tổng, mô tả).
+# Chỉ kiểm tra khi TẤT CẢ field liên quan đều có giá trị.
+FIELD_IDENTITIES = [
+    (
+        ["tai_san_ngan_han", "tai_san_dai_han"],
+        "tong_tai_san",
+        "Tài sản ngắn hạn + Tài sản dài hạn phải bằng Tổng tài sản",
+    ),
+    (
+        ["no_phai_tra", "von_chu_so_huu"],
+        "tong_tai_san",
+        "Nợ phải trả + Vốn chủ sở hữu phải bằng Tổng tài sản",
+    ),
+    (
+        ["gia_von_hang_ban", "loi_nhuan_gop"],
+        "doanh_thu_thuan",
+        "Giá vốn hàng bán + Lợi nhuận gộp phải bằng Doanh thu thuần",
+    ),
+]
+
+# Dung sai cho đẳng thức, tính theo tỷ lệ trên giá trị tổng.
+#
+# Để RẤT hẹp, vì báo cáo đã kiểm toán thì các đẳng thức này khớp tuyệt
+# đối tới từng đồng — mọi sai lệch đều là do đọc sai, không phải do báo
+# cáo. Dung sai rộng làm luật này mất tác dụng: với tổng tài sản 47
+# nghìn tỷ, mức 0,1% cho phép lệch tới 47 tỷ đồng, tức là đọc nhầm một
+# chữ số ở hàng chục tỷ vẫn lọt.
+#
+# 1e-7 tương đương ~4,7 triệu đồng trên báo cáo cỡ VNM: đủ để bỏ qua làm
+# tròn ở đơn vị rút gọn, nhưng bắt được mọi lỗi đọc sai chữ số thực tế.
+IDENTITY_TOLERANCE_RATIO = 1e-7
+
 # Doanh thu một kỳ lớn hơn tổng tài sản gấp nhiều lần là bất thường với
 # doanh nghiệp sản xuất — thường là dấu hiệu đọc nhầm dòng hoặc nhầm cột.
 REVENUE_TO_ASSETS_LIMIT = 10

@@ -23,7 +23,7 @@ from openai import (
 )
 from PIL import Image
 
-from ocr_baseline import load_table_regions   # tái sử dụng hàm cũ, không viết lại
+from ocr_baseline import iter_table_regions   # tái sử dụng hàm cũ, không viết lại
 from fields_config import FIELD_MAP
 
 load_dotenv()
@@ -209,7 +209,7 @@ def extract_fields_from_regions(pages: list[dict]) -> dict:
 
 def extract_fields_from_document(file_path: str) -> dict:
     """Chạy trọn nhánh VLM từ file gốc (dùng khi chạy standalone)."""
-    return extract_fields_from_regions(load_table_regions(file_path))
+    return extract_fields_from_regions(iter_table_regions(file_path))
 
 
 if __name__ == "__main__":

@@ -8,38 +8,42 @@ extraction found all required fields.
 import json
 
 from pathlib import Path
-from ocr_baseline import load_table_regions, ocr_regions
+from ocr_baseline import iter_table_regions, ocr_page_regions
 from extract_baseline import extract_all_fields
 from extract_vlm import extract_fields_from_regions
+from validation import validate_result
 
-
-def run_ocr_pipeline(pages: list[dict]) -> dict:
-    ocr_results = ocr_regions(pages)
-    full_text = "\n".join(page["text"] for page in ocr_results)
-    return extract_all_fields(full_text)
-
-
-def run_vlm_pipeline(pages: list[dict]) -> dict:
-    return extract_fields_from_regions(pages)
+from fields_config import FIELD_MAP
 
 
 def route_document(file_path: str) -> dict:
-    """
-    Chạy nhánh OCR trước, thiếu field nào thì mới chuyển sang nhánh VLM.
+    pages_iter = iter_table_regions(file_path)   # generator
+    cached_pages = []                             # để VLM dùng lại, không chạy YOLO lần 2
+    result = {key: None for key in FIELD_MAP}
 
-    Convert PDF sang ảnh 300 DPI và chạy YOLO là hai việc đắt nhất trong
-    pipeline, nên load_table_regions() được gọi đúng MỘT LẦN ở đây rồi
-    truyền chung cho cả hai nhánh. Trước đây mỗi nhánh tự gọi lại từ file
-    gốc, nên báo cáo 54 trang phải convert và chạy YOLO hai lượt.
-    """
-    pages = load_table_regions(file_path)
+    # VÒNG LẶP OCR theo từng trang
+    for page in pages_iter:
+        cached_pages.append(page)
 
-    result = run_ocr_pipeline(pages)
+        ocr_result = ocr_page_regions(page)              # OCR 1 trang
+        page_fields = extract_all_fields(ocr_result["text"])   # regex trên text trang đó
 
-    missing = [key for key, value in result.items() if value is None]
-    if missing:
-        print(f"--- OCR không tìm được {missing}, chuyển sang nhánh VLM ---")
-        result = run_vlm_pipeline(pages)
+        # merge: chỉ lấp field còn None, không ghi đè field đã có
+        for key in result:
+            if result[key] is None and page_fields.get(key) is not None:
+                result[key] = page_fields[key]
+
+        # dừng sớm nếu đủ field VÀ validate không có warning
+        if is_acceptable(result):
+            break
+
+    # fallback VLM nếu OCR không cho kết quả đáng tin
+    if not is_acceptable(result):
+        vlm_result = extract_fields_from_regions(cached_pages)
+        # merge: giữ field OCR đã có, chỉ lấp chỗ thiếu
+        for key in result:
+            if result[key] is None and vlm_result.get(key) is not None:
+                result[key] = vlm_result[key]
 
     save_result(file_path, result)
     return result
@@ -53,3 +57,30 @@ def save_result(file_path: str, result: dict) -> Path:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
     return out_path
+
+
+def is_acceptable(result: dict) -> bool:
+    """
+    Kết quả có đáng tin để dừng sớm / khỏi cần fallback VLM không?
+
+    Hai điều kiện, cả hai đều phải đạt:
+    1. Đủ field (không còn None nào)
+    2. Validate không sinh warning — chỉ kiểm tra "có giá trị" là chưa đủ,
+       vì regex có thể bắt trúng một con số SAI (không phải None) và
+       router sẽ tin dùng luôn mà không bao giờ gọi VLM.
+    """
+    if not all(value is not None for value in result.values()):
+        return False
+
+    return not validate_result(result)["warnings"]
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python router.py <file_path>")
+        sys.exit(1)
+
+    input_path = sys.argv[1]
+    result = route_document(input_path)
+
+    print(result)

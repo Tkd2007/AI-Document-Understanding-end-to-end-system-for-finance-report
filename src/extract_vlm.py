@@ -23,8 +23,9 @@ from openai import (
 )
 from PIL import Image
 
+from fields_config import FIELD_LINE_CODES, FIELD_MAP, FIELD_RULES
+from validation import has_required_fields
 from ocr_baseline import iter_table_regions   # tái sử dụng hàm cũ, không viết lại
-from fields_config import FIELD_MAP
 
 load_dotenv()
 
@@ -50,23 +51,71 @@ def encode_image_to_base64(image: Image.Image) -> str:
 
 
 def build_prompt() -> str:
-    field_lines = "\n".join(f'- "{key}": tương ứng với dòng "{name}"' for key, name in FIELD_MAP.items())
+    """
+    Sinh prompt từ fields_config, nhóm theo mẫu biểu.
+
+    Khi danh sách chỉ tiêu còn 3 field thì liệt kê phẳng là đủ. Với 11
+    field trải trên hai mẫu biểu khác nhau thì không: mỗi trang ảnh chỉ
+    thuộc MỘT mẫu, nên nếu prompt trộn lẫn, model dễ cố tìm cho bằng được
+    chỉ tiêu của bảng cân đối trên trang kết quả kinh doanh — rồi bịa ra
+    một con số gần đúng. Nhóm theo mẫu và nói rõ "trang này thường chỉ
+    chứa một nhóm" giúp model tự tin trả null cho nhóm còn lại.
+
+    Kèm luôn mã số dòng: bảng BCTC Việt Nam in mã ngay cạnh tên chỉ tiêu,
+    và mã là thứ ổn định nhất trên trang — hữu ích cho model đối chiếu
+    khi tên chỉ tiêu trong ảnh viết hơi khác so với danh sách.
+    """
+    form_names = {
+        "B01a": "Báo cáo tình hình tài chính (bảng cân đối kế toán)",
+        "B02a": "Báo cáo kết quả hoạt động kinh doanh",
+        "B03a": "Báo cáo lưu chuyển tiền tệ",
+    }
+
+    # Gom field theo mẫu biểu, giữ nguyên thứ tự khai báo trong FIELD_MAP
+    grouped: dict[str, list[str]] = {}
+    ungrouped: list[str] = []
+
+    for key in FIELD_MAP:
+        entry = FIELD_LINE_CODES.get(key)
+        if entry is None:
+            ungrouped.append(key)
+            continue
+        form, _ = entry
+        grouped.setdefault(form, []).append(key)
+
+    sections = []
+    for form, keys in grouped.items():
+        lines = [f"NHÓM {form} — {form_names.get(form, form)}:"]
+        for key in keys:
+            _, code = FIELD_LINE_CODES[key]
+            required = " [BẮT BUỘC]" if FIELD_RULES.get(key, {}).get("required") else ""
+            lines.append(f'- "{key}": dòng "{FIELD_MAP[key]}", mã số {code}{required}')
+        sections.append("\n".join(lines))
+
+    if ungrouped:
+        lines = ["NHÓM KHÁC:"]
+        for key in ungrouped:
+            lines.append(f'- "{key}": dòng "{FIELD_MAP[key]}"')
+        sections.append("\n".join(lines))
+
+    field_block = "\n\n".join(sections)
     json_template = ", ".join(f'"{key}": <số hoặc null>' for key in FIELD_MAP)
 
     return f"""Bạn là một hệ thống trích xuất dữ liệu tài chính tự động.
-Nhiệm vụ: nhìn vào ảnh trang báo cáo tài chính được cung cấp, tìm và trích xuất các chỉ tiêu sau:
+Nhiệm vụ: nhìn vào ảnh trang báo cáo tài chính được cung cấp, tìm và trích xuất các chỉ tiêu sau.
 
-{field_lines}
+{field_block}
 
 QUY TẮC BẮT BUỘC:
-1. Chỉ trả về đúng 1 object JSON, KHÔNG thêm bất kỳ lời giải thích, lời chào, hay markdown (không dùng dấu ```) nào trước/sau JSON.
-2. Số trả về phải là số nguyên thuần (integer), KHÔNG chứa dấu chấm, dấu phẩy hay ký hiệu đơn vị tiền tệ.
-3. Nếu số liệu trong ảnh là số âm (thể hiện bằng dấu "-" hoặc đặt trong ngoặc đơn, ví dụ "(1.234.567)"), PHẢI giữ lại dấu âm trong JSON (ví dụ -1234567). Đây là trường hợp rất thường gặp với "Lợi nhuận sau thuế" khi doanh nghiệp thua lỗ.
-4. Giữ nguyên đơn vị tính như số liệu hiển thị trong ảnh (ví dụ nếu bảng ghi "Đơn vị tính: triệu đồng" thì trả về đúng con số theo đơn vị triệu đồng đó), KHÔNG tự quy đổi sang đơn vị khác.
-5. Nếu ảnh này KHÔNG chứa chỉ tiêu nào đó (không thấy trong ảnh), trả về null cho chỉ tiêu đó — TUYỆT ĐỐI KHÔNG được đoán hay bịa ra một con số gần đúng.
-6. Chỉ lấy số liệu của kỳ báo cáo gần nhất. Xác định cột này dựa vào NHÃN/TIÊU ĐỀ cột (ngày, quý, năm — kỳ có ngày gần hiện tại nhất), KHÔNG mặc định dựa vào vị trí cột đầu tiên bên trái, vì thứ tự cột có thể khác nhau giữa các mẫu báo cáo. Không lấy số liệu của kỳ so sánh (kỳ trước).
-7. Bảng báo cáo tài chính Việt Nam thường có cột "Mã số" (số nhỏ 2-3 chữ số như 10, 60, 270) và cột "Thuyết minh" (ký hiệu như VI.1) nằm giữa tên chỉ tiêu và giá trị. TUYỆT ĐỐI KHÔNG lấy nhầm mã số hay số thuyết minh làm giá trị — giá trị là con số tiền tệ lớn nằm ở các cột bên phải.
-8. Tên chỉ tiêu trong ảnh có thể đi kèm số thứ tự/tiền tố (ví dụ "A.", "I.", "1.") hoặc viết hoa toàn bộ, hoặc diễn đạt hơi khác so với tên liệt kê ở trên — hãy nhận diện dựa trên Ý NGHĨA của dòng, không yêu cầu khớp chính xác từng ký tự.
+1. Chỉ trả về đúng 1 object JSON chứa ĐẦY ĐỦ mọi khoá liệt kê ở trên, KHÔNG thêm bất kỳ lời giải thích, lời chào, hay markdown (không dùng dấu ```) nào trước/sau JSON.
+2. Mỗi trang thường chỉ thuộc MỘT mẫu biểu, nên bình thường chỉ một nhóm chỉ tiêu ở trên xuất hiện được trên ảnh này. Các chỉ tiêu thuộc nhóm khác PHẢI trả null — đó là kết quả đúng, không phải thiếu sót.
+3. Nếu ảnh KHÔNG chứa một chỉ tiêu nào đó, trả null cho chỉ tiêu đó — TUYỆT ĐỐI KHÔNG được đoán hay bịa ra một con số gần đúng. Trả null luôn tốt hơn trả số sai.
+4. Số trả về phải là số nguyên thuần (integer), KHÔNG chứa dấu chấm, dấu phẩy hay ký hiệu đơn vị tiền tệ.
+5. Nếu số liệu trong ảnh là số âm (thể hiện bằng dấu "-" hoặc đặt trong ngoặc đơn, ví dụ "(1.234.567)"), PHẢI giữ lại dấu âm trong JSON (ví dụ -1234567). Rất thường gặp với "Lợi nhuận sau thuế" khi doanh nghiệp thua lỗ.
+6. Giữ nguyên đơn vị tính như số liệu hiển thị trong ảnh (ví dụ nếu bảng ghi "Đơn vị tính: triệu đồng" thì trả về đúng con số theo đơn vị đó), KHÔNG tự quy đổi.
+7. Chỉ lấy số liệu của kỳ báo cáo gần nhất. Xác định cột này dựa vào NHÃN/TIÊU ĐỀ cột (ngày, quý, năm — kỳ có ngày gần hiện tại nhất), KHÔNG mặc định dựa vào vị trí cột đầu tiên bên trái, vì thứ tự cột có thể khác nhau giữa các mẫu báo cáo. Không lấy số liệu của kỳ so sánh.
+8. Bảng BCTC Việt Nam có cột "Mã số" (số nhỏ 2-3 chữ số như 10, 60, 280) và cột "Thuyết minh" (ký hiệu như V.5, VI.1) nằm giữa tên chỉ tiêu và giá trị. TUYỆT ĐỐI KHÔNG lấy nhầm mã số hay số thuyết minh làm giá trị — giá trị là con số tiền tệ lớn, có dấu phân cách nghìn, nằm ở các cột bên phải.
+9. Tên chỉ tiêu trong ảnh có thể kèm số thứ tự/tiền tố ("A.", "I.", "1."), viết hoa toàn bộ, hoặc diễn đạt hơi khác danh sách trên — nhận diện theo Ý NGHĨA của dòng và mã số đi kèm, không đòi khớp từng ký tự.
 
 Trả về đúng format JSON sau, không có gì khác:
 {{{json_template}}}"""
@@ -162,21 +211,38 @@ def parse_response(text: str) -> dict | None:
     return None
 
 
-def extract_fields_from_regions(pages: list[dict]) -> dict:
+# Số trang liên tiếp không tìm thêm được field mới thì coi như đã đi hết
+# phần bảng biểu. Các mẫu B01a/B02a/B03a luôn nằm liền nhau ở đầu báo cáo
+# (trang 6-12 với báo cáo VNM), phần còn lại là thuyết minh — quét tiếp
+# chỉ tốn tiền gọi API. Để 3 cho rộng rãi: giữa các bảng có thể chen vài
+# trang chữ ký, trang trắng, hoặc trang mà YOLO cắt nhầm.
+PATIENCE_PAGES = 3
+
+
+def extract_fields_from_regions(pages) -> dict:
     """
     Chạy VLM trên từng vùng bảng đã cắt sẵn, gộp kết quả lại thành 1 dict.
 
-    1 báo cáo tài chính thường nhiều trang: Tổng tài sản nằm ở trang
-    Bảng cân đối kế toán, Doanh thu thuần/Lợi nhuận sau thuế nằm ở
-    trang Báo cáo KQKD khác. Nên với mỗi field, lấy giá trị non-null
-    ĐẦU TIÊN tìm thấy qua các trang (field nào trang trước không có,
-    trang sau tìm tiếp; đã có rồi thì không ghi đè).
+    Với mỗi field, lấy giá trị non-null ĐẦU TIÊN tìm thấy qua các trang
+    (field nào trang trước không có, trang sau tìm tiếp; đã có rồi thì
+    không ghi đè). Các chỉ tiêu nằm rải ở nhiều trang khác nhau: nhóm
+    B01a ở trang bảng cân đối, nhóm B02a ở trang kết quả kinh doanh.
+
+    Điều kiện dừng sớm gồm hai nhánh, vì mục tiêu là lấy ĐỦ field nhưng
+    không quét vô ích tới hết tài liệu:
+      1. Đủ cả 11 field  -> chắc chắn không còn gì để tìm, dừng ngay.
+      2. Đủ field BẮT BUỘC và đã PATIENCE_PAGES trang liên tiếp không có
+         thêm field mới -> gần như chắc chắn đã qua hết phần bảng biểu.
+    Nếu chỉ dùng nhánh 1, chỉ cần một field không bao giờ đọc được là
+    phải gọi API cho cả 55 trang.
     """
     prompt = build_prompt()
     final_result = {key: None for key in FIELD_MAP}
+    pages_without_new_field = 0
 
     for page in pages:
         page_no = page["page"]
+        found_new_field = False
 
         for region in page["regions"]:
             base64_image = encode_image_to_base64(region)
@@ -194,14 +260,24 @@ def extract_fields_from_regions(pages: list[dict]) -> dict:
             for key in final_result:
                 if final_result[key] is None and page_result.get(key) is not None:
                     final_result[key] = page_result[key]
+                    found_new_field = True
 
             print(f"--- Page {page_no}: {page_result} ---")
 
-        """
-        Check nếu đã có hết tất cả dữ liệu cần thiết thì dừng
-        """
+        # 1. Đủ hết -> không còn gì để tìm
         if all(value is not None for value in final_result.values()):
-            print(f"--- Đã tìm đủ cả {len(FIELD_MAP)} field, dừng sớm ở trang {page_no} ---")
+            print(f"--- Đã tìm đủ cả {len(FIELD_MAP)} field, dừng ở trang {page_no} ---")
+            break
+
+        # 2. Đủ field bắt buộc và đã hết bảng để đọc
+        pages_without_new_field = 0 if found_new_field else pages_without_new_field + 1
+
+        if has_required_fields(final_result) and pages_without_new_field >= PATIENCE_PAGES:
+            missing = [key for key, value in final_result.items() if value is None]
+            print(
+                f"--- Đủ field bắt buộc, {PATIENCE_PAGES} trang liên tiếp không có "
+                f"field mới -> dừng ở trang {page_no}. Không tìm được: {missing} ---"
+            )
             break
 
     return final_result

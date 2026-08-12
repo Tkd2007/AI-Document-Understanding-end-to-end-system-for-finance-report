@@ -4,6 +4,15 @@ Pipeline step 2: Raw Text -> Structured JSON (Extraction baseline)
 Rule-based / regex extraction of key financial line items from
 OCR raw text. This is the baseline to compare against a VLM-based
 approach later.
+
+Hai chiến lược tìm, thử theo thứ tự:
+  1. Theo TÊN chỉ tiêu (FIELD_ALIASES) — đọc được thì chính xác nhất vì
+     tên là duy nhất trong toàn tài liệu.
+  2. Theo MÃ SỐ dòng (FIELD_LINE_CODES) — dự phòng cho trường hợp OCR
+     làm hỏng tên. Chữ số ASCII gần như không bao giờ bị đọc sai, trong
+     khi chữ tiếng Việt có dấu thì hay hỏng: trên báo cáo VNM, EasyOCR
+     đọc "TỔNG TÀI SẢN" thành "TỖNG TÀISẢN" (sai dấu + mất khoảng trắng)
+     nên không alias nào khớp, còn mã "280" thì đọc đúng tuyệt đối.
 """
 
 import sys
@@ -11,7 +20,13 @@ import re
 import json
 from pathlib import Path
 
-from fields_config import FIELD_MAP, FIELD_ALIASES, FIELD_EXCLUDE
+from fields_config import (
+    FIELD_ALIASES,
+    FIELD_EXCLUDE,
+    FIELD_LINE_CODES,
+    FIELD_MAP,
+    FORM_MARKERS,
+)
 
 
 # Một giá trị tiền tệ trong BCTC luôn có dấu phân cách nghìn
@@ -31,7 +46,6 @@ LOOKAHEAD_CHARS = 80
 
 
 def load_raw_text(file_path: str) -> str:
-
     with open(file_path, encoding="utf-8") as f:
         text = f.read()
     return text
@@ -56,9 +70,9 @@ def parse_number(raw: str) -> int:
     return -value if is_negative else value
 
 
-def extract_field(text: str, field_key: str) -> int | None:
+def extract_field_by_alias(text: str, field_key: str) -> int | None:
     """
-    Tìm giá trị của một chỉ tiêu trong text OCR.
+    Tìm giá trị theo TÊN chỉ tiêu.
 
     Thử lần lượt từng alias theo thứ tự cụ thể -> chung chung (xem
     FIELD_ALIASES), với mỗi alias thì duyệt hết các vị trí xuất hiện và
@@ -87,6 +101,53 @@ def extract_field(text: str, field_key: str) -> int | None:
     return None
 
 
+def extract_field_by_code(text: str, field_key: str) -> int | None:
+    """
+    Tìm giá trị theo MÃ SỐ dòng — dự phòng khi OCR làm hỏng tên chỉ tiêu.
+
+    Chỉ áp dụng khi text có dấu hiệu đúng mẫu biểu, vì mã số chỉ duy nhất
+    TRONG một mẫu: "10" là Doanh thu thuần ở B02a nhưng là Biến động hàng
+    tồn kho ở B03a. Không kiểm tra mẫu biểu thì đây thành nguồn sai âm
+    thầm — đúng loại lỗi tệ nhất, vì có giá trị nên router tin dùng luôn.
+    """
+    entry = FIELD_LINE_CODES.get(field_key)
+    if entry is None:
+        return None
+
+    form, code = entry
+    marker = FORM_MARKERS.get(form)
+    if marker is None or not re.search(marker, text, flags=re.IGNORECASE):
+        return None
+
+    # Mã số phải nằm ở CUỐI một dòng. Cột "Mã số" là cột cuối trước khi
+    # sang cột giá trị, nên OCR luôn xuống dòng ngay sau nó — hoặc mã
+    # đứng riêng một dòng ("280"), hoặc khép lại dòng công thức
+    # ("...+ 260 + 270) 200"). Ràng buộc cuối dòng là thứ phân biệt mã số
+    # với một con số bất kỳ nằm giữa câu.
+    #
+    # Sau mã có thể còn cột thuyết minh (V.5, VI.1...) rồi mới tới giá
+    # trị. NUMBER_RE bắt buộc có dấu phân cách nghìn nên số thuyết minh
+    # và các mã số khác không lọt vào.
+    pattern = rf"(?:^|\s){re.escape(code)}\s*$(.{{0,{LOOKAHEAD_CHARS}}}?)({NUMBER_RE})"
+
+    for match in re.finditer(pattern, text, flags=re.MULTILINE | re.DOTALL):
+        try:
+            return parse_number(match.group(2))
+        except ValueError:
+            continue
+
+    return None
+
+
+def extract_field(text: str, field_key: str) -> int | None:
+    """Thử tên chỉ tiêu trước, không ra thì mới thử mã số dòng."""
+    value = extract_field_by_alias(text, field_key)
+    if value is not None:
+        return value
+
+    return extract_field_by_code(text, field_key)
+
+
 def extract_all_fields(text: str) -> dict:
     return {key: extract_field(text, key) for key in FIELD_MAP}
 
@@ -106,4 +167,4 @@ if __name__ == "__main__":
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
-    print(result)
+    print(json.dumps(result, ensure_ascii=False, indent=2))

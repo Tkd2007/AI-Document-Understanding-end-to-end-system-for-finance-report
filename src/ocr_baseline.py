@@ -68,7 +68,9 @@ def load_table_regions(file_path: str) -> list[dict]:
     """
     Load document, chạy layout detection, trả về các vùng bảng theo trang:
         [{"page": 1, "regions": [Image, ...]}, ...]
-    Chỉ gồm những trang thực sự có bảng.
+    mỗi trang trả về các vùng bảng tìm được; nếu không tìm thấy bảng nào 
+    thì trả về nguyên trang gốc (fail open — để không mất dữ liệu ở trang 
+    mà YOLO nhận nhầm).
 
     Tách riêng khỏi ocr_document() để router.py tính MỘT LẦN rồi dùng
     chung cho cả nhánh OCR lẫn nhánh VLM. Convert PDF ở 300 DPI và chạy
@@ -83,7 +85,8 @@ def load_table_regions(file_path: str) -> list[dict]:
         regions = get_table_regions(page_img)
 
         if not regions:
-            print(f"--- Page {i}/{total}: không có bảng, bỏ qua ---")
+            print(f"--- Page {i}/{total}: không có bảng, dùng nguyên trang ---")
+            results.append({"page": i, "regions": [page_img]})
             continue
 
         results.append({"page": i, "regions": regions})

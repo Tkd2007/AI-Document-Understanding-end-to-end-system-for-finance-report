@@ -50,3 +50,9 @@ FIELD_EXCLUDE = {
         "được trích chia",  # "...được trích chia cổ tức cho các cổ đông"
     ],
 }
+
+
+# Chỉ tiêu mà giá trị âm là dấu hiệu bất thường. Lợi nhuận sau thuế cố ý
+# KHÔNG nằm ở đây: doanh nghiệp lỗ là chuyện bình thường, và prompt VLM
+# được yêu cầu giữ nguyên dấu âm nên số âm ở đó là kết quả đúng.
+NON_NEGATIVE_FIELDS = ("tong_tai_san", "doanh_thu_thuan")

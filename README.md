@@ -1,7 +1,7 @@
 # AI Document Understanding System — Financial Reports
 
-End-to-end pipeline for extracting structured financial data (Total Assets,
-Net Revenue, Net Profit After Tax) from Vietnamese financial report PDFs.
+End-to-end pipeline for extracting **11 structured financial line items**
+(balance sheet + income statement) from Vietnamese financial report PDFs.
 Final project for the "MasterClass AI Document Understanding" course.
 
 ## Architecture
@@ -19,21 +19,51 @@ Client (PDF / image upload)
         │   · chạy MỘT LẦN, dùng chung cho cả hai nhánh bên dưới
         ▼
 Document Classifier & Router
-   ├── OCR Pipeline   (EasyOCR + regex — rẻ, nhanh, thử trước)
-   └── VLM Pipeline   (Vision-Language Model — fallback khi OCR thiếu field)
-        │
-        ▼
-   save_result()  →  data/output/<file>_routed.json
+   ├── OCR Pipeline   (EasyOCR + regex — rẻ, nhanh; TẮT mặc định, xem bên dưới)
+   └── VLM Pipeline   (Vision-Language Model — đắt hơn nhưng đáng tin hơn)
         │
         ▼
    Validation  (ép kiểu số, sanity checks, warnings)
         │
         ▼
+   save_result()  →  data/output/<file>_routed.json
+        │
+        ▼
    JSON response  {"data": {...}, "warnings": [...]}
 ```
 
-Router chỉ gọi VLM khi nhánh OCR còn thiếu field — VLM chính xác hơn nhưng
-chậm và tốn tiền hơn, nên chỉ dùng khi thật sự cần.
+### Router quyết định thế nào
+
+Router coi kết quả là **đạt** khi thoả cả hai điều kiện:
+
+1. Có đủ các chỉ tiêu **bắt buộc** (`required` trong `FIELD_RULES`) — không đòi đủ
+   cả 11 field, vì danh sách càng dài thì càng dễ thiếu một chỉ tiêu phụ và lần nào
+   cũng phải fallback.
+2. `validate_result()` **không sinh warning nào**. Chỉ kiểm tra "có giá trị" là chưa
+   đủ: regex có thể bắt trúng một con số SAI (không phải `None`) và router sẽ tin
+   dùng luôn mà không bao giờ gọi VLM.
+
+Khi chưa đạt thì gọi VLM. Nếu lý do chưa đạt là *có warning* (giá trị đang có nhưng
+sai) thì VLM được phép **ghi đè**, chứ không chỉ lấp chỗ `None` — nếu không thì con
+số sai vẫn nằm nguyên đó và cả validation gate thành vô nghĩa.
+
+### Vì sao nhánh OCR đang tắt mặc định
+
+`USE_OCR_FIRST=false`. Đo trên báo cáo VNM Q1/2026:
+
+- EasyOCR đọc **số** rất chuẩn nhưng đọc **chữ tiếng Việt có dấu** thì hỏng
+  (`TỔNG TÀI SẢN` → `TỖNG TÀISẢN`), trong khi regex lại phải khớp đúng tên chỉ tiêu.
+- Lúc bị tắt, nhánh OCR quét hết 55 trang (chậm, EasyOCR chạy CPU) rồi vẫn thiếu
+  field, sau đó mới gọi VLM — người dùng phải chờ trọn một nhánh vô ích.
+- Nhánh VLM một mình trả đúng cả 11/11 field và dừng ở trang 10.
+
+Từ đó regex đã khá lên nhiều nhờ dò theo **mã số dòng** và luật loại trừ hai chiều:
+trên đúng OCR text ấy, nhánh regex hiện trích đúng **11/11 chỉ tiêu** và không sinh
+warning nào — tức là sẽ không cần fallback VLM nữa. Nhưng mặc định vẫn để `false`
+cho tới khi đo được trên nhiều báo cáo khác, vì đây mới là **một** tài liệu và
+regex vốn nhạy với cách OCR cắt chữ ở từng bản in.
+
+Code nhánh OCR được **giữ nguyên**, bật lại bằng `USE_OCR_FIRST=true` trong `.env`.
 
 ## Project structure
 
@@ -47,9 +77,10 @@ doc-ai-project/
 │   ├── ocr_baseline.py      # Step 1: document -> raw text (EasyOCR)
 │   ├── extract_baseline.py  # Step 2 (OCR branch): raw text -> structured JSON (regex)
 │   ├── extract_vlm.py       # Step 2 (VLM branch): table images -> structured JSON (VLM)
-│   ├── fields_config.py     # single source of truth for target fields
-│   ├── router.py            # Document Classifier & Router: OCR first, VLM fallback
-│   └── api.py               # FastAPI Gateway: POST /extract endpoint + validation
+│   ├── fields_config.py     # single source of truth: fields, aliases, rules, checks
+│   ├── validation.py        # ép kiểu số + sanity checks; cũng là gate quyết định fallback
+│   ├── router.py            # Document Classifier & Router: OCR (optional) -> VLM
+│   └── api.py               # FastAPI Gateway: POST /extract endpoint
 ├── .env                     # local secrets/config, never committed (see Setup)
 ├── .gitignore
 ├── requirements.txt
@@ -83,6 +114,7 @@ Create a `.env` file in the project root (this file is gitignored — never comm
 POPPLER_PATH=C:\poppler\poppler-XX.XX.X\Library\bin
 OPENROUTER_API_KEY=your_openrouter_key
 OPENROUTER_MODEL=google/gemma-4-31b-it:free
+USE_OCR_FIRST=false
 ```
 
 - Get an OpenRouter key at openrouter.ai/keys.
@@ -91,6 +123,9 @@ OPENROUTER_MODEL=google/gemma-4-31b-it:free
   rate-limit errors).
 - `POPPLER_PATH` is machine-specific — update it after cloning onto a new
   computer.
+- `USE_OCR_FIRST` bật/tắt nhánh OCR + regex (mặc định `false` — xem
+  "Vì sao nhánh OCR đang tắt mặc định" ở trên). `OPENROUTER_API_KEY` và
+  `OPENROUTER_MODEL` là bắt buộc: thiếu thì nhánh VLM báo lỗi ngay lúc import.
 
 ## Usage
 
@@ -100,24 +135,44 @@ Run each pipeline stage standalone (useful for debugging):
 python src/ocr_baseline.py data/samples/report.pdf         # OCR only -> data/output/*_raw.txt
 python src/extract_baseline.py data/output/report_raw.txt  # regex extraction -> *_extracted.json
 python src/extract_vlm.py data/samples/report.pdf          # VLM extraction -> *_vlm.json
+python src/router.py data/samples/report.pdf               # full router -> *_routed.json
 ```
+
+> Lưu ý khi chạy `extract_baseline.py` trên raw text của **cả tài liệu**: text toàn
+> văn chứa marker của nhiều mẫu biểu cùng lúc, nên lớp bảo vệ theo `FORM_MARKERS`
+> mất tác dụng và việc dò theo mã số dòng có thể lấy nhầm (mã `10` là Doanh thu
+> thuần ở B02a nhưng là Biến động hàng tồn kho ở B03a). Trong pipeline thật,
+> `router.py` gọi hàm này theo **từng trang** nên không dính vấn đề đó.
 
 Run the full dual pipeline as an API:
 
 ```bash
-uvicorn src.api:app --reload
+uvicorn api:app --app-dir src --reload
 ```
+
+`--app-dir src` là bắt buộc: các module trong `src/` dùng import phẳng
+(`from validation import ...`) nên chỉ resolve được khi `src/` nằm trên `sys.path`
+— đúng như khi chạy `python src/router.py`. Không có cờ này thì
+`uvicorn src.api:app` sẽ chết với `ModuleNotFoundError: No module named 'validation'`.
 
 Then POST a PDF file to `http://127.0.0.1:8000/extract` (or use the
 auto-generated docs at `http://127.0.0.1:8000/docs`).
 
-Response format:
+Response format (giá trị thật từ báo cáo VNM Q1/2026, đơn vị VND):
 
 ```json
 {
   "data": {
+    "tai_san_ngan_han": 29403116984122,
+    "hang_ton_kho": 5393002084291,
+    "tai_san_dai_han": 18372709942261,
     "tong_tai_san": 47775826926383,
+    "no_phai_tra": 16666572149360,
+    "von_chu_so_huu": 31109254777023,
     "doanh_thu_thuan": 13217639635987,
+    "gia_von_hang_ban": 7278764406353,
+    "loi_nhuan_gop": 5938875229634,
+    "loi_nhuan_truoc_thue": 2523887147085,
     "loi_nhuan_sau_thue": 2049247209782
   },
   "warnings": []
@@ -128,22 +183,49 @@ Response format:
 
 Defined in `src/fields_config.py` — the single source of truth used by both
 the OCR and VLM branches, so adding a new field only requires editing this
-one file:
+one file.
 
-- `tong_tai_san` — Tổng tài sản (Total Assets)
-- `doanh_thu_thuan` — Doanh thu thuần (Net Revenue)
-- `loi_nhuan_sau_thue` — Lợi nhuận sau thuế (Net Profit After Tax)
+**B01a-DN — Báo cáo tình hình tài chính (bảng cân đối kế toán)**
 
-`FIELD_MAP` là danh sách field chuẩn. Riêng nhánh regex cần thêm
-`FIELD_ALIASES` (các cách gọi khác nhau của cùng một chỉ tiêu, xếp từ cụ thể
-tới chung chung) và `FIELD_EXCLUDE` (cụm từ loại trừ, để "Lợi nhuận sau
-thuế" không khớp nhầm "Lợi nhuận sau thuế chưa phân phối"). Nhánh VLM không
-cần hai bảng này vì model tự hiểu ngữ nghĩa.
+| Key | Chỉ tiêu | Mã số | Bắt buộc |
+|---|---|---|---|
+| `tai_san_ngan_han` | Tài sản ngắn hạn | 100 | |
+| `hang_ton_kho` | Hàng tồn kho | 140 | |
+| `tai_san_dai_han` | Tài sản dài hạn | 200 | |
+| `tong_tai_san` | Tổng tài sản | 280 | ✅ |
+| `no_phai_tra` | Nợ phải trả | 300 | |
+| `von_chu_so_huu` | Vốn chủ sở hữu | 400 | |
+
+**B02a-DN — Báo cáo kết quả hoạt động kinh doanh**
+
+| Key | Chỉ tiêu | Mã số | Bắt buộc |
+|---|---|---|---|
+| `doanh_thu_thuan` | Doanh thu thuần | 10 | ✅ |
+| `gia_von_hang_ban` | Giá vốn hàng bán | 11 | |
+| `loi_nhuan_gop` | Lợi nhuận gộp | 20 | |
+| `loi_nhuan_truoc_thue` | Lợi nhuận trước thuế | 50 | |
+| `loi_nhuan_sau_thue` | Lợi nhuận sau thuế | 60 | ✅ |
+
+### Các bảng cấu hình trong `fields_config.py`
+
+| Bảng | Dùng cho | Vai trò |
+|---|---|---|
+| `FIELD_MAP` | cả hai nhánh | danh sách field chuẩn + tên tiếng Việt |
+| `FIELD_RULES` | validation | `allow_negative`, `required` cho từng field |
+| `FIELD_RELATIONS` | validation | bất đẳng thức (Hàng tồn kho ≤ Tài sản ngắn hạn…) |
+| `FIELD_IDENTITIES` | validation | đẳng thức kế toán (TSNH + TSDH = Tổng TS…) |
+| `FIELD_RATIO_BOUNDS` | validation | biên tỷ trọng, bắt lỗi lệch bậc độ lớn |
+| `FIELD_ALIASES` | nhánh regex | các cách gọi của cùng chỉ tiêu, xếp cụ thể → chung |
+| `FIELD_EXCLUDE` | nhánh regex | cụm từ loại trừ, theo vị trí `before` / `between` |
+| `FIELD_LINE_CODES` | regex + prompt VLM | mã số dòng theo mẫu biểu |
+| `FORM_MARKERS` | nhánh regex | nhận diện trang thuộc mẫu B01a / B02a / B03a |
+
+Nhánh VLM không cần `FIELD_ALIASES` / `FIELD_EXCLUDE` / `FORM_MARKERS` vì model
+tự hiểu ngữ nghĩa của dòng.
 
 ### Vì sao regex phải khó tính đến vậy
 
-Bảng BCTC Việt Nam có cột **Mã số** và **Thuyết minh** nằm chen giữa tên chỉ
-tiêu và giá trị:
+**1. Cột Mã số và Thuyết minh chen giữa nhãn và giá trị:**
 
 ```
 Doanh thu thuần về bán và cung cấp dịch vụ    10    VI.1    13.217.639.635.987
@@ -154,19 +236,40 @@ Nên regex "lấy số ngay sau nhãn" sẽ bắt được `10` chứ không ph�
 Cách xử lý: chỉ chấp nhận con số **có dấu phân cách nghìn** — giá trị tiền
 tệ luôn có, còn mã số và số thuyết minh thì không.
 
+**2. Tên chỉ tiêu KHÔNG duy nhất trong tài liệu.** Một alias ngắn có thể nằm gọn
+ở *đầu* nhãn khác ("Lợi nhuận sau thuế" trong "…chưa phân phối") hoặc ở *đuôi*
+("Hàng tồn kho" trong "Dự phòng giảm giá hàng tồn kho" — mã 142, một khoản âm nhỏ
+hơn giá trị thật khoảng 1000 lần). Vì vậy `FIELD_EXCLUDE` soi **cả hai chiều**:
+
+```python
+"loi_nhuan_sau_thue": {"between": ["chưa phân", ...]},   # từ khoá đứng SAU nhãn
+"hang_ton_kho":       {"before":  ["giảm giá", ...]},    # từ khoá đứng TRƯỚC nhãn
+```
+
+**3. OCR làm hỏng chữ tiếng Việt có dấu.** Khi không alias nào khớp, hệ thống dò
+tiếp theo **mã số dòng** (`FIELD_LINE_CODES`): trên báo cáo VNM, EasyOCR đọc
+`TỔNG TÀI SẢN` thành `TỖNG TÀISẢN` nên alias thất bại, còn mã `280` thì đọc đúng
+tuyệt đối. Mã số chỉ duy nhất **trong một mẫu biểu**, nên chỉ được dùng khi trang
+khớp `FORM_MARKERS` của đúng mẫu đó.
+
 ## Status
 
 - **Layout Detection** (DocLayout-YOLO): working — lọc trang không có bảng
   và cắt riêng từng vùng bảng trước khi đưa vào OCR/VLM.
-- **OCR Pipeline** (EasyOCR + regex): working — đã verify trích đúng cả 3
-  chỉ tiêu trên báo cáo VNM (Vinamilk) Q1/2026, khớp với kết quả VLM.
+- **OCR Pipeline** (EasyOCR + regex): working nhưng **tắt mặc định**
+  (`USE_OCR_FIRST=false`). Trên OCR text của báo cáo VNM Q1/2026, kết hợp alias +
+  mã số dòng hiện trích đúng **11/11 chỉ tiêu**, nhưng vẫn chậm hơn nhiều so với
+  chạy thẳng VLM — xem phần lý do ở trên.
 - **VLM Pipeline** (Gemma 4 31B via OpenRouter): working, verified accurate
-  on the same 54-page report. Có retry với exponential backoff khi gặp 429.
-- **Document Classifier & Router**: implemented — tries OCR first, falls
-  back to VLM when any target field is missing. Layout detection và convert
+  on the same 54-page report — 11/11 field, dừng sớm ở trang 10. Có retry với
+  exponential backoff khi gặp 429, và dừng sớm theo `PATIENCE_PAGES`.
+- **Document Classifier & Router**: implemented — gọi VLM khi kết quả chưa đủ
+  field bắt buộc **hoặc** validation còn warning. Layout detection và convert
   PDF chỉ chạy một lần, dùng chung cho cả hai nhánh.
-- **Validation**: ép kiểu số (VLM đôi khi trả string), cảnh báo giá trị âm
-  bất thường, tỷ lệ doanh thu/tài sản, và field không trích được.
+- **Validation**: 7 lớp kiểm tra — ép kiểu số (VLM đôi khi trả string), giá trị âm
+  bất thường, bất đẳng thức giữa các chỉ tiêu, **đẳng thức kế toán** (chặt nhất:
+  lệch một chữ số là lộ ngay), biên tỷ trọng, tỷ lệ doanh thu/tài sản, và thiếu
+  chỉ tiêu bắt buộc.
 
 ### Not yet done
 

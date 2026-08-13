@@ -160,7 +160,15 @@ def call_vlm(base64_image: str, prompt: str) -> str | None:
                     }
                 ]
             )
-            return response.choices[0].message.content
+            if not response.choices:
+                # OpenRouter trả HTTP 200 nhưng body là object lỗi (hết
+                # quota, model tạm không khả dụng, request bị từ chối) —
+                # không có exception nào để except bắt, nên phải tự kiểm
+                # tra. Không có dòng này thì cả request sập, đúng thứ mà
+                # retry logic sinh ra để ngăn.
+                error = RuntimeError(f"VLM không trả về choices: {response}")
+            else:
+                return response.choices[0].message.content
 
         except RETRYABLE_ERRORS as e:
             error = e

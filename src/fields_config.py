@@ -101,6 +101,27 @@ FIELD_IDENTITIES = [
 # tròn ở đơn vị rút gọn, nhưng bắt được mọi lỗi đọc sai chữ số thực tế.
 IDENTITY_TOLERANCE_RATIO = 1e-7
 
+# Biên tỷ trọng cho những field không đẳng thức kế toán nào phủ được.
+#
+# FIELD_RELATIONS chỉ bắt lỗi sai THỨ BẬC (A lớn hơn B), nên một giá trị
+# đọc nhầm sang dòng con nhỏ hơn cả nghìn lần vẫn lọt — nó vẫn nhỏ hơn
+# field cha đúng như luật đòi hỏi. Bảng này bắt loại lệch BẬC ĐỘ LỚN đó.
+#
+# Đây là ràng buộc HEURISTIC chứ không phải đẳng thức kế toán, nên biên
+# để rất rộng: mục tiêu là bắt lỗi lệch cả bậc độ lớn, không phải đánh
+# giá cơ cấu tài sản của doanh nghiệp. Trên báo cáo VNM Q1/2026 hàng tồn
+# kho chiếm 18,3% tài sản ngắn hạn — nằm thoải mái trong biên dưới đây,
+# còn giá trị đọc nhầm từ dòng dự phòng chỉ chiếm 0,02% nên bị bắt.
+#
+# Mỗi mục: (field, field cơ sở, tỷ lệ tối thiểu, tỷ lệ tối đa, mô tả).
+# Chỉ kiểm tra khi cả hai field có giá trị và field cơ sở khác 0.
+FIELD_RATIO_BOUNDS = [
+    (
+        "hang_ton_kho", "tai_san_ngan_han", 0.01, 1.0,
+        "Hàng tồn kho chiếm tỷ trọng bất thường trong Tài sản ngắn hạn",
+    ),
+]
+
 # Doanh thu một kỳ lớn hơn tổng tài sản gấp nhiều lần là bất thường với
 # doanh nghiệp sản xuất — thường là dấu hiệu đọc nhầm dòng hoặc nhầm cột.
 REVENUE_TO_ASSETS_LIMIT = 10

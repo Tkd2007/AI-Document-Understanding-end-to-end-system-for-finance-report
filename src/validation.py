@@ -15,6 +15,7 @@ import re
 from fields_config import (
     FIELD_IDENTITIES,
     FIELD_MAP,
+    FIELD_RATIO_BOUNDS,
     FIELD_RELATIONS,
     FIELD_RULES,
     IDENTITY_TOLERANCE_RATIO,
@@ -123,7 +124,25 @@ def validate_result(result: dict) -> dict:
             diff = actual - total
             warnings.append(f"{message} — lệch {diff:,} ({actual:,} vs {total:,})")
 
-    # 5. Tỷ lệ doanh thu / tổng tài sản
+    # 5. Tỷ trọng so với field cơ sở, cho những chỉ tiêu không đẳng thức
+    #    kế toán nào phủ được. Bước 3 chỉ bắt sai thứ bậc, nên một giá
+    #    trị đọc nhầm sang dòng con nhỏ hơn cả nghìn lần vẫn lọt qua —
+    #    nó vẫn nhỏ hơn field cha đúng như luật đòi hỏi. Bước này bắt
+    #    đúng loại lệch bậc độ lớn đó.
+    for key, base_key, min_ratio, max_ratio, message in FIELD_RATIO_BOUNDS:
+        value = data.get(key)
+        base = data.get(base_key)
+        if value is None or base is None or base == 0:
+            continue
+
+        ratio = abs(value) / abs(base)
+        if not min_ratio <= ratio <= max_ratio:
+            warnings.append(
+                f"{message}: {ratio:.2%} "
+                f"(ngoài khoảng {min_ratio:.0%}–{max_ratio:.0%})"
+            )
+
+    # 6. Tỷ lệ doanh thu / tổng tài sản
     doanh_thu = data.get("doanh_thu_thuan")
     tong_tai_san = data.get("tong_tai_san")
     if doanh_thu is not None and tong_tai_san is not None and tong_tai_san > 0:
@@ -133,7 +152,7 @@ def validate_result(result: dict) -> dict:
                 f"(gấp hơn {REVENUE_TO_ASSETS_LIMIT} lần)"
             )
 
-    # 6. Thiếu chỉ tiêu bắt buộc
+    # 7. Thiếu chỉ tiêu bắt buộc
     missing_required = [
         field_label(key)
         for key, rules in FIELD_RULES.items()

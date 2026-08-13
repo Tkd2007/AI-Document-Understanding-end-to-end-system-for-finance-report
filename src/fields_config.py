@@ -158,24 +158,50 @@ FIELD_ALIASES = {
     ],
 }
 
-# Cụm từ khiến một match bị loại. Được kiểm tra trên đoạn text nằm giữa
-# nhãn và con số, dùng để phân biệt các chỉ tiêu chung tiền tố mà alias
-# ở trên chưa tách được.
+# Cụm từ khiến một match bị loại, dùng để tách các chỉ tiêu mà alias ở
+# trên chưa phân biệt được. Mỗi field có hai danh sách, theo VỊ TRÍ của
+# cụm từ so với chỗ alias khớp:
+#
+#   between — nằm SAU nhãn, giữa nhãn và con số. Loại các nhãn nối dài
+#     thêm về phía sau: "Lợi nhuận sau thuế" + " chưa phân phối".
+#
+#   before — nằm TRƯỚC nhãn. Loại các nhãn có alias nằm ở phần ĐUÔI của
+#     một nhãn dài hơn. Chỉ dùng between là không đủ, vì lúc đó cụm từ
+#     phân biệt đứng phía trước nên không bao giờ lọt vào đoạn kiểm tra.
 FIELD_EXCLUDE = {
-    "loi_nhuan_sau_thue": [
-        "chưa phân",        # "Lợi nhuận sau thuế chưa phân phối" (bảng cân đối)
-        "được trích chia",  # "...được trích chia cổ tức cho các cổ đông"
-    ],
-    "tai_san_ngan_han": [
-        "khác",             # "Tài sản ngắn hạn khác"
-    ],
-    "tai_san_dai_han": [
-        "khác",             # "Tài sản dài hạn khác"
-    ],
-    "no_phai_tra": [
-        "người bán",        # "Phải trả người bán"
-        "người lao",        # "Phải trả người lao động"
-    ],
+    "loi_nhuan_sau_thue": {
+        "between": [
+            "chưa phân",        # "Lợi nhuận sau thuế chưa phân phối" (bảng cân đối)
+            "được trích chia",  # "...được trích chia cổ tức cho các cổ đông"
+        ],
+    },
+    "tai_san_ngan_han": {
+        "between": [
+            "khác",             # "Tài sản ngắn hạn khác"
+        ],
+    },
+    "tai_san_dai_han": {
+        "between": [
+            "khác",             # "Tài sản dài hạn khác"
+        ],
+    },
+    "no_phai_tra": {
+        "between": [
+            "người bán",        # "Phải trả người bán"
+            "người lao",        # "Phải trả người lao động"
+        ],
+    },
+    "hang_ton_kho": {
+        # "Dự phòng giảm giá hàng tồn kho" (mã 142) kết thúc bằng đúng
+        # cụm "hàng tồn kho", nên alias khớp trúng dòng dự phòng và lấy
+        # về một khoản âm nhỏ hơn giá trị thật khoảng 1000 lần. Trên báo
+        # cáo VNM Q1/2026 đây là ca có thật, vì OCR còn cắt mất chữ "Hàng"
+        # ở dòng đúng (mã 140) khiến alias không khớp được dòng đó nữa.
+        "before": [
+            "giảm giá",
+            "dự phòng",
+        ],
+    },
 }
 
 # Mã số dòng theo mẫu biểu Bộ Tài chính (Thông tư 99/2025/TT-BTC).

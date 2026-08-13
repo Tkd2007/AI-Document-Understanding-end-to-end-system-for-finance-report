@@ -6,8 +6,12 @@ OCR raw text. This is the baseline to compare against a VLM-based
 approach later.
 
 Hai chiến lược tìm, thử theo thứ tự:
-  1. Theo TÊN chỉ tiêu (FIELD_ALIASES) — đọc được thì chính xác nhất vì
-     tên là duy nhất trong toàn tài liệu.
+  1. Theo TÊN chỉ tiêu (FIELD_ALIASES) — khớp được thì cho kết quả sát
+     nhất, nhưng phải kèm luật loại trừ. Tên chỉ tiêu KHÔNG duy nhất
+     trong tài liệu: một alias ngắn có thể nằm gọn ở đầu ("Lợi nhuận sau
+     thuế" trong "...chưa phân phối") hoặc ở ĐUÔI ("Hàng tồn kho" trong
+     "Dự phòng giảm giá hàng tồn kho") của một nhãn khác hẳn. Vì vậy
+     FIELD_EXCLUDE soi cả đoạn trước lẫn đoạn sau chỗ khớp.
   2. Theo MÃ SỐ dòng (FIELD_LINE_CODES) — dự phòng cho trường hợp OCR
      làm hỏng tên. Chữ số ASCII gần như không bao giờ bị đọc sai, trong
      khi chữ tiếng Việt có dấu thì hay hỏng: trên báo cáo VNM, EasyOCR
@@ -44,6 +48,12 @@ NUMBER_RE = r"\(?\s*-?\s*\d{1,3}(?:[.,]\d{3})+\s*\)?"
 # để không vô tình lấy sang giá trị của dòng chỉ tiêu kế tiếp.
 LOOKAHEAD_CHARS = 80
 
+# Độ dài đoạn text phía TRƯỚC nhãn đem đi đối chiếu FIELD_EXCLUDE["before"].
+# Chỉ cần đủ ôm phần đầu của nhãn dài nhất mà alias có thể nằm lọt ở đuôi
+# ("Dự phòng giảm giá " trước "hàng tồn kho"). Để rộng hơn thì đoạn này
+# tràn sang cả dòng chỉ tiêu phía trên và sinh loại trừ oan.
+LOOKBEHIND_CHARS = 40
+
 
 def load_raw_text(file_path: str) -> str:
     with open(file_path, encoding="utf-8") as f:
@@ -76,10 +86,13 @@ def extract_field_by_alias(text: str, field_key: str) -> int | None:
 
     Thử lần lượt từng alias theo thứ tự cụ thể -> chung chung (xem
     FIELD_ALIASES), với mỗi alias thì duyệt hết các vị trí xuất hiện và
-    bỏ qua những vị trí dính từ khoá trong FIELD_EXCLUDE.
+    bỏ qua những vị trí dính từ khoá trong FIELD_EXCLUDE — soi cả đoạn
+    đứng trước nhãn lẫn đoạn nằm giữa nhãn và con số.
     """
     aliases = FIELD_ALIASES.get(field_key) or [FIELD_MAP[field_key]]
-    excluded = FIELD_EXCLUDE.get(field_key, [])
+    excluded = FIELD_EXCLUDE.get(field_key, {})
+    exclude_before = [bad.lower() for bad in excluded.get("before", [])]
+    exclude_between = [bad.lower() for bad in excluded.get("between", [])]
 
     for alias in aliases:
         # re.escape: tên chỉ tiêu là dữ liệu chứ không phải regex. Không
@@ -89,8 +102,12 @@ def extract_field_by_alias(text: str, field_key: str) -> int | None:
         pattern = rf"{re.escape(alias)}(.{{0,{LOOKAHEAD_CHARS}}}?)({NUMBER_RE})"
 
         for match in re.finditer(pattern, text, flags=re.IGNORECASE | re.DOTALL):
+            before = text[max(0, match.start() - LOOKBEHIND_CHARS):match.start()].lower()
+            if any(bad in before for bad in exclude_before):
+                continue
+
             between = match.group(1).lower()
-            if any(bad.lower() in between for bad in excluded):
+            if any(bad in between for bad in exclude_between):
                 continue
 
             try:

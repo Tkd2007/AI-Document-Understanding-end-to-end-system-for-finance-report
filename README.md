@@ -82,12 +82,52 @@ doc-ai-project/
 │   ├── router.py            # Document Classifier & Router: OCR (optional) -> VLM
 │   └── api.py               # FastAPI Gateway: POST /extract endpoint
 ├── .env                     # local secrets/config, never committed (see Setup)
+├── .env.docker              # chỉ OPENROUTER_*, dùng khi chạy container
+├── Dockerfile
+├── .dockerignore
 ├── .gitignore
 ├── requirements.txt
 └── README.md
 ```
 
 ## Setup
+
+Có hai cách chạy. **Docker là cách được khuyến nghị**: không phải cài
+Poppler, không phải chỉnh đường dẫn theo từng máy.
+
+### Cách A — Docker (khuyến nghị)
+
+Chỉ cần cài [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+
+```bash
+docker build -t doc-ai .
+docker run --rm -p 8000:8000 --env-file .env.docker doc-ai
+```
+
+Mở `http://127.0.0.1:8000/docs` để upload file và xem kết quả.
+
+`.env.docker` chỉ gồm hai dòng (KHÔNG dùng chung `.env` với chạy local —
+`POPPLER_PATH` trong đó là đường dẫn Windows, truyền vào container Linux
+sẽ khiến `pdf2image` tìm sai chỗ):
+
+OPENROUTER_API_KEY=your_openrouter_key 
+OPENROUTER_MODEL=google/gemma-4-31b-it:free
+
+Trong container, Poppler được cài qua `apt-get` nên nằm sẵn trong `PATH`;
+`load_pages()` truyền `poppler_path=None` và `pdf2image` tự tìm được.
+
+Lần build đầu mất 10–20 phút, chủ yếu là tải PyTorch. Các lần sau chỉ vài
+giây: `Dockerfile` copy `requirements.txt` **trước** `src/`, nên sửa code
+không làm mất cache của bước cài thư viện.
+
+Kết quả ghi ra `/app/data/output/` **bên trong container** và mất đi khi
+container dừng (do cờ `--rm`). Muốn giữ lại trên máy thì gắn volume:
+
+```bash
+docker run --rm -p 8000:8000 -v "${PWD}/data:/app/data" --env-file .env.docker doc-ai
+```
+
+### Cách B — chạy trực tiếp trên máy
 
 ### 1. Install system dependencies (Windows)
 
@@ -270,13 +310,36 @@ khớp `FORM_MARKERS` của đúng mẫu đó.
   bất thường, bất đẳng thức giữa các chỉ tiêu, **đẳng thức kế toán** (chặt nhất:
   lệch một chữ số là lộ ngay), biên tỷ trọng, tỷ lệ doanh thu/tài sản, và thiếu
   chỉ tiêu bắt buộc.
+  - **Docker**: working — đã build và chạy thử thành công, xử lý được trọn
+  pipeline (YOLO + VLM) qua endpoint HTTP trong container. Image cài sẵn
+  `poppler-utils` nên bỏ được phụ thuộc ngoài duy nhất còn lại; không cần
+  `POPPLER_PATH` khi chạy bằng Docker.
 
 ### Not yet done
 
 - Đánh giá có hệ thống: chưa có tập test nhiều báo cáo từ nhiều công ty để
   đo accuracy, hiện mới verify tay trên một báo cáo.
 - Chưa có unit test.
-- Docker, CI/CD, monitoring.
+- CI/CD, monitoring.
 - Chuẩn hoá đơn vị tính: prompt yêu cầu VLM giữ nguyên đơn vị hiển thị trong
   ảnh, nên hai báo cáo dùng đơn vị khác nhau ("đồng" vs "triệu đồng") sẽ cho
   ra số không cùng thang đo. Cần thêm field đơn vị hoặc bước quy đổi.
+
+
+## Vài thứ chỉ lộ ra khi chạy thật
+
+- **Build thử Dockerfile là bắt buộc, không phải tuỳ chọn.** Lần chạy đầu
+  trong container lộ ra ba thứ chưa từng gặp khi chạy trên Windows:
+  `uvicorn` mặc định chỉ nghe `127.0.0.1` nên bên ngoài không vào được
+  (phải `--host 0.0.0.0`), import phẳng trong `src/` cần `--app-dir src`,
+  và `python:slim` thiếu thư viện hệ thống mà OpenCV cần.
+
+- **Một bug thật lộ ra nhờ chạy container:** OpenRouter thỉnh thoảng trả
+  HTTP 200 nhưng `choices` là `null`. Không có exception nào để `except`
+  bắt, nên nó lọt qua toàn bộ retry logic và giết cả request giữa chừng —
+  dù `call_vlm()` vốn được thiết kế để không bao giờ làm sập pipeline.
+
+- **Fail open ở Layout Detection đã cứu dữ liệu thật.** Log cho thấy YOLO
+  không nhận ra bảng ở trang 7 (bảng BCTC Việt Nam không kẻ khung nên bị
+  phân loại thành `plain text`), nhưng vì pipeline trả về nguyên trang
+  thay vì bỏ qua, VLM vẫn trích đúng hai chỉ tiêu từ trang đó.

@@ -5,7 +5,7 @@ numpy
 
 # --- Layout detection ---
 doclayout-yolo     # cung cấp `from doclayout_yolo import YOLOv10`
-huggingface-hub    # tải checkpoint DocLayout-YOLO qua from_pretrained()
+huggingface-hub    # tải checkpoint DocLayout-YOLO qua hf_hub_download()
 
 # --- Nhánh OCR ---
 easyocr

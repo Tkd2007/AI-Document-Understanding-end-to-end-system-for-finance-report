@@ -29,11 +29,27 @@ from ocr_baseline import iter_table_regions   # tái sử dụng hàm cũ, khôn
 
 load_dotenv()
 
+API_KEY = os.getenv("OPENROUTER_API_KEY")
+MODEL = os.getenv("OPENROUTER_MODEL")
+
+# Báo thiếu config ngay lúc import, thay vì để None đi tới tận lời gọi
+# API rồi nhận về một lỗi HTTP khó hiểu — sau khi đã tốn công convert
+# PDF và chạy YOLO cho cả tài liệu.
+_missing = [
+    name
+    for name, value in (("OPENROUTER_API_KEY", API_KEY), ("OPENROUTER_MODEL", MODEL))
+    if not value
+]
+if _missing:
+    raise RuntimeError(
+        f"Thiếu biến môi trường bắt buộc trong .env: {', '.join(_missing)}. "
+        f"Xem phần Setup trong README."
+    )
+
 client = OpenAI(
-    api_key=os.getenv("OPENROUTER_API_KEY"),
+    api_key=API_KEY,
     base_url="https://openrouter.ai/api/v1",
 )
-MODEL = os.getenv("OPENROUTER_MODEL")
 
 MAX_RETRIES = 3
 RETRY_BASE_DELAY = 2.0   # giây, nhân đôi sau mỗi lần thất bại: 2 -> 4 -> 8

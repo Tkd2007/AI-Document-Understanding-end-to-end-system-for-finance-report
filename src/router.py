@@ -114,8 +114,14 @@ def route_document(file_path: str) -> dict:
             print(f"--- OCR chưa đạt (thiếu/nghi ngờ: {missing}), chuyển sang VLM ---")
         result = run_vlm(pages_iter, cached_pages, result)
 
-    save_result(file_path, result)
-    return result
+    # Ép kiểu số TRƯỚC khi lưu và trả về. VLM đôi khi trả số dưới dạng
+    # chuỗi, nên nếu lưu thẳng result thô thì file _routed.json và
+    # response HTTP (api.py có chạy validate_result) sẽ khác nhau về kiểu
+    # dữ liệu cho cùng một lượt chạy — rất khó lần khi đi đối chiếu.
+    data = validate_result(result)["data"]
+
+    save_result(file_path, data)
+    return data
 
 
 def is_acceptable(result: dict) -> bool:

@@ -38,6 +38,9 @@ class RunMetrics:
         tích nhất, lại là thứ không có số liệu.
         """
         start = time.perf_counter()
-        # phần chạy trước khi vào khối with
-        yield
-        # phần chạy sau khi ra khỏi khối with
+
+        try:
+            yield
+        finally:
+            elapsed = time.perf_counter() - start
+            self.stages[name] = self.stages.get(name, 0.0) + elapsed

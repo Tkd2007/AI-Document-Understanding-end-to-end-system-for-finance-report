@@ -19,9 +19,9 @@ Hai chiến lược tìm, thử theo thứ tự:
      nên không alias nào khớp, còn mã "280" thì đọc đúng tuyệt đối.
 """
 
-import sys
-import re
 import json
+import re
+import sys
 from pathlib import Path
 
 from fields_config import (
@@ -31,7 +31,6 @@ from fields_config import (
     FIELD_MAP,
     FORM_MARKERS,
 )
-
 
 # Một giá trị tiền tệ trong BCTC luôn có dấu phân cách nghìn
 # (13.217.639.635.987). Bắt buộc phải có ít nhất một nhóm 3 chữ số là

@@ -30,9 +30,9 @@ from dotenv import load_dotenv
 from extract_baseline import extract_all_fields
 from extract_vlm import extract_fields_from_regions
 from fields_config import FIELD_MAP
+from metrics import RunMetrics
 from ocr_baseline import iter_table_regions, ocr_page_regions
 from validation import has_required_fields, validate_result
-from metrics import RunMetrics
 
 load_dotenv()
 

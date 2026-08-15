@@ -9,9 +9,9 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from validation import validate_result
 
 from router import route_document
+from validation import validate_result
 
 app = FastAPI(title="AI Document Understanding — Financial Reports")
 

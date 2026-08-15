@@ -5,11 +5,11 @@ Sends page images directly to a Vision-Language Model, skipping
 the OCR text step entirely.
 """
 
+import base64
+import json
 import os
 import sys
-import json
 import time
-import base64
 from io import BytesIO
 from pathlib import Path
 
@@ -24,9 +24,9 @@ from openai import (
 from PIL import Image
 
 from fields_config import FIELD_LINE_CODES, FIELD_MAP, FIELD_RULES
-from validation import has_required_fields
-from ocr_baseline import iter_table_regions
 from metrics import timer
+from ocr_baseline import iter_table_regions
+from validation import has_required_fields
 
 load_dotenv()
 

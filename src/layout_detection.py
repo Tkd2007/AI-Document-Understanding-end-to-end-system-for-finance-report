@@ -8,7 +8,6 @@ region on pages that have one — reducing noise/size before OCR/VLM.
 
 from PIL import Image
 
-
 # Tham số theo khuyến nghị của DocLayout-YOLO. Ngưỡng conf để thấp hơn
 # mặc định vì bảng trong BCTC thường không kẻ khung đầy đủ, để mặc định
 # hay bị sót cả bảng.

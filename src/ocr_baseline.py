@@ -10,20 +10,20 @@ Usage:
     python src/ocr_baseline.py data/samples/report.png
 """
 
-import sys
 import os
+import sys
 from collections.abc import Iterable, Iterator
 from pathlib import Path
-from metrics import timer
-
-from dotenv import load_dotenv
-
-load_dotenv()
 
 import numpy as np
+from dotenv import load_dotenv
 from PIL import Image
 
 from layout_detection import get_table_regions
+from metrics import timer
+
+load_dotenv()
+
 
 LANGUAGES = ["vi", "en"]
 PDF_DPI = 300

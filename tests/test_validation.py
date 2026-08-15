@@ -1,4 +1,4 @@
-from validation import coerce_number
+from validation import coerce_number, validate_result
 
 
 def test_coerce_number_tu_string_co_dau_cham():
@@ -20,8 +20,6 @@ def test_coerce_number_so_san_co():
 def test_coerce_number_chuoi_rac():
     assert coerce_number("abc") is None
 
-
-from validation import validate_result
 
 # Số thật từ báo cáo VNM Q1/2026 (đơn vị VND). Cả ba đẳng thức kế toán
 # trong FIELD_IDENTITIES khớp tới từng đồng trên bộ số này.

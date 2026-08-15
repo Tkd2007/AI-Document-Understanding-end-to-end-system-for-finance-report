@@ -8,10 +8,9 @@ mỗi dòng một lượt chạy, để sau này gộp lại phân tích.
 
 import json
 import time
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from datetime import datetime, timezone
 from pathlib import Path
-from contextlib import nullcontext
 
 METRICS_PATH = Path("data/output/metrics.jsonl")
 

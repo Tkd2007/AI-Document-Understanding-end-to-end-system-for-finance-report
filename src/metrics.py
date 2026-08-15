@@ -11,6 +11,7 @@ import time
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
+from contextlib import nullcontext
 
 METRICS_PATH = Path("data/output/metrics.jsonl")
 
@@ -82,3 +83,12 @@ class RunMetrics:
             parts.append(f"{name}={value}")
  
         return " | ".join(parts)
+
+def timer(metrics, name: str):
+    """
+    Đo stage khi có metrics, không làm gì khi metrics=None.
+
+    Nhờ vậy các hàm trong pipeline vẫn chạy standalone (metrics=None)
+    mà không phải viết if/else quanh mỗi khối with.
+    """
+    return metrics.stage(name) if metrics is not None else nullcontext()

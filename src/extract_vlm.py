@@ -25,7 +25,8 @@ from PIL import Image
 
 from fields_config import FIELD_LINE_CODES, FIELD_MAP, FIELD_RULES
 from validation import has_required_fields
-from ocr_baseline import iter_table_regions   # tái sử dụng hàm cũ, không viết lại
+from ocr_baseline import iter_table_regions
+from metrics import timer
 
 load_dotenv()
 
@@ -243,7 +244,7 @@ def parse_response(text: str) -> dict | None:
 PATIENCE_PAGES = 3
 
 
-def extract_fields_from_regions(pages) -> dict:
+def extract_fields_from_regions(pages, metrics=None) -> dict:
     """
     Chạy VLM trên từng vùng bảng đã cắt sẵn, gộp kết quả lại thành 1 dict.
 
@@ -270,15 +271,24 @@ def extract_fields_from_regions(pages) -> dict:
 
         for region in page["regions"]:
             base64_image = encode_image_to_base64(region)
-            raw_text = call_vlm(base64_image, prompt)
+
+            with timer(metrics, "vlm"):
+                raw_text = call_vlm(base64_image, prompt)
+
+            if metrics is not None:
+                metrics.count("vlm_calls")
 
             if raw_text is None:
                 print(f"--- Page {page_no}: bỏ qua (gọi VLM thất bại) ---")
+                if metrics is not None:
+                    metrics.count("vlm_failures")
                 continue
 
             page_result = parse_response(raw_text)
             if page_result is None:
                 print(f"--- Page {page_no}: bỏ qua (parse lỗi) ---")
+                if metrics is not None:
+                    metrics.count("parse_failures")
                 continue
 
             for key in final_result:

@@ -32,6 +32,7 @@ from extract_vlm import extract_fields_from_regions
 from fields_config import FIELD_MAP
 from ocr_baseline import iter_table_regions, ocr_page_regions
 from validation import has_required_fields, validate_result
+from metrics import RunMetrics
 
 load_dotenv()
 
@@ -68,7 +69,7 @@ def run_ocr_first(pages_iter, cached_pages: list, result: dict) -> dict:
     return result
 
 
-def run_vlm(pages_iter, cached_pages: list, result: dict) -> dict:
+def run_vlm(pages_iter, cached_pages: list, result: dict, metrics=None) -> dict:
     """
     Chạy nhánh VLM và trộn kết quả vào result.
 
@@ -89,7 +90,7 @@ def run_vlm(pages_iter, cached_pages: list, result: dict) -> dict:
             cached_pages.append(page)
             yield page
 
-    vlm_result = extract_fields_from_regions(remaining_pages())
+    vlm_result = extract_fields_from_regions(remaining_pages(), metrics)
 
     for key in result:
         if vlm_result.get(key) is None:
@@ -101,27 +102,35 @@ def run_vlm(pages_iter, cached_pages: list, result: dict) -> dict:
 
 
 def route_document(file_path: str) -> dict:
-    pages_iter = iter_table_regions(file_path)
-    cached_pages: list = []
-    result = {key: None for key in FIELD_MAP}
+    metrics = RunMetrics(file_path)
 
-    if USE_OCR_FIRST:
-        result = run_ocr_first(pages_iter, cached_pages, result)
+    try:
+        pages_iter = iter_table_regions(file_path, metrics)
+        cached_pages: list = []
+        result = {key: None for key in FIELD_MAP}
 
-    if not is_acceptable(result):
         if USE_OCR_FIRST:
-            missing = [key for key, value in result.items() if value is None]
-            print(f"--- OCR chưa đạt (thiếu/nghi ngờ: {missing}), chuyển sang VLM ---")
-        result = run_vlm(pages_iter, cached_pages, result)
+            result = run_ocr_first(pages_iter, cached_pages, result)
 
-    # Ép kiểu số TRƯỚC khi lưu và trả về. VLM đôi khi trả số dưới dạng
-    # chuỗi, nên nếu lưu thẳng result thô thì file _routed.json và
-    # response HTTP (api.py có chạy validate_result) sẽ khác nhau về kiểu
-    # dữ liệu cho cùng một lượt chạy — rất khó lần khi đi đối chiếu.
-    data = validate_result(result)["data"]
+        if not is_acceptable(result):
+            if USE_OCR_FIRST:
+                missing = [key for key, value in result.items() if value is None]
+                print(f"--- OCR chưa đạt (thiếu/nghi ngờ: {missing}), chuyển sang VLM ---")
+            result = run_vlm(pages_iter, cached_pages, result, metrics)
 
-    save_result(file_path, data)
-    return data
+        # Ép kiểu số TRƯỚC khi lưu và trả về. VLM đôi khi trả số dưới dạng
+        # chuỗi, nên nếu lưu thẳng result thô thì file _routed.json và
+        # response HTTP (api.py có chạy validate_result) sẽ khác nhau về kiểu
+        # dữ liệu cho cùng một lượt chạy — rất khó lần khi đi đối chiếu.
+        data = validate_result(result)["data"]
+
+        save_result(file_path, data)
+        metrics.set_info(pages_processed=len(cached_pages), ocr_first=USE_OCR_FIRST)
+        return data
+    
+    finally:
+        metrics.save()
+        print(metrics.summary())
 
 
 def is_acceptable(result: dict) -> bool:

@@ -14,6 +14,7 @@ import sys
 import os
 from collections.abc import Iterable, Iterator
 from pathlib import Path
+from metrics import timer
 
 from dotenv import load_dotenv
 
@@ -65,7 +66,7 @@ def load_pages(file_path: str) -> list[Image.Image]:
         return [Image.open(path)]
 
 
-def iter_table_regions(file_path: str) -> Iterator[dict]:
+def iter_table_regions(file_path: str, metrics=None) -> Iterator[dict]:
     """
     Generator: chạy layout detection cho TỪNG trang, yield từng trang một:
         {"page": 1, "regions": [Image, ...]}
@@ -79,11 +80,14 @@ def iter_table_regions(file_path: str) -> Iterator[dict]:
     còn lại không hề bị chạy YOLO — đây là phần tiết kiệm lớn nhất, vì
     YOLO là một trong hai việc đắt nhất pipeline (cùng với convert PDF).
     """
-    pages = load_pages(file_path)
+    with timer(metrics, "pdf_convert"):
+        pages = load_pages(file_path)
+
     total = len(pages)
 
     for i, page_img in enumerate(pages, start=1):
-        regions = get_table_regions(page_img)
+        with timer(metrics, "layout"):
+            regions = get_table_regions(page_img)
 
         if not regions:
             print(f"--- Page {i}/{total}: không có bảng, dùng nguyên trang ---")

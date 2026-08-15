@@ -44,3 +44,41 @@ class RunMetrics:
         finally:
             elapsed = time.perf_counter() - start
             self.stages[name] = self.stages.get(name, 0.0) + elapsed
+
+    def count(self, name:str, amount: int=1) -> None:
+        self.counters[name] = self.counters.get(name, 0) + amount
+
+    def set_info(self, **kwargs) -> None:
+        self.info.update(kwargs)
+
+    def as_dict(self) -> dict:
+        return {
+            "timestamp": self.started_at.isoformat(),
+            "document": self.document,
+            "total_seconds": round(time.perf_counter() - self._run_start, 2),
+            "stages": {name: round(value, 2) for name, value in self.stages.items()},
+            "counters": dict(self.counters),
+            "info": dict(self.info),
+        }
+
+    def save(self, path: Path = METRICS_PATH) -> None:
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with open(path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(self.as_dict(), ensure_ascii=False) + "\n")
+
+        except OSError as e:
+            print(f"[WARNING] Không ghi được metrics: {e}")
+
+    def summary(self) -> str:
+        """Một dòng tóm tắt để in ra cuối lượt chạy."""
+        data = self.as_dict()
+        parts = [f"{data['total_seconds']}s tổng"]
+ 
+        for name, value in sorted(data["stages"].items(), key=lambda x: -x[1]):
+            parts.append(f"{name} {value}s")
+ 
+        for name, value in data["counters"].items():
+            parts.append(f"{name}={value}")
+ 
+        return " | ".join(parts)

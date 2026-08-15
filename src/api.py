@@ -9,7 +9,9 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import PlainTextResponse
 
+from metrics import get_totals
 from router import route_document
 from validation import validate_result
 
@@ -17,6 +19,7 @@ app = FastAPI(title="AI Document Understanding — Financial Reports")
 
 UPLOAD_DIR = Path("data/samples")
 ALLOWED_SUFFIXES = {".pdf", ".png", ".jpg", ".jpeg"}
+PREFIX = "doc_ai_"
 
 
 @app.post("/extract")
@@ -47,3 +50,13 @@ async def extract(file: UploadFile = File(...)):
     # request khác, nên đẩy sang threadpool.
     result = await run_in_threadpool(route_document, str(save_path))
     return validate_result(result)
+
+
+@app.get("/metrics", response_class=PlainTextResponse)
+def metrics():
+    lines = []
+    for name, value in get_totals().items():
+        metric = PREFIX + name
+        lines.append(f"# TYPE {metric} counter")
+        lines.append(f"{metric} {value}")
+    return "\n".join(lines) + "\n"

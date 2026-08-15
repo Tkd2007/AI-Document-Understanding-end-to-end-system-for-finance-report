@@ -91,3 +91,31 @@ def timer(metrics, name: str):
     mà không phải viết if/else quanh mỗi khối with.
     """
     return metrics.stage(name) if metrics is not None else nullcontext()
+
+
+# Bộ đếm tích lũy từ lúc process khởi động, phục vụ endpoint /metrics.
+# Prometheus mong đợi counter cộng dồn theo vòng đời process chứ không
+# phải số liệu của một lượt chạy — nó tự tính tốc độ thay đổi giữa các
+# lần scrape. Nên RunMetrics (per-run, ghi ra file) và bảng này (toàn
+# cục, giữ trong RAM) phục vụ hai mục đích khác nhau.
+_totals: dict[str, float] = {}
+
+
+def merge_into_totals(run: "RunMetrics") -> None:
+    """Cộng số liệu của một lượt chạy vừa xong vào bộ đếm toàn cục."""
+    data = run.as_dict()
+
+    _totals["documents_total"] = _totals.get("documents_total", 0) + 1
+    _totals["seconds_total"] = _totals.get("seconds_total", 0) + data["total_seconds"]
+
+    for name, value in data["stages"].items():
+        key = f"stage_{name}_seconds_total"
+        _totals[key] = _totals.get(key, 0) + value
+
+    for name, value in data["counters"].items():
+        key = f"{name}_total"
+        _totals[key] = _totals.get(key, 0) + value
+
+
+def get_totals() -> dict[str, float]:
+    return dict(_totals)

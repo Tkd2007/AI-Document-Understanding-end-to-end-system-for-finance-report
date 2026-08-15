@@ -30,7 +30,7 @@ from dotenv import load_dotenv
 from extract_baseline import extract_all_fields
 from extract_vlm import extract_fields_from_regions
 from fields_config import FIELD_MAP
-from metrics import RunMetrics
+from metrics import RunMetrics, merge_into_totals, timer
 from ocr_baseline import iter_table_regions, ocr_page_regions
 from validation import has_required_fields, validate_result
 
@@ -40,7 +40,7 @@ load_dotenv()
 USE_OCR_FIRST = os.getenv("USE_OCR_FIRST", "false").strip().lower() in {"1", "true", "yes"}
 
 
-def run_ocr_first(pages_iter, cached_pages: list, result: dict) -> dict:
+def run_ocr_first(pages_iter, cached_pages: list, result: dict, metrics=None) -> dict:
     """
     Quét OCR theo từng trang, merge dần, dừng khi kết quả đã đáng tin.
 
@@ -54,7 +54,8 @@ def run_ocr_first(pages_iter, cached_pages: list, result: dict) -> dict:
     for page in pages_iter:
         cached_pages.append(page)
 
-        ocr_result = ocr_page_regions(page)
+        with timer(metrics, "ocr"):
+            ocr_result = ocr_page_regions(page)
         page_fields = extract_all_fields(ocr_result["text"])
 
         # Chỉ lấp field còn trống, không ghi đè giá trị đã tìm được
@@ -130,6 +131,7 @@ def route_document(file_path: str) -> dict:
     
     finally:
         metrics.save()
+        merge_into_totals(metrics)
         print(metrics.summary())
 
 

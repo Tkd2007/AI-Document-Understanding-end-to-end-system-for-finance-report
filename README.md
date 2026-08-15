@@ -374,3 +374,11 @@ khớp `FORM_MARKERS` của đúng mẫu đó.
   không nhận ra bảng ở trang 7 (bảng BCTC Việt Nam không kẻ khung nên bị
   phân loại thành `plain text`), nhưng vì pipeline trả về nguyên trang
   thay vì bỏ qua, VLM vẫn trích đúng hai chỉ tiêu từ trang đó.
+
+- **Đo mới biết chi phí nằm ở đâu.** Comment trong code từng ghi YOLO là 
+một trong hai việc đắt nhất pipeline. Metrics cho thấy ngược lại: convert 
+PDF chiếm 59% tổng thời gian còn YOLO chỉ 15%. Tệ hơn, `convert_from_path`
+render toàn bộ 55 trang trước lần `yield` đầu tiên, nên thiết kế generator 
+không tiết kiệm được gì ở khâu đó — dừng sớm ở trang 10 vẫn trả đủ 169 
+giây. Chuyển sang convert từng trang bằng `first_page`/`last_page` đưa con số 
+đó xuống 12 giây và cắt 60% tổng thời gian chạy.

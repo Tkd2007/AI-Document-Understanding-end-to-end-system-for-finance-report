@@ -1,4 +1,5 @@
 # AI Document Understanding System — Financial Reports
+![CI](https://github.com/Tkd2007/AI-Document-Understanding-end-to-end-system-for-finance-report/actions/workflows/ci.yml/badge.svg)
 
 End-to-end pipeline for extracting **11 structured financial line items**
 (balance sheet + income statement) from Vietnamese financial report PDFs.
@@ -69,6 +70,9 @@ Code nhánh OCR được **giữ nguyên**, bật lại bằng `USE_OCR_FIRST=tr
 
 ```
 doc-ai-project/
+├── .github/
+│   └── workflows/
+│       └── ci.yml           # lint (ruff) + test (pytest) mỗi lần push
 ├── data/
 │   ├── samples/             # input PDFs/images (gitignored except demo sample)
 │   └── output/              # pipeline outputs (gitignored)
@@ -81,6 +85,12 @@ doc-ai-project/
 │   ├── validation.py        # ép kiểu số + sanity checks; cũng là gate quyết định fallback
 │   ├── router.py            # Document Classifier & Router: OCR (optional) -> VLM
 │   └── api.py               # FastAPI Gateway: POST /extract endpoint
+│   └── metrics.py           # đo thời gian từng stage + đếm lần gọi VLM
+├── tests/
+│   ├── test_extract_baseline.py
+│   └── test_validation.py
+├── pytest.ini               # pythonpath = src, cho import phẳng
+├── ruff.toml                # chốt bộ rule để CI và máy local giống nhau
 ├── .env                     # local secrets/config, never committed (see Setup)
 ├── .env.docker              # chỉ OPENROUTER_*, dùng khi chạy container
 ├── Dockerfile
@@ -219,6 +229,13 @@ Response format (giá trị thật từ báo cáo VNM Q1/2026, đơn vị VND):
 }
 ```
 
+Chạy test và lint:
+
+```bash
+pytest
+ruff check src tests
+```
+
 ## Target fields
 
 Defined in `src/fields_config.py` — the single source of truth used by both
@@ -314,13 +331,27 @@ khớp `FORM_MARKERS` của đúng mẫu đó.
   pipeline (YOLO + VLM) qua endpoint HTTP trong container. Image cài sẵn
   `poppler-utils` nên bỏ được phụ thuộc ngoài duy nhất còn lại; không cần
   `POPPLER_PATH` khi chạy bằng Docker.
+  - **Monitoring**: `metrics.py` đo thời gian từng giai đoạn (`pdf_convert`,
+  `layout`, `ocr`, `vlm`), đếm số lần gọi VLM và số lần lỗi, ghi mỗi lượt
+  chạy thành một dòng JSON trong `data/output/metrics.jsonl`. Truyền
+  `metrics=None` thì mọi hàm vẫn chạy standalone như cũ.
+- **Unit test**: 12 test với `pytest`, không cần model hay mạng nên chạy
+  trong ~0,3 giây. Đáng chú ý là test đẳng thức kế toán: sửa một chỉ tiêu
+  lệch 10 triệu đồng trên tổng tài sản 47 nghìn tỷ vẫn bị bắt — kiểm chứng
+  được lựa chọn `IDENTITY_TOLERANCE_RATIO=1e-7`.
+- **CI**: GitHub Actions chạy `ruff check` + `pytest` mỗi lần push và pull
+  request. CI cố tình KHÔNG cài `requirements.txt`: các test chỉ import
+  `extract_baseline` và `validation`, vốn chỉ cần thư viện chuẩn, nên cài
+  đủ bộ là tải PyTorch ~2GB cho 12 test chạy 0,3 giây.
 
 ### Not yet done
 
 - Đánh giá có hệ thống: chưa có tập test nhiều báo cáo từ nhiều công ty để
   đo accuracy, hiện mới verify tay trên một báo cáo.
-- Chưa có unit test.
-- CI/CD, monitoring.
+- Unit test mới phủ phần logic thuần (parse số, validation). Chưa có test
+  cho router, OCR, VLM — những phần cần model hoặc gọi mạng.
+- Monitoring mới ở mức thu thập per-run ra file. Chưa có Prometheus /
+  Grafana / alerting như kiến trúc tham chiếu.
 - Chuẩn hoá đơn vị tính: prompt yêu cầu VLM giữ nguyên đơn vị hiển thị trong
   ảnh, nên hai báo cáo dùng đơn vị khác nhau ("đồng" vs "triệu đồng") sẽ cho
   ra số không cùng thang đo. Cần thêm field đơn vị hoặc bước quy đổi.

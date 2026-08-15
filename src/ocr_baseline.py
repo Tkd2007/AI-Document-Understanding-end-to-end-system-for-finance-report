@@ -31,9 +31,53 @@ PDF_DPI = 300
 _reader = None
 
 try:
-    from pdf2image import convert_from_path
+    from pdf2image import convert_from_path, pdfinfo_from_path
 except ImportError:
     convert_from_path = None
+    pdfinfo_from_path = None
+
+
+def count_pages(file_path: str) -> int:
+    """
+    Số trang của tài liệu, KHÔNG convert ảnh.
+
+    pdfinfo_from_path chỉ đọc metadata qua binary `pdfinfo` của Poppler
+    nên gần như tức thì, khác hẳn convert_from_path vốn render từng trang
+    thành bitmap 300 DPI.
+    """
+    path = Path(file_path)
+    if path.suffix.lower() != ".pdf":
+        return 1
+
+    info = pdfinfo_from_path(str(path), poppler_path=os.getenv("POPPLER_PATH"))
+    return info["Pages"]
+
+
+def load_page(file_path: str, page_no: int) -> Image.Image:
+    """
+    Convert ĐÚNG một trang thành ảnh. Đánh số từ 1.
+
+    Thay cho load_pages() cũ vốn convert cả tài liệu một lượt: đo trên
+    báo cáo VNM 55 trang, convert toàn bộ mất 169s trong khi pipeline
+    chỉ thực sự đọc tới trang 10. Generator ở iter_table_regions() không
+    cứu được phần đó, vì toàn bộ chi phí đã phát sinh TRƯỚC lần yield
+    đầu tiên.
+    """
+    path = Path(file_path)
+    if path.suffix.lower() != ".pdf":
+        return Image.open(path)
+
+    if convert_from_path is None:
+        raise RuntimeError("pdf2image is not installed")
+
+    images = convert_from_path(
+        str(path),
+        dpi=PDF_DPI,
+        poppler_path=os.getenv("POPPLER_PATH"),
+        first_page=page_no,
+        last_page=page_no,
+    )
+    return images[0]
 
 
 def get_reader():
@@ -68,24 +112,23 @@ def load_pages(file_path: str) -> list[Image.Image]:
 
 def iter_table_regions(file_path: str, metrics=None) -> Iterator[dict]:
     """
-    Generator: chạy layout detection cho TỪNG trang, yield từng trang một:
+    Generator: convert + layout detection cho TỪNG trang, yield từng trang một:
         {"page": 1, "regions": [Image, ...]}
 
     Mỗi trang trả về các vùng bảng tìm được; nếu không tìm thấy bảng nào
     thì trả về nguyên trang gốc (fail open — để không mất dữ liệu ở trang
     mà YOLO nhận nhầm là plain text).
 
-    Dùng generator thay vì trả về list: YOLO chỉ chạy khi người gọi thực
-    sự cần tới trang đó. Nếu tìm đủ field ở trang 10 rồi dừng thì 45 trang
-    còn lại không hề bị chạy YOLO — đây là phần tiết kiệm lớn nhất, vì
-    YOLO là một trong hai việc đắt nhất pipeline (cùng với convert PDF).
+    Lười ở CẢ HAI khâu đắt tiền: cả convert PDF lẫn YOLO chỉ chạy cho
+    trang nào thực sự được duyệt tới. Đo trên báo cáo VNM 55 trang, dừng
+    ở trang 10 nghĩa là 45 trang còn lại không tốn gì.
     """
-    with timer(metrics, "pdf_convert"):
-        pages = load_pages(file_path)
+    total = count_pages(file_path)
 
-    total = len(pages)
+    for i in range(1, total + 1):
+        with timer(metrics, "pdf_convert"):
+            page_img = load_page(file_path, i)
 
-    for i, page_img in enumerate(pages, start=1):
         with timer(metrics, "layout"):
             regions = get_table_regions(page_img)
 

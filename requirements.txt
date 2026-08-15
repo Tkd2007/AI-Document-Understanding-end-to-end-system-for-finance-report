@@ -24,3 +24,6 @@ python-dotenv
 # Ghi chú: torch được cài kèm theo easyocr và doclayout-yolo nên không
 # khai báo ở đây. Nếu muốn chạy GPU, cài torch riêng theo đúng bản CUDA
 # của máy TRƯỚC khi chạy lệnh này (xem https://pytorch.org/get-started).
+
+
+pytest

@@ -1,4 +1,9 @@
 line-length = 100
 
 [lint]
-select = ["E4", "E7", "E9", "F", "I"]
+# E501 (dòng quá dài) phải select tường minh: đặt line-length ở trên KHÔNG
+# tự bật rule đó, nó chỉ định hướng cho formatter. Thiếu E501 thì con số
+# 100 ở trên không hề được kiểm — đúng tình trạng trước đây.
+# W bắt các lỗi khoảng trắng mà mắt không thấy: dòng trắng còn space,
+# thiếu newline cuối file (làm diff git nhiễu ở dòng cuối mỗi lần sửa).
+select = ["E4", "E5", "E7", "E9", "F", "I", "W"]

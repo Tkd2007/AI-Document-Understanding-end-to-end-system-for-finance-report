@@ -1,29 +1,41 @@
+# Phiên bản được GHIM (==) chứ không để trôi tự do.
+#
+# Lý do: README chỉ Docker là cách chạy được khuyến nghị, mà một image
+# dựng từ danh sách không ghim thì mỗi lần `docker build` lại ra một bộ
+# thư viện khác — vài tháng nữa easyocr/doclayout-yolo có thể kéo về bản
+# torch không tương thích và không còn cách nào biết bản nào từng chạy
+# được. Đây đúng là bộ đã verify chạy trọn pipeline trên báo cáo VNM.
+#
+# Nâng version thì làm có chủ đích: sửa số ở đây rồi chạy lại pipeline
+# trên một báo cáo thật, không nâng bằng cách bỏ ghim.
+
 # --- Xử lý ảnh / PDF ---
-pillow
-pdf2image          # cần Poppler cài sẵn ở máy, xem POPPLER_PATH trong README
-numpy
+pillow==12.2.0
+pdf2image==1.17.0          # cần Poppler cài sẵn ở máy, xem POPPLER_PATH trong README
+numpy==2.5.1
 
 # --- Layout detection ---
-doclayout-yolo     # cung cấp `from doclayout_yolo import YOLOv10`
-huggingface-hub    # tải checkpoint DocLayout-YOLO qua hf_hub_download()
+doclayout-yolo==0.0.4      # cung cấp `from doclayout_yolo import YOLOv10`
+huggingface-hub==0.36.2    # tải checkpoint DocLayout-YOLO qua hf_hub_download()
 
 # --- Nhánh OCR ---
-easyocr
+easyocr==1.7.2
 
 # --- Nhánh VLM ---
-openai             # client trỏ sang OpenRouter, không gọi thẳng OpenAI
+openai==2.53.0             # client trỏ sang OpenRouter, không gọi thẳng OpenAI
 
 # --- API layer ---
-fastapi
-uvicorn
-python-multipart   # bắt buộc để FastAPI nhận được UploadFile
+fastapi==0.141.1
+uvicorn==0.52.1
+python-multipart==0.0.32   # bắt buộc để FastAPI nhận được UploadFile
 
 # --- Config ---
-python-dotenv
+python-dotenv==1.2.2
+
+# --- Test ---
+pytest==9.1.1
 
 # Ghi chú: torch được cài kèm theo easyocr và doclayout-yolo nên không
 # khai báo ở đây. Nếu muốn chạy GPU, cài torch riêng theo đúng bản CUDA
 # của máy TRƯỚC khi chạy lệnh này (xem https://pytorch.org/get-started).
-
-
-pytest
+# Bộ này đã verify với torch==2.13.0.

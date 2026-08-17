@@ -1,0 +1,68 @@
+# Chạy app một mình, hoặc app kèm monitoring:
+#
+#   docker compose up                            # chỉ app
+#   docker compose --profile monitoring up       # app + Prometheus
+#
+# Prometheus nằm sau `profiles` chứ không bật mặc định: nó chạy nền và scrape
+# /metrics đều đặn bất kể có ai dùng hay không, nên với một project chạy theo
+# phiên làm việc thì bật lên khi cần xem số là đủ.
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+
+    # KHÔNG dùng chung .env với chạy local: POPPLER_PATH trong đó là đường dẫn
+    # Windows, truyền vào container Linux sẽ khiến pdf2image tìm sai chỗ.
+    # .env.docker chỉ gồm OPENROUTER_API_KEY và OPENROUTER_MODEL.
+    env_file:
+      - .env.docker
+
+    # Bind mount (không phải named volume) vì đây là thứ cần mở bằng editor:
+    # metrics.jsonl và các file *_routed.json của đường CLI.
+    volumes:
+      - ./data:/app/data
+
+    # Driver mặc định json-file KHÔNG giới hạn kích thước, mà pipeline in khá
+    # nhiều (mỗi trang một dòng, ~100 dòng cho báo cáo 55 trang). Ở quy mô này
+    # log chỉ cỡ 10 KB một báo cáo nên đây là bảo hiểm rẻ, không phải xử lý sự
+    # cố — nhưng file log nằm trong VM của Docker Desktop, không nhìn thấy nó
+    # lớn lên, nên đặt trần ngay từ đầu.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  prometheus:
+    # Ghim version, cùng lý do với requirements.txt: `latest` thì mỗi lần kéo
+    # image lại ra một bản khác và không còn cách nào biết bản nào từng chạy.
+    image: prom/prometheus:v3.13.2
+
+    # Tên profile này chính là chuỗi truyền vào --profile ở lệnh trên.
+    profiles: ["monitoring"]
+
+    ports:
+      - "9090:9090"
+
+    # CẢNH BÁO: `command` tự viết sẽ THAY THẾ lệnh mặc định của image, nên
+    # --config.file phải tự khai lại. Bỏ dòng đó thì Prometheus đi tìm config
+    # ở đường dẫn mặc định, không thấy file mount bên dưới, và im lặng chạy
+    # với cấu hình rỗng — không scrape gì cả mà container vẫn "khoẻ".
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=15d"
+
+    volumes:
+      # Đường dẫn bên phải phải KHỚP TỪNG KÝ TỰ với --config.file ở trên.
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Named volume: dữ liệu TSDB là định dạng nhị phân riêng, mở bằng editor
+      # không đọc được gì, nên không cần bind mount ra thư mục dự án.
+      - prometheus_data:/prometheus
+
+    depends_on:
+      - app
+
+volumes:
+  prometheus_data:

@@ -1,0 +1,20 @@
+global:
+  # 15 giây là mặc định của Prometheus và là con số nên giữ. Nới rộng ra để
+  # "tiết kiệm" là phá luôn công dụng: rate() cần ít nhất hai điểm trong cửa
+  # sổ truy vấn mới tính được độ lệch, nên scrape_interval quá thưa khiến mọi
+  # truy vấn trả về rỗng — hệ thống vẫn chạy, vẫn tốn RAM, và không nói gì.
+  # Muốn tắt thì tắt hẳn container (bỏ --profile monitoring), đừng nới interval.
+  scrape_interval: 15s
+
+scrape_configs:
+  # job_name trở thành label job= gắn vào mọi metric, và vào metric `up` mà
+  # Prometheus tự sinh cho từng target. `up == 0` là cách phát hiện service
+  # chết — nó chạy được cả khi app chưa xử lý document nào.
+  - job_name: "doc-ai"
+    metrics_path: /metrics
+    static_configs:
+      # Tên SERVICE trong docker-compose, không phải localhost: mỗi container
+      # là một network namespace riêng, localhost trong container Prometheus
+      # trỏ về chính nó. Cổng cũng là cổng TRONG container (8000), không phải
+      # cổng đã publish ra host.
+      - targets: ["app:8000"]

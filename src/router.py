@@ -28,7 +28,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from extract_baseline import extract_all_fields
-from extract_vlm import extract_fields_from_regions
+from extract_vlm import extract_fields_from_regions, require_config
 from fields_config import FIELD_MAP
 from metrics import RunMetrics, merge_into_totals, timer
 from ocr_baseline import iter_table_regions, ocr_page_regions
@@ -103,6 +103,12 @@ def run_vlm(pages_iter, cached_pages: list, result: dict, metrics=None) -> dict:
 
 
 def route_document(file_path: str) -> dict:
+    # Nhánh VLM luôn có thể được gọi làm fallback, kể cả khi USE_OCR_FIRST
+    # bật, nên thiếu config là hỏng chắc chắn. Kiểm ngay đây — trước cả
+    # RunMetrics — để không ghi lại một "lượt chạy" vốn chưa từng bắt đầu,
+    # và để lỗi nổ ra trước khi tốn công convert PDF + chạy YOLO.
+    require_config()
+
     metrics = RunMetrics(file_path)
 
     try:
@@ -111,7 +117,7 @@ def route_document(file_path: str) -> dict:
         result = {key: None for key in FIELD_MAP}
 
         if USE_OCR_FIRST:
-            result = run_ocr_first(pages_iter, cached_pages, result)
+            result = run_ocr_first(pages_iter, cached_pages, result, metrics)
 
         if not is_acceptable(result):
             if USE_OCR_FIRST:
@@ -128,7 +134,7 @@ def route_document(file_path: str) -> dict:
         save_result(file_path, data)
         metrics.set_info(pages_processed=len(cached_pages), ocr_first=USE_OCR_FIRST)
         return data
-    
+
     finally:
         metrics.save()
         merge_into_totals(metrics)

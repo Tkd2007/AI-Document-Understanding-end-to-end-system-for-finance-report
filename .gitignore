@@ -4,6 +4,7 @@ __pycache__/
 .venv/
 venv/
 .env
+.env.*
 
 # Data - real financial reports should NOT be pushed to a public repo
 data/samples/*

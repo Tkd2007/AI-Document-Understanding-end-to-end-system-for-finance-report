@@ -60,7 +60,10 @@ FIELD_RELATIONS = [
     ("hang_ton_kho", "tai_san_ngan_han", "Hàng tồn kho không thể lớn hơn Tài sản ngắn hạn"),
     ("no_phai_tra", "tong_tai_san", "Nợ phải trả không thể lớn hơn Tổng tài sản"),
     ("gia_von_hang_ban", "doanh_thu_thuan", "Giá vốn hàng bán không thể lớn hơn Doanh thu thuần"),
-    ("loi_nhuan_sau_thue", "loi_nhuan_truoc_thue", "Lợi nhuận sau thuế không thể lớn hơn Lợi nhuận trước thuế"),
+    (
+        "loi_nhuan_sau_thue", "loi_nhuan_truoc_thue",
+        "Lợi nhuận sau thuế không thể lớn hơn Lợi nhuận trước thuế",
+    ),
 ]
 
 # Đẳng thức kế toán. Chặt hơn FIELD_RELATIONS ở trên rất nhiều: bất đẳng

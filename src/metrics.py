@@ -7,6 +7,7 @@ mỗi dòng một lượt chạy, để sau này gộp lại phân tích.
 """
 
 import json
+import threading
 import time
 from contextlib import contextmanager, nullcontext
 from datetime import datetime, timezone
@@ -17,9 +18,9 @@ METRICS_PATH = Path("data/output/metrics.jsonl")
 
 class RunMetrics:
     def __init__(self, document: str):
-        self.document=document
+        self.document = document
         self.started_at = datetime.now(timezone.utc)
-        self._run_start=time.perf_counter()
+        self._run_start = time.perf_counter()
 
         self.stages: dict[str, float] = {}
         self.counters: dict[str, int] = {}
@@ -29,10 +30,10 @@ class RunMetrics:
     def stage(self, name: str):
         """
         Đo thời gian một giai đoạn:
- 
+
             with metrics.stage("vlm_call"):
                 ...
- 
+
         Dùng try/finally để thời gian vẫn được ghi cả khi bên trong ném
         lỗi — nếu không thì đúng những lượt chạy thất bại, thứ đáng phân
         tích nhất, lại là thứ không có số liệu.
@@ -45,7 +46,7 @@ class RunMetrics:
             elapsed = time.perf_counter() - start
             self.stages[name] = self.stages.get(name, 0.0) + elapsed
 
-    def count(self, name:str, amount: int=1) -> None:
+    def count(self, name: str, amount: int = 1) -> None:
         self.counters[name] = self.counters.get(name, 0) + amount
 
     def set_info(self, **kwargs) -> None:
@@ -74,14 +75,15 @@ class RunMetrics:
         """Một dòng tóm tắt để in ra cuối lượt chạy."""
         data = self.as_dict()
         parts = [f"{data['total_seconds']}s tổng"]
- 
+
         for name, value in sorted(data["stages"].items(), key=lambda x: -x[1]):
             parts.append(f"{name} {value}s")
- 
+
         for name, value in data["counters"].items():
             parts.append(f"{name}={value}")
- 
+
         return " | ".join(parts)
+
 
 def timer(metrics, name: str):
     """
@@ -100,22 +102,33 @@ def timer(metrics, name: str):
 # cục, giữ trong RAM) phục vụ hai mục đích khác nhau.
 _totals: dict[str, float] = {}
 
+# api.py chạy route_document() trong threadpool, nên nhiều request có thể
+# gọi merge_into_totals() cùng lúc. Phép cộng dồn dưới đây là
+# read-modify-write, KHÔNG atomic: hai thread đọc cùng một giá trị cũ rồi
+# cùng ghi đè thì mất một lượt đếm. Counter sai lệch âm thầm còn tệ hơn
+# không có counter, vì không có cách nào phát hiện.
+_totals_lock = threading.Lock()
+
 
 def merge_into_totals(run: "RunMetrics") -> None:
     """Cộng số liệu của một lượt chạy vừa xong vào bộ đếm toàn cục."""
     data = run.as_dict()
 
-    _totals["documents_total"] = _totals.get("documents_total", 0) + 1
-    _totals["seconds_total"] = _totals.get("seconds_total", 0) + data["total_seconds"]
+    with _totals_lock:
+        _totals["documents_total"] = _totals.get("documents_total", 0) + 1
+        _totals["seconds_total"] = _totals.get("seconds_total", 0) + data["total_seconds"]
 
-    for name, value in data["stages"].items():
-        key = f"stage_{name}_seconds_total"
-        _totals[key] = _totals.get(key, 0) + value
+        for name, value in data["stages"].items():
+            key = f"stage_{name}_seconds_total"
+            _totals[key] = _totals.get(key, 0) + value
 
-    for name, value in data["counters"].items():
-        key = f"{name}_total"
-        _totals[key] = _totals.get(key, 0) + value
+        for name, value in data["counters"].items():
+            key = f"{name}_total"
+            _totals[key] = _totals.get(key, 0) + value
 
 
 def get_totals() -> dict[str, float]:
-    return dict(_totals)
+    # Copy trong lock: dict(_totals) duyệt qua dict, sẽ nổ RuntimeError
+    # nếu một request khác chèn key mới giữa chừng.
+    with _totals_lock:
+        return dict(_totals)

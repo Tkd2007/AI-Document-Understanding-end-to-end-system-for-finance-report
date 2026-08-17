@@ -16,11 +16,66 @@ jobs:
         with:
           python-version: "3.12"
 
+      # KHÔNG cài requirements.txt: easyocr và doclayout-yolo kéo theo
+      # torch ~2GB, quá đắt cho một bộ test chạy vài giây. Chỉ cài phần
+      # nhẹ mà `import router` cần — easyocr/doclayout-yolo được import
+      # lười bên trong get_reader()/get_model() nên không cần ở đây.
+      #
+      # Cố tình KHÔNG ghim version ở bước này (khác requirements.txt):
+      # job docker bên dưới mới là chỗ kiểm bộ đã ghim, còn ở đây chạy
+      # với bản mới nhất để lộ sớm khi thư viện thượng nguồn đổi hành vi.
       - name: Install dependencies
-        run: pip install pytest ruff
+        run: pip install pytest ruff numpy pillow openai python-dotenv
 
       - name: Lint
         run: ruff check src tests
 
       - name: Test
         run: pytest
+
+  docker:
+    runs-on: ubuntu-latest
+
+    # Ba bug từng chỉ lộ ra ở lần chạy container đầu tiên (uvicorn mặc
+    # định chỉ nghe 127.0.0.1, import phẳng cần --app-dir src, python:slim
+    # thiếu thư viện hệ thống của OpenCV). Job này để lần sau không phải
+    # phát hiện chúng bằng tay nữa.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # load: true để bước smoke test bên dưới `docker run` được image.
+      # Cache của GitHub Actions giữ lại layer cài thư viện, nên chỉ lần
+      # build đầu mới phải tải torch.
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: doc-ai:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Build xong không có nghĩa là chạy được: cả ba bug kể trên đều chỉ
+      # lộ lúc RUNTIME. Key giả là đủ vì /metrics không gọi tới VLM — nó
+      # vẫn phải qua được require_config() lúc khởi động, đúng thứ cần thử.
+      - name: Smoke test
+        run: |
+          docker run -d --name doc-ai-ci -p 8000:8000 \
+            -e OPENROUTER_API_KEY=ci-dummy \
+            -e OPENROUTER_MODEL=ci-dummy \
+            doc-ai:ci
+
+          for _ in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/metrics > /dev/null; then
+              echo "OK: container phục vụ được request"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "LỖI: container không phản hồi sau 60s"
+          docker logs doc-ai-ci
+          exit 1

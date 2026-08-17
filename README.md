@@ -13,6 +13,7 @@ Client (PDF / image upload)
         ▼
    FastAPI Gateway  (POST /extract)
         │   · làm sạch tên file, kiểm tra định dạng
+        │   · lưu tạm với hậu tố ngẫu nhiên, xoá sau khi xử lý xong
         ▼
    Layout Detection  (DocLayout-YOLO)
         │   · bỏ qua trang không có bảng
@@ -84,15 +85,16 @@ doc-ai-project/
 │   ├── fields_config.py     # single source of truth: fields, aliases, rules, checks
 │   ├── validation.py        # ép kiểu số + sanity checks; cũng là gate quyết định fallback
 │   ├── router.py            # Document Classifier & Router: OCR (optional) -> VLM
-│   └── api.py               # FastAPI Gateway: POST /extract endpoint
+│   ├── api.py               # FastAPI Gateway: POST /extract endpoint
 │   └── metrics.py           # đo thời gian từng stage + đếm lần gọi VLM
 ├── tests/
 │   ├── test_extract_baseline.py
+│   ├── test_router.py       # cổng quyết định fallback (không cần key/mạng)
 │   └── test_validation.py
 ├── pytest.ini               # pythonpath = src, cho import phẳng
 ├── ruff.toml                # chốt bộ rule để CI và máy local giống nhau
-├── .env                     # local secrets/config, never committed (see Setup)
-├── .env.docker              # chỉ OPENROUTER_*, dùng khi chạy container
+├── .env                     # tự tạo — local secrets/config, never committed (see Setup)
+├── .env.docker              # tự tạo — chỉ OPENROUTER_*, dùng khi chạy container
 ├── Dockerfile
 ├── .dockerignore
 ├── .gitignore
@@ -124,7 +126,7 @@ OPENROUTER_API_KEY=your_openrouter_key
 OPENROUTER_MODEL=google/gemma-4-31b-it:free
 
 Trong container, Poppler được cài qua `apt-get` nên nằm sẵn trong `PATH`;
-`load_pages()` truyền `poppler_path=None` và `pdf2image` tự tìm được.
+`load_page()` truyền `poppler_path=None` và `pdf2image` tự tìm được.
 
 Lần build đầu mất 10–20 phút, chủ yếu là tải PyTorch. Các lần sau chỉ vài
 giây: `Dockerfile` copy `requirements.txt` **trước** `src/`, nên sửa code
@@ -156,6 +158,13 @@ python -m pip install -r requirements.txt
 Lần chạy đầu tiên sẽ tự tải checkpoint của EasyOCR và DocLayout-YOLO về
 cache — mất vài phút và cần mạng, các lần sau thì không.
 
+Các version trong `requirements.txt` được **ghim** (`==`) chứ không để trôi:
+đây đúng là bộ đã verify chạy trọn pipeline. Không ghim thì mỗi lần
+`docker build` lại ra một bộ thư viện khác, và `easyocr`/`doclayout-yolo`
+có thể kéo về bản `torch` không tương thích mà không còn cách nào biết bản
+nào từng chạy được. Muốn nâng thì sửa số ở đó rồi chạy lại trên một báo cáo
+thật, đừng nâng bằng cách bỏ ghim.
+
 ### 3. Configure `.env`
 
 Create a `.env` file in the project root (this file is gitignored — never commit it):
@@ -174,8 +183,14 @@ USE_OCR_FIRST=false
 - `POPPLER_PATH` is machine-specific — update it after cloning onto a new
   computer.
 - `USE_OCR_FIRST` bật/tắt nhánh OCR + regex (mặc định `false` — xem
-  "Vì sao nhánh OCR đang tắt mặc định" ở trên). `OPENROUTER_API_KEY` và
-  `OPENROUTER_MODEL` là bắt buộc: thiếu thì nhánh VLM báo lỗi ngay lúc import.
+  "Vì sao nhánh OCR đang tắt mặc định" ở trên).
+- `OPENROUTER_API_KEY` và `OPENROUTER_MODEL` là bắt buộc, kiểm bằng
+  `require_config()`. Chỗ kiểm được đặt ở **entrypoint** chứ không phải lúc
+  import module: `api.py` gọi lúc khởi động (thiếu key thì container chết
+  ngay thay vì lên "healthy" rồi trả 500 ở từng request), `route_document()`
+  gọi ở đầu mỗi lượt chạy — vẫn trước khi tốn công convert PDF và chạy YOLO.
+  Nhờ vậy `import router` không đòi API key, nên phần logic thuần của router
+  mới viết được unit test (xem `tests/test_router.py`).
 
 ## Usage
 
@@ -207,6 +222,17 @@ uvicorn api:app --app-dir src --reload
 
 Then POST a PDF file to `http://127.0.0.1:8000/extract` (or use the
 auto-generated docs at `http://127.0.0.1:8000/docs`).
+
+> File upload được lưu tạm dưới tên `<tên gốc>_<8 ký tự ngẫu nhiên>.pdf` rồi xoá
+> ngay sau khi xử lý xong. Hậu tố ngẫu nhiên là **bắt buộc chứ không phải cho
+> đẹp**: hai người cùng upload `report.pdf` mà dùng nguyên tên client gửi lên thì
+> request đến sau ghi đè file của request đang chạy — và vì `load_page()` mở lại
+> file cho *từng trang*, request đầu sẽ đọc tiếp sang nội dung tài liệu kia rồi
+> trả về số của một báo cáo khác. Kết quả trong `data/output/` vì thế cũng mang
+> hậu tố đó (`report_a3f2b1c9_routed.json`) thay vì đè lên nhau.
+
+Chạy standalone bằng `python src/router.py` thì không có chuyện đó — tên file
+giữ nguyên và kết quả là `data/output/<file>_routed.json`.
 
 Response format (giá trị thật từ báo cáo VNM Q1/2026, đơn vị VND):
 
@@ -327,31 +353,39 @@ khớp `FORM_MARKERS` của đúng mẫu đó.
   bất thường, bất đẳng thức giữa các chỉ tiêu, **đẳng thức kế toán** (chặt nhất:
   lệch một chữ số là lộ ngay), biên tỷ trọng, tỷ lệ doanh thu/tài sản, và thiếu
   chỉ tiêu bắt buộc.
-  - **Docker**: working — đã build và chạy thử thành công, xử lý được trọn
+- **Docker**: working — đã build và chạy thử thành công, xử lý được trọn
   pipeline (YOLO + VLM) qua endpoint HTTP trong container. Image cài sẵn
   `poppler-utils` nên bỏ được phụ thuộc ngoài duy nhất còn lại; không cần
   `POPPLER_PATH` khi chạy bằng Docker.
-  - **Monitoring**: `metrics.py` đo thời gian từng giai đoạn (`pdf_convert`,
+- **Monitoring**: `metrics.py` đo thời gian từng giai đoạn (`pdf_convert`,
   `layout`, `ocr`, `vlm`), đếm số lần gọi VLM và số lần lỗi, ghi mỗi lượt
-  chạy thành một dòng JSON trong `data/output/metrics.jsonl`. Truyền
-  `metrics=None` thì mọi hàm vẫn chạy standalone như cũ.
-- **Unit test**: 12 test với `pytest`, không cần model hay mạng nên chạy
-  trong ~0,3 giây. Đáng chú ý là test đẳng thức kế toán: sửa một chỉ tiêu
+  chạy thành một dòng JSON trong `data/output/metrics.jsonl`, và cộng dồn
+  vào bộ đếm toàn cục cho endpoint `/metrics` (định dạng Prometheus).
+  Truyền `metrics=None` thì mọi hàm vẫn chạy standalone như cũ.
+- **Unit test**: 15 test với `pytest`, không cần model hay mạng nên chạy
+  trong vài giây. Đáng chú ý là test đẳng thức kế toán: sửa một chỉ tiêu
   lệch 10 triệu đồng trên tổng tài sản 47 nghìn tỷ vẫn bị bắt — kiểm chứng
-  được lựa chọn `IDENTITY_TOLERANCE_RATIO=1e-7`.
-- **CI**: GitHub Actions chạy `ruff check` + `pytest` mỗi lần push và pull
-  request. CI cố tình KHÔNG cài `requirements.txt`: các test chỉ import
-  `extract_baseline` và `validation`, vốn chỉ cần thư viện chuẩn, nên cài
-  đủ bộ là tải PyTorch ~2GB cho 12 test chạy 0,3 giây.
+  được lựa chọn `IDENTITY_TOLERANCE_RATIO=1e-7`. `test_router.py` phủ cổng
+  quyết định fallback, gồm ca mọi field đều CÓ giá trị nhưng một con số bị
+  đọc nhầm dòng — nếu cổng chỉ đếm field thì lỗi đó lọt qua âm thầm.
+- **CI**: GitHub Actions chạy hai job mỗi lần push và pull request.
+  - `test` — `ruff check` + `pytest`. Cố tình KHÔNG cài `requirements.txt`
+    mà chỉ cài phần nhẹ (`numpy pillow openai python-dotenv`): `easyocr` và
+    `doclayout-yolo` được import lười bên trong `get_reader()`/`get_model()`
+    nên test không cần tới, mà cài đủ bộ là tải PyTorch ~2GB.
+  - `docker` — build image rồi **chạy thử thật**: khởi động container và
+    gọi `/metrics`. Build xong không đảm bảo chạy được; cả ba bug ở mục
+    "Vài thứ chỉ lộ ra khi chạy thật" bên dưới đều chỉ lộ lúc runtime.
 
 ### Not yet done
 
 - Đánh giá có hệ thống: chưa có tập test nhiều báo cáo từ nhiều công ty để
   đo accuracy, hiện mới verify tay trên một báo cáo.
-- Unit test mới phủ phần logic thuần (parse số, validation). Chưa có test
-  cho router, OCR, VLM — những phần cần model hoặc gọi mạng.
-- Monitoring mới ở mức thu thập per-run ra file. Chưa có Prometheus /
-  Grafana / alerting như kiến trúc tham chiếu.
+- Unit test mới phủ phần logic thuần (parse số, validation, cổng fallback
+  của router). Chưa có test cho OCR và VLM — những phần cần model hoặc gọi
+  mạng, sẽ cần mock/fixture ảnh thay vì gọi thật.
+- Monitoring mới ở mức thu thập per-run ra file + endpoint `/metrics`.
+  Chưa có Prometheus / Grafana / alerting như kiến trúc tham chiếu.
 - Chuẩn hoá đơn vị tính: prompt yêu cầu VLM giữ nguyên đơn vị hiển thị trong
   ảnh, nên hai báo cáo dùng đơn vị khác nhau ("đồng" vs "triệu đồng") sẽ cho
   ra số không cùng thang đo. Cần thêm field đơn vị hoặc bước quy đổi.

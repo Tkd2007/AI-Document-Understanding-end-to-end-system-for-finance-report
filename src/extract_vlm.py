@@ -33,24 +33,49 @@ load_dotenv()
 API_KEY = os.getenv("OPENROUTER_API_KEY")
 MODEL = os.getenv("OPENROUTER_MODEL")
 
-# Báo thiếu config ngay lúc import, thay vì để None đi tới tận lời gọi
-# API rồi nhận về một lỗi HTTP khó hiểu — sau khi đã tốn công convert
-# PDF và chạy YOLO cho cả tài liệu.
-_missing = [
-    name
-    for name, value in (("OPENROUTER_API_KEY", API_KEY), ("OPENROUTER_MODEL", MODEL))
-    if not value
-]
-if _missing:
-    raise RuntimeError(
-        f"Thiếu biến môi trường bắt buộc trong .env: {', '.join(_missing)}. "
-        f"Xem phần Setup trong README."
-    )
+_client = None
 
-client = OpenAI(
-    api_key=API_KEY,
-    base_url="https://openrouter.ai/api/v1",
-)
+
+def require_config() -> None:
+    """
+    Báo thiếu config trước khi tốn công convert PDF và chạy YOLO.
+
+    Gọi ở ĐẦU pipeline (`router.route_document`) và lúc khởi động service
+    (`api.py`), chứ KHÔNG phải lúc import module này. Check ở mức import
+    thì mọi thứ import gián tiếp tới đây đều chết theo: `import router`
+    chỉ để test hàm `is_acceptable()` — logic thuần, không chạm mạng —
+    cũng đòi phải có API key, nên phần đó không sao viết test được.
+
+    Fail-fast vẫn giữ nguyên: chỗ kiểm tra chỉ lùi từ "lúc import" xuống
+    "lúc bắt đầu một lượt chạy thật", vẫn trước mọi việc nặng.
+    """
+    missing = [
+        name
+        for name, value in (("OPENROUTER_API_KEY", API_KEY), ("OPENROUTER_MODEL", MODEL))
+        if not value
+    ]
+    if missing:
+        raise RuntimeError(
+            f"Thiếu biến môi trường bắt buộc trong .env: {', '.join(missing)}. "
+            f"Xem phần Setup trong README."
+        )
+
+
+def get_client() -> OpenAI:
+    """
+    Tạo client ở lần gọi đầu, rồi dùng lại.
+
+    OpenAI(api_key=None) tự ném lỗi lúc khởi tạo, nên client cũng không
+    dựng được ở mức module nếu muốn import mà không cần key.
+    """
+    global _client
+    if _client is None:
+        require_config()
+        _client = OpenAI(
+            api_key=API_KEY,
+            base_url="https://openrouter.ai/api/v1",
+        )
+    return _client
 
 MAX_RETRIES = 3
 RETRY_BASE_DELAY = 2.0   # giây, nhân đôi sau mỗi lần thất bại: 2 -> 4 -> 8
@@ -65,6 +90,50 @@ def encode_image_to_base64(image: Image.Image) -> str:
     image_bytes = buffer.getvalue()   # kiểu dữ liệu: bytes (dãy số nhị phân thô)
     base64_bytes = base64.b64encode(image_bytes)
     return base64_bytes.decode("utf-8")
+
+
+# Các quy tắc trong prompt. Mỗi phần tử là ĐÚNG MỘT dòng của prompt cuối
+# cùng — được ghép lại từ nhiều literal bằng phép nối chuỗi ngầm của
+# Python, nên dòng code vừa 100 cột mà chuỗi gửi đi không đổi một ký tự.
+#
+# Tách khỏi f-string trong build_prompt() chính vì lý do đó: gói cho vừa
+# bề rộng ngay trong khối """...""" sẽ chèn xuống dòng THẬT vào prompt,
+# khiến model đọc một quy tắc thành hai mẩu rời.
+PROMPT_RULES = [
+    '1. Chỉ trả về đúng 1 object JSON chứa ĐẦY ĐỦ mọi khoá liệt kê ở trên, KHÔNG thêm bất kỳ '
+    'lời giải thích, lời chào, hay markdown (không dùng dấu ```) nào trước/sau JSON.',
+
+    '2. Mỗi trang thường chỉ thuộc MỘT mẫu biểu, nên bình thường chỉ một nhóm chỉ tiêu ở trên '
+    'xuất hiện được trên ảnh này. Các chỉ tiêu thuộc nhóm khác PHẢI trả null — đó là kết quả '
+    'đúng, không phải thiếu sót.',
+
+    '3. Nếu ảnh KHÔNG chứa một chỉ tiêu nào đó, trả null cho chỉ tiêu đó — TUYỆT ĐỐI KHÔNG được '
+    'đoán hay bịa ra một con số gần đúng. Trả null luôn tốt hơn trả số sai.',
+
+    '4. Số trả về phải là số nguyên thuần (integer), KHÔNG chứa dấu chấm, dấu phẩy hay ký hiệu '
+    'đơn vị tiền tệ.',
+
+    '5. Nếu số liệu trong ảnh là số âm (thể hiện bằng dấu "-" hoặc đặt trong ngoặc đơn, ví dụ '
+    '"(1.234.567)"), PHẢI giữ lại dấu âm trong JSON (ví dụ -1234567). Rất thường gặp với '
+    '"Lợi nhuận sau thuế" khi doanh nghiệp thua lỗ.',
+
+    '6. Giữ nguyên đơn vị tính như số liệu hiển thị trong ảnh (ví dụ nếu bảng ghi "Đơn vị tính: '
+    'triệu đồng" thì trả về đúng con số theo đơn vị đó), KHÔNG tự quy đổi.',
+
+    '7. Chỉ lấy số liệu của kỳ báo cáo gần nhất. Xác định cột này dựa vào NHÃN/TIÊU ĐỀ cột '
+    '(ngày, quý, năm — kỳ có ngày gần hiện tại nhất), KHÔNG mặc định dựa vào vị trí cột đầu '
+    'tiên bên trái, vì thứ tự cột có thể khác nhau giữa các mẫu báo cáo. Không lấy số liệu của '
+    'kỳ so sánh.',
+
+    '8. Bảng BCTC Việt Nam có cột "Mã số" (số nhỏ 2-3 chữ số như 10, 60, 280) và cột '
+    '"Thuyết minh" (ký hiệu như V.5, VI.1) nằm giữa tên chỉ tiêu và giá trị. TUYỆT ĐỐI KHÔNG '
+    'lấy nhầm mã số hay số thuyết minh làm giá trị — giá trị là con số tiền tệ lớn, có dấu '
+    'phân cách nghìn, nằm ở các cột bên phải.',
+
+    '9. Tên chỉ tiêu trong ảnh có thể kèm số thứ tự/tiền tố ("A.", "I.", "1."), viết hoa toàn '
+    'bộ, hoặc diễn đạt hơi khác danh sách trên — nhận diện theo Ý NGHĨA của dòng và mã số đi '
+    'kèm, không đòi khớp từng ký tự.',
+]
 
 
 def build_prompt() -> str:
@@ -116,6 +185,7 @@ def build_prompt() -> str:
         sections.append("\n".join(lines))
 
     field_block = "\n\n".join(sections)
+    rules_block = "\n".join(PROMPT_RULES)
     json_template = ", ".join(f'"{key}": <số hoặc null>' for key in FIELD_MAP)
 
     return f"""Bạn là một hệ thống trích xuất dữ liệu tài chính tự động.
@@ -124,15 +194,7 @@ Nhiệm vụ: nhìn vào ảnh trang báo cáo tài chính được cung cấp, 
 {field_block}
 
 QUY TẮC BẮT BUỘC:
-1. Chỉ trả về đúng 1 object JSON chứa ĐẦY ĐỦ mọi khoá liệt kê ở trên, KHÔNG thêm bất kỳ lời giải thích, lời chào, hay markdown (không dùng dấu ```) nào trước/sau JSON.
-2. Mỗi trang thường chỉ thuộc MỘT mẫu biểu, nên bình thường chỉ một nhóm chỉ tiêu ở trên xuất hiện được trên ảnh này. Các chỉ tiêu thuộc nhóm khác PHẢI trả null — đó là kết quả đúng, không phải thiếu sót.
-3. Nếu ảnh KHÔNG chứa một chỉ tiêu nào đó, trả null cho chỉ tiêu đó — TUYỆT ĐỐI KHÔNG được đoán hay bịa ra một con số gần đúng. Trả null luôn tốt hơn trả số sai.
-4. Số trả về phải là số nguyên thuần (integer), KHÔNG chứa dấu chấm, dấu phẩy hay ký hiệu đơn vị tiền tệ.
-5. Nếu số liệu trong ảnh là số âm (thể hiện bằng dấu "-" hoặc đặt trong ngoặc đơn, ví dụ "(1.234.567)"), PHẢI giữ lại dấu âm trong JSON (ví dụ -1234567). Rất thường gặp với "Lợi nhuận sau thuế" khi doanh nghiệp thua lỗ.
-6. Giữ nguyên đơn vị tính như số liệu hiển thị trong ảnh (ví dụ nếu bảng ghi "Đơn vị tính: triệu đồng" thì trả về đúng con số theo đơn vị đó), KHÔNG tự quy đổi.
-7. Chỉ lấy số liệu của kỳ báo cáo gần nhất. Xác định cột này dựa vào NHÃN/TIÊU ĐỀ cột (ngày, quý, năm — kỳ có ngày gần hiện tại nhất), KHÔNG mặc định dựa vào vị trí cột đầu tiên bên trái, vì thứ tự cột có thể khác nhau giữa các mẫu báo cáo. Không lấy số liệu của kỳ so sánh.
-8. Bảng BCTC Việt Nam có cột "Mã số" (số nhỏ 2-3 chữ số như 10, 60, 280) và cột "Thuyết minh" (ký hiệu như V.5, VI.1) nằm giữa tên chỉ tiêu và giá trị. TUYỆT ĐỐI KHÔNG lấy nhầm mã số hay số thuyết minh làm giá trị — giá trị là con số tiền tệ lớn, có dấu phân cách nghìn, nằm ở các cột bên phải.
-9. Tên chỉ tiêu trong ảnh có thể kèm số thứ tự/tiền tố ("A.", "I.", "1."), viết hoa toàn bộ, hoặc diễn đạt hơi khác danh sách trên — nhận diện theo Ý NGHĨA của dòng và mã số đi kèm, không đòi khớp từng ký tự.
+{rules_block}
 
 Trả về đúng format JSON sau, không có gì khác:
 {{{json_template}}}"""
@@ -149,14 +211,19 @@ def call_vlm(base64_image: str, prompt: str) -> str | None:
     """
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            response = client.chat.completions.create(
+            response = get_client().chat.completions.create(
                 model=MODEL,
                 messages=[
                     {
                         "role": "user",
                         "content": [
                             {"type": "text", "text": prompt},
-                            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{base64_image}"}}
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/png;base64,{base64_image}"
+                                },
+                            },
                         ]
                     }
                 ]
@@ -187,7 +254,10 @@ def call_vlm(base64_image: str, prompt: str) -> str | None:
             return None
 
         delay = RETRY_BASE_DELAY * 2 ** (attempt - 1)
-        print(f"[WARNING] Lỗi gọi VLM (lần {attempt}/{MAX_RETRIES}): {error} — thử lại sau {delay:.0f}s")
+        print(
+            f"[WARNING] Lỗi gọi VLM (lần {attempt}/{MAX_RETRIES}): {error} "
+            f"— thử lại sau {delay:.0f}s"
+        )
         time.sleep(delay)
 
     return None

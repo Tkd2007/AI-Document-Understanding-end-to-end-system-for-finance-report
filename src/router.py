@@ -102,7 +102,19 @@ def run_vlm(pages_iter, cached_pages: list, result: dict, metrics=None) -> dict:
     return result
 
 
-def route_document(file_path: str) -> dict:
+def route_document(file_path: str, save: bool = True) -> dict:
+    """
+    Chạy trọn pipeline cho một tài liệu, trả về dict đã ép kiểu số.
+
+    save — có ghi data/output/<stem>_routed.json hay không.
+
+    Đường CLI để mặc định True vì file đó CHÍNH LÀ output của lệnh.
+    Đường API truyền False: client đã nhận dữ liệu qua HTTP và metrics.jsonl
+    đã ghi lại lượt chạy, nên file kia là bản sao không ai đọc. Tên nó còn
+    mang hậu tố ngẫu nhiên của request (report_a3f2b1c9_routed.json) nên
+    cũng không tra cứu bằng tay được — chỉ để lại rác trong data/output/,
+    mỗi request một file, không ai dọn.
+    """
     # Nhánh VLM luôn có thể được gọi làm fallback, kể cả khi USE_OCR_FIRST
     # bật, nên thiếu config là hỏng chắc chắn. Kiểm ngay đây — trước cả
     # RunMetrics — để không ghi lại một "lượt chạy" vốn chưa từng bắt đầu,
@@ -131,7 +143,9 @@ def route_document(file_path: str) -> dict:
         # dữ liệu cho cùng một lượt chạy — rất khó lần khi đi đối chiếu.
         data = validate_result(result)["data"]
 
-        save_result(file_path, data)
+        if save:
+            save_result(file_path, data)
+
         metrics.set_info(pages_processed=len(cached_pages), ocr_first=USE_OCR_FIRST)
         return data
 

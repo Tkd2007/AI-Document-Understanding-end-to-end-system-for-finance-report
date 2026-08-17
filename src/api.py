@@ -65,7 +65,19 @@ async def extract(file: UploadFile = File(...)):
         # route_document() chạy OCR/YOLO/VLM, mất từ vài chục giây tới vài
         # phút. Gọi thẳng trong endpoint async sẽ chặn event loop và treo mọi
         # request khác, nên đẩy sang threadpool.
-        result = await run_in_threadpool(route_document, str(save_path))
+        #
+        # save=True là TẠM THỜI, để debug: đang cần mở file _routed.json xem
+        # output sau mỗi lần upload qua /docs. Đích đến là save=False, xem
+        # improvements-todo.md.
+        #
+        # Cái giá của nó: mỗi request để lại một file trong data/output/ và
+        # không ai dọn. Tên file mang hậu tố ngẫu nhiên của request
+        # (report_a3f2b1c9_routed.json) nên upload cùng một báo cáo ba lần ra
+        # ba file nội dung giống nhau, không tra cứu theo tên được. Dữ liệu
+        # thì đã có sẵn ở hai chỗ khác: response HTTP bên dưới, và
+        # metrics.jsonl (chỗ này còn ghi được cả lượt chạy THẤT BẠI, vì
+        # metrics.save() nằm trong finally còn save_result() thì không).
+        result = await run_in_threadpool(route_document, str(save_path), save=True)
     finally:
         # Xoá file tạm kể cả khi pipeline ném lỗi. Không có bước này thì
         # data/samples/ phình vô hạn theo số request — mỗi lượt upload để

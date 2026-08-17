@@ -37,6 +37,21 @@ except ImportError:
     pdfinfo_from_path = None
 
 
+def _require_pdf2image() -> None:
+    """
+    Chặn sớm khi pdf2image không import được.
+
+    Không có hàm này thì `pdfinfo_from_path` và `convert_from_path` vẫn là
+    None và lời gọi nổ ra `TypeError: 'NoneType' object is not callable` —
+    một câu báo lỗi không hề gợi ý rằng thư viện bị thiếu.
+    """
+    if convert_from_path is None or pdfinfo_from_path is None:
+        raise RuntimeError(
+            "pdf2image chưa cài (hoặc import thất bại) nên không đọc được PDF. "
+            "Cài bằng: pip install -r requirements.txt"
+        )
+
+
 def count_pages(file_path: str) -> int:
     """
     Số trang của tài liệu, KHÔNG convert ảnh.
@@ -48,6 +63,11 @@ def count_pages(file_path: str) -> int:
     path = Path(file_path)
     if path.suffix.lower() != ".pdf":
         return 1
+
+    # count_pages() chạy TRƯỚC load_page() trong iter_table_regions(), nên
+    # đây mới là chỗ đầu tiên chạm tới pdf2image — check phải nằm ở đây,
+    # không phải chỉ ở load_page().
+    _require_pdf2image()
 
     info = pdfinfo_from_path(str(path), poppler_path=os.getenv("POPPLER_PATH"))
     return info["Pages"]
@@ -67,8 +87,7 @@ def load_page(file_path: str, page_no: int) -> Image.Image:
     if path.suffix.lower() != ".pdf":
         return Image.open(path)
 
-    if convert_from_path is None:
-        raise RuntimeError("pdf2image is not installed")
+    _require_pdf2image()
 
     images = convert_from_path(
         str(path),

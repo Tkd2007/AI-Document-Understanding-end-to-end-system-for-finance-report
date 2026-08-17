@@ -91,6 +91,9 @@ doc-ai-project/
 │   ├── test_extract_baseline.py
 │   ├── test_router.py       # cổng quyết định fallback (không cần key/mạng)
 │   └── test_validation.py
+├── monitoring/
+│   └── prometheus.yml       # scrape config, trỏ vào app:8000/metrics
+├── docker-compose.yml       # app + Prometheus (sau profile "monitoring")
 ├── pytest.ini               # pythonpath = src, cho import phẳng
 ├── ruff.toml                # chốt bộ rule để CI và máy local giống nhau
 ├── .env                     # tự tạo — local secrets/config, never committed (see Setup)
@@ -138,6 +141,56 @@ container dừng (do cờ `--rm`). Muốn giữ lại trên máy thì gắn volu
 ```bash
 docker run --rm -p 8000:8000 -v "${PWD}/data:/app/data" --env-file .env.docker doc-ai
 ```
+
+#### Chạy kèm monitoring (docker compose)
+
+```bash
+docker compose up                            # chỉ app
+docker compose --profile monitoring up       # app + Prometheus
+```
+
+Prometheus nằm sau `profiles` nên **không** khởi động mặc định. Lý do: nó chạy
+nền và scrape `/metrics` mỗi 15 giây bất kể có ai dùng hay không, mà project này
+chạy theo phiên làm việc chứ không phải 24/7 — bật khi cần xem số là đủ.
+
+Kiểm tra theo đúng thứ tự này, mỗi bước xanh mới sang bước sau:
+
+1. `curl 127.0.0.1:8000/metrics` — app có trả metric không
+2. `127.0.0.1:9090/targets` — job `doc-ai` phải hiện **UP**
+3. `127.0.0.1:9090/graph`, gõ `doc_ai_documents_total` — Prometheus có lưu được không
+
+Bước 2 là chỗ bắt lỗi phổ biến nhất: `targets` trong `monitoring/prometheus.yml`
+phải là **tên service** (`app:8000`), không phải `localhost:8000`. Mỗi container
+là một network namespace riêng nên `localhost` trỏ về chính Prometheus.
+
+Dừng và dọn:
+
+| Lệnh | Tác dụng |
+|---|---|
+| `docker compose stop prometheus` | Ngừng scrape, giữ nguyên dữ liệu |
+| `docker compose down` | Xoá container, **giữ** volume |
+| `docker compose down -v` | Xoá cả volume — mất sạch lịch sử, không phục hồi được |
+
+Dữ liệu Prometheus nằm trong named volume `prometheus_data` và tự xoá theo
+`--storage.tsdb.retention.time=15d`, nên không phình vô hạn. Lúc hệ thống rảnh
+thì gần như miễn phí: counter không đổi được nén theo độ lệch, một đêm 8 tiếng
+không hoạt động chỉ tốn vài KB.
+
+Đừng "tiết kiệm" bằng cách nới `scrape_interval` lên hàng giờ: `rate()` cần ít
+nhất hai điểm trong cửa sổ truy vấn mới tính được độ lệch, nên interval quá thưa
+khiến mọi truy vấn trả rỗng — hệ thống vẫn chạy, vẫn tốn RAM, và không nói gì.
+Muốn tắt thì tắt hẳn container.
+
+#### Checkpoint được tải sẵn vào image
+
+`Dockerfile` gọi `hf_hub_download()` và `easyocr.Reader()` ngay lúc build, nên
+container không cần mạng lúc chạy. Nếu để tải lúc runtime thì container lên
+`healthy` rồi **request đầu tiên** mới phải tải vài trăm MB: mạng chậm là người
+dùng chờ vài phút, HuggingFace lỗi là mọi request fail trong khi health check
+vẫn xanh — cùng loại bug mà `require_config()` diệt.
+
+Đánh đổi: image to thêm ~400 MB và build lần đầu lâu hơn. Dòng `RUN` đặt **trước**
+`COPY src/` nên sửa code không làm mất cache lớp này.
 
 ### Cách B — chạy trực tiếp trên máy
 
@@ -233,6 +286,54 @@ auto-generated docs at `http://127.0.0.1:8000/docs`).
 
 Chạy standalone bằng `python src/router.py` thì không có chuyện đó — tên file
 giữ nguyên và kết quả là `data/output/<file>_routed.json`.
+
+> `route_document(file_path, save=True)` — tham số `save` quyết định có ghi
+> `data/output/<stem>_routed.json` hay không, và **người gọi quyết định** chứ
+> không phải pipeline, cùng nguyên tắc như `require_config()` được đẩy ra
+> entrypoint.
+
+#### Kết quả upload qua API được ghi ra file (trạng thái debug hiện tại)
+
+`api.py` đang truyền `save=True`, nên **mỗi request để lại một file JSON** trong
+`data/output/`:
+
+```
+data/output/VNM_Q1_2026_a3f2b1c9_routed.json
+data/output/VNM_Q1_2026_7e4d0b88_routed.json    <- upload lần 2, cùng báo cáo
+```
+
+Hai điều cần biết khi dùng:
+
+- **Tên file không đoán trước được.** Hậu tố 8 ký tự là hậu tố ngẫu nhiên của
+  request (xem ghi chú về file upload ở trên), nên upload cùng một báo cáo nhiều
+  lần sẽ ra nhiều file nội dung giống nhau. Tìm kết quả của lần chạy vừa rồi thì
+  sắp theo thời gian sửa file, đừng tìm theo tên:
+
+  ```bash
+  ls -t data/output/*_routed.json | head -1     # Linux / macOS
+  Get-ChildItem data/output/*_routed.json | Sort-Object LastWriteTime -Desc | Select -First 1   # PowerShell
+  ```
+
+- **Không có gì tự dọn.** `data/output/` phình theo số request. Dọn định kỳ bằng
+  tay, chú ý giữ lại `metrics.jsonl`:
+
+  ```bash
+  rm data/output/*_routed.json
+  ```
+
+  Chạy bằng Docker thì file nằm trong container, chỉ ra tới máy bạn nếu đã gắn
+  volume `./data:/app/data` (mặc định trong `docker-compose.yml` là có).
+
+Trạng thái này là **tạm thời để debug**. Cùng dữ liệu đó đã có ở hai chỗ khác:
+response HTTP, và `metrics.jsonl` — chỗ sau còn ghi được cả lượt chạy *thất bại*,
+vì `metrics.save()` nằm trong `finally` còn `save_result()` thì không. Kế hoạch
+đổi về `save=False` nằm trong `improvements-todo.md`.
+
+Không cần file thì dùng CLI, tên giữ nguyên nên dễ tra:
+
+```bash
+python src/router.py data/samples/report.pdf   # -> data/output/report_routed.json
+```
 
 Response format (giá trị thật từ báo cáo VNM Q1/2026, đơn vị VND):
 
@@ -362,6 +463,8 @@ khớp `FORM_MARKERS` của đúng mẫu đó.
   chạy thành một dòng JSON trong `data/output/metrics.jsonl`, và cộng dồn
   vào bộ đếm toàn cục cho endpoint `/metrics` (định dạng Prometheus).
   Truyền `metrics=None` thì mọi hàm vẫn chạy standalone như cũ.
+  **Prometheus** đã dựng qua `docker-compose.yml`, scrape `/metrics` mỗi 15s và
+  giữ 15 ngày. Grafana và Alertmanager chưa làm.
 - **Unit test**: 15 test với `pytest`, không cần model hay mạng nên chạy
   trong vài giây. Đáng chú ý là test đẳng thức kế toán: sửa một chỉ tiêu
   lệch 10 triệu đồng trên tổng tài sản 47 nghìn tỷ vẫn bị bắt — kiểm chứng
@@ -384,8 +487,9 @@ khớp `FORM_MARKERS` của đúng mẫu đó.
 - Unit test mới phủ phần logic thuần (parse số, validation, cổng fallback
   của router). Chưa có test cho OCR và VLM — những phần cần model hoặc gọi
   mạng, sẽ cần mock/fixture ảnh thay vì gọi thật.
-- Monitoring mới ở mức thu thập per-run ra file + endpoint `/metrics`.
-  Chưa có Prometheus / Grafana / alerting như kiến trúc tham chiếu.
+- Monitoring: đã có thu thập per-run ra file, endpoint `/metrics` và Prometheus
+  scrape + lưu lịch sử. Chưa có Grafana (dashboard) và Alertmanager (cảnh báo),
+  chưa có Loki cho log.
 - Chuẩn hoá đơn vị tính: prompt yêu cầu VLM giữ nguyên đơn vị hiển thị trong
   ảnh, nên hai báo cáo dùng đơn vị khác nhau ("đồng" vs "triệu đồng") sẽ cho
   ra số không cùng thang đo. Cần thêm field đơn vị hoặc bước quy đổi.

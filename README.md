@@ -327,8 +327,7 @@ Hai điều cần biết khi dùng:
 Trạng thái này là **tạm thời để debug**. Cùng dữ liệu đó đã có ở hai chỗ khác:
 response HTTP, và `metrics.jsonl` — chỗ sau còn ghi được cả lượt chạy *thất bại*,
 vì `metrics.save()` nằm trong `finally` còn `save_result()` thì không; dòng thất
-bại nhận ra bằng khoá `"status": "error"`. Kế hoạch đổi về `save=False` nằm
-trong `improvements-todo.md`.
+bại nhận ra bằng khoá `"status": "error"`. Kế hoạch là đổi về `save=False`.
 
 Không cần file thì dùng CLI, tên giữ nguyên nên dễ tra:
 

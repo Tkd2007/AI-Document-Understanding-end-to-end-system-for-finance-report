@@ -67,8 +67,9 @@ async def extract(file: UploadFile = File(...)):
         # request khác, nên đẩy sang threadpool.
         #
         # save=True là TẠM THỜI, để debug: đang cần mở file _routed.json xem
-        # output sau mỗi lần upload qua /docs. Đích đến là save=False, xem
-        # improvements-todo.md.
+        # output sau mỗi lần upload qua /docs. Đích đến là save=False; chi
+        # tiết ở mục "Kết quả upload qua API được ghi ra file (trạng thái
+        # debug hiện tại)" trong README.
         #
         # Cái giá của nó: mỗi request để lại một file trong data/output/ và
         # không ai dọn. Tên file mang hậu tố ngẫu nhiên của request

@@ -68,7 +68,7 @@ FIELD_RELATIONS = [
 
 # Đẳng thức kế toán. Chặt hơn FIELD_RELATIONS ở trên rất nhiều: bất đẳng
 # thức chỉ bắt được lỗi thô (A lớn hơn B), còn đẳng thức thì lệch một chữ
-# số là lộ ngay. Trên báo cáo VNM Q1/2026, cả hai đẳng thức dưới đây khớp
+# số là lộ ngay. Trên báo cáo VNM Q1/2026, cả ba đẳng thức dưới đây khớp
 # tới từng đồng — nên nếu một lần chạy nào đó không khớp, gần như chắc
 # chắn có field bị đọc sai chứ không phải báo cáo sai.
 #

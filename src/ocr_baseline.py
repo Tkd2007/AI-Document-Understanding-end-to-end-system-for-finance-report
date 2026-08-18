@@ -77,7 +77,7 @@ def load_page(file_path: str, page_no: int) -> Image.Image:
     """
     Convert ĐÚNG một trang thành ảnh. Đánh số từ 1.
 
-    Thay cho load_pages() cũ vốn convert cả tài liệu một lượt: đo trên
+    Thay cho cách cũ là convert cả tài liệu một lượt: đo trên
     báo cáo VNM 55 trang, convert toàn bộ mất 169s trong khi pipeline
     chỉ thực sự đọc tới trang 10. Generator ở iter_table_regions() không
     cứu được phần đó, vì toàn bộ chi phí đã phát sinh TRƯỚC lần yield
@@ -104,7 +104,7 @@ def get_reader():
     Khởi tạo EasyOCR ở lần gọi đầu tiên rồi tái sử dụng.
 
     Trước đây reader được tạo ngay lúc import. Vì extract_vlm.py cũng
-    import module này (để dùng load_pages/iter_table_regions), chạy nhánh
+    import module này (để dùng load_page/iter_table_regions), chạy nhánh
     VLM thuần vẫn phải chờ nạp xong model OCR không dùng tới.
     """
     global _reader
@@ -113,20 +113,6 @@ def get_reader():
 
         _reader = easyocr.Reader(LANGUAGES)
     return _reader
-
-
-def load_pages(file_path: str) -> list[Image.Image]:
-    """Return a list of page images (one image per page). A multi-page
-    PDF becomes multiple images."""
-    path = Path(file_path)
-    if path.suffix.lower() == ".pdf":
-        if convert_from_path is None:
-            raise RuntimeError("pdf2image is not installed")
-        return convert_from_path(
-            str(path), dpi=PDF_DPI, poppler_path=os.getenv("POPPLER_PATH")
-        )
-    else:
-        return [Image.open(path)]
 
 
 def iter_table_regions(file_path: str, metrics=None) -> Iterator[dict]:

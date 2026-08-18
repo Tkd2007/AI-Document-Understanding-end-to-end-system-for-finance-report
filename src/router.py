@@ -109,11 +109,14 @@ def route_document(file_path: str, save: bool = True) -> dict:
     save — có ghi data/output/<stem>_routed.json hay không.
 
     Đường CLI để mặc định True vì file đó CHÍNH LÀ output của lệnh.
-    Đường API truyền False: client đã nhận dữ liệu qua HTTP và metrics.jsonl
-    đã ghi lại lượt chạy, nên file kia là bản sao không ai đọc. Tên nó còn
-    mang hậu tố ngẫu nhiên của request (report_a3f2b1c9_routed.json) nên
-    cũng không tra cứu bằng tay được — chỉ để lại rác trong data/output/,
-    mỗi request một file, không ai dọn.
+    Đường API SẼ truyền False, nhưng hiện api.py vẫn tạm truyền True để
+    debug. Lý do đích đến là False: client đã nhận dữ liệu qua HTTP và
+    metrics.jsonl đã ghi lại lượt chạy, nên file kia là bản sao không ai
+    đọc. Tên nó còn mang hậu tố ngẫu nhiên của request
+    (report_a3f2b1c9_routed.json) nên cũng không tra cứu bằng tay được —
+    chỉ để lại rác trong data/output/, mỗi request một file, không ai dọn.
+    Chi tiết trạng thái tạm này: mục "Kết quả upload qua API được ghi ra
+    file (trạng thái debug hiện tại)" trong README.
     """
     # Nhánh VLM luôn có thể được gọi làm fallback, kể cả khi USE_OCR_FIRST
     # bật, nên thiếu config là hỏng chắc chắn. Kiểm ngay đây — trước cả

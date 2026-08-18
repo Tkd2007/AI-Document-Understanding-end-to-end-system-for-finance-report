@@ -110,7 +110,18 @@ def timer(metrics, name: str):
 # phải số liệu của một lượt chạy — nó tự tính tốc độ thay đổi giữa các
 # lần scrape. Nên RunMetrics (per-run, ghi ra file) và bảng này (toàn
 # cục, giữ trong RAM) phục vụ hai mục đích khác nhau.
-_totals: dict[str, float] = {}
+#
+# Ba counter dưới đây khởi tạo sẵn bằng 0 chứ không đợi lượt chạy đầu tiên
+# tạo ra chúng. Lý do nằm ở phía Prometheus: chưa có series thì
+# rate(doc_ai_documents_error_total[5m]) trả về RỖNG, mọi alert dựng trên
+# biểu thức đó không bao giờ bắn — hệ thống giám sát im lặng đúng vào lúc
+# chưa từng có lượt chạy nào thành công. Một series phẳng ở 0 thì alert có
+# cái để so sánh ngay từ lần scrape đầu tiên.
+_totals: dict[str, float] = {
+    "documents_total": 0,
+    "documents_ok_total": 0,
+    "documents_error_total": 0,
+}
 
 # api.py chạy route_document() trong threadpool, nên nhiều request có thể
 # gọi merge_into_totals() cùng lúc. Phép cộng dồn dưới đây là
@@ -124,8 +135,23 @@ def merge_into_totals(run: "RunMetrics") -> None:
     """Cộng số liệu của một lượt chạy vừa xong vào bộ đếm toàn cục."""
     data = run.as_dict()
 
+    status = data["status"]
+    status_key = f"documents_{status}_total"
+
     with _totals_lock:
+        # documents_total đếm MỌI lượt chạy (ok + error), giữ nguyên ý nghĩa
+        # cũ vì README và bước kiểm tra Prometheus đang dựa vào nó. Tỷ lệ lỗi
+        # tính bằng documents_error_total chia cho nó.
         _totals["documents_total"] = _totals.get("documents_total", 0) + 1
+
+        if status_key not in _totals:
+            # Status ngoài dự kiến — "running" nghĩa là process chết trước cả
+            # khối finally của route_document(). Vẫn đếm nó thành series
+            # riêng và kêu to ra log: bỏ qua im lặng thì tổng các counter con
+            # nhỏ hơn documents_total mà không chỗ nào giải thích khoản chênh.
+            print(f"[WARNING] Lượt chạy có status ngoài dự kiến: {status!r}")
+
+        _totals[status_key] = _totals.get(status_key, 0) + 1
         _totals["seconds_total"] = _totals.get("seconds_total", 0) + data["total_seconds"]
 
         for name, value in data["stages"].items():

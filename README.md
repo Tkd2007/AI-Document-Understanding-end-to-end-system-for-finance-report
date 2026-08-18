@@ -159,6 +159,18 @@ Kiểm tra theo đúng thứ tự này, mỗi bước xanh mới sang bước sa
 2. `127.0.0.1:9090/targets` — job `doc-ai` phải hiện **UP**
 3. `127.0.0.1:9090/graph`, gõ `doc_ai_documents_total` — Prometheus có lưu được không
 
+Ở bước 1, ba counter `doc_ai_documents_total`, `doc_ai_documents_ok_total` và
+`doc_ai_documents_error_total` phải hiện ra ngay cả khi chưa xử lý tài liệu nào —
+cả ba bằng 0. Tỷ lệ lỗi trong 5 phút gần nhất:
+
+```promql
+rate(doc_ai_documents_error_total[5m]) / rate(doc_ai_documents_total[5m])
+```
+
+Lúc không có request nào thì cả tử lẫn mẫu đều bằng 0 và biểu thức trả rỗng, nên
+alert dựng trên nó nhớ kèm điều kiện có lưu lượng, ví dụ
+`rate(doc_ai_documents_total[5m]) > 0`.
+
 Bước 2 là chỗ bắt lỗi phổ biến nhất: `targets` trong `monitoring/prometheus.yml`
 phải là **tên service** (`app:8000`), không phải `localhost:8000`. Mỗi container
 là một network namespace riêng nên `localhost` trỏ về chính Prometheus.
@@ -471,15 +483,23 @@ khớp `FORM_MARKERS` của đúng mẫu đó.
   grep '"status": "error"' data/output/metrics.jsonl
   ```
 
+  Endpoint `/metrics` tách cùng thông tin đó thành ba counter:
+  `doc_ai_documents_total` (mọi lượt chạy, ok + error),
+  `doc_ai_documents_ok_total` và `doc_ai_documents_error_total`. Cả ba có
+  mặt với giá trị 0 ngay từ lúc process khởi động, không đợi lượt lỗi đầu
+  tiên — Prometheus chưa có series thì `rate()` trả rỗng và alert dựng trên
+  nó không bao giờ bắn.
   Truyền `metrics=None` thì mọi hàm vẫn chạy standalone như cũ.
   **Prometheus** đã dựng qua `docker-compose.yml`, scrape `/metrics` mỗi 15s và
   giữ 15 ngày. Grafana và Alertmanager chưa làm.
-- **Unit test**: 15 test với `pytest`, không cần model hay mạng nên chạy
+- **Unit test**: 19 test với `pytest`, không cần model hay mạng nên chạy
   trong vài giây. Đáng chú ý là test đẳng thức kế toán: sửa một chỉ tiêu
   lệch 10 triệu đồng trên tổng tài sản 47 nghìn tỷ vẫn bị bắt — kiểm chứng
   được lựa chọn `IDENTITY_TOLERANCE_RATIO=1e-7`. `test_router.py` phủ cổng
   quyết định fallback, gồm ca mọi field đều CÓ giá trị nhưng một con số bị
   đọc nhầm dòng — nếu cổng chỉ đếm field thì lỗi đó lọt qua âm thầm.
+  `test_metrics.py` chốt việc counter lỗi của `/metrics` có sẵn từ lúc khởi
+  động, vì đó là điều kiện để alert bắn được.
 - **CI**: GitHub Actions chạy hai job mỗi lần push và pull request.
   - `test` — `ruff check` + `pytest`. Cố tình KHÔNG cài `requirements.txt`
     mà chỉ cài phần nhẹ (`numpy pillow openai python-dotenv`): `easyocr` và
@@ -494,7 +514,7 @@ khớp `FORM_MARKERS` của đúng mẫu đó.
 - Đánh giá có hệ thống: chưa có tập test nhiều báo cáo từ nhiều công ty để
   đo accuracy, hiện mới verify tay trên một báo cáo.
 - Unit test mới phủ phần logic thuần (parse số, validation, cổng fallback
-  của router). Chưa có test cho OCR và VLM — những phần cần model hoặc gọi
+  của router, bộ đếm `/metrics`). Chưa có test cho OCR và VLM — những phần cần model hoặc gọi
   mạng, sẽ cần mock/fixture ảnh thay vì gọi thật.
 - Monitoring: đã có thu thập per-run ra file, endpoint `/metrics` và Prometheus
   scrape + lưu lịch sử. Chưa có Grafana (dashboard) và Alertmanager (cảnh báo),

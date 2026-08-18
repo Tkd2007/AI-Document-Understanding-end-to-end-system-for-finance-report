@@ -89,6 +89,7 @@ doc-ai-project/
 │   └── metrics.py           # đo thời gian từng stage + đếm lần gọi VLM
 ├── tests/
 │   ├── test_extract_baseline.py
+│   ├── test_metrics.py      # bộ đếm toàn cục cho endpoint /metrics
 │   ├── test_router.py       # cổng quyết định fallback (không cần key/mạng)
 │   └── test_validation.py
 ├── monitoring/

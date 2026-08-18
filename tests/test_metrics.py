@@ -17,9 +17,11 @@ import metrics
 from metrics import RunMetrics, get_totals, merge_into_totals
 
 # Chụp lại _totals ngay lúc import — thời điểm chưa lượt chạy nào được gộp
-# — nên đây đúng là bộ counter mà metrics.py khởi tạo sẵn. Dùng ảnh chụp
-# thay vì chép cứng danh sách key: chép cứng thì test vẫn xanh cả khi
-# metrics.py thêm counter mới mà quên khởi tạo bằng 0.
+# — nên đây đúng là bộ counter mà metrics.py khởi tạo sẵn. Fixture bên dưới
+# khôi phục theo ảnh chụp này, không theo một danh sách key chép cứng: chép
+# cứng thì lần sau metrics.py thêm hoặc đổi tên một counter khởi tạo sẵn,
+# fixture sẽ dựng lại trạng thái mà metrics.py chưa từng có — test vẫn xanh
+# nhưng đang đo một thứ không tồn tại.
 TOTALS_KHOI_TAO = dict(metrics._totals)
 
 

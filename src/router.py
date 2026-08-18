@@ -150,7 +150,15 @@ def route_document(file_path: str, save: bool = True) -> dict:
             save_result(file_path, data)
 
         metrics.set_info(pages_processed=len(cached_pages), ocr_first=USE_OCR_FIRST)
+        metrics.status = "ok"
         return data
+
+    except BaseException:
+        # Bắt cả KeyboardInterrupt/SystemExit: lượt chạy không đi hết
+        # pipeline thì dòng metrics của nó không được trông như bình
+        # thường. Đánh dấu ở đây rồi raise lại — không nuốt lỗi.
+        metrics.status = "error"
+        raise
 
     finally:
         metrics.save()

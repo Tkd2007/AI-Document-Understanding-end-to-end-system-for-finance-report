@@ -26,6 +26,15 @@ class RunMetrics:
         self.counters: dict[str, int] = {}
         self.info: dict = {}
 
+        # Kết cục của lượt chạy, người gọi đặt lại thành "ok"/"error" ở
+        # cuối. Là field hạng nhất chứ không nhét vào info: người đọc
+        # metrics.jsonl phải biết được dòng nào thất bại bằng một khoá có
+        # sẵn, đừng bắt họ suy ra qua sự VẮNG MẶT của một khoá khác — ràng
+        # buộc ngầm kiểu đó vỡ ngay lần đầu có ai thêm set_info() ở nhánh
+        # mới. Nếu một dòng còn mang "running" nghĩa là process chết trước
+        # khi kịp chạy finally.
+        self.status = "running"
+
     @contextmanager
     def stage(self, name: str):
         """
@@ -56,6 +65,7 @@ class RunMetrics:
         return {
             "timestamp": self.started_at.isoformat(),
             "document": self.document,
+            "status": self.status,
             "total_seconds": round(time.perf_counter() - self._run_start, 2),
             "stages": {name: round(value, 2) for name, value in self.stages.items()},
             "counters": dict(self.counters),
@@ -74,7 +84,7 @@ class RunMetrics:
     def summary(self) -> str:
         """Một dòng tóm tắt để in ra cuối lượt chạy."""
         data = self.as_dict()
-        parts = [f"{data['total_seconds']}s tổng"]
+        parts = [data["status"], f"{data['total_seconds']}s tổng"]
 
         for name, value in sorted(data["stages"].items(), key=lambda x: -x[1]):
             parts.append(f"{name} {value}s")

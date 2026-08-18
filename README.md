@@ -326,8 +326,9 @@ Hai điều cần biết khi dùng:
 
 Trạng thái này là **tạm thời để debug**. Cùng dữ liệu đó đã có ở hai chỗ khác:
 response HTTP, và `metrics.jsonl` — chỗ sau còn ghi được cả lượt chạy *thất bại*,
-vì `metrics.save()` nằm trong `finally` còn `save_result()` thì không. Kế hoạch
-đổi về `save=False` nằm trong `improvements-todo.md`.
+vì `metrics.save()` nằm trong `finally` còn `save_result()` thì không; dòng thất
+bại nhận ra bằng khoá `"status": "error"`. Kế hoạch đổi về `save=False` nằm
+trong `improvements-todo.md`.
 
 Không cần file thì dùng CLI, tên giữ nguyên nên dễ tra:
 
@@ -462,6 +463,15 @@ khớp `FORM_MARKERS` của đúng mẫu đó.
   `layout`, `ocr`, `vlm`), đếm số lần gọi VLM và số lần lỗi, ghi mỗi lượt
   chạy thành một dòng JSON trong `data/output/metrics.jsonl`, và cộng dồn
   vào bộ đếm toàn cục cho endpoint `/metrics` (định dạng Prometheus).
+  Mỗi dòng có khoá `status` — `"ok"` khi pipeline đi trọn, `"error"` khi ném
+  lỗi giữa chừng, `"running"` nếu process chết trước cả khối `finally`. Lọc
+  lượt chạy hỏng bằng chính khoá đó, đừng suy ra từ việc thiếu
+  `info.pages_processed`:
+
+  ```bash
+  grep '"status": "error"' data/output/metrics.jsonl
+  ```
+
   Truyền `metrics=None` thì mọi hàm vẫn chạy standalone như cũ.
   **Prometheus** đã dựng qua `docker-compose.yml`, scrape `/metrics` mỗi 15s và
   giữ 15 ngày. Grafana và Alertmanager chưa làm.

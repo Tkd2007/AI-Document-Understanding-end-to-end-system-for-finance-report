@@ -93,7 +93,12 @@ doc-ai-project/
 │   ├── test_router.py       # cổng quyết định fallback (không cần key/mạng)
 │   └── test_validation.py
 ├── monitoring/
-│   └── prometheus.yml       # scrape config, trỏ vào app:8000/metrics
+│   ├── prometheus.yml       # scrape config, trỏ vào app:8000/metrics
+│   └── grafana/
+│       ├── provisioning/
+│       │   ├── datasources/prometheus.yml
+│       │   └── dashboards/dashboards.yml    # provider, không phải dashboard
+│       └── dashboards/                      # file .json export từ UI
 ├── docker-compose.yml       # app + Prometheus (sau profile "monitoring")
 ├── pytest.ini               # pythonpath = src, cho import phẳng
 ├── ruff.toml                # chốt bộ rule để CI và máy local giống nhau
@@ -194,6 +199,100 @@ nhất hai điểm trong cửa sổ truy vấn mới tính được độ lệch
 khiến mọi truy vấn trả rỗng — hệ thống vẫn chạy, vẫn tốn RAM, và không nói gì.
 Muốn tắt thì tắt hẳn container.
 
+#### Grafana — dashboard
+
+Grafana **không lưu số liệu**, nó chỉ gửi PromQL sang Prometheus rồi vẽ. Thứ
+duy nhất nó sở hữu là định nghĩa dashboard và tài khoản đăng nhập — nên câu
+hỏi kiến trúc duy nhất là: định nghĩa dashboard sống ở đâu?
+
+Ở đây chọn **provisioning** (file trong repo) thay vì click trong UI (lưu vào
+SQLite nội bộ container). Lý do: `docker compose down -v` rồi `up` lại vẫn ra
+đúng dashboard đó, và thay đổi review được bằng `git diff`.
+
+Ba loại file, hai cái đầu rất dễ nhầm nhau:
+
+| File | Vai trò |
+|---|---|
+| `provisioning/datasources/prometheus.yml` | Prometheus nằm ở đâu |
+| `provisioning/dashboards/dashboards.yml` | **không phải dashboard** — chỉ cho Grafana biết đi tìm file `.json` ở thư mục nào |
+| `dashboards/*.json` | dashboard thật |
+
+`/etc/grafana/provisioning` là đường dẫn **cố định** của image, không đổi được
+bằng config. Còn `options.path` trong file thứ hai phải **khớp từng ký tự** với
+vế phải của bind mount `dashboards` trong `docker-compose.yml` — lệch một ký tự
+thì Grafana lên xanh, datasource có, dashboard rỗng, và không lỗi nào. Cùng loại
+bẫy với `--config.file` của Prometheus.
+
+Datasource trỏ `http://prometheus:9090` — **tên service**, không phải
+`localhost`, và là cổng TRONG container. Cùng lý do đã ghi ở `prometheus.yml`.
+Grafana không bao giờ nói chuyện với `app`: luồng là
+`app → Prometheus → Grafana`, và FastAPI không hiểu PromQL.
+
+##### Biến môi trường
+
+Thêm vào `.env` (KHÔNG phải `.env.docker`):
+GRAFANA_USER=admin
+GRAFANA_PASSWORD=<tự đặt>
+
+
+Nghe ngược nhưng đúng: cú pháp `${...}` trong `docker-compose.yml` được
+**Compose** thay thế lúc đọc file, nên nó đọc `.env` của thư mục chạy lệnh.
+`env_file:` là chuyện khác — thứ đó truyền biến vào *trong* container.
+
+Biến thiếu thì Compose mặc định thay bằng chuỗi rỗng và chỉ cảnh báo: Grafana
+lên bình thường rồi không đăng nhập được bằng bất cứ thứ gì. Nên dùng cú pháp
+`${GRAFANA_PASSWORD:?...}` để Compose chết ngay kèm câu giải thích — cùng tinh
+thần với `require_config()`.
+
+##### Kiểm tra, mỗi bước xanh mới sang bước sau
+
+1. `docker compose --profile monitoring up` — 3 container lên, không cái nào restart lặp
+2. `127.0.0.1:3000` — đăng nhập bằng `GRAFANA_USER` / `GRAFANA_PASSWORD`
+3. `Connections → Data sources` — Prometheus **đã có sẵn**, không phải tự thêm
+4. `Explore` → gõ `doc_ai_documents_total` → ra series phẳng ở 0
+5. Chạy một tài liệu thật, đợi 15–30s, xem số nhích lên
+
+Bước 3 là chỗ phân biệt "provisioning chạy được" với "tự click thêm datasource".
+Phải thêm tay nghĩa là mount `provisioning` sai — log Grafana lúc khởi động có
+dòng cho biết nó đọc được mấy file.
+
+Kiểm cấu trúc YAML mà chưa cần pull image:
+
+```bash
+docker compose --profile monitoring config --services
+```
+
+Dùng `--services`, đừng dùng `config` trần: lệnh trần resolve luôn `env_file`
+và **in `OPENROUTER_API_KEY` ra dạng thô**.
+
+##### PromQL cho panel
+
+| Panel | Query |
+|---|---|
+| Service sống? | `up{job="doc-ai"}` |
+| Throughput | `increase(doc_ai_documents_total[1h])` |
+| Tỷ lệ lỗi | `rate(doc_ai_documents_error_total[5m]) / rate(doc_ai_documents_total[5m])` |
+| Thời gian TB / tài liệu | `rate(doc_ai_seconds_total[5m]) / rate(doc_ai_documents_total[5m])` |
+| Thời gian TB theo stage | `rate(doc_ai_stage_vlm_seconds_total[5m]) / rate(doc_ai_documents_total[5m])` |
+| Tỷ lệ gọi VLM hỏng | `rate(doc_ai_vlm_failures_total[5m]) / rate(doc_ai_vlm_calls_total[5m])` |
+
+Chỉ có **trung bình**, chưa có p95/p99: `metrics.py` cộng dồn `seconds_total`
+chứ không có histogram bucket. Muốn phân vị thật thì phải đổi kiến trúc bộ đếm.
+
+##### Ba thứ trông như dashboard hỏng nhưng không phải
+
+- **Panel trống ≠ sai query.** Project chạy theo phiên, mỗi lượt mất vài phút,
+  nên cửa sổ `[5m]` nhiều khi chỉ ôm được một điểm và `rate()` trả rỗng. Với
+  throughput dùng `increase(...[1h])` cho dễ đọc.
+- **Counter reset về 0 mỗi lần restart container.** `rate()` tự xử lý được,
+  nhưng panel Stat gõ thẳng `doc_ai_documents_total` sẽ tụt về 0 sau mỗi
+  `docker compose up`. Muốn tổng tích luỹ thì `increase(doc_ai_documents_total[30d])`.
+- **Sửa panel trong UI KHÔNG cập nhật file trong repo.** `allowUiUpdates: true`
+  cho phép lưu, nhưng lưu vào SQLite nội bộ. Sau vài lần chỉnh, cái nhìn thấy và
+  cái trong git là hai thứ khác nhau mà `git diff` vẫn sạch. Quy trình bắt buộc:
+  chỉnh UI → `Dashboard settings → JSON Model` → dán về
+  `monitoring/grafana/dashboards/` → commit.
+
 #### Checkpoint được tải sẵn vào image
 
 `Dockerfile` gọi `hf_hub_download()` và `easyocr.Reader()` ngay lúc build, nên
@@ -240,6 +339,8 @@ POPPLER_PATH=C:\poppler\poppler-XX.XX.X\Library\bin
 OPENROUTER_API_KEY=your_openrouter_key
 OPENROUTER_MODEL=google/gemma-4-31b-it:free
 USE_OCR_FIRST=false
+GRAFANA_USER=admin
+GRAFANA_PASSWORD=${GRAFANA_PASSWORD}
 ```
 
 - Get an OpenRouter key at openrouter.ai/keys.
@@ -491,8 +592,10 @@ khớp `FORM_MARKERS` của đúng mẫu đó.
   tiên — Prometheus chưa có series thì `rate()` trả rỗng và alert dựng trên
   nó không bao giờ bắn.
   Truyền `metrics=None` thì mọi hàm vẫn chạy standalone như cũ.
-  **Prometheus** đã dựng qua `docker-compose.yml`, scrape `/metrics` mỗi 15s và
-  giữ 15 ngày. Grafana và Alertmanager chưa làm.
+  **Prometheus** scrape `/metrics` mỗi 15s, giữ 15 ngày. Grafana dựng qua 
+  provisioning nên dashboard nằm trong repo. Chưa có Alertmanager (cảnh báo) 
+  và Loki (log); latency mới có trung bình, chưa có p95/p99 vì bộ đếm chưa 
+  dùng histogram.
 - **Unit test**: 19 test với `pytest`, không cần model hay mạng nên chạy
   trong vài giây. Đáng chú ý là test đẳng thức kế toán: sửa một chỉ tiêu
   lệch 10 triệu đồng trên tổng tài sản 47 nghìn tỷ vẫn bị bắt — kiểm chứng
@@ -518,8 +621,7 @@ khớp `FORM_MARKERS` của đúng mẫu đó.
   của router, bộ đếm `/metrics`). Chưa có test cho OCR và VLM — những phần cần model hoặc gọi
   mạng, sẽ cần mock/fixture ảnh thay vì gọi thật.
 - Monitoring: đã có thu thập per-run ra file, endpoint `/metrics` và Prometheus
-  scrape + lưu lịch sử. Chưa có Grafana (dashboard) và Alertmanager (cảnh báo),
-  chưa có Loki cho log.
+  scrape + lưu lịch sử. Chưa có Alertmanager (cảnh báo), chưa có Loki cho log.
 - Chuẩn hoá đơn vị tính: prompt yêu cầu VLM giữ nguyên đơn vị hiển thị trong
   ảnh, nên hai báo cáo dùng đơn vị khác nhau ("đồng" vs "triệu đồng") sẽ cho
   ra số không cùng thang đo. Cần thêm field đơn vị hoặc bước quy đổi.

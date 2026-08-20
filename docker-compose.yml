@@ -63,6 +63,41 @@ services:
 
     depends_on:
       - app
+      
+
+  grafana:
+    # grafana-oss là bản open source thuần. grafana/grafana là bản
+    # enterprise (vẫn free tier) — dùng được, nhưng oss thì rõ ràng về
+    # license hơn cho một project nộp bài.
+    image: grafana/grafana-oss:13.0.2
+    profiles: ["monitoring"]
+
+    ports:
+      # CẢ HAI VẾ ĐỀU LÀ SỐ: host:container. Dòng này chỉ phục vụ trình
+      # duyệt của Tony. Grafana gọi Prometheus qua tên service nên không
+      # phụ thuộc gì vào đây.
+      - "3000:3000"
+
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?GRAFANA_PASSWORD chưa đặt trong .env}
+
+    volumes:
+      # Thư mục provisioning: đường dẫn CỐ ĐỊNH của image, chứa file YAML
+      # khai báo (datasources/ + dashboards/).
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      # Thư mục chứa file JSON dashboard. Vế phải KHỚP TỪNG KÝ TỰ với
+      # options.path trong provisioning/dashboards/dashboards.yml — lệch
+      # một ký tự thì Grafana lên xanh, datasource có, dashboard rỗng,
+      # không lỗi nào. Cùng loại bẫy với --config.file của Prometheus.
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards
+      # Named volume: SQLite nội bộ (user, session, dashboard sửa trong UI).
+      - grafana_data:/var/lib/grafana
+
+    # Grafana query Prometheus, không query app.
+    depends_on:
+      - prometheus
 
 volumes:
   prometheus_data:
+  grafana_data:

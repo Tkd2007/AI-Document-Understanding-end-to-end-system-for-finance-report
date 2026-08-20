@@ -1,0 +1,9 @@
+apiVersion: 1
+
+providers:
+  - name: "doc-ai"
+    orgId: 1
+    type: file
+    allowUiUpdates: true    # false thì dashboard KHOÁ trong UI, sửa gì cũng không lưu được
+    options:
+      path: /etc/grafana/dashboards             # thư mục TRONG container chứa file .json

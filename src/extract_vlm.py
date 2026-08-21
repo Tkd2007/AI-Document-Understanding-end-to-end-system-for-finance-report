@@ -27,7 +27,9 @@ from fields_config import (
     DEFAULT_STANDARD,
     FIELD_MAP,
     FIELD_RULES,
+    UNIT_KEY,
     Standard,
+    empty_result,
     line_codes_for,
 )
 from metrics import timer
@@ -124,7 +126,10 @@ PROMPT_RULES = [
     '"Lợi nhuận sau thuế" khi doanh nghiệp thua lỗ.',
 
     '6. Giữ nguyên đơn vị tính như số liệu hiển thị trong ảnh (ví dụ nếu bảng ghi "Đơn vị tính: '
-    'triệu đồng" thì trả về đúng con số theo đơn vị đó), KHÔNG tự quy đổi.',
+    'triệu đồng" thì trả về đúng con số theo đơn vị đó), KHÔNG tự quy đổi. ĐỒNG THỜI đọc dòng '
+    'khai báo đơn vị ở đầu bảng (thường ghi "Đơn vị tính: ...") và trả về NGUYÊN VĂN cụm đơn vị '
+    'ở khoá "don_vi_tinh", ví dụ "triệu đồng". Nếu ảnh không có dòng đó, trả null cho khoá này — '
+    'không được suy đoán đơn vị từ độ lớn của các con số.',
 
     '7. Chỉ lấy số liệu của kỳ báo cáo gần nhất. Xác định cột này dựa vào NHÃN/TIÊU ĐỀ cột '
     '(ngày, quý, năm — kỳ có ngày gần hiện tại nhất), KHÔNG mặc định dựa vào vị trí cột đầu '
@@ -201,7 +206,12 @@ def build_prompt(standard: Standard = DEFAULT_STANDARD) -> str:
 
     field_block = "\n\n".join(sections)
     rules_block = "\n".join(PROMPT_RULES)
-    json_template = ", ".join(f'"{key}": <số hoặc null>' for key in FIELD_MAP)
+
+    # don_vi_tinh nối vào CUỐI template và mang kiểu chuỗi, không phải số.
+    # Nó là dữ liệu meta về cách đọc cả bảng chứ không phải một chỉ tiêu,
+    # nên cố ý không nằm trong FIELD_MAP — xem chú thích ở UNIT_KEY.
+    o_so = ", ".join(f'"{key}": <số hoặc null>' for key in FIELD_MAP)
+    json_template = f'{o_so}, "{UNIT_KEY}": <chuỗi đơn vị hoặc null>'
 
     return f"""Bạn là một hệ thống trích xuất dữ liệu tài chính tự động.
 Nhiệm vụ: nhìn vào ảnh trang báo cáo tài chính được cung cấp, tìm và trích xuất các chỉ tiêu sau.
@@ -354,7 +364,7 @@ def extract_fields_from_regions(
     # gọi truyền vào chứ không tự dò theo từng trang: nhánh VLM không có
     # text OCR để dò, và một tài liệu thì chỉ theo đúng một chuẩn.
     prompt = build_prompt(standard)
-    final_result = {key: None for key in FIELD_MAP}
+    final_result = empty_result()
     pages_without_new_field = 0
 
     for page in pages:
@@ -390,8 +400,12 @@ def extract_fields_from_regions(
 
             print(f"--- Page {page_no}: {page_result} ---")
 
-        # 1. Đủ hết -> không còn gì để tìm
-        if all(value is not None for value in final_result.values()):
+        # 1. Đủ hết -> không còn gì để tìm.
+        #    Điều kiện dừng vẫn tính trên FIELD_MAP chứ không trên cả
+        #    final_result: đơn vị tính chỉ in ở header bảng nên có trang
+        #    không có nó, và để nó chặn early-stop thì gặp báo cáo thiếu
+        #    dòng khai báo là quét tới hết tài liệu.
+        if all(final_result[key] is not None for key in FIELD_MAP):
             print(f"--- Đã tìm đủ cả {len(FIELD_MAP)} field, dừng ở trang {page_no} ---")
             break
 

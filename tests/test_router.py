@@ -7,10 +7,14 @@ trong extract_vlm.py. `is_acceptable()` là logic thuần, nhưng nó quyết đ
 có gọi VLM hay không, tức là quyết định cả chi phí lẫn độ đúng của kết quả.
 """
 
-from fields_config import FIELD_MAP
+from fields_config import empty_result
 from router import is_acceptable
 
 # Số thật từ báo cáo VNM Q1/2026, trùng bộ dùng trong test_validation.py.
+#
+# don_vi_tinh phải có mặt: thiếu khai báo đơn vị là một cảnh báo thật sự,
+# vì không biết bậc độ lớn thì không kiểm được ca đọc "triệu đồng" thành
+# "đồng" — ca mà mọi đẳng thức kế toán đều bó tay.
 VNM_Q1_2026 = {
     "tai_san_ngan_han": 29403116984122,
     "hang_ton_kho": 5393002084291,
@@ -23,11 +27,12 @@ VNM_Q1_2026 = {
     "loi_nhuan_gop": 5938875229634,
     "loi_nhuan_truoc_thue": 2523887147085,
     "loi_nhuan_sau_thue": 2049247209782,
+    "don_vi_tinh": "đồng",
 }
 
 
 def test_ket_qua_rong_thi_khong_dat():
-    assert is_acceptable({key: None for key in FIELD_MAP}) is False
+    assert is_acceptable(empty_result()) is False
 
 
 def test_bao_cao_that_thi_dat():

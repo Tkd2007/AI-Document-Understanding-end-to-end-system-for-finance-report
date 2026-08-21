@@ -264,6 +264,111 @@ FIELD_RATIO_BOUNDS = [
 # doanh nghiệp sản xuất — thường là dấu hiệu đọc nhầm dòng hoặc nhầm cột.
 REVENUE_TO_ASSETS_LIMIT = 10
 
+
+# ---------------------------------------------------------------------------
+# Đơn vị tính — mỏ neo tuyệt đối
+# ---------------------------------------------------------------------------
+#
+# Vì sao phần này bắt buộc, không phải tuỳ chọn: hệ ràng buộc kế toán là hệ
+# THUẦN NHẤT (Ax = 0), nên mọi bội vô hướng của nghiệm cũng là nghiệm. Với
+# lỗi đọc sai đơn vị, δ = (c−1)x*, ta có Aδ = (c−1)Ax* = 0 — residual bằng 0
+# tuyệt đối. Đọc "triệu đồng" thành "đồng" khiến MỌI con số sai gấp một
+# triệu lần trong khi bảng cân đối vẫn cân hoàn hảo và mọi đẳng thức vẫn
+# khớp tới từng đồng.
+#
+# Không đẳng thức nào bắt được ca này. Chỉ có hai thứ bắt được: đọc đúng
+# dòng khai báo đơn vị ở header bảng, và biên độ lớn tuyệt đối bên dưới.
+
+# Khoá của đơn vị tính trong kết quả trích xuất.
+#
+# CỐ Ý KHÔNG nằm trong FIELD_MAP: validate_result() chạy coerce_number()
+# trên mọi khoá của FIELD_MAP, nên chuỗi "triệu đồng" sẽ thành None kèm
+# cảnh báo "không đọc được thành số". Nó là dữ liệu META về cách đọc cả
+# bảng, không phải một chỉ tiêu tài chính.
+UNIT_KEY = "don_vi_tinh"
+
+# Hệ số quy đổi về đồng. Khoá là dạng chuẩn hoá mà parse_unit() trả về.
+UNIT_MULTIPLIERS: dict[str, int] = {
+    "đồng": 1,
+    "nghìn đồng": 1_000,
+    "triệu đồng": 1_000_000,
+    "tỷ đồng": 1_000_000_000,
+}
+
+# Từ khoá bậc độ lớn, tra trên chuỗi ĐÃ BỎ DẤU. Xếp theo thứ tự thử.
+_TU_KHOA_BAC = (
+    ("ty", "tỷ đồng"),
+    ("trieu", "triệu đồng"),
+    ("nghin", "nghìn đồng"),
+    ("ngan", "nghìn đồng"),
+)
+
+# Dấu hiệu cho biết chuỗi này THỰC SỰ nói về tiền tệ.
+#
+# Phải kiểm trước khi dò bậc độ lớn, nếu không thì một chuỗi rác bất kỳ có
+# chứa "ngắn" (bỏ dấu thành "ngan") sẽ bị đọc thành "nghìn đồng".
+_TU_KHOA_TIEN_TE = ("dong", "vnd")
+
+
+def parse_unit(raw: str | None) -> tuple[int | None, str]:
+    """
+    Đọc dòng khai báo đơn vị tính, trả về (hệ số nhân, dạng chuẩn hoá).
+
+    Trả (None, "") khi KHÔNG đọc được — và nơi gọi PHẢI xử lý trường hợp
+    này, tuyệt đối không được ngầm coi là "đồng". Mặc định im lặng chính là
+    lỗi mà cả mục này sinh ra để chống: nó biến một tài liệu chưa biết bậc
+    độ lớn thành một tài liệu trông như đã biết.
+
+    Chuỗi thật trên báo cáo rất đa dạng — "VND", "Đơn vị: triệu VNĐ",
+    "(Đơn vị tính: Triệu đồng)" — nên phải bỏ dấu và hạ chữ thường trước
+    khi tra, cùng cách detect_standard() làm.
+    """
+    if not raw:
+        return None, ""
+
+    khong_dau = _bo_dau(str(raw))
+
+    # Cụm "đơn vị tính" bỏ dấu thành "don vi tinh", KHÔNG chứa "dong", nên
+    # điều kiện này không bị chính cái nhãn của nó làm cho luôn đúng.
+    if not any(re.search(rf"\b{tu}\b", khong_dau) for tu in _TU_KHOA_TIEN_TE):
+        return None, ""
+
+    for tu_khoa, dang_chuan in _TU_KHOA_BAC:
+        if re.search(rf"\b{tu_khoa}\b", khong_dau):
+            return UNIT_MULTIPLIERS[dang_chuan], dang_chuan
+
+    # Có nói về tiền nhưng không có bậc độ lớn nào -> đơn vị là đồng.
+    return UNIT_MULTIPLIERS["đồng"], "đồng"
+
+
+# Biên độ lớn cho tong_tai_san SAU khi đã quy đổi về đồng.
+#
+# Đây là mỏ neo tuyệt đối: đẳng thức kế toán luôn cân bất kể đơn vị, nên
+# chỉ một biên trên GIÁ TRỊ TUYỆT ĐỐI mới bắt được ca đọc nhầm đơn vị.
+#
+# Khoảng 1e10 đến 1e15 VND (10 tỷ tới 1 triệu tỷ) chọn cho rất rộng, đủ phủ
+# từ doanh nghiệp niêm yết nhỏ nhất tới VIC/VCB. Mục tiêu là bắt lệch CẢ BẬC
+# ĐỘ LỚN (sai số nhân 1e3, 1e6, 1e9), không phải đánh giá quy mô doanh
+# nghiệp — biên hẹp sẽ báo oan hàng loạt.
+#
+# CẦN HIỆU CHỈNH LẠI SAU PILOT: hai con số này hiện dựa trên suy luận về
+# phổ doanh nghiệp niêm yết, chưa dựa trên phân phối đo được. Phải kiểm lại
+# trên tập gold nhiều công ty rồi mới chốt.
+TOTAL_ASSETS_BOUNDS = (1e10, 1e15)
+
+
+def empty_result() -> dict:
+    """
+    Khung kết quả rỗng: mọi chỉ tiêu cộng thêm khoá đơn vị tính.
+
+    Gom vào một chỗ vì cả router.py lẫn extract_vlm.py đều dựng khung này,
+    và trước đây cả hai đều dựng bằng {key: None for key in FIELD_MAP} —
+    tức là khoá đơn vị tính do VLM trả về sẽ bị vứt lặng lẽ ở bước merge.
+    """
+    khung = {key: None for key in FIELD_MAP}
+    khung[UNIT_KEY] = None
+    return khung
+
 # Các cách gọi khác nhau của cùng một chỉ tiêu trong báo cáo thật.
 #
 # THỨ TỰ QUAN TRỌNG: extract_field() dừng ở alias đầu tiên tìm thấy, nên

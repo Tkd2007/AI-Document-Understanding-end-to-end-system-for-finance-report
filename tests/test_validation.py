@@ -23,6 +23,10 @@ def test_coerce_number_chuoi_rac():
 
 # Số thật từ báo cáo VNM Q1/2026 (đơn vị VND). Cả ba đẳng thức kế toán
 # trong FIELD_IDENTITIES khớp tới từng đồng trên bộ số này.
+#
+# don_vi_tinh là phần bắt buộc của một bộ số hợp lệ, không phải trang trí:
+# thiếu nó thì không xác minh được bậc độ lớn, và đó chính là ca mà mọi
+# đẳng thức kế toán đều bó tay vì hệ ràng buộc là thuần nhất.
 VNM_Q1_2026 = {
     "tai_san_ngan_han": 29403116984122,
     "hang_ton_kho": 5393002084291,
@@ -35,6 +39,7 @@ VNM_Q1_2026 = {
     "loi_nhuan_gop": 5938875229634,
     "loi_nhuan_truoc_thue": 2523887147085,
     "loi_nhuan_sau_thue": 2049247209782,
+    "don_vi_tinh": "đồng",
 }
 
 
@@ -73,6 +78,7 @@ DOANH_NGHIEP_LO = {
     "loi_nhuan_gop": -100_000_000_000,
     "loi_nhuan_truoc_thue": -300_000_000_000,
     "loi_nhuan_sau_thue": -320_000_000_000,
+    "don_vi_tinh": "đồng",
 }
 
 

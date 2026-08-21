@@ -20,8 +20,11 @@ from fields_config import (
     FIELD_RULES,
     IDENTITY_TOLERANCE_RATIO,
     REVENUE_TO_ASSETS_LIMIT,
+    TOTAL_ASSETS_BOUNDS,
+    UNIT_KEY,
     Standard,
     identities_for,
+    parse_unit,
 )
 
 
@@ -90,11 +93,33 @@ def validate_result(result: dict, standard: Standard = DEFAULT_STANDARD) -> dict
     warnings = []
     data = {}
 
-    # 1. Ép kiểu số
+    # 0. Đơn vị tính — xử lý TRƯỚC mọi thứ khác, vì nó quyết định con số
+    #    đem đi kiểm là con số nào. Mọi giá trị trong "data" trả về đều đã
+    #    quy về ĐỒNG, để số của các báo cáo khác đơn vị so được với nhau.
+    don_vi_raw = result.get(UNIT_KEY)
+    he_so, don_vi_chuan = parse_unit(don_vi_raw)
+
+    if he_so is None:
+        # Không im lặng coi là "đồng". Một tài liệu chưa biết bậc độ lớn
+        # mà bị đối xử như đã biết thì mọi con số accuracy đo trên nó đều
+        # vô nghĩa, và không có gì báo ra điều đó.
+        thieu = "Không có khai báo đơn vị tính" if don_vi_raw is None else (
+            f"Không đọc được đơn vị tính {don_vi_raw!r}"
+        )
+        warnings.append(f"{thieu} — không xác minh được bậc độ lớn của các con số")
+
+    # 1. Ép kiểu số, rồi quy đổi về đồng
     for key, value in result.items():
+        if key == UNIT_KEY:
+            continue
+
         number = coerce_number(value)
         if value is not None and number is None:
             warnings.append(f"{field_label(key)}: không đọc được giá trị {value!r} thành số")
+
+        if number is not None and he_so is not None:
+            number *= he_so
+
         data[key] = number
 
     # 2. Số âm ở những chỉ tiêu không được phép âm
@@ -187,4 +212,34 @@ def validate_result(result: dict, standard: Standard = DEFAULT_STANDARD) -> dict
     if missing_required:
         warnings.append(f"Thiếu chỉ tiêu bắt buộc: {', '.join(missing_required)}")
 
-    return {"data": data, "warnings": warnings}
+    # 8. Biên độ lớn tuyệt đối cho Tổng tài sản — MỎ NEO chống sai đơn vị.
+    #
+    #    Đây là check duy nhất trong cả hàm không bất biến với phép nhân vô
+    #    hướng, nên cũng là check duy nhất bắt được ca đọc "triệu đồng"
+    #    thành "đồng": mọi đẳng thức ở trên vẫn khớp hoàn hảo trong ca đó
+    #    vì hệ ràng buộc là thuần nhất.
+    #
+    #    Bỏ qua khi chưa biết hệ số quy đổi. Áp một biên tuyệt đối lên con
+    #    số chưa biết bậc độ lớn thì không phân biệt được "doanh nghiệp
+    #    nhỏ" với "đọc nhầm đơn vị" — báo ra sẽ là một phỏng đoán khoác áo
+    #    kết luận. Cảnh báo ở mục 0 đã nói đúng cái đang thật sự sai.
+    tong_tai_san_quy_doi = data.get("tong_tai_san")
+    if he_so is not None and tong_tai_san_quy_doi is not None:
+        can_duoi, can_tren = TOTAL_ASSETS_BOUNDS
+        if not can_duoi <= abs(tong_tai_san_quy_doi) <= can_tren:
+            warnings.append(
+                f"{field_label('tong_tai_san')} sau quy đổi ra đồng "
+                f"({tong_tai_san_quy_doi:,}) nằm ngoài biên hợp lý "
+                f"[{can_duoi:,.0f}; {can_tren:,.0f}] — nghi đọc sai đơn vị tính"
+            )
+
+    return {
+        "data": data,
+        "meta": {
+            "don_vi_tinh_raw": don_vi_raw,
+            "don_vi_tinh_chuan": don_vi_chuan or None,
+            "don_vi_tinh_he_so": he_so,
+            "standard": standard.value,
+        },
+        "warnings": warnings,
+    }

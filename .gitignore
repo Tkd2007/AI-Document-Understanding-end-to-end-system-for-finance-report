@@ -13,6 +13,13 @@ data/output/*
 !data/output/.gitkeep
 !data/samples/sample_report.png
 
+# Ngoai le: bao cao identifiability la KET QUA NGHIEN CUU, khong phai
+# output tam. No sinh ra tu ma tran rang buoc chu khong tu bao cao tai
+# chinh nao, nen khong co du lieu doanh nghiep trong do. Phai vao git vi
+# Moc 1 bat nguoi chu tri doc va doi chieu no voi Thong tu, va lan doi
+# chieu do can neo vao mot commit cu the.
+!data/output/identifiability_*.md
+
 # OS/editor junk
 .DS_Store
 .vscode/

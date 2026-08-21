@@ -11,6 +11,9 @@ dựng trên `rate(...)` im lặng, và một hệ giám sát im lặng lúc đa
 thì tệ hơn là không có.
 """
 
+import sys
+import threading
+
 import pytest
 
 import metrics
@@ -89,3 +92,47 @@ def test_counter_khong_bi_lan_giua_cac_test():
     merge_into_totals(luot_chay("ok"))
 
     assert get_totals()["documents_total"] == 1
+
+
+def test_dem_khong_mat_luot_khi_nhieu_thread_cong_don_cung_luc():
+    """
+    api.py chạy route_document() trong threadpool, nên nhiều request kết
+    thúc cùng lúc sẽ gọi merge_into_totals() song song. Phép cộng dồn bên
+    trong là read-modify-write, không atomic — thiếu khoá thì hai thread
+    đọc chung một giá trị cũ rồi cùng ghi đè, và một lượt chạy biến mất
+    khỏi counter mà không có cách nào phát hiện về sau.
+
+    Hai thủ thuật để test thực sự bắt được lỗi đó chứ không xanh nhờ may:
+      * Barrier ép mọi thread cùng xuất phát, thay vì thread đầu đã xong
+        trước khi thread cuối kịp start.
+      * Hạ switch interval để CPython đổi thread liên tục, mở rộng cửa sổ
+        giữa lúc đọc và lúc ghi. Với giá trị mặc định 5ms, một hàm ngắn
+        như thế này gần như không bao giờ bị cắt ngang giữa chừng, nên bỏ
+        khoá đi test vẫn xanh — tức là test vô dụng.
+    """
+    SO_THREAD = 50
+    SO_LUOT_MOI_THREAD = 20
+
+    vach_xuat_phat = threading.Barrier(SO_THREAD)
+
+    def cong_don():
+        vach_xuat_phat.wait()
+        for _ in range(SO_LUOT_MOI_THREAD):
+            merge_into_totals(luot_chay("ok"))
+
+    switch_interval_cu = sys.getswitchinterval()
+    sys.setswitchinterval(1e-6)
+    try:
+        cac_thread = [threading.Thread(target=cong_don) for _ in range(SO_THREAD)]
+        for thread in cac_thread:
+            thread.start()
+        for thread in cac_thread:
+            thread.join()
+    finally:
+        sys.setswitchinterval(switch_interval_cu)
+
+    mong_doi = SO_THREAD * SO_LUOT_MOI_THREAD
+    totals = get_totals()
+
+    assert totals["documents_total"] == mong_doi
+    assert totals["documents_ok_total"] == mong_doi

@@ -94,16 +94,31 @@ def validate_result(result: dict) -> dict:
         if not rules.get("allow_negative", True):
             warnings.append(f"{field_label(key)} có giá trị âm bất thường: {value}")
 
-    # 3. Quan hệ số học giữa các chỉ tiêu. So sánh trên giá trị tuyệt đối:
-    #    một số dòng (giá vốn, lợi nhuận) có thể được trình bày âm tuỳ mẫu
-    #    báo cáo, nhưng độ lớn thì vẫn phải theo đúng thứ bậc.
-    for smaller_key, larger_key, message in FIELD_RELATIONS:
-        smaller = data.get(smaller_key)
-        larger = data.get(larger_key)
+    # 3. Quan hệ số học giữa các chỉ tiêu.
+    #
+    #    Mặc định so trên trị tuyệt đối: một số dòng (giá vốn, lợi nhuận)
+    #    có thể được trình bày âm tuỳ mẫu báo cáo, nhưng độ lớn thì vẫn
+    #    phải theo đúng thứ bậc. Quan hệ nào cần so trên giá trị CÓ DẤU thì
+    #    tự khai use_abs=False.
+    #
+    #    in_effect() là chỗ chặn báo oan trên báo cáo lỗ — xem docstring
+    #    của FieldRelation trong fields_config.py để biết vì sao mấy bất
+    #    đẳng thức này không phải lúc nào cũng đúng.
+    for relation in FIELD_RELATIONS:
+        smaller = data.get(relation.smaller)
+        larger = data.get(relation.larger)
         if smaller is None or larger is None:
             continue
-        if abs(smaller) > abs(larger):
-            warnings.append(f"{message} ({smaller:,} > {larger:,})")
+        if not relation.in_effect(data):
+            continue
+
+        left = abs(smaller) if relation.use_abs else smaller
+        right = abs(larger) if relation.use_abs else larger
+
+        if left > right:
+            # In giá trị GỐC chứ không in bản đã lấy trị tuyệt đối: người
+            # đọc cảnh báo cần thấy đúng con số nằm trong dữ liệu để đi dò.
+            warnings.append(f"{relation.message} ({smaller:,} > {larger:,})")
 
     # 4. Đẳng thức kế toán — kiểm tra chặt nhất trong cả hàm.
     #    Các check ở trên chỉ bắt được lỗi thô; đẳng thức thì lệch một

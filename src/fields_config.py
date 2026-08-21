@@ -12,6 +12,9 @@ FIELD_RULES gắn quy tắc kiểm tra vào chính định nghĩa field, để t
 field mới chỉ cần sửa file này chứ không phải lục lại validation.py.
 """
 
+from collections.abc import Callable
+from dataclasses import dataclass
+
 FIELD_MAP = {
     # --- B01a-DN: Báo cáo tình hình tài chính (bảng cân đối kế toán) ---
     "tai_san_ngan_han": "Tài sản ngắn hạn",
@@ -51,18 +54,97 @@ FIELD_RULES = {
     "loi_nhuan_sau_thue":   {"allow_negative": True,  "required": True},
 }
 
+def _khong_am(value) -> bool:
+    """
+    Giá trị này không âm chứ? Thiếu dữ liệu (None) cũng tính là không âm.
+
+    Cho None đi qua là có chủ đích: một field điều kiện chưa đọc được KHÔNG
+    phải bằng chứng doanh nghiệp đang lỗ, nên không được lấy nó làm cớ tắt
+    luật. Cùng tinh thần "chỉ kiểm khi cả hai field đều có giá trị" mà các
+    check khác trong validation.py vẫn theo.
+    """
+    return value is None or value >= 0
+
+
+@dataclass(frozen=True)
+class FieldRelation:
+    """
+    Một bất đẳng thức giữa hai chỉ tiêu, kèm ĐIỀU KIỆN ÁP DỤNG.
+
+    Vì sao cần điều kiện thay vì một bất đẳng thức trần: ba trong sáu quan
+    hệ dưới đây chỉ đúng khi doanh nghiệp có lãi và vốn chủ sở hữu dương —
+    tức là chúng ngầm giả định một thứ mà FIELD_RULES vốn đã cho phép ngược
+    lại (von_chu_so_huu và loi_nhuan_gop được khai báo allow_negative=True).
+    Mâu thuẫn đó không vô hại: FIELD_RELATIONS là một phần cổng
+    is_acceptable() trong router.py, nên gặp báo cáo lỗ thì router coi kết
+    quả ĐÚNG là chưa đạt, gọi VLM, và has_warnings mở chế độ ghi đè lên
+    những con số vốn đã đúng.
+
+    smaller/larger — tên field, quy ước |smaller| <= |larger|.
+    applies_when   — nhận dict data đã ép kiểu số, trả True nếu bất đẳng
+                     thức CÓ HIỆU LỰC trong tình huống hiện tại. None nghĩa
+                     là luôn áp dụng.
+    use_abs        — so trên trị tuyệt đối hay trên giá trị có dấu.
+
+    HẠN CHẾ ĐÃ BIẾT, đừng quên khi đọc kết quả: điều kiện áp dụng đọc từ
+    chính một field cũng do model trích ra. Nếu field điều kiện bị đọc sai
+    thành âm thì luật tự tắt và lỗi lọt im lặng. Đây là cái giá phải trả để
+    không báo oan trên báo cáo lỗ, và là một lý do nữa khiến đẳng thức kế
+    toán (FIELD_IDENTITIES) đáng tin hơn hẳn nhóm bất đẳng thức này.
+    """
+
+    smaller: str
+    larger: str
+    message: str
+    applies_when: Callable[[dict], bool] | None = None
+    use_abs: bool = True
+
+    def in_effect(self, data: dict) -> bool:
+        """Bất đẳng thức này có hiệu lực với bộ số hiện tại không?"""
+        return self.applies_when is None or self.applies_when(data)
+
+
 # Quan hệ số học giữa các field, dùng để bắt lỗi đọc nhầm dòng/nhầm cột.
-# Mỗi mục: (field nhỏ hơn, field lớn hơn, mô tả).
-# Chỉ kiểm tra khi cả hai field đều có giá trị.
+# Chỉ kiểm tra khi cả hai field đều có giá trị VÀ điều kiện áp dụng thoả.
 FIELD_RELATIONS = [
-    ("tai_san_ngan_han", "tong_tai_san", "Tài sản ngắn hạn không thể lớn hơn Tổng tài sản"),
-    ("tai_san_dai_han", "tong_tai_san", "Tài sản dài hạn không thể lớn hơn Tổng tài sản"),
-    ("hang_ton_kho", "tai_san_ngan_han", "Hàng tồn kho không thể lớn hơn Tài sản ngắn hạn"),
-    ("no_phai_tra", "tong_tai_san", "Nợ phải trả không thể lớn hơn Tổng tài sản"),
-    ("gia_von_hang_ban", "doanh_thu_thuan", "Giá vốn hàng bán không thể lớn hơn Doanh thu thuần"),
-    (
+    FieldRelation(
+        "tai_san_ngan_han", "tong_tai_san",
+        "Tài sản ngắn hạn không thể lớn hơn Tổng tài sản",
+    ),
+    FieldRelation(
+        "tai_san_dai_han", "tong_tai_san",
+        "Tài sản dài hạn không thể lớn hơn Tổng tài sản",
+    ),
+    FieldRelation(
+        "hang_ton_kho", "tai_san_ngan_han",
+        "Hàng tồn kho không thể lớn hơn Tài sản ngắn hạn",
+    ),
+    FieldRelation(
+        "no_phai_tra", "tong_tai_san",
+        "Nợ phải trả không thể lớn hơn Tổng tài sản",
+        # Chỉ đúng khi vốn chủ sở hữu không âm. VCSH âm nghĩa là lỗ luỹ kế
+        # đã ăn hết vốn — lúc đó nợ VƯỢT tổng tài sản là hệ quả số học của
+        # chính đẳng thức no_phai_tra + von_chu_so_huu = tong_tai_san, chứ
+        # không phải lỗi đọc.
+        applies_when=lambda d: _khong_am(d.get("von_chu_so_huu")),
+    ),
+    FieldRelation(
+        "gia_von_hang_ban", "doanh_thu_thuan",
+        "Giá vốn hàng bán không thể lớn hơn Doanh thu thuần",
+        # Chỉ đúng khi lãi gộp không âm. Bán dưới giá vốn là chuyện có thật
+        # với doanh nghiệp đang xả hàng tồn hoặc gặp giá nguyên liệu tăng
+        # đột biến, và khi đó gia_von > doanh_thu là đúng chứ không sai.
+        applies_when=lambda d: _khong_am(d.get("loi_nhuan_gop")),
+    ),
+    FieldRelation(
         "loi_nhuan_sau_thue", "loi_nhuan_truoc_thue",
         "Lợi nhuận sau thuế không thể lớn hơn Lợi nhuận trước thuế",
+        # Khi có lãi thì thuế chỉ làm giảm, nên LNST <= LNTT trên giá trị
+        # CÓ DẤU. Khi lỗ thì quan hệ đảo chiều (LNTT = -100, LNST = -125 là
+        # bình thường vì chi phí thuế hoãn lại), nên không kiểm được — và
+        # so trên trị tuyệt đối như trước đây thì đúng ca đó bị báo oan.
+        applies_when=lambda d: _khong_am(d.get("loi_nhuan_truoc_thue")),
+        use_abs=False,
     ),
 ]
 

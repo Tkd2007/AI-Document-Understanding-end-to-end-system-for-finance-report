@@ -23,6 +23,7 @@ from openai import (
 )
 from PIL import Image
 
+from extraction_types import ExtractionResult, FieldResult
 from fields_config import (
     DEFAULT_STANDARD,
     FIELD_MAP,
@@ -34,7 +35,7 @@ from fields_config import (
 )
 from metrics import timer
 from ocr_baseline import iter_table_regions
-from validation import has_required_fields
+from validation import coerce_number, has_required_fields
 
 load_dotenv()
 
@@ -225,9 +226,13 @@ Trả về đúng format JSON sau, không có gì khác:
 {{{json_template}}}"""
 
 
-def call_vlm(base64_image: str, prompt: str) -> str | None:
+def call_vlm(base64_image: str, prompt: str, temperature: float = 0.0) -> str | None:
     """
     Gọi VLM, tự thử lại khi gặp lỗi tạm thời.
+
+    temperature phải truyền được vì self-consistency đứng trên nó: ở nhiệt
+    độ 0 thì k mẫu giống hệt nhau và tỷ lệ đồng thuận luôn bằng 1, tức là
+    không đo được gì.
 
     Model free tier trên OpenRouter dính 429 (rate limit) khá thường, và
     một báo cáo có thể 50+ trang. Trước đây một lỗi mạng ở giữa chừng là
@@ -238,6 +243,7 @@ def call_vlm(base64_image: str, prompt: str) -> str | None:
         try:
             response = get_client().chat.completions.create(
                 model=MODEL,
+                temperature=temperature,
                 messages=[
                     {
                         "role": "user",
@@ -339,32 +345,157 @@ def parse_response(text: str) -> dict | None:
 PATIENCE_PAGES = 3
 
 
+def _lay_mau_vung(
+    base64_image: str,
+    prompt: str,
+    n_samples: int,
+    temperature: float,
+    metrics=None,
+) -> list[dict]:
+    """
+    Gọi VLM n_samples lần trên CÙNG một ảnh, trả về các mẫu parse được.
+
+    Mẫu nào gọi hỏng hoặc parse hỏng thì bị bỏ khỏi danh sách, nhưng vẫn
+    được đếm vào n_samples ở mẫu số của confidence — xem _bo_phieu().
+    """
+    cac_mau = []
+
+    for _ in range(n_samples):
+        with timer(metrics, "vlm"):
+            raw_text = call_vlm(base64_image, prompt, temperature)
+
+        if metrics is not None:
+            metrics.count("vlm_calls")
+
+        if raw_text is None:
+            if metrics is not None:
+                metrics.count("vlm_failures")
+            continue
+
+        da_parse = parse_response(raw_text)
+        if da_parse is None:
+            if metrics is not None:
+                metrics.count("parse_failures")
+            continue
+
+        cac_mau.append(da_parse)
+
+    return cac_mau
+
+
+def _chuan_hoa_chuoi(gia_tri):
+    """Chuẩn hoá đơn vị tính trước khi bỏ phiếu: chỉ cắt khoảng trắng."""
+    if gia_tri is None:
+        return None
+    da_cat = str(gia_tri).strip()
+    return da_cat or None
+
+
+def _bo_phieu(cac_mau: list[dict], khoa: str, n_samples: int) -> tuple[FieldResult, str | None]:
+    """
+    Bỏ phiếu self-consistency cho một chỉ tiêu, trả về (kết quả, cảnh báo).
+
+    Ba quyết định đáng ghi lại:
+
+    None CŨNG LÀ MỘT ỨNG VIÊN bỏ phiếu. Model trả null ba trên năm lần là
+    một tín hiệu thật — nó nói rằng chỉ tiêu này thường không đọc được trên
+    ảnh đó — và biến nó thành phiếu trắng sẽ làm confidence của hai lần còn
+    lại trông cao giả tạo.
+
+    Mẫu số là n_samples chứ không phải số mẫu parse được. Một lượt gọi hỏng
+    là một lượt không có bằng chứng, nên nó PHẢI kéo confidence xuống. Lấy
+    số mẫu thành công làm mẫu số sẽ cho ra confidence 1.0 trên một tài liệu
+    mà bốn trong năm lần gọi đều thất bại.
+
+    Hoà phiếu thì ưu tiên giá trị non-null, rồi tới giá trị xuất hiện sớm
+    nhất. Điều kiện thứ hai chỉ để KẾT QUẢ TẤT ĐỊNH — cùng đầu vào phải cho
+    cùng đầu ra, nếu không thì không tái lập được thí nghiệm.
+    """
+    chuan_hoa = _chuan_hoa_chuoi if khoa == UNIT_KEY else coerce_number
+
+    phieu: dict = {}
+    xuat_hien_dau = {}
+
+    for thu_tu, mau in enumerate(cac_mau):
+        gia_tri = chuan_hoa(mau.get(khoa))
+        phieu[gia_tri] = phieu.get(gia_tri, 0) + 1
+        xuat_hien_dau.setdefault(gia_tri, thu_tu)
+
+    if not phieu:
+        return FieldResult(value=None, confidence=0.0), None
+
+    thang = min(phieu, key=lambda g: (-phieu[g], g is None, xuat_hien_dau[g]))
+    so_phieu_thang = phieu[thang]
+
+    canh_bao = None
+    hoa_voi = [
+        g for g in phieu
+        if g != thang and phieu[g] == so_phieu_thang and g is not None
+    ]
+    if hoa_voi and thang is not None:
+        canh_bao = (
+            f"{khoa}: hoà phiếu {so_phieu_thang} đều giữa {thang} và {hoa_voi}, "
+            f"đã chọn {thang} theo thứ tự xuất hiện"
+        )
+
+    return (
+        FieldResult(
+            value=thang,
+            confidence=so_phieu_thang / n_samples,
+            votes={str(g): so for g, so in phieu.items()},
+        ),
+        canh_bao,
+    )
+
+
 def extract_fields_from_regions(
     pages,
     metrics=None,
     standard: Standard = DEFAULT_STANDARD,
-) -> dict:
+    n_samples: int = 1,
+    temperature: float = 0.0,
+) -> ExtractionResult:
     """
-    Chạy VLM trên từng vùng bảng đã cắt sẵn, gộp kết quả lại thành 1 dict.
+    Chạy VLM trên từng vùng bảng đã cắt sẵn, gộp thành một ExtractionResult.
 
     Với mỗi field, lấy giá trị non-null ĐẦU TIÊN tìm thấy qua các trang
     (field nào trang trước không có, trang sau tìm tiếp; đã có rồi thì
-    không ghi đè). Các chỉ tiêu nằm rải ở nhiều trang khác nhau: nhóm
-    B01a ở trang bảng cân đối, nhóm B02a ở trang kết quả kinh doanh.
+    không ghi đè). Các chỉ tiêu nằm rải ở nhiều trang khác nhau: nhóm B01a
+    ở trang bảng cân đối, nhóm B02a ở trang kết quả kinh doanh.
+
+    n_samples > 1 bật self-consistency: gọi VLM nhiều lần trên cùng một ảnh
+    ở nhiệt độ lớn hơn 0 rồi lấy tỷ lệ đồng thuận làm confidence. Một thay
+    đổi cho ba thứ — confidence cho H1, baseline VLM cộng self-consistency
+    voting, và tập ứng viên sửa lỗi từ chính các giá trị thua phiếu.
+
+    n_samples = 1 và temperature = 0 cho hành vi Y HỆT bản trước, với
+    confidence 1.0 ở mọi field có giá trị. Con số 1.0 đó KHÔNG có nghĩa là
+    chắc chắn, nó có nghĩa là không đo được — xem FieldResult.khong_do().
 
     Điều kiện dừng sớm gồm hai nhánh, vì mục tiêu là lấy ĐỦ field nhưng
     không quét vô ích tới hết tài liệu:
-      1. Đủ cả 11 field  -> chắc chắn không còn gì để tìm, dừng ngay.
+      1. Đủ cả field trong FIELD_MAP -> chắc chắn không còn gì để tìm.
       2. Đủ field BẮT BUỘC và đã PATIENCE_PAGES trang liên tiếp không có
          thêm field mới -> gần như chắc chắn đã qua hết phần bảng biểu.
-    Nếu chỉ dùng nhánh 1, chỉ cần một field không bao giờ đọc được là
-    phải gọi API cho cả 55 trang.
+    Nếu chỉ dùng nhánh 1, chỉ cần một field không bao giờ đọc được là phải
+    gọi API cho cả 55 trang.
     """
+    if n_samples > 1 and temperature == 0:
+        raise ValueError(
+            f"n_samples={n_samples} với temperature=0 là vô nghĩa: mọi mẫu sẽ giống "
+            f"hệt nhau nên tỷ lệ đồng thuận luôn bằng 1. Đặt temperature > 0, hoặc "
+            f"để n_samples=1 nếu chưa cần đo confidence."
+        )
+
     # Prompt dựng MỘT lần cho cả tài liệu, nên chuẩn mẫu biểu phải do người
     # gọi truyền vào chứ không tự dò theo từng trang: nhánh VLM không có
     # text OCR để dò, và một tài liệu thì chỉ theo đúng một chuẩn.
     prompt = build_prompt(standard)
-    final_result = empty_result()
+
+    final_result: dict[str, FieldResult] = {
+        khoa: FieldResult(value=None, confidence=0.0) for khoa in empty_result()
+    }
+    warnings: list[str] = []
     pages_without_new_field = 0
 
     for page in pages:
@@ -373,59 +504,82 @@ def extract_fields_from_regions(
 
         for region in page["regions"]:
             base64_image = encode_image_to_base64(region)
+            cac_mau = _lay_mau_vung(base64_image, prompt, n_samples, temperature, metrics)
 
-            with timer(metrics, "vlm"):
-                raw_text = call_vlm(base64_image, prompt)
-
-            if metrics is not None:
-                metrics.count("vlm_calls")
-
-            if raw_text is None:
-                print(f"--- Page {page_no}: bỏ qua (gọi VLM thất bại) ---")
-                if metrics is not None:
-                    metrics.count("vlm_failures")
+            if not cac_mau:
+                print(f"--- Page {page_no}: bỏ qua (không mẫu nào dùng được) ---")
                 continue
 
-            page_result = parse_response(raw_text)
-            if page_result is None:
-                print(f"--- Page {page_no}: bỏ qua (parse lỗi) ---")
-                if metrics is not None:
-                    metrics.count("parse_failures")
-                continue
+            for khoa in final_result:
+                if final_result[khoa].value is not None:
+                    continue
 
-            for key in final_result:
-                if final_result[key] is None and page_result.get(key) is not None:
-                    final_result[key] = page_result[key]
-                    found_new_field = True
+                ket_qua, canh_bao = _bo_phieu(cac_mau, khoa, n_samples)
 
-            print(f"--- Page {page_no}: {page_result} ---")
+                if ket_qua.value is None:
+                    # "Model nhất quán trả null" là một tín hiệu THẬT cho
+                    # H1 — nó nói chỉ tiêu này không đọc được trên ảnh —
+                    # nên vẫn ghi lại confidence của verdict đó. Nhưng
+                    # KHÔNG tính là đã tìm thấy field, để trang sau còn
+                    # được thử: các chỉ tiêu nằm rải ở nhiều trang.
+                    if ket_qua.confidence > final_result[khoa].confidence:
+                        final_result[khoa] = ket_qua
+                    continue
+
+                final_result[khoa] = ket_qua
+                found_new_field = True
+                if canh_bao:
+                    warnings.append(f"Trang {page_no}: {canh_bao}")
+
+            print(f"--- Page {page_no}: {cac_mau[0]} ---")
 
         # 1. Đủ hết -> không còn gì để tìm.
         #    Điều kiện dừng vẫn tính trên FIELD_MAP chứ không trên cả
         #    final_result: đơn vị tính chỉ in ở header bảng nên có trang
         #    không có nó, và để nó chặn early-stop thì gặp báo cáo thiếu
         #    dòng khai báo là quét tới hết tài liệu.
-        if all(final_result[key] is not None for key in FIELD_MAP):
+        if all(final_result[khoa].value is not None for khoa in FIELD_MAP):
             print(f"--- Đã tìm đủ cả {len(FIELD_MAP)} field, dừng ở trang {page_no} ---")
             break
 
         # 2. Đủ field bắt buộc và đã hết bảng để đọc
         pages_without_new_field = 0 if found_new_field else pages_without_new_field + 1
 
-        if has_required_fields(final_result) and pages_without_new_field >= PATIENCE_PAGES:
-            missing = [key for key, value in final_result.items() if value is None]
+        gia_tri_hien_co = {khoa: kq.value for khoa, kq in final_result.items()}
+        if has_required_fields(gia_tri_hien_co) and pages_without_new_field >= PATIENCE_PAGES:
+            missing = [khoa for khoa, kq in final_result.items() if kq.value is None]
             print(
                 f"--- Đủ field bắt buộc, {PATIENCE_PAGES} trang liên tiếp không có "
                 f"field mới -> dừng ở trang {page_no}. Không tìm được: {missing} ---"
             )
             break
 
-    return final_result
+    # Đơn vị tính đi ra ở tầng meta chứ không nằm chung với các chỉ tiêu:
+    # nó là dữ liệu về CÁCH ĐỌC cả bảng, và mọi hàm hạ nguồn đều giả định
+    # data chỉ chứa số.
+    don_vi = final_result.pop(UNIT_KEY, None)
+
+    return ExtractionResult(
+        data=final_result,
+        meta={UNIT_KEY: don_vi.value if don_vi is not None else None},
+        warnings=warnings,
+        n_samples=n_samples,
+        temperature=temperature,
+        model=MODEL,
+    )
 
 
-def extract_fields_from_document(file_path: str) -> dict:
+def extract_fields_from_document(
+    file_path: str,
+    n_samples: int = 1,
+    temperature: float = 0.0,
+) -> ExtractionResult:
     """Chạy trọn nhánh VLM từ file gốc (dùng khi chạy standalone)."""
-    return extract_fields_from_regions(iter_table_regions(file_path))
+    return extract_fields_from_regions(
+        iter_table_regions(file_path),
+        n_samples=n_samples,
+        temperature=temperature,
+    )
 
 
 if __name__ == "__main__":
@@ -433,14 +587,33 @@ if __name__ == "__main__":
         print("Usage: python extract_vlm.py <file_path>")
         sys.exit(1)
 
+    # Console Windows mặc định cp1252 nên in tiếng Việt sẽ nổ.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+
     input_path = sys.argv[1]
     result = extract_fields_from_document(input_path)
 
     out_path = Path("data/output") / (Path(input_path).stem + "_vlm.json")
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
+    # Ghi cả confidence và votes chứ không chỉ giá trị: chạy standalone là
+    # cách rẻ nhất để soi một tài liệu, và votes chính là tập ứng viên sửa
+    # lỗi — gọi lại VLM để có lại nó thì tốn đúng số tiền vừa tiêu.
+    ghi_ra = {
+        "data": {
+            ten: {"value": kq.value, "confidence": kq.confidence, "votes": kq.votes}
+            for ten, kq in result.data.items()
+        },
+        "meta": result.meta,
+        "warnings": result.warnings,
+        "n_samples": result.n_samples,
+        "temperature": result.temperature,
+        "model": result.model,
+    }
 
-    print(result)
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(ghi_ra, f, ensure_ascii=False, indent=2)
+
+    print(result.values())
     print(f"\nKết quả đã lưu tại: {out_path}")

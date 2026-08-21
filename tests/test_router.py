@@ -8,6 +8,7 @@ có gọi VLM hay không, tức là quyết định cả chi phí lẫn độ đ
 """
 
 import router
+from extraction_types import ExtractionResult, FieldResult
 from fields_config import empty_result
 from router import is_acceptable
 
@@ -48,6 +49,21 @@ def test_thieu_field_bat_buoc_thi_khong_dat():
     assert is_acceptable(thieu) is False
 
 
+def _vlm_gia(gia_tri: dict) -> ExtractionResult:
+    """
+    Dựng ExtractionResult như nhánh VLM thật sẽ trả về: đơn vị tính nằm ở
+    meta chứ không lẫn vào data.
+    """
+    return ExtractionResult(
+        data={
+            khoa: FieldResult.khong_do(v)
+            for khoa, v in gia_tri.items()
+            if khoa != "don_vi_tinh"
+        },
+        meta={"don_vi_tinh": gia_tri.get("don_vi_tinh")},
+    )
+
+
 def _lap_pipeline_gia(monkeypatch, ket_qua_vlm: dict):
     """
     Dựng một route_document() chạy được mà không cần mạng, model hay file.
@@ -58,7 +74,9 @@ def _lap_pipeline_gia(monkeypatch, ket_qua_vlm: dict):
     """
     monkeypatch.setattr(router, "require_config", lambda: None)
     monkeypatch.setattr(router, "iter_table_regions", lambda *a, **k: iter([]))
-    monkeypatch.setattr(router, "extract_fields_from_regions", lambda *a, **k: ket_qua_vlm)
+    monkeypatch.setattr(
+        router, "extract_fields_from_regions", lambda *a, **k: _vlm_gia(ket_qua_vlm)
+    )
     monkeypatch.setattr(router, "merge_into_totals", lambda run: None)
     monkeypatch.setattr(router.RunMetrics, "save", lambda self, *a, **k: None)
 
@@ -96,9 +114,10 @@ def test_tat_cong_rang_buoc_van_tra_ve_du_ket_qua(monkeypatch):
     _lap_pipeline_gia(monkeypatch, VNM_Q1_2026)
     monkeypatch.setattr(router, "DISABLE_CONSTRAINT_GATE", True)
 
-    data = router.route_document("bao_cao.pdf", save=False)
+    ket_qua = router.route_document("bao_cao.pdf", save=False)
 
-    assert data["tong_tai_san"] == VNM_Q1_2026["tong_tai_san"]
+    assert ket_qua.values()["tong_tai_san"] == VNM_Q1_2026["tong_tai_san"]
+    assert ket_qua.meta["don_vi_tinh_he_so"] == 1
 
 
 def test_bat_cong_rang_buoc_thi_van_hoi_is_acceptable(monkeypatch):

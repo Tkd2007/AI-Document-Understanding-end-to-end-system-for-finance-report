@@ -15,7 +15,6 @@ from fastapi.responses import PlainTextResponse
 from extract_vlm import require_config
 from metrics import get_totals
 from router import route_document
-from validation import validate_result
 
 # api.py là entrypoint của service, nên đây ĐÚNG là chỗ để fail fast: thiếu
 # key thì container chết ngay lúc khởi động, thay vì lên "healthy" rồi trả
@@ -78,14 +77,24 @@ async def extract(file: UploadFile = File(...)):
         # thì đã có sẵn ở hai chỗ khác: response HTTP bên dưới, và
         # metrics.jsonl (chỗ này còn ghi được cả lượt chạy THẤT BẠI, vì
         # metrics.save() nằm trong finally còn save_result() thì không).
-        result = await run_in_threadpool(route_document, str(save_path), save=True)
+        extraction = await run_in_threadpool(route_document, str(save_path), save=True)
     finally:
         # Xoá file tạm kể cả khi pipeline ném lỗi. Không có bước này thì
         # data/samples/ phình vô hạn theo số request — mỗi lượt upload để
         # lại một PDF vài chục MB không ai dọn.
         save_path.unlink(missing_ok=True)
 
-    return validate_result(result)
+    # KHÔNG gọi lại validate_result ở đây. route_document() đã chạy nó và
+    # trả về cả data đã ép kiểu lẫn warnings, nên gọi lần hai vừa thừa vừa
+    # nguy hiểm: nó chạy trên dữ liệu ĐÃ QUY ĐỔI về đồng nhưng lại không
+    # còn khoá đơn vị tính, nên sẽ nhân thêm lần nữa hoặc báo thiếu đơn vị
+    # một cách vô cớ.
+    return {
+        "data": extraction.values(),
+        "meta": extraction.meta,
+        "confidence": extraction.confidences(),
+        "warnings": extraction.warnings,
+    }
 
 
 @app.get("/metrics", response_class=PlainTextResponse)

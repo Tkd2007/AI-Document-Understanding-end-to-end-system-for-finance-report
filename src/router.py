@@ -29,7 +29,8 @@ from dotenv import load_dotenv
 
 from extract_baseline import extract_all_fields
 from extract_vlm import extract_fields_from_regions, require_config
-from fields_config import empty_result
+from extraction_types import ExtractionResult, FieldResult
+from fields_config import UNIT_KEY, empty_result
 from metrics import RunMetrics, merge_into_totals, timer
 from ocr_baseline import iter_table_regions, ocr_page_regions
 from validation import has_required_fields, validate_result
@@ -62,6 +63,73 @@ USE_OCR_FIRST = _co_bat("USE_OCR_FIRST")
 DISABLE_CONSTRAINT_GATE = _co_bat("DISABLE_CONSTRAINT_GATE")
 
 
+def khung_rong() -> dict[str, FieldResult]:
+    """
+    Khung tích luỹ của router: mỗi chỉ tiêu một FieldResult chưa có gì.
+
+    Router tích luỹ FieldResult chứ không tích luỹ giá trị trần, vì
+    confidence và về sau là provenance phải sống sót qua bước merge. Trước
+    đây merge trả về giá trị trần nên mọi thứ biết được về độ tin cậy của
+    một con số đều bị vứt ngay tại đây.
+    """
+    return {khoa: FieldResult(value=None, confidence=0.0) for khoa in empty_result()}
+
+
+def gia_tri_tran(tich_luy: dict[str, FieldResult]) -> dict:
+    """
+    Chỉ giá trị, cho validate_result() và is_acceptable() — hai hàm cố ý
+    không biết gì về confidence.
+    """
+    return {khoa: ket_qua.value for khoa, ket_qua in tich_luy.items()}
+
+
+def _lap_cho_trong(tich_luy: dict[str, FieldResult], nguon: dict[str, FieldResult]) -> bool:
+    """
+    Lấp các chỉ tiêu còn trống, không ghi đè giá trị đã tìm được.
+    Trả về True nếu có lấp được ít nhất một chỗ.
+    """
+    co_field_moi = False
+    for khoa in tich_luy:
+        if tich_luy[khoa].value is None and nguon.get(khoa) is not None:
+            tich_luy[khoa] = nguon[khoa]
+            co_field_moi = True
+    return co_field_moi
+
+
+def _tu_extraction(extraction: ExtractionResult) -> dict[str, FieldResult]:
+    """
+    Đưa ExtractionResult về dạng phẳng mà router merge được.
+
+    Đơn vị tính nằm ở meta của ExtractionResult nhưng phải quay lại thành
+    một khoá phẳng ở đây, vì validate_result() đọc nó từ chính dict giá
+    trị — nó cần đơn vị TRƯỚC khi quy đổi bất cứ con số nào.
+    """
+    phang = dict(extraction.data)
+
+    don_vi = extraction.meta.get(UNIT_KEY)
+    if don_vi is not None:
+        phang[UNIT_KEY] = FieldResult.khong_do(don_vi)
+
+    return phang
+
+
+def _ocr_mot_trang(page, metrics=None) -> dict[str, FieldResult]:
+    """
+    OCR một trang rồi trích bằng regex, trả về dạng FieldResult.
+
+    Nhánh OCR không đo được confidence nên mọi giá trị đi ra với
+    confidence 1.0 theo nghĩa "không đo được" — xem FieldResult.khong_do().
+    """
+    with timer(metrics, "ocr"):
+        ocr_result = ocr_page_regions(page)
+
+    return {
+        khoa: FieldResult.khong_do(gia_tri)
+        for khoa, gia_tri in extract_all_fields(ocr_result["text"]).items()
+        if gia_tri is not None
+    }
+
+
 def run_ocr_first(pages_iter, cached_pages: list, result: dict, metrics=None) -> dict:
     """
     Quét OCR theo từng trang, merge dần, dừng khi kết quả đã đáng tin.
@@ -75,17 +143,9 @@ def run_ocr_first(pages_iter, cached_pages: list, result: dict, metrics=None) ->
     """
     for page in pages_iter:
         cached_pages.append(page)
+        _lap_cho_trong(result, _ocr_mot_trang(page, metrics))
 
-        with timer(metrics, "ocr"):
-            ocr_result = ocr_page_regions(page)
-        page_fields = extract_all_fields(ocr_result["text"])
-
-        # Chỉ lấp field còn trống, không ghi đè giá trị đã tìm được
-        for key in result:
-            if result[key] is None and page_fields.get(key) is not None:
-                result[key] = page_fields[key]
-
-        if is_acceptable(result):
+        if is_acceptable(gia_tri_tran(result)):
             print(f"--- OCR đã đủ và hợp lệ, dừng ở trang {page['page']} ---")
             break
 
@@ -125,22 +185,12 @@ def run_unconstrained(pages_iter, cached_pages: list, result: dict, metrics=None
     if USE_OCR_FIRST:
         for page in pages_iter:
             cached_pages.append(page)
-
-            with timer(metrics, "ocr"):
-                ocr_result = ocr_page_regions(page)
-            page_fields = extract_all_fields(ocr_result["text"])
-
-            for key in result:
-                if result[key] is None and page_fields.get(key) is not None:
-                    result[key] = page_fields[key]
+            _lap_cho_trong(result, _ocr_mot_trang(page, metrics))
 
         return result
 
-    vlm_result = extract_fields_from_regions(_remaining_pages(pages_iter, cached_pages), metrics)
-
-    for key in result:
-        if vlm_result.get(key) is not None:
-            result[key] = vlm_result[key]
+    extraction = extract_fields_from_regions(_remaining_pages(pages_iter, cached_pages), metrics)
+    _lap_cho_trong(result, _tu_extraction(extraction))
 
     return result
 
@@ -156,22 +206,32 @@ def run_vlm(pages_iter, cached_pages: list, result: dict, metrics=None) -> dict:
          nguyên đó và cả validation gate thành vô nghĩa: tốn tiền gọi VLM
          rồi vứt kết quả đúng đi.
     """
-    has_warnings = bool(validate_result(result)["warnings"])
+    has_warnings = bool(validate_result(gia_tri_tran(result))["warnings"])
 
-    vlm_result = extract_fields_from_regions(_remaining_pages(pages_iter, cached_pages), metrics)
+    extraction = extract_fields_from_regions(_remaining_pages(pages_iter, cached_pages), metrics)
+    tu_vlm = _tu_extraction(extraction)
 
     for key in result:
-        if vlm_result.get(key) is None:
+        moi = tu_vlm.get(key)
+        if moi is None or moi.value is None:
             continue
-        if result[key] is None or has_warnings:
-            result[key] = vlm_result[key]
+        if result[key].value is None or has_warnings:
+            result[key] = moi
 
     return result
 
 
-def route_document(file_path: str, save: bool = True) -> dict:
+def route_document(file_path: str, save: bool = True) -> ExtractionResult:
     """
-    Chạy trọn pipeline cho một tài liệu, trả về dict đã ép kiểu số.
+    Chạy trọn pipeline cho một tài liệu.
+
+    Trả về ExtractionResult chứ không phải dict giá trị trần: confidence
+    của từng chỉ tiêu là đầu vào bắt buộc của H1 và H2, còn các giá trị
+    THUA phiếu là tập ứng viên sửa lỗi. Trả về dict trần đồng nghĩa với
+    việc vứt cả hai ngay tại cửa ra, rồi phải gọi lại VLM để có lại.
+
+    Giá trị trong .data đã ÉP KIỂU SỐ và QUY ĐỔI VỀ ĐỒNG, còn .warnings
+    gộp cả cảnh báo của bước bỏ phiếu lẫn cảnh báo của validate_result().
 
     save — có ghi data/output/<stem>_routed.json hay không.
 
@@ -196,7 +256,7 @@ def route_document(file_path: str, save: bool = True) -> dict:
     try:
         pages_iter = iter_table_regions(file_path, metrics)
         cached_pages: list = []
-        result = empty_result()
+        result = khung_rong()
 
         if DISABLE_CONSTRAINT_GATE:
             print("--- CỔNG RÀNG BUỘC ĐANG TẮT: chế độ ĐO, không dùng để phục vụ ---")
@@ -205,17 +265,39 @@ def route_document(file_path: str, save: bool = True) -> dict:
             if USE_OCR_FIRST:
                 result = run_ocr_first(pages_iter, cached_pages, result, metrics)
 
-            if not is_acceptable(result):
+            if not is_acceptable(gia_tri_tran(result)):
                 if USE_OCR_FIRST:
-                    missing = [key for key, value in result.items() if value is None]
+                    missing = [k for k, kq in result.items() if kq.value is None]
                     print(f"--- OCR chưa đạt (thiếu/nghi ngờ: {missing}), chuyển sang VLM ---")
                 result = run_vlm(pages_iter, cached_pages, result, metrics)
 
         # Ép kiểu số TRƯỚC khi lưu và trả về. VLM đôi khi trả số dưới dạng
         # chuỗi, nên nếu lưu thẳng result thô thì file _routed.json và
-        # response HTTP (api.py có chạy validate_result) sẽ khác nhau về kiểu
-        # dữ liệu cho cùng một lượt chạy — rất khó lần khi đi đối chiếu.
-        data = validate_result(result)["data"]
+        # response HTTP sẽ khác nhau về kiểu dữ liệu cho cùng một lượt
+        # chạy — rất khó lần khi đi đối chiếu.
+        da_kiem = validate_result(gia_tri_tran(result))
+        data = da_kiem["data"]
+
+        # Ghi giá trị đã ép kiểu và quy đổi NGƯỢC vào FieldResult, giữ
+        # nguyên confidence và votes. Nếu bỏ qua bước này thì .values() trả
+        # về số thô chưa quy đổi trong khi .data lại nói đã quy đổi — hai
+        # nguồn sự thật lệch nhau trong cùng một object.
+        ket_qua_cuoi = {
+            khoa: FieldResult(
+                value=data.get(khoa),
+                confidence=result[khoa].confidence,
+                votes=result[khoa].votes,
+                provenance=result[khoa].provenance,
+            )
+            for khoa in result
+            if khoa != UNIT_KEY
+        }
+
+        extraction = ExtractionResult(
+            data=ket_qua_cuoi,
+            meta=da_kiem["meta"],
+            warnings=da_kiem["warnings"],
+        )
 
         if save:
             save_result(file_path, data)
@@ -230,7 +312,7 @@ def route_document(file_path: str, save: bool = True) -> dict:
             constraint_gate=not DISABLE_CONSTRAINT_GATE,
         )
         metrics.status = "ok"
-        return data
+        return extraction
 
     except BaseException:
         # Bắt cả KeyboardInterrupt/SystemExit: lượt chạy không đi hết
@@ -279,6 +361,10 @@ if __name__ == "__main__":
         print("Usage: python router.py <file_path>")
         sys.exit(1)
 
+    # Console Windows mặc định cp1252 nên in tiếng Việt sẽ nổ.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+
     print(f"--- Nhánh OCR: {'BẬT' if USE_OCR_FIRST else 'TẮT'} (USE_OCR_FIRST) ---")
     print(
         f"--- Cổng ràng buộc: {'TẮT (chế độ ĐO)' if DISABLE_CONSTRAINT_GATE else 'BẬT'} "
@@ -286,6 +372,10 @@ if __name__ == "__main__":
     )
 
     input_path = sys.argv[1]
-    result = route_document(input_path)
+    ket_qua = route_document(input_path)
 
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    print(json.dumps(ket_qua.values(), ensure_ascii=False, indent=2))
+    if ket_qua.warnings:
+        print("\nCảnh báo:")
+        for canh_bao in ket_qua.warnings:
+            print(f"  - {canh_bao}")

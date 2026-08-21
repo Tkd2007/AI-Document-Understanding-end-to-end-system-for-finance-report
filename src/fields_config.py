@@ -12,8 +12,40 @@ FIELD_RULES gắn quy tắc kiểm tra vào chính định nghĩa field, để t
 field mới chỉ cần sửa file này chứ không phải lục lại validation.py.
 """
 
+import re
+import unicodedata
 from collections.abc import Callable
 from dataclasses import dataclass
+from enum import Enum
+
+
+class Standard(str, Enum):
+    """
+    Chuẩn mẫu biểu báo cáo tài chính đang áp dụng.
+
+    Kế thừa str để dùng thẳng làm khoá JSON và in ra log mà không phải gọi
+    .value ở mọi chỗ.
+
+    Vì sao repo phải mang cả hai: Thông tư 99/2025/TT-BTC ban hành
+    27/10/2025, hiệu lực 01/01/2026, áp dụng cho năm tài chính bắt đầu từ
+    hoặc sau ngày đó. Nên bộ dữ liệu thu thập trong 2026 BẮT BUỘC trải hai
+    chuẩn — báo cáo năm tài chính 2025 theo TT200, từ 2026 theo TT99. Đó
+    vừa là ràng buộc kỹ thuật, vừa là trục distribution shift có sẵn và có
+    ý nghĩa thật cho phần đánh giá.
+    """
+
+    TT200 = "TT200"   # Thông tư 200/2014/TT-BTC
+    TT99 = "TT99"     # Thông tư 99/2025/TT-BTC, hiệu lực 01/01/2026
+
+
+# Chuẩn dùng khi KHÔNG nhận diện được từ nội dung trang.
+#
+# Đây là fallback cuối cùng, không phải giá trị mặc định êm ái: mọi chỗ rơi
+# vào đây đều phải kêu ra log. Nhận diện sai chuẩn là một CHẾ ĐỘ LỖI RIÊNG
+# cần đo được, nên nếu để nó im lặng thì sau này không có cách nào tách nó
+# khỏi lỗi đọc số.
+DEFAULT_STANDARD = Standard.TT99
+
 
 FIELD_MAP = {
     # --- B01a-DN: Báo cáo tình hình tài chính (bảng cân đối kế toán) ---
@@ -156,7 +188,7 @@ FIELD_RELATIONS = [
 #
 # Mỗi mục: (danh sách field cộng lại, field tổng, mô tả).
 # Chỉ kiểm tra khi TẤT CẢ field liên quan đều có giá trị.
-FIELD_IDENTITIES = [
+_DANG_THUC_CHUNG = [
     (
         ["tai_san_ngan_han", "tai_san_dai_han"],
         "tong_tai_san",
@@ -173,6 +205,27 @@ FIELD_IDENTITIES = [
         "Giá vốn hàng bán + Lợi nhuận gộp phải bằng Doanh thu thuần",
     ),
 ]
+
+# Đẳng thức tách theo CHUẨN mẫu biểu.
+#
+# Hiện hai chuẩn dùng chung một bộ đẳng thức, vì ba quan hệ trên là quan hệ
+# KẾ TOÁN chứ không phải quy ước trình bày: tài sản vẫn bằng nguồn vốn dù
+# mẫu biểu có đổi tên hay đổi mã số dòng. Vẫn tách theo chuẩn thay vì dùng
+# chung một list phẳng vì hai lý do:
+#
+#   1. constraints.py dựng ma trận A RIÊNG cho từng chuẩn. Đồ thị ràng buộc
+#      là thứ quyết định kết quả identifiability, nên phải nói được "ma
+#      trận này của chuẩn nào" chứ không được giả định hai chuẩn giống nhau.
+#   2. TT99 đổi tên "Bảng cân đối kế toán" thành "Báo cáo tình hình tài
+#      chính". Đổi tên thường đi kèm đổi cấu trúc, nên nếu sau này phát
+#      hiện khác biệt thì sửa được đúng một chuẩn mà không đụng chuẩn kia.
+#
+# CẦN NGƯỜI ĐỐI CHIẾU: bộ đẳng thức của TT99 phải kiểm lại với Phụ lục IV
+# văn bản gốc trước khi tin vào bất kỳ số identifiability nào.
+FIELD_IDENTITIES: dict[Standard, list] = {
+    Standard.TT200: _DANG_THUC_CHUNG,
+    Standard.TT99: _DANG_THUC_CHUNG,
+}
 
 # Dung sai cho đẳng thức, tính theo tỷ lệ trên giá trị tổng.
 #
@@ -310,27 +363,54 @@ FIELD_EXCLUDE = {
     },
 }
 
-# Mã số dòng theo mẫu biểu Bộ Tài chính (Thông tư 99/2025/TT-BTC).
+# Mã số dòng theo mẫu biểu Bộ Tài chính, TÁCH THEO CHUẨN.
 #
 # Mã số đáng tin hơn tên chữ: OCR đọc chữ số gần như không sai, còn chữ
 # tiếng Việt có dấu thì hay hỏng ("TỔNG TÀI SẢN" -> "TỖNG TÀISẢN").
 #
-# CẢNH BÁO: mã số chỉ duy nhất TRONG một mẫu biểu, không phải toàn tài
-# liệu. Mã "10" là Doanh thu thuần ở B02a nhưng là Biến động hàng tồn kho
-# ở B03a; mã "20", "30", "50" cũng trùng tương tự. Nên mỗi field phải đi
-# kèm mẫu biểu của nó, và chỉ dùng mã khi trang đúng mẫu đó.
-FIELD_LINE_CODES = {
-    "tai_san_ngan_han":     ("B01a", "100"),
-    "hang_ton_kho":         ("B01a", "140"),
-    "tai_san_dai_han":      ("B01a", "200"),
-    "tong_tai_san":         ("B01a", "280"),
-    "no_phai_tra":          ("B01a", "300"),
-    "von_chu_so_huu":       ("B01a", "400"),
-    "doanh_thu_thuan":      ("B02a", "10"),
-    "gia_von_hang_ban":     ("B02a", "11"),
-    "loi_nhuan_gop":        ("B02a", "20"),
-    "loi_nhuan_truoc_thue": ("B02a", "50"),
-    "loi_nhuan_sau_thue":   ("B02a", "60"),
+# CẢNH BÁO 1 — mã số chỉ duy nhất TRONG một mẫu biểu, không phải toàn tài
+# liệu. Mã "10" là Doanh thu thuần ở B02 nhưng là Biến động hàng tồn kho ở
+# B03; mã "20", "30", "50" cũng trùng tương tự. Nên mỗi field phải đi kèm
+# mẫu biểu của nó, và chỉ dùng mã khi trang đúng mẫu đó.
+#
+# CẢNH BÁO 2 — mã số còn khác nhau GIỮA HAI CHUẨN. Chỗ lệch đã biết: tổng
+# tài sản là 270 ở TT200 nhưng 280 ở TT99. Dùng nhầm bảng mã không làm gì
+# nổ, nó chỉ lặng lẽ trả về sai dòng — nên nhận diện sai chuẩn phải được
+# đếm như một chế độ lỗi riêng.
+#
+# ==========================================================================
+# CHƯA ĐƯỢC NGƯỜI ĐỐI CHIẾU. Hai bảng dưới đây phải kiểm từng dòng với
+# Phụ lục IV của văn bản gốc (Thông tư 200/2014/TT-BTC và Thông tư
+# 99/2025/TT-BTC), KHÔNG lấy từ bài tóm tắt trên mạng. Sai một mã là toàn
+# bộ kết quả identifiability sai mà không có gì báo.
+# ==========================================================================
+FIELD_LINE_CODES: dict[Standard, dict[str, tuple[str, str]]] = {
+    Standard.TT200: {
+        "tai_san_ngan_han":     ("B01", "100"),
+        "hang_ton_kho":         ("B01", "140"),
+        "tai_san_dai_han":      ("B01", "200"),
+        "tong_tai_san":         ("B01", "270"),
+        "no_phai_tra":          ("B01", "300"),
+        "von_chu_so_huu":       ("B01", "400"),
+        "doanh_thu_thuan":      ("B02", "10"),
+        "gia_von_hang_ban":     ("B02", "11"),
+        "loi_nhuan_gop":        ("B02", "20"),
+        "loi_nhuan_truoc_thue": ("B02", "50"),
+        "loi_nhuan_sau_thue":   ("B02", "60"),
+    },
+    Standard.TT99: {
+        "tai_san_ngan_han":     ("B01a", "100"),
+        "hang_ton_kho":         ("B01a", "140"),
+        "tai_san_dai_han":      ("B01a", "200"),
+        "tong_tai_san":         ("B01a", "280"),
+        "no_phai_tra":          ("B01a", "300"),
+        "von_chu_so_huu":       ("B01a", "400"),
+        "doanh_thu_thuan":      ("B02a", "10"),
+        "gia_von_hang_ban":     ("B02a", "11"),
+        "loi_nhuan_gop":        ("B02a", "20"),
+        "loi_nhuan_truoc_thue": ("B02a", "50"),
+        "loi_nhuan_sau_thue":   ("B02a", "60"),
+    },
 }
 
 # Dấu hiệu nhận biết trang thuộc mẫu biểu nào.
@@ -342,8 +422,131 @@ FIELD_LINE_CODES = {
 _ZERO = r"[O0o]"      # 0 hay bị đọc thành O hoa hoặc o thường
 _ONE = r"[1lI|]"      # 1 hay bị đọc thành l thường, I hoa, hoặc gạch đứng
 
-FORM_MARKERS = {
-    "B01a": rf"B\s*{_ZERO}\s*{_ONE}\s*a",
-    "B02a": rf"B\s*{_ZERO}\s*2\s*a",
-    "B03a": rf"B\s*{_ZERO}\s*3\s*a",
+# Mẫu biểu cũng mang KÝ HIỆU KHÁC NHAU giữa hai chuẩn: TT200 dùng
+# "Mẫu số B 01 - DN", TT99 dùng "Mẫu số B 01a - DN". Khác biệt chỉ là chữ
+# "a", nhưng nó đủ để regex của chuẩn này không khớp mẫu của chuẩn kia.
+#
+# Chiều nguy hiểm là chiều TT200: pattern "B 01" nằm gọn bên trong "B 01a",
+# nên nếu không chặn thì trang TT99 sẽ khớp luôn cả marker TT200 và bảng mã
+# sai được đem ra dùng. Vì vậy marker TT200 có (?!\s*a) — không được theo
+# sau bởi chữ a. Chiều ngược lại không cần chặn vì "B 01a" không nằm trong
+# "B 01".
+_KHONG_CO_A = r"(?!\s*a)"
+
+FORM_MARKERS: dict[Standard, dict[str, str]] = {
+    Standard.TT200: {
+        "B01": rf"B\s*{_ZERO}\s*{_ONE}\s*{_KHONG_CO_A}",
+        "B02": rf"B\s*{_ZERO}\s*2\s*{_KHONG_CO_A}",
+        "B03": rf"B\s*{_ZERO}\s*3\s*{_KHONG_CO_A}",
+    },
+    Standard.TT99: {
+        "B01a": rf"B\s*{_ZERO}\s*{_ONE}\s*a",
+        "B02a": rf"B\s*{_ZERO}\s*2\s*a",
+        "B03a": rf"B\s*{_ZERO}\s*3\s*a",
+    },
 }
+
+
+def line_codes_for(standard: Standard) -> dict[str, tuple[str, str]]:
+    """Bảng mã số dòng của một chuẩn. KeyError nếu chuẩn chưa được khai báo."""
+    return FIELD_LINE_CODES[standard]
+
+
+def identities_for(standard: Standard) -> list:
+    """Bộ đẳng thức kế toán của một chuẩn."""
+    return FIELD_IDENTITIES[standard]
+
+
+def form_markers_for(standard: Standard) -> dict[str, str]:
+    """Dấu hiệu nhận biết mẫu biểu, trong phạm vi một chuẩn."""
+    return FORM_MARKERS[standard]
+
+
+def _bo_dau(text: str) -> str:
+    """
+    Bỏ dấu tiếng Việt và hạ chữ thường, để so khớp không phụ thuộc dấu.
+
+    OCR làm hỏng dấu một cách có hệ thống trên chữ tiếng Việt, nên liệt kê
+    từng biến thể CÓ DẤU là cuộc đuổi bắt không có hồi kết — cách làm của
+    FORM_MARKERS chỉ khả thi vì ở đó chuỗi cần khớp là "B 01a", gần như
+    không có dấu. Với câu tiếng Việt đầy đủ như "Báo cáo tình hình tài
+    chính" thì bỏ dấu cả hai phía rồi mới so là cách rẻ hơn hẳn và phủ
+    được mọi biến thể dấu cùng lúc.
+
+    Chữ "đ" phải thay tay: nó là ký tự riêng chứ không phải "d" cộng dấu,
+    nên NFD không phân rã được.
+    """
+    text = text.replace("đ", "d").replace("Đ", "D")
+    phan_ra = unicodedata.normalize("NFD", text)
+    return "".join(ky_tu for ky_tu in phan_ra if not unicodedata.combining(ky_tu)).lower()
+
+
+# Dấu hiệu nhận biết CHUẨN — khác với FORM_MARKERS vốn nhận biết MẪU BIỂU.
+#
+# Dấu hiệu rẻ nhất là việc TT99 đổi tên "Bảng cân đối kế toán" thành "Báo
+# cáo tình hình tài chính"; đó là chuỗi nằm ngay tiêu đề trang. Số hiệu
+# thông tư là dấu hiệu chắc chắn hơn nhưng chỉ xuất hiện ở trang đầu.
+#
+# Pattern viết KHÔNG DẤU vì detect_standard() bỏ dấu trước khi so.
+STANDARD_MARKERS: dict[Standard, list[str]] = {
+    Standard.TT99: [
+        r"bao\s*cao\s*tinh\s*hinh\s*tai\s*chinh",
+        r"99\s*/\s*2025",
+    ],
+    Standard.TT200: [
+        r"bang\s*can\s*doi\s*ke\s*toan",
+        r"200\s*/\s*2014",
+    ],
+}
+
+
+def detect_standard(text: str) -> tuple[Standard | None, float]:
+    """
+    Nhận diện chuẩn mẫu biểu từ text OCR của trang.
+
+    Trả về (chuẩn, độ tin cậy 0..1). Trả (None, 0.0) khi không đủ dấu hiệu
+    HOẶC khi hai chuẩn hoà nhau.
+
+    KHÔNG BAO GIỜ tự chọn mặc định khi không chắc. Nhận diện sai chuẩn là
+    một chế độ lỗi riêng, và nó lặng lẽ: dùng nhầm bảng mã không làm gì nổ,
+    chỉ trả về sai dòng. Nếu hàm này âm thầm đoán bừa thì chế độ lỗi đó
+    biến mất khỏi mọi phép đo, và về sau không tách được nó khỏi lỗi đọc
+    số. Người gọi phải tự quyết định làm gì với None, và phải ghi lại.
+
+    Trang mục lục nhắc tên cả hai chuẩn là ca có thật, nên khi có dấu hiệu
+    của cả hai thì độ tin cậy bị chia đôi, và hoà thì trả None.
+    """
+    khong_dau = _bo_dau(text)
+
+    diem = {
+        chuan: sum(1 for mau in mau_list if re.search(mau, khong_dau))
+        for chuan, mau_list in STANDARD_MARKERS.items()
+    }
+
+    thang = max(diem, key=lambda chuan: diem[chuan])
+    diem_thang = diem[thang]
+    diem_thua = max(diem[chuan] for chuan in diem if chuan is not thang)
+
+    if diem_thang == 0:
+        print("[STANDARD] Không tìm thấy dấu hiệu chuẩn mẫu biểu nào trong trang")
+        return None, 0.0
+
+    if diem_thang == diem_thua:
+        print(
+            f"[STANDARD] Hoà {diem_thang}-{diem_thua} giữa các chuẩn "
+            f"(trang nhắc cả hai?) — không kết luận"
+        )
+        return None, 0.0
+
+    do_tin_cay = (diem_thang - diem_thua) / len(STANDARD_MARKERS[thang])
+
+    if diem_thua > 0:
+        # Có dấu hiệu của chuẩn kia trên cùng trang thì kết luận yếu hẳn đi,
+        # dù bên này vẫn nhiều dấu hiệu hơn.
+        do_tin_cay *= 0.5
+        print(
+            f"[STANDARD] Nhận diện {thang} nhưng trang còn dấu hiệu chuẩn khác "
+            f"({diem_thang} vs {diem_thua}) — độ tin cậy {do_tin_cay:.2f}"
+        )
+
+    return thang, do_tin_cay

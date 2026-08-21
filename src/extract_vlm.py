@@ -23,7 +23,13 @@ from openai import (
 )
 from PIL import Image
 
-from fields_config import FIELD_LINE_CODES, FIELD_MAP, FIELD_RULES
+from fields_config import (
+    DEFAULT_STANDARD,
+    FIELD_MAP,
+    FIELD_RULES,
+    Standard,
+    line_codes_for,
+)
 from metrics import timer
 from ocr_baseline import iter_table_regions
 from validation import has_required_fields
@@ -136,7 +142,20 @@ PROMPT_RULES = [
 ]
 
 
-def build_prompt() -> str:
+# Tên tiếng Việt của mẫu biểu, tra theo ký hiệu ĐÃ BỎ hậu tố "a".
+#
+# TT200 ký hiệu mẫu là B01/B02/B03, TT99 là B01a/B02a/B03a, nhưng vẫn là
+# cùng ba loại báo cáo nên không cần hai bảng tên. Riêng B01 để cả hai tên
+# vì TT99 đổi "Bảng cân đối kế toán" thành "Báo cáo tình hình tài chính" —
+# nêu cả hai giúp model nhận ra trang dù báo cáo theo chuẩn nào.
+FORM_NAMES = {
+    "B01": "Báo cáo tình hình tài chính (bảng cân đối kế toán)",
+    "B02": "Báo cáo kết quả hoạt động kinh doanh",
+    "B03": "Báo cáo lưu chuyển tiền tệ",
+}
+
+
+def build_prompt(standard: Standard = DEFAULT_STANDARD) -> str:
     """
     Sinh prompt từ fields_config, nhóm theo mẫu biểu.
 
@@ -151,18 +170,14 @@ def build_prompt() -> str:
     và mã là thứ ổn định nhất trên trang — hữu ích cho model đối chiếu
     khi tên chỉ tiêu trong ảnh viết hơi khác so với danh sách.
     """
-    form_names = {
-        "B01a": "Báo cáo tình hình tài chính (bảng cân đối kế toán)",
-        "B02a": "Báo cáo kết quả hoạt động kinh doanh",
-        "B03a": "Báo cáo lưu chuyển tiền tệ",
-    }
+    line_codes = line_codes_for(standard)
 
     # Gom field theo mẫu biểu, giữ nguyên thứ tự khai báo trong FIELD_MAP
     grouped: dict[str, list[str]] = {}
     ungrouped: list[str] = []
 
     for key in FIELD_MAP:
-        entry = FIELD_LINE_CODES.get(key)
+        entry = line_codes.get(key)
         if entry is None:
             ungrouped.append(key)
             continue
@@ -171,9 +186,9 @@ def build_prompt() -> str:
 
     sections = []
     for form, keys in grouped.items():
-        lines = [f"NHÓM {form} — {form_names.get(form, form)}:"]
+        lines = [f"NHÓM {form} — {FORM_NAMES.get(form.rstrip('a'), form)}:"]
         for key in keys:
-            _, code = FIELD_LINE_CODES[key]
+            _, code = line_codes[key]
             required = " [BẮT BUỘC]" if FIELD_RULES.get(key, {}).get("required") else ""
             lines.append(f'- "{key}": dòng "{FIELD_MAP[key]}", mã số {code}{required}')
         sections.append("\n".join(lines))
@@ -314,7 +329,11 @@ def parse_response(text: str) -> dict | None:
 PATIENCE_PAGES = 3
 
 
-def extract_fields_from_regions(pages, metrics=None) -> dict:
+def extract_fields_from_regions(
+    pages,
+    metrics=None,
+    standard: Standard = DEFAULT_STANDARD,
+) -> dict:
     """
     Chạy VLM trên từng vùng bảng đã cắt sẵn, gộp kết quả lại thành 1 dict.
 
@@ -331,7 +350,10 @@ def extract_fields_from_regions(pages, metrics=None) -> dict:
     Nếu chỉ dùng nhánh 1, chỉ cần một field không bao giờ đọc được là
     phải gọi API cho cả 55 trang.
     """
-    prompt = build_prompt()
+    # Prompt dựng MỘT lần cho cả tài liệu, nên chuẩn mẫu biểu phải do người
+    # gọi truyền vào chứ không tự dò theo từng trang: nhánh VLM không có
+    # text OCR để dò, và một tài liệu thì chỉ theo đúng một chuẩn.
+    prompt = build_prompt(standard)
     final_result = {key: None for key in FIELD_MAP}
     pages_without_new_field = 0
 

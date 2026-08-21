@@ -25,11 +25,14 @@ import sys
 from pathlib import Path
 
 from fields_config import (
+    DEFAULT_STANDARD,
     FIELD_ALIASES,
     FIELD_EXCLUDE,
-    FIELD_LINE_CODES,
     FIELD_MAP,
-    FORM_MARKERS,
+    Standard,
+    detect_standard,
+    form_markers_for,
+    line_codes_for,
 )
 
 # Một giá trị tiền tệ trong BCTC luôn có dấu phân cách nghìn
@@ -117,21 +120,26 @@ def extract_field_by_alias(text: str, field_key: str) -> int | None:
     return None
 
 
-def extract_field_by_code(text: str, field_key: str) -> int | None:
+def extract_field_by_code(text: str, field_key: str, standard: Standard) -> int | None:
     """
     Tìm giá trị theo MÃ SỐ dòng — dự phòng khi OCR làm hỏng tên chỉ tiêu.
 
     Chỉ áp dụng khi text có dấu hiệu đúng mẫu biểu, vì mã số chỉ duy nhất
-    TRONG một mẫu: "10" là Doanh thu thuần ở B02a nhưng là Biến động hàng
-    tồn kho ở B03a. Không kiểm tra mẫu biểu thì đây thành nguồn sai âm
+    TRONG một mẫu: "10" là Doanh thu thuần ở B02 nhưng là Biến động hàng
+    tồn kho ở B03. Không kiểm tra mẫu biểu thì đây thành nguồn sai âm
     thầm — đúng loại lỗi tệ nhất, vì có giá trị nên router tin dùng luôn.
+
+    standard là THAM SỐ BẮT BUỘC, không có mặc định: mã số còn khác nhau
+    giữa hai chuẩn (tổng tài sản là 270 ở TT200, 280 ở TT99), nên chọn
+    nhầm bảng mã cũng là một nguồn sai âm thầm y hệt. Bắt người gọi nói rõ
+    chuẩn là cách rẻ nhất để lỗi đó không xảy ra được.
     """
-    entry = FIELD_LINE_CODES.get(field_key)
+    entry = line_codes_for(standard).get(field_key)
     if entry is None:
         return None
 
     form, code = entry
-    marker = FORM_MARKERS.get(form)
+    marker = form_markers_for(standard).get(form)
     if marker is None or not re.search(marker, text, flags=re.IGNORECASE):
         return None
 
@@ -155,17 +163,39 @@ def extract_field_by_code(text: str, field_key: str) -> int | None:
     return None
 
 
-def extract_field(text: str, field_key: str) -> int | None:
+def extract_field(text: str, field_key: str, standard: Standard) -> int | None:
     """Thử tên chỉ tiêu trước, không ra thì mới thử mã số dòng."""
     value = extract_field_by_alias(text, field_key)
     if value is not None:
         return value
 
-    return extract_field_by_code(text, field_key)
+    return extract_field_by_code(text, field_key, standard)
 
 
-def extract_all_fields(text: str) -> dict:
-    return {key: extract_field(text, key) for key in FIELD_MAP}
+def extract_all_fields(text: str, standard: Standard | None = None) -> dict:
+    """
+    Trích mọi chỉ tiêu từ text OCR của một trang.
+
+    standard=None nghĩa là "tự nhận diện từ nội dung trang". Khi nhận diện
+    thất bại thì lùi về DEFAULT_STANDARD và KÊU RA LOG — không im lặng.
+
+    Vì sao không để nó im: dùng nhầm bảng mã không làm gì nổ, nó chỉ trả về
+    sai dòng. Nếu bước lùi này không để lại dấu vết thì về sau không tách
+    được "lỗi do nhận diện sai chuẩn" khỏi "lỗi do đọc sai số", mà đó lại
+    đúng là hai thứ cần đo riêng.
+    """
+    if standard is None:
+        standard, do_tin_cay = detect_standard(text)
+        if standard is None:
+            standard = DEFAULT_STANDARD
+            print(
+                f"[STANDARD] Không nhận diện được chuẩn, lùi về {standard} "
+                f"— kết quả trang này có thể dùng sai bảng mã số dòng"
+            )
+        else:
+            print(f"[STANDARD] Trang dùng chuẩn {standard} (tin cậy {do_tin_cay:.2f})")
+
+    return {key: extract_field(text, key, standard) for key in FIELD_MAP}
 
 
 if __name__ == "__main__":

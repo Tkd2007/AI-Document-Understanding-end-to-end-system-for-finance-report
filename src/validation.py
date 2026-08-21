@@ -13,13 +13,15 @@ Mọi quy tắc đều đọc từ fields_config.py chứ không hardcode tên f
 import re
 
 from fields_config import (
-    FIELD_IDENTITIES,
+    DEFAULT_STANDARD,
     FIELD_MAP,
     FIELD_RATIO_BOUNDS,
     FIELD_RELATIONS,
     FIELD_RULES,
     IDENTITY_TOLERANCE_RATIO,
     REVENUE_TO_ASSETS_LIMIT,
+    Standard,
+    identities_for,
 )
 
 
@@ -69,12 +71,21 @@ def has_required_fields(data: dict) -> bool:
     return True
 
 
-def validate_result(result: dict) -> dict:
+def validate_result(result: dict, standard: Standard = DEFAULT_STANDARD) -> dict:
     """
     Trả về {"data": <đã ép kiểu số>, "warnings": [...]}.
 
     warnings rỗng nghĩa là không phát hiện bất thường. Không chặn kết
     quả — chỉ gắn cờ để người dùng (và router) biết chỗ nào cần xem lại.
+
+    standard quyết định dùng bộ đẳng thức của chuẩn mẫu biểu nào. Để mặc
+    định là DEFAULT_STANDARD chứ không bắt buộc truyền, vì hiện hai chuẩn
+    dùng chung một bộ đẳng thức nên giá trị này chưa đổi được kết quả.
+
+    KHI NÀO MẶC ĐỊNH NÀY THÀNH NGUY HIỂM: ngay khi việc đối chiếu Phụ lục
+    IV cho thấy hai chuẩn khác nhau về đẳng thức. Lúc đó router phải truyền
+    chuẩn đã nhận diện xuống đây, và mặc định này phải bỏ đi — nếu không,
+    báo cáo TT200 sẽ bị kiểm bằng đẳng thức của TT99 mà không ai biết.
     """
     warnings = []
     data = {}
@@ -125,7 +136,7 @@ def validate_result(result: dict) -> dict:
     #    chữ số ở BẤT KỲ field nào trong nhóm là lộ ngay. Đây là thứ bắt
     #    được kiểu sai nguy hiểm nhất: giá trị đọc ra trông hợp lý, đúng
     #    thứ bậc, nhưng thực ra lấy nhầm dòng.
-    for parts, total_key, message in FIELD_IDENTITIES:
+    for parts, total_key, message in identities_for(standard):
         total = data.get(total_key)
         values = [data.get(key) for key in parts]
 

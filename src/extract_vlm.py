@@ -23,7 +23,7 @@ from openai import (
 )
 from PIL import Image
 
-from extraction_types import ExtractionResult, FieldResult
+from extraction_types import ExtractionResult, FieldResult, Provenance
 from fields_config import (
     DEFAULT_STANDARD,
     FIELD_MAP,
@@ -448,12 +448,37 @@ def _bo_phieu(cac_mau: list[dict], khoa: str, n_samples: int) -> tuple[FieldResu
     )
 
 
+def _luu_crop(region, page_no: int, region_index: int, crop_dir) -> str | None:
+    """
+    Ghi ảnh crop ra đĩa để bước đọc lại dùng lại, trả về đường dẫn.
+
+    Tên file mang (trang, chỉ số vùng) chứ KHÔNG mang số ngẫu nhiên: crop
+    này tồn tại để tra cứu lại bằng tay khi đi dò một kết quả đáng ngờ, mà
+    tên ngẫu nhiên thì không tra được. document_id nằm ở chính tên thư mục
+    crop_dir do người gọi đặt.
+
+    Trả None khi không bật lưu crop — bbox trong Provenance vẫn đủ để cắt
+    lại từ PDF gốc, chỉ tốn công convert lại trang.
+    """
+    if crop_dir is None:
+        return None
+
+    thu_muc = Path(crop_dir)
+    thu_muc.mkdir(parents=True, exist_ok=True)
+
+    duong_dan = thu_muc / f"p{page_no:03d}_r{region_index}.png"
+    region.image.save(duong_dan)
+
+    return str(duong_dan)
+
+
 def extract_fields_from_regions(
     pages,
     metrics=None,
     standard: Standard = DEFAULT_STANDARD,
     n_samples: int = 1,
     temperature: float = 0.0,
+    crop_dir: str | Path | None = None,
 ) -> ExtractionResult:
     """
     Chạy VLM trên từng vùng bảng đã cắt sẵn, gộp thành một ExtractionResult.
@@ -502,13 +527,20 @@ def extract_fields_from_regions(
         page_no = page["page"]
         found_new_field = False
 
-        for region in page["regions"]:
-            base64_image = encode_image_to_base64(region)
+        for region_index, region in enumerate(page["regions"]):
+            base64_image = encode_image_to_base64(region.image)
             cac_mau = _lay_mau_vung(base64_image, prompt, n_samples, temperature, metrics)
 
             if not cac_mau:
                 print(f"--- Page {page_no}: bỏ qua (không mẫu nào dùng được) ---")
                 continue
+
+            nguon = Provenance(
+                page=page_no,
+                region_index=region_index,
+                bbox=region.bbox,
+                crop_path=_luu_crop(region, page_no, region_index, crop_dir),
+            )
 
             for khoa in final_result:
                 if final_result[khoa].value is not None:
@@ -523,9 +555,11 @@ def extract_fields_from_regions(
                     # KHÔNG tính là đã tìm thấy field, để trang sau còn
                     # được thử: các chỉ tiêu nằm rải ở nhiều trang.
                     if ket_qua.confidence > final_result[khoa].confidence:
+                        ket_qua.provenance = nguon
                         final_result[khoa] = ket_qua
                     continue
 
+                ket_qua.provenance = nguon
                 final_result[khoa] = ket_qua
                 found_new_field = True
                 if canh_bao:

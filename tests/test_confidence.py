@@ -12,9 +12,11 @@ chính là tập ứng viên sửa lỗi đầu tiên.
 import json
 
 import pytest
+from PIL import Image
 
 import extract_vlm
 from extract_vlm import _bo_phieu, extract_fields_from_regions
+from layout_detection import TableRegion
 
 
 def _mau(**gia_tri) -> dict:
@@ -41,8 +43,13 @@ def _lap_vlm_gia(monkeypatch, cac_phan_hoi: list):
     monkeypatch.setattr(extract_vlm, "encode_image_to_base64", lambda anh: "")
 
 
-def _mot_trang():
-    return [{"page": 1, "regions": [None]}]
+def _vung(bbox=(0, 0, 10, 10)) -> TableRegion:
+    """Một vùng bảng giả, đủ để pipeline chạy mà không cần PDF thật."""
+    return TableRegion(image=Image.new("RGB", (10, 10)), bbox=bbox, confidence=0.9)
+
+
+def _mot_trang(page: int = 1):
+    return [{"page": page, "regions": [_vung()]}]
 
 
 # --- Bỏ phiếu, kiểm ở mức thuật toán -----------------------------------------

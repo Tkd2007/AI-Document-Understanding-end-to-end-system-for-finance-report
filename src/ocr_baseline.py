@@ -19,7 +19,7 @@ import numpy as np
 from dotenv import load_dotenv
 from PIL import Image
 
-from layout_detection import get_table_regions
+from layout_detection import ca_trang, get_table_regions
 from metrics import timer
 
 load_dotenv()
@@ -118,7 +118,12 @@ def get_reader():
 def iter_table_regions(file_path: str, metrics=None) -> Iterator[dict]:
     """
     Generator: convert + layout detection cho TỪNG trang, yield từng trang một:
-        {"page": 1, "regions": [Image, ...]}
+        {"page": 1, "regions": [TableRegion, ...]}
+
+    regions mang TableRegion chứ không mang ảnh trần: bbox phải đi kèm
+    tới tận bước gộp kết quả, vì đó là thứ cho phép cắt lại đúng vùng để
+    ĐỌC LẠI. Chuỗi này đứt ở bất kỳ mắt nào thì đóng góp cốt lõi của cả
+    nghiên cứu biến mất.
 
     Mỗi trang trả về các vùng bảng tìm được; nếu không tìm thấy bảng nào
     thì trả về nguyên trang gốc (fail open — để không mất dữ liệu ở trang
@@ -139,7 +144,7 @@ def iter_table_regions(file_path: str, metrics=None) -> Iterator[dict]:
 
         if not regions:
             print(f"--- Page {i}/{total}: không có bảng, dùng nguyên trang ---")
-            yield {"page": i, "regions": [page_img]}
+            yield {"page": i, "regions": [ca_trang(page_img)]}
             continue
 
         print(f"--- Page {i}/{total}: tìm thấy {len(regions)} bảng ---")
@@ -155,12 +160,13 @@ def ocr_image(image: Image.Image) -> str:
 def ocr_page_regions(page: dict) -> dict:
     """
     OCR các vùng bảng của MỘT trang.
-    Nhận {"page": 1, "regions": [...]}, trả {"page": 1, "text": "..."}.
+    Nhận {"page": 1, "regions": [TableRegion, ...]}, trả
+    {"page": 1, "text": "..."}.
 
     Tách ra khỏi ocr_regions() để router.py gọi được theo từng trang khi
     duyệt generator, thay vì phải gom hết mọi trang lại rồi mới OCR.
     """
-    text = "\n".join(ocr_image(region) for region in page["regions"])
+    text = "\n".join(ocr_image(region.image) for region in page["regions"])
     print(f"--- OCR page {page['page']}: {len(text)} characters ---")
     return {"page": page["page"], "text": text}
 

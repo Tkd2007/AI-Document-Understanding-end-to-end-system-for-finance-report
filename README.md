@@ -339,6 +339,7 @@ POPPLER_PATH=C:\poppler\poppler-XX.XX.X\Library\bin
 OPENROUTER_API_KEY=your_openrouter_key
 OPENROUTER_MODEL=google/gemma-4-31b-it:free
 USE_OCR_FIRST=false
+DISABLE_CONSTRAINT_GATE=false
 GRAFANA_USER=admin
 GRAFANA_PASSWORD=${GRAFANA_PASSWORD}
 ```
@@ -351,6 +352,15 @@ GRAFANA_PASSWORD=${GRAFANA_PASSWORD}
   computer.
 - `USE_OCR_FIRST` bật/tắt nhánh OCR + regex (mặc định `false` — xem
   "Vì sao nhánh OCR đang tắt mặc định" ở trên).
+- `DISABLE_CONSTRAINT_GATE` **chỉ dùng khi ĐO, không dùng khi phục vụ**
+  (mặc định `false`). Bật lên thì pipeline chạy đúng một nhánh, không gọi
+  `is_acceptable()`, không fallback, và trả kết quả thô. Nó tồn tại vì
+  pipeline thường đã dùng chính đẳng thức kế toán làm cổng quyết định
+  fallback, nên đo "vi phạm ràng buộc dự báo lỗi tốt đến đâu" trên đầu ra
+  đó là vòng lặp luận chứng — ta đánh giá một tín hiệu trên tập đã bị chính
+  nó lọc. Lượt chạy nào ở chế độ này được đánh dấu bằng khoá
+  `constraint_gate: false` trong `metrics.jsonl`, vì dữ liệu hai chế độ
+  không so được với nhau.
 - `OPENROUTER_API_KEY` và `OPENROUTER_MODEL` là bắt buộc, kiểm bằng
   `require_config()`. Chỗ kiểm được đặt ở **entrypoint** chứ không phải lúc
   import module: `api.py` gọi lúc khởi động (thiếu key thì container chết

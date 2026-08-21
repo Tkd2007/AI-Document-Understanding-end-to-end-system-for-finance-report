@@ -36,8 +36,30 @@ from validation import has_required_fields, validate_result
 
 load_dotenv()
 
+def _co_bat(ten_bien: str, mac_dinh: str = "false") -> bool:
+    """Đọc một cờ bật/tắt từ biến môi trường."""
+    return os.getenv(ten_bien, mac_dinh).strip().lower() in {"1", "true", "yes"}
+
+
 # Bật lại nhánh OCR bằng USE_OCR_FIRST=true trong .env
-USE_OCR_FIRST = os.getenv("USE_OCR_FIRST", "false").strip().lower() in {"1", "true", "yes"}
+USE_OCR_FIRST = _co_bat("USE_OCR_FIRST")
+
+# Tắt HOÀN TOÀN cổng ràng buộc. CHỈ DÙNG KHI ĐO, không dùng khi phục vụ.
+#
+# Vì sao cờ này phải tồn tại: H1 so "vi phạm ràng buộc" với "confidence của
+# model" như hai bộ dự báo lỗi. Nhưng pipeline hiện ĐÃ dùng chính đẳng thức
+# kế toán làm cổng quyết định fallback — is_acceptable() gọi
+# validate_result(), và khi có warning thì run_vlm() cho VLM ghi đè. Nghĩa
+# là đầu ra đã được chính tín hiệu ấy làm sạch.
+#
+# Đo AUROC của vi phạm ràng buộc trên dữ liệu đó là VÒNG LẶP LUẬN CHỨNG:
+# ta đang đánh giá một tín hiệu trên tập đã bị chính nó lọc, và con số thu
+# được không nói lên điều gì về khả năng dự báo thật. Bật cờ này cho ta
+# nhánh đối chứng: đầu ra thô, chưa từng thấy ràng buộc.
+#
+# Đây là mục rẻ nhất trong cả kế hoạch thi công, và bỏ qua nó thì toàn bộ
+# kết quả H1 vô giá trị bất kể phần còn lại làm tốt tới đâu.
+DISABLE_CONSTRAINT_GATE = _co_bat("DISABLE_CONSTRAINT_GATE")
 
 
 def run_ocr_first(pages_iter, cached_pages: list, result: dict, metrics=None) -> dict:
@@ -70,6 +92,59 @@ def run_ocr_first(pages_iter, cached_pages: list, result: dict, metrics=None) ->
     return result
 
 
+def _remaining_pages(pages_iter, cached_pages: list):
+    """
+    Trang đã đọc ở nhánh OCR thì dùng lại, phần chưa duyệt thì đọc tiếp từ
+    generator — không convert PDF hay chạy YOLO lần nữa.
+    """
+    yield from cached_pages
+    for page in pages_iter:
+        cached_pages.append(page)
+        yield page
+
+
+def run_unconstrained(pages_iter, cached_pages: list, result: dict, metrics=None) -> dict:
+    """
+    Chạy ĐÚNG MỘT nhánh, không cổng ràng buộc, không fallback.
+
+    Nhánh nào là do USE_OCR_FIRST quyết định. Điểm khác biệt với đường
+    thường không phải ở việc bỏ fallback, mà ở chỗ KHÔNG một quyết định
+    nào trong đường đi này đọc kết quả của validate_result(). Đầu ra vì
+    vậy chưa từng bị ràng buộc kế toán chạm vào, và đó là điều kiện để
+    con số AUROC ở H1 có nghĩa.
+
+    Kể cả điều kiện dừng sớm của run_ocr_first() cũng phải bỏ: nó gọi
+    is_acceptable(), nên nó quyết định đọc tới trang nào dựa trên chính
+    tín hiệu đang được đem đi đánh giá.
+
+    KHÔNG bỏ điều kiện dừng sớm theo PATIENCE_PAGES bên trong nhánh VLM:
+    cái đó dựa trên "đã đủ field bắt buộc chưa", tức là tính đầy đủ chứ
+    không phải tính hợp lệ theo ràng buộc. Nó là một nguồn thiên lệch
+    khác và được xử lý riêng trong danh mục dọn dẹp.
+    """
+    if USE_OCR_FIRST:
+        for page in pages_iter:
+            cached_pages.append(page)
+
+            with timer(metrics, "ocr"):
+                ocr_result = ocr_page_regions(page)
+            page_fields = extract_all_fields(ocr_result["text"])
+
+            for key in result:
+                if result[key] is None and page_fields.get(key) is not None:
+                    result[key] = page_fields[key]
+
+        return result
+
+    vlm_result = extract_fields_from_regions(_remaining_pages(pages_iter, cached_pages), metrics)
+
+    for key in result:
+        if vlm_result.get(key) is not None:
+            result[key] = vlm_result[key]
+
+    return result
+
+
 def run_vlm(pages_iter, cached_pages: list, result: dict, metrics=None) -> dict:
     """
     Chạy nhánh VLM và trộn kết quả vào result.
@@ -83,15 +158,7 @@ def run_vlm(pages_iter, cached_pages: list, result: dict, metrics=None) -> dict:
     """
     has_warnings = bool(validate_result(result)["warnings"])
 
-    # Trang đã đọc ở nhánh OCR thì dùng lại, phần chưa duyệt thì đọc tiếp
-    # từ generator — không convert PDF hay chạy YOLO lần nữa.
-    def remaining_pages():
-        yield from cached_pages
-        for page in pages_iter:
-            cached_pages.append(page)
-            yield page
-
-    vlm_result = extract_fields_from_regions(remaining_pages(), metrics)
+    vlm_result = extract_fields_from_regions(_remaining_pages(pages_iter, cached_pages), metrics)
 
     for key in result:
         if vlm_result.get(key) is None:
@@ -131,14 +198,18 @@ def route_document(file_path: str, save: bool = True) -> dict:
         cached_pages: list = []
         result = empty_result()
 
-        if USE_OCR_FIRST:
-            result = run_ocr_first(pages_iter, cached_pages, result, metrics)
-
-        if not is_acceptable(result):
+        if DISABLE_CONSTRAINT_GATE:
+            print("--- CỔNG RÀNG BUỘC ĐANG TẮT: chế độ ĐO, không dùng để phục vụ ---")
+            result = run_unconstrained(pages_iter, cached_pages, result, metrics)
+        else:
             if USE_OCR_FIRST:
-                missing = [key for key, value in result.items() if value is None]
-                print(f"--- OCR chưa đạt (thiếu/nghi ngờ: {missing}), chuyển sang VLM ---")
-            result = run_vlm(pages_iter, cached_pages, result, metrics)
+                result = run_ocr_first(pages_iter, cached_pages, result, metrics)
+
+            if not is_acceptable(result):
+                if USE_OCR_FIRST:
+                    missing = [key for key, value in result.items() if value is None]
+                    print(f"--- OCR chưa đạt (thiếu/nghi ngờ: {missing}), chuyển sang VLM ---")
+                result = run_vlm(pages_iter, cached_pages, result, metrics)
 
         # Ép kiểu số TRƯỚC khi lưu và trả về. VLM đôi khi trả số dưới dạng
         # chuỗi, nên nếu lưu thẳng result thô thì file _routed.json và
@@ -149,7 +220,15 @@ def route_document(file_path: str, save: bool = True) -> dict:
         if save:
             save_result(file_path, data)
 
-        metrics.set_info(pages_processed=len(cached_pages), ocr_first=USE_OCR_FIRST)
+        # constraint_gate ghi thành khoá TƯỜNG MINH trong metrics: một lượt
+        # chạy ở chế độ đo và một lượt chạy phục vụ cho ra dữ liệu không so
+        # được với nhau, nên người đọc metrics.jsonl phải phân biệt được hai
+        # loại đó bằng một khoá có sẵn chứ không phải suy đoán.
+        metrics.set_info(
+            pages_processed=len(cached_pages),
+            ocr_first=USE_OCR_FIRST,
+            constraint_gate=not DISABLE_CONSTRAINT_GATE,
+        )
         metrics.status = "ok"
         return data
 
@@ -201,6 +280,10 @@ if __name__ == "__main__":
         sys.exit(1)
 
     print(f"--- Nhánh OCR: {'BẬT' if USE_OCR_FIRST else 'TẮT'} (USE_OCR_FIRST) ---")
+    print(
+        f"--- Cổng ràng buộc: {'TẮT (chế độ ĐO)' if DISABLE_CONSTRAINT_GATE else 'BẬT'} "
+        f"(DISABLE_CONSTRAINT_GATE) ---"
+    )
 
     input_path = sys.argv[1]
     result = route_document(input_path)

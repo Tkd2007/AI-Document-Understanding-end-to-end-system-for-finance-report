@@ -33,7 +33,7 @@ from fields_config import (
     empty_result,
     line_codes_for,
 )
-from metrics import timer
+from metrics import bam_prompt, timer
 from ocr_baseline import iter_table_regions
 from validation import coerce_number, has_required_fields
 
@@ -595,7 +595,13 @@ def extract_fields_from_regions(
 
     return ExtractionResult(
         data=final_result,
-        meta={UNIT_KEY: don_vi.value if don_vi is not None else None},
+        meta={
+            UNIT_KEY: don_vi.value if don_vi is not None else None,
+            "standard": standard.value,
+            # Băm NỘI DUNG prompt chứ không phải số phiên bản: số phiên
+            # bản đòi con người nhớ tăng nó, và người ta không nhớ.
+            "prompt_hash": bam_prompt(prompt),
+        },
         warnings=warnings,
         n_samples=n_samples,
         temperature=temperature,

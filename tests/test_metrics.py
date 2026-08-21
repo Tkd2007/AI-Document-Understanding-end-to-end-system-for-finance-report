@@ -136,3 +136,69 @@ def test_dem_khong_mat_luot_khi_nhieu_thread_cong_don_cung_luc():
 
     assert totals["documents_total"] == mong_doi
     assert totals["documents_ok_total"] == mong_doi
+
+
+def test_bam_prompt_doi_khi_noi_dung_doi():
+    """
+    Băm NỘI DUNG chứ không phải số phiên bản. Số phiên bản đòi con người
+    nhớ tăng nó, và người ta không nhớ — một prompt bị sửa mà số phiên bản
+    đứng yên là hai lượt chạy khác nhau trông như một.
+    """
+    goc = metrics.bam_prompt("Trích xuất các chỉ tiêu sau")
+    sua_mot_chu = metrics.bam_prompt("Trích xuất các chỉ tiêu sau.")
+
+    assert goc != sua_mot_chu
+    assert goc == metrics.bam_prompt("Trích xuất các chỉ tiêu sau")
+
+
+def test_thong_tin_tai_lap_co_du_cac_khoa_bat_buoc():
+    """
+    Thiếu một khoá nào ở đây là một lượt chạy không dựng lại được. Ghi cho
+    MỌI lượt chứ không chỉ lượt cuối: khi một bảng kết quả trông lạ, câu
+    hỏi đầu tiên luôn là lượt đó chạy bằng gì.
+    """
+    thong_tin = metrics.thong_tin_tai_lap(
+        model="google/gemma-4-31b-it:free",
+        temperature=0.7,
+        n_samples=5,
+        seed=42,
+        prompt_hash="abc123",
+        standard="TT99",
+    )
+
+    assert set(thong_tin) == {
+        "experiment_id",
+        "commit",
+        "model",
+        "temperature",
+        "n_samples",
+        "seed",
+        "prompt_hash",
+        "standard",
+    }
+    assert thong_tin["n_samples"] == 5
+    assert thong_tin["prompt_hash"] == "abc123"
+
+
+def test_experiment_id_doc_tu_bien_moi_truong(monkeypatch):
+    """
+    Runner thí nghiệm đặt được biến này mà không phải luồn tham số qua cả
+    pipeline. Rỗng nghĩa là lượt chạy lẻ, không thuộc thí nghiệm nào.
+    """
+    monkeypatch.setenv("EXPERIMENT_ID", "h1-xbrl-seed3")
+
+    assert metrics.thong_tin_tai_lap()["experiment_id"] == "h1-xbrl-seed3"
+
+
+def test_khong_co_git_thi_commit_la_none_chu_khong_no(monkeypatch):
+    """
+    Chạy trong Docker không có .git là chuyện bình thường. Một dòng metrics
+    thiếu commit hash vẫn hơn một lượt chạy bị hỏng vì không lấy được nó.
+    """
+    monkeypatch.setattr(metrics, "_da_tra_commit", False)
+    monkeypatch.setattr(metrics, "_commit_hash", None)
+    monkeypatch.setattr(
+        metrics.subprocess, "check_output", lambda *a, **k: (_ for _ in ()).throw(OSError())
+    )
+
+    assert metrics.commit_hash() is None

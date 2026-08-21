@@ -31,7 +31,7 @@ from extract_baseline import extract_all_fields
 from extract_vlm import extract_fields_from_regions, require_config
 from extraction_types import ExtractionResult, FieldResult
 from fields_config import UNIT_KEY, empty_result
-from metrics import RunMetrics, merge_into_totals, timer
+from metrics import RunMetrics, merge_into_totals, thong_tin_tai_lap, timer
 from ocr_baseline import iter_table_regions, ocr_page_regions
 from validation import has_required_fields, validate_result
 
@@ -94,6 +94,27 @@ def _lap_cho_trong(tich_luy: dict[str, FieldResult], nguon: dict[str, FieldResul
             tich_luy[khoa] = nguon[khoa]
             co_field_moi = True
     return co_field_moi
+
+
+def _ghi_lai_luot_vlm(ghi_lai, extraction: ExtractionResult) -> None:
+    """
+    Bồi thông tin tái lập của lượt gọi VLM vào dict do người gọi đưa.
+
+    Bồi tại chỗ thay vì đổi kiểu trả về, cùng cách cached_pages vẫn làm:
+    hai nhánh run_vlm và run_unconstrained đều trả về accumulator, và
+    đổi cả hai sang trả tuple sẽ làm nơi gọi phải phân biệt hai dạng kết
+    quả chỉ để lấy vài trường metadata.
+    """
+    if ghi_lai is None:
+        return
+
+    ghi_lai.update(
+        model=extraction.model,
+        temperature=extraction.temperature,
+        n_samples=extraction.n_samples,
+        prompt_hash=extraction.meta.get("prompt_hash"),
+        standard=extraction.meta.get("standard"),
+    )
 
 
 def _tu_extraction(extraction: ExtractionResult) -> dict[str, FieldResult]:
@@ -163,7 +184,9 @@ def _remaining_pages(pages_iter, cached_pages: list):
         yield page
 
 
-def run_unconstrained(pages_iter, cached_pages: list, result: dict, metrics=None) -> dict:
+def run_unconstrained(
+    pages_iter, cached_pages: list, result: dict, metrics=None, ghi_lai=None
+) -> dict:
     """
     Chạy ĐÚNG MỘT nhánh, không cổng ràng buộc, không fallback.
 
@@ -190,12 +213,13 @@ def run_unconstrained(pages_iter, cached_pages: list, result: dict, metrics=None
         return result
 
     extraction = extract_fields_from_regions(_remaining_pages(pages_iter, cached_pages), metrics)
+    _ghi_lai_luot_vlm(ghi_lai, extraction)
     _lap_cho_trong(result, _tu_extraction(extraction))
 
     return result
 
 
-def run_vlm(pages_iter, cached_pages: list, result: dict, metrics=None) -> dict:
+def run_vlm(pages_iter, cached_pages: list, result: dict, metrics=None, ghi_lai=None) -> dict:
     """
     Chạy nhánh VLM và trộn kết quả vào result.
 
@@ -209,6 +233,7 @@ def run_vlm(pages_iter, cached_pages: list, result: dict, metrics=None) -> dict:
     has_warnings = bool(validate_result(gia_tri_tran(result))["warnings"])
 
     extraction = extract_fields_from_regions(_remaining_pages(pages_iter, cached_pages), metrics)
+    _ghi_lai_luot_vlm(ghi_lai, extraction)
     tu_vlm = _tu_extraction(extraction)
 
     for key in result:
@@ -257,10 +282,13 @@ def route_document(file_path: str, save: bool = True) -> ExtractionResult:
         pages_iter = iter_table_regions(file_path, metrics)
         cached_pages: list = []
         result = khung_rong()
+        thong_tin_vlm: dict = {}
 
         if DISABLE_CONSTRAINT_GATE:
             print("--- CỔNG RÀNG BUỘC ĐANG TẮT: chế độ ĐO, không dùng để phục vụ ---")
-            result = run_unconstrained(pages_iter, cached_pages, result, metrics)
+            result = run_unconstrained(
+                pages_iter, cached_pages, result, metrics, thong_tin_vlm
+            )
         else:
             if USE_OCR_FIRST:
                 result = run_ocr_first(pages_iter, cached_pages, result, metrics)
@@ -269,7 +297,7 @@ def route_document(file_path: str, save: bool = True) -> ExtractionResult:
                 if USE_OCR_FIRST:
                     missing = [k for k, kq in result.items() if kq.value is None]
                     print(f"--- OCR chưa đạt (thiếu/nghi ngờ: {missing}), chuyển sang VLM ---")
-                result = run_vlm(pages_iter, cached_pages, result, metrics)
+                result = run_vlm(pages_iter, cached_pages, result, metrics, thong_tin_vlm)
 
         # Ép kiểu số TRƯỚC khi lưu và trả về. VLM đôi khi trả số dưới dạng
         # chuỗi, nên nếu lưu thẳng result thô thì file _routed.json và
@@ -310,6 +338,7 @@ def route_document(file_path: str, save: bool = True) -> ExtractionResult:
             pages_processed=len(cached_pages),
             ocr_first=USE_OCR_FIRST,
             constraint_gate=not DISABLE_CONSTRAINT_GATE,
+            **thong_tin_tai_lap(**thong_tin_vlm),
         )
         metrics.status = "ok"
         return extraction

@@ -6,7 +6,10 @@ số lần gọi VLM, số trang đã xử lý. Ghi ra data/output/metrics.jsonl
 mỗi dòng một lượt chạy, để sau này gộp lại phân tích.
 """
 
+import hashlib
 import json
+import os
+import subprocess
 import threading
 import time
 from contextlib import contextmanager, nullcontext
@@ -14,6 +17,90 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 METRICS_PATH = Path("data/output/metrics.jsonl")
+
+_commit_hash: str | None = None
+_da_tra_commit = False
+
+
+def bam_prompt(prompt: str) -> str:
+    """
+    Băm NỘI DUNG prompt, không phải số phiên bản.
+
+    Số phiên bản đòi con người nhớ tăng nó, và người ta không nhớ. Một
+    prompt bị sửa mà số phiên bản đứng yên là hai lượt chạy khác nhau
+    trông như một, và đó đúng là thứ phá hỏng việc so sánh giữa các lần
+    chạy mà không ai phát hiện.
+
+    16 ký tự đầu của SHA-256 là đủ: ta chỉ cần phân biệt các phiên bản
+    prompt của chính dự án này, không chống va chạm có chủ đích.
+    """
+    return hashlib.sha256(prompt.encode("utf-8")).hexdigest()[:16]
+
+
+def commit_hash() -> str | None:
+    """
+    Commit hash của mã đang chạy, hoặc None nếu không đọc được.
+
+    Cache lại vì nó không đổi trong vòng đời một process, và gọi git cho
+    mỗi tài liệu trong một lượt chạy 60 tài liệu là lãng phí không cần
+    thiết.
+
+    Trả None thay vì ném lỗi: chạy trong Docker không có .git là chuyện
+    bình thường, và một dòng metrics thiếu commit hash vẫn hơn là một lượt
+    chạy bị hỏng vì không lấy được nó.
+    """
+    global _commit_hash, _da_tra_commit
+
+    if _da_tra_commit:
+        return _commit_hash
+
+    _da_tra_commit = True
+    try:
+        _commit_hash = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        _commit_hash = None
+
+    return _commit_hash
+
+
+def thong_tin_tai_lap(
+    model: str | None = None,
+    temperature: float | None = None,
+    n_samples: int | None = None,
+    seed: int | None = None,
+    prompt_hash: str | None = None,
+    standard: str | None = None,
+) -> dict:
+    """
+    Bộ trường tối thiểu để một lượt chạy tái lập lại được.
+
+    Ghi cho MỌI lượt chạy, không chỉ lượt cuối. Lý do: khi một bảng kết
+    quả trông lạ, câu hỏi đầu tiên luôn là "lượt đó chạy bằng gì" — và nếu
+    chỉ lượt cuối có thông tin thì mọi lượt trước thành không dùng được.
+
+    experiment_id đọc từ biến môi trường để runner thí nghiệm đặt được mà
+    không phải luồn tham số qua cả pipeline. Rỗng nghĩa là lượt chạy lẻ,
+    không thuộc thí nghiệm nào.
+
+    Nhận prompt_hash đã băm sẵn chứ không nhận nguyên văn prompt: prompt
+    được dựng bên trong nhánh trích xuất và không đi ngược ra tới đây, còn
+    băm thì nhẹ và mang đi được. Băm ở đúng chỗ dựng prompt cũng đảm bảo
+    băm đúng chuỗi ĐÃ GỬI, không phải một chuỗi dựng lại.
+    """
+    return {
+        "experiment_id": os.getenv("EXPERIMENT_ID", ""),
+        "commit": commit_hash(),
+        "model": model,
+        "temperature": temperature,
+        "n_samples": n_samples,
+        "seed": seed,
+        "prompt_hash": prompt_hash,
+        "standard": standard,
+    }
 
 
 class RunMetrics:

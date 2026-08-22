@@ -14,6 +14,16 @@ pillow==12.2.0
 pdf2image==1.17.0          # cần Poppler cài sẵn ở máy, xem POPPLER_PATH trong README
 numpy==2.5.1
 
+# --- Giải bài định vị lỗi ---
+#
+# scipy vốn đã có trong image từ trước theo chuỗi easyocr → scikit-image →
+# scipy, nên dòng này không cài thêm gì cả; nó chỉ nói ra một thư viện mà
+# code ĐANG phụ thuộc trực tiếp. Baseline 8 trong src/repair/diagnose.py
+# gọi scipy.optimize.linprog để giải chính xác bài L1. Dựa vào một phụ
+# thuộc bắc cầu mà không khai báo là tự đặt bẫy: ngày nào easyocr bỏ
+# scikit-image thì baseline im lặng biến mất khỏi image.
+scipy==1.18.0
+
 # --- Layout detection ---
 doclayout-yolo==0.0.4      # cung cấp `from doclayout_yolo import YOLOv10`
 huggingface-hub==0.36.2    # tải checkpoint DocLayout-YOLO qua hf_hub_download()

@@ -22,6 +22,16 @@ from repair.diagnose import (
 A = np.array([[1.0, 1.0, -1.0]])
 THU_TU = ["a", "b", "c"]
 
+# Hệ thứ hai, bốn field và hai đẳng thức lồng nhau:
+#     a + b = c
+#     b + c = d
+# Cột: a=[1,0], b=[1,1], c=[-1,1], d=[0,-1] — đôi một không tỷ lệ. Ví dụ
+# một đẳng thức ở trên quá lỏng để kiểm những khẳng định cần tới ca mà
+# KHÔNG trường đơn lẻ nào sửa nổi, vì với một đẳng thức thì trường nào có
+# cột khác 0 cũng tự mình gánh được cả residual.
+A_LONG = np.array([[1.0, 1.0, -1.0, 0.0], [0.0, 1.0, 1.0, -1.0]])
+THU_TU_LONG = ["a", "b", "c", "d"]
+
 
 def _uv(gia_tri, cost=1.0, source="ocr_alt") -> Candidate:
     return Candidate(value=gia_tri, source=source, cost=cost)
@@ -289,6 +299,26 @@ def test_l1_lien_tuc_cho_nghiem_THUA():
     assert ket_qua.n_changed <= 2
 
 
+def test_l1_lien_tuc_khong_sua_qua_HANG_CUA_A_truong():
+    """
+    Nghiệm của một bài quy hoạch tuyến tính là nghiệm ĐỈNH, nên số trường
+    bị sửa không vượt quá hạng của A. Đây là tính chất mà chỉ bộ giải LP
+    thật bảo đảm — nghiệm bình phương tối thiểu rải sai lệch ra cả bốn
+    trường và vẫn có cùng chuẩn L1, nên không có gì bắt được sự khác nhau
+    đó ngoài việc đếm số trường bị đổi ở đây.
+
+    Dùng hệ hai đẳng thức vì trên hệ một đẳng thức thì hạng bằng 1 và mọi
+    nghiệm hợp lệ đều thưa sẵn, không phân biệt được hai bộ giải.
+    """
+    ket_qua = diagnose_l1_continuous(
+        {"a": 11, "b": 20, "c": 30, "d": 48}, {}, A_LONG, THU_TU_LONG
+    )
+
+    assert ket_qua.verdict == "REPAIRED"
+    assert np.allclose(ket_qua.residual_after, 0, atol=1e-6)
+    assert ket_qua.n_changed <= np.linalg.matrix_rank(A_LONG)
+
+
 # --- Baseline 9: Fellegi-Holt với donor --------------------------------------
 
 
@@ -326,6 +356,48 @@ def test_donor_keo_nghiem_ve_phia_gia_tri_donor():
     )
 
     assert gan.changed_fields["c"].value == pytest.approx(30)
+
+
+def test_donor_chon_truong_theo_DONOR_chu_khong_theo_thu_tu_chi_so():
+    """
+    Với `a + b = c` thì sửa riêng `a`, riêng `b` hay riêng `c` đều đủ làm
+    residual về 0, nên ba tập trường hoà nhau về cardinality. Phân xử hoà
+    bằng thứ tự chỉ số sẽ luôn chọn `a` — tức baseline trung tâm của cả
+    nghiên cứu thắng thua theo thứ tự khai báo field trong `fields_config`,
+    một chi tiết cài đặt không liên quan gì tới khoa học.
+
+    Ở đây donor chỉ biết `b`, nên `b` phải thắng dù `a` đứng trước và cũng
+    khả thi.
+    """
+    ket_qua = diagnose_fellegi_holt_donor(
+        {"a": 10, "b": 20, "c": 35}, {}, A, THU_TU, donor_values={"b": 25}
+    )
+
+    assert set(ket_qua.changed_fields) == {"b"}
+    assert ket_qua.changed_fields["b"].value == pytest.approx(25)
+
+
+def test_donor_chon_CAP_truong_gan_donor_nhat_khi_khong_truong_don_le_nao_du():
+    """
+    Ca thật của Fellegi-Holt: không trường đơn lẻ nào gánh nổi residual,
+    phải thả hai trường, và có tới sáu cặp cùng cardinality đều thoả ràng
+    buộc. Donor là thứ duy nhất phân biệt được chúng.
+
+    Donor ở đây biết đúng giá trị thật của `a` và `d` — đúng vai của một
+    bản ghi donor tốt — nên cặp `{a, d}` có khoảng cách 0 và phải thắng cả
+    năm cặp còn lại.
+    """
+    ket_qua = diagnose_fellegi_holt_donor(
+        {"a": 11, "b": 20, "c": 30, "d": 48},
+        {},
+        A_LONG,
+        THU_TU_LONG,
+        donor_values={"a": 10, "d": 50},
+    )
+
+    assert set(ket_qua.changed_fields) == {"a", "d"}
+    assert ket_qua.changed_fields["a"].value == pytest.approx(10)
+    assert ket_qua.changed_fields["d"].value == pytest.approx(50)
 
 
 def test_donor_van_VERIFIED_khi_da_khop():

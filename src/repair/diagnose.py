@@ -18,9 +18,14 @@ Quyết định này có chủ đích và có số liệu đỡ lưng:
     hợp và k=2 là khoảng 43 nghìn — cả hai đều tức thì. Nghiệm thực tế gần
     như luôn là 1-2 trường, vì một tài liệu có ba trường cùng sai thì vấn
     đề nằm ở khâu trích xuất chứ không phải khâu sửa.
-  * Giữ requirements.txt nguyên vẹn: bộ đã ghim là bộ đã verify chạy trọn
-    pipeline, và thêm một bộ giải kèm binary vào image là cái giá thật.
+  * Không thêm bộ giải MILP kèm binary vào image: bộ thư viện đã ghim là
+    bộ đã verify chạy trọn pipeline, và một binary mới là cái giá thật.
   * Test chạy được mà không cần binary ngoài.
+
+Baseline 8 ở cuối file thì có dùng bộ giải LP của scipy, và đó không phải
+ngoại lệ của nguyên tắc trên: scipy vốn đã nằm sẵn trong image theo chuỗi
+easyocr → scikit-image → scipy, nên khai báo nó trong requirements.txt là
+nói ra thứ đang dùng chứ không phải cài thêm gì.
 
 Nếu về sau đo thấy chậm thật thì cắm bộ giải MILP vào đúng chỗ
 `_tim_to_hop_nho_nhat()` mà không đụng phần còn lại. Nhưng cắt rẻ hơn
@@ -33,6 +38,7 @@ from itertools import combinations, product
 from typing import Literal
 
 import numpy as np
+from scipy.optimize import linprog
 
 from repair.candidates import Candidate
 
@@ -252,38 +258,39 @@ def diagnose(
 # ---------------------------------------------------------------------------
 
 
-def _min_l1_irls(A: np.ndarray, b: np.ndarray, so_vong: int = 50, eps: float = 1e-8):
+def _min_l1_lp(A: np.ndarray, b: np.ndarray):
     """
-    Nghiệm chuẩn L1 nhỏ nhất của A·delta = b, giải xấp xỉ bằng IRLS.
+    Nghiệm chuẩn L1 nhỏ nhất của A·delta = b, giải CHÍNH XÁC bằng quy hoạch
+    tuyến tính. Trả về `(delta, lý do thất bại)`; một trong hai luôn là None.
 
-    Bài toán chính xác là một bài quy hoạch tuyến tính. Ở đây không có bộ
-    giải LP nào (quyết định giữ requirements nguyên vẹn), nên dùng
-    iteratively reweighted least squares: lặp lại bài bình phương tối
-    thiểu có trọng số nghịch với độ lớn nghiệm hiện tại, việc đó kéo nghiệm
-    về phía thưa đúng như chuẩn L1 làm.
+    Tách `delta = u − v` với `u, v ≥ 0` rồi tối thiểu hoá `Σ(u + v)` là cách
+    chuẩn đưa chuẩn L1 về dạng tuyến tính. Điều quan trọng hơn: nghiệm bộ
+    giải trả về là nghiệm ĐỈNH, nên số toạ độ khác 0 không vượt quá hạng
+    của A — đúng tính chất thưa mà baseline này phải có.
 
-    PHẢI NÊU TRONG PAPER rằng đây là nghiệm xấp xỉ chứ không phải nghiệm
-    LP chính xác. Baseline mạnh hơn thì kết luận về phương pháp đề xuất
-    càng đáng tin, nên làm yếu baseline một cách âm thầm là tự bắn vào
-    chân mình.
+    Vì sao không dùng IRLS: trên hệ đối xứng như `a + b = c`, cực tiểu L1
+    suy biến — nghiệm rải đều ra ba trường có cùng chuẩn L1 với nghiệm dồn
+    vào một trường. IRLS xuất phát từ trọng số đều rơi ngay vào nghiệm rải
+    đều, và đó là điểm bất động thật sự của phép lặp: không có bất đối xứng
+    nào để thoát ra, kể cả khi giảm dần epsilon. Một baseline rải sai lệch
+    ra mọi trường là baseline bị làm yếu âm thầm, mà baseline yếu oan thì
+    kết luận về phương pháp đề xuất mất giá trị — đúng thứ mục 2 của
+    PREREGISTRATION.md dựng lên để chống.
     """
     n = A.shape[1]
-    w = np.ones(n)
-    delta = np.zeros(n)
 
-    for _ in range(so_vong):
-        Q = np.diag(w)
-        M = A @ Q @ A.T
-        delta_moi = Q @ A.T @ np.linalg.pinv(M) @ b
+    ket_qua = linprog(
+        np.ones(2 * n),
+        A_eq=np.hstack([A, -A]),
+        b_eq=b,
+        bounds=(0, None),
+        method="highs",
+    )
 
-        if np.allclose(delta_moi, delta, atol=eps):
-            delta = delta_moi
-            break
+    if not ket_qua.success:
+        return None, ket_qua.message
 
-        delta = delta_moi
-        w = np.maximum(np.abs(delta), eps)
-
-    return delta
+    return ket_qua.x[:n] - ket_qua.x[n:], None
 
 
 def diagnose_l1_continuous(
@@ -301,6 +308,10 @@ def diagnose_l1_continuous(
 
     Tìm delta chuẩn L1 nhỏ nhất thoả A(x + delta) = 0, với delta chạy TỰ DO
     trong R^n. Đây là hướng compressed sensing và data reconciliation.
+
+    Giải bằng quy hoạch tuyến tính nên đây là nghiệm L1 CHÍNH XÁC, không
+    phải xấp xỉ — paper nói được điều đó mà không cần kèm caveat, và một
+    baseline không có caveat thì kết quả so sánh với nó cũng không có.
 
     Tham số `candidates` bị BỎ QUA, và đó chính là điểm của baseline này:
     nó không cần tài liệu vì nó không đọc lại tài liệu. Giữ nguyên chữ ký
@@ -334,11 +345,27 @@ def diagnose_l1_continuous(
             solve_time_s=time.perf_counter() - bat_dau,
         )
 
-    delta = _min_l1_irls(A, -residual_truoc)
+    delta, that_bai = _min_l1_lp(A, -residual_truoc)
+
+    # `b = −A·x` luôn nằm trong không gian cột của A theo đúng cách nó được
+    # dựng, nên bài LP này về toán học luôn có nghiệm. Thất bại ở đây chỉ có
+    # thể là chuyện của bộ giải, và phải nói ra thành ABSTAIN chứ không được
+    # trả REPAIRED kèm một residual chưa về 0.
+    if delta is None:
+        return Diagnosis(
+            verdict="ABSTAIN",
+            residual_before=residual_truoc,
+            solve_time_s=time.perf_counter() - bat_dau,
+            ly_do_abstain=f"bộ giải LP không trả nghiệm: {that_bai}",
+        )
+
     x_moi = x + delta
 
-    # Trường nào bị đổi đáng kể thì tính là đã sửa. Ngưỡng theo tỷ lệ vì
-    # IRLS để lại nhiễu rất nhỏ ở mọi toạ độ chứ không đúng bằng 0.
+    # Trường nào bị đổi đáng kể thì tính là đã sửa. Ngưỡng vẫn theo tỷ lệ
+    # dù bộ giải LP trả về 0 đúng bằng 0 ở các toạ độ ngoài cơ sở: với giá
+    # trị cỡ 1e13 thì sai số dấu phẩy động của chính phép giải cũng cỡ lớn,
+    # và đếm nhầm một nhiễu 1e-3 đồng thành "một trường bị sửa" sẽ thổi
+    # phồng số trường bị sửa của baseline này.
     da_sua = {
         ten: Candidate(
             value=float(x_moi[i]),
@@ -392,6 +419,18 @@ def diagnose_fellegi_holt_donor(
     NHẤT mà vẫn thoả ràng buộc. Đây là phiên bản trung thực của Fellegi-Holt
     kinh điển — nó không bị thua oan chỉ vì giá trị donor thô ngẫu nhiên
     không cân bảng.
+
+    Cách chọn TẬP TRƯỜNG cũng phải trung thực như vậy, và đó là lý do vòng
+    lặp dưới đây duyệt HẾT mọi tập trường ở một cardinality rồi mới phân xử
+    — đúng như `diagnose()` làm với cost ứng viên. Trả về tập đầu tiên gặp
+    được thì tập trường phụ thuộc vào thứ tự khai báo field, tức baseline
+    trung tâm của cả nghiên cứu thắng thua vì một chi tiết cài đặt. Ở đây
+    phân xử bằng tổng khoảng cách tới donor: tập trường nào donor đỡ được
+    nhiều nhất thì tập đó thắng, và khác biệt còn lại giữa hai nhánh đúng
+    bằng một biến số là nguồn giá trị.
+
+    Trường không có giá trị donor thì lấy chính giá trị hiện tại làm mốc,
+    nên khoảng cách của nó đo đúng phần phải bịa ra khi không ai đỡ.
     """
     bat_dau = time.perf_counter()
 
@@ -420,14 +459,13 @@ def diagnose_fellegi_holt_donor(
     tran_k = n if max_changes is None else min(max_changes, n)
 
     for k in range(1, tran_k + 1):
+        tot_nhat = None
+        het_gio = False
+
         for cac_truong in combinations(range(n), k):
             if time.perf_counter() - bat_dau > time_limit_s:
-                return Diagnosis(
-                    verdict="ABSTAIN",
-                    residual_before=residual_truoc,
-                    solve_time_s=time.perf_counter() - bat_dau,
-                    ly_do_abstain=f"hết {time_limit_s}s",
-                )
+                het_gio = True
+                break
 
             chi_so = list(cac_truong)
             A_tha = A[:, chi_so]
@@ -453,12 +491,29 @@ def diagnose_fellegi_holt_donor(
             if not _thoa_rang_buoc(A @ x_moi, do_lon, tolerance_ratio):
                 continue
 
+            khoang_cach = float(np.abs(x_tha - d).sum())
+            if tot_nhat is None or khoang_cach < tot_nhat[0]:
+                tot_nhat = (khoang_cach, chi_so, x_tha)
+
+        # Hết giờ giữa chừng vẫn dùng được tập tốt nhất đã tìm ra ở chính
+        # cardinality này: nó là một nghiệm k-trường hợp lệ, chỉ là chưa
+        # chắc tối ưu. Bỏ nó đi để trả ABSTAIN là mất trắng công đã làm.
+        if tot_nhat is not None:
+            _, chi_so, x_tha = tot_nhat
+            x_moi = x.copy()
+            x_moi[chi_so] = x_tha
+
             da_sua = {
                 field_order[i]: Candidate(
                     value=float(x_moi[i]),
                     source="donor",
                     cost=abs(float(x_moi[i] - x[i])),
-                    evidence={"donor": donor.get(field_order[i])},
+                    evidence={
+                        "donor": donor.get(field_order[i]),
+                        "lech_so_voi_donor": abs(
+                            float(x_moi[i] - donor.get(field_order[i], x[i]))
+                        ),
+                    },
                 )
                 for i in chi_so
             }
@@ -470,6 +525,14 @@ def diagnose_fellegi_holt_donor(
                 residual_after=A @ x_moi,
                 n_changed=len(da_sua),
                 solve_time_s=time.perf_counter() - bat_dau,
+            )
+
+        if het_gio:
+            return Diagnosis(
+                verdict="ABSTAIN",
+                residual_before=residual_truoc,
+                solve_time_s=time.perf_counter() - bat_dau,
+                ly_do_abstain=f"hết {time_limit_s}s",
             )
 
     return Diagnosis(

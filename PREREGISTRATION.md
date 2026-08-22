@@ -283,4 +283,35 @@ giống nhau đến mức nếu một trang vào train và một trang vào test
 
 ## Sửa đổi
 
-Chưa có. Mọi sửa đổi ghi vào đây kèm ngày và lý do, không sửa đè lên trên.
+Mọi sửa đổi ghi vào đây kèm ngày và lý do, không sửa đè lên trên.
+
+### 22/08/2026 — Chốt trần số trường được sửa ở 2, và tách hai loại ABSTAIN
+
+**Sửa đổi:** `diagnose()` và baseline 9 chạy với `max_changes = 2` làm mặc
+định, tức phương pháp chỉ xét các tổ hợp sửa từ hai trường trở xuống.
+
+**Lý do — đo được, không đoán.** Trên bài toán 8 chỉ tiêu với 87 ứng viên,
+ca có nghiệm mất 1,8 mili giây còn ca VÔ NGHIỆM mất **30 giây** khi không
+chặn và **16 mili giây** khi chặn ở 2. Toàn bộ chi phí nằm ở việc chứng minh
+KHÔNG có nghiệm, mà đó lại là ca thường gặp vì tập ứng viên đóng cố ý không
+chứa mọi cách sửa. Với tầng XBRL hàng nghìn tài liệu, 30 giây một tài liệu
+là không chạy nổi.
+
+**Đây là hạn chế của phương pháp, không phải chi tiết cài đặt.** Một tài
+liệu có ba trường cùng sai sẽ không được sửa, kể cả khi tổ hợp sửa đúng nằm
+sẵn trong tập ứng viên. Phải nêu trong paper, và bảng kết quả phải báo cáo
+tỷ lệ tài liệu rơi vào ca đó.
+
+**Trần áp cho CẢ baseline 9**, vì H3 so ở cùng ngân sách và trần thay đổi là
+một phần của ngân sách. Baseline 8 nằm ngoài vì delta của nó chạy tự do
+trong `ℝⁿ`; nghiệm đỉnh của bài quy hoạch tuyến tính đã tự giới hạn số toạ
+độ khác 0 không vượt quá `rank(A)`.
+
+**Kèm theo — tách ABSTAIN thành các lý do phân loại được.** Verdict
+`ABSTAIN` giờ đi kèm một mã trong tập đóng: `vo_nghiem`,
+`vuot_tran_thay_doi`, `het_gio`, `thieu_gia_tri`, `bo_giai_that_bai`. Việc
+tách là bắt buộc vì **chỉ `vo_nghiem` mới đỡ được luận điểm chống bịa**: nó
+nghĩa là đã vét cạn mọi tổ hợp và không cách đọc nào làm bảng cân đối được.
+`vuot_tran_thay_doi` chỉ nghĩa là ta đã không tìm. Gộp hai thứ lại là tính
+công cho phương pháp ở những ca nó không chứng minh được gì, nên mọi bảng
+kết quả phải đếm chúng riêng.

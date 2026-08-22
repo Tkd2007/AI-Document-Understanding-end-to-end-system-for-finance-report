@@ -71,6 +71,46 @@ TRONG_SO_MAC_DINH = 1.0
 # nghiệm — cost chỉ dùng để phân xử giữa các nghiệm CÙNG cardinality.
 LAMBDA = 1.0
 
+# Trần số trường được sửa, mặc định.
+#
+# ĐO ĐƯỢC, không đoán: trên bài toán 8 chỉ tiêu với 87 ứng viên, ca VÔ
+# NGHIỆM tốn 30 giây khi không chặn và 16 mili giây khi chặn ở 2. Ca có
+# nghiệm thì tức thì trong cả hai trường hợp — chi phí nằm trọn ở việc
+# chứng minh KHÔNG có nghiệm, mà đó lại là ca thường gặp vì tập ứng viên
+# đóng cố ý không chứa mọi cách sửa.
+#
+# Chọn 2 vì một tài liệu có ba trường cùng sai thì vấn đề nằm ở khâu trích
+# xuất chứ không phải khâu sửa. Nhưng đây KHÔNG phải tham số tinh chỉnh: nó
+# chặn cứng số lỗi đồng thời mà phương pháp có thể sửa, nên đã ghi vào mục
+# Sửa đổi của PREREGISTRATION.md kèm ngày và lý do.
+MAX_CHANGES_MAC_DINH = 2
+
+# Phân loại lý do ABSTAIN, tập ĐÓNG.
+#
+# Tách khỏi câu giải thích cho người đọc vì hai loại ABSTAIN mang ý nghĩa
+# khoa học khác hẳn nhau, và bảng kết quả phải đếm chúng riêng:
+#
+#   vo_nghiem         — đã vét cạn MỌI tổ hợp và không có nghiệm. CHỈ ca này
+#                       mới chứng minh được luận điểm chống bịa, tức "không
+#                       cách đọc nào của tài liệu này làm bảng cân đối được".
+#   vuot_tran_thay_doi— hết tổ hợp trong trần max_changes. KHÔNG chứng minh
+#                       được là vô nghiệm: một nghiệm nhiều trường hơn vẫn
+#                       có thể tồn tại, chỉ là không được tìm.
+#   het_gio           — cũng không chứng minh được gì cả.
+#   thieu_gia_tri     — không dựng được vector nên không kiểm được ràng buộc.
+#   bo_giai_that_bai  — bộ giải LP của baseline 8 không trả nghiệm.
+#
+# Gộp bốn loại sau vào một chỗ với vo_nghiem sẽ làm luận điểm cốt lõi được
+# tính công cho những ca nó không chứng minh được gì.
+LyDoAbstain = Literal[
+    "",
+    "vo_nghiem",
+    "vuot_tran_thay_doi",
+    "het_gio",
+    "thieu_gia_tri",
+    "bo_giai_that_bai",
+]
+
 
 @dataclass
 class Diagnosis:
@@ -82,6 +122,7 @@ class Diagnosis:
     residual_after: np.ndarray | None = None
     n_changed: int = 0
     solve_time_s: float = 0.0
+    ma_ly_do: LyDoAbstain = ""
     ly_do_abstain: str = ""
 
     def gia_tri_sau_sua(self, values: dict) -> dict:
@@ -121,6 +162,10 @@ def _tim_to_hop_nho_nhat(
 
     Dừng ở k đầu tiên có nghiệm chính là định nghĩa min-cardinality. Trong
     cùng một k thì phân xử bằng hàm mục tiêu.
+
+    Lý do trả về phân biệt `vo_nghiem` với `vuot_tran`: chỉ khi trần thay
+    đổi KHÔNG cắt ngắn cuộc duyệt thì "không tìm thấy" mới đồng nghĩa với
+    "không tồn tại", và chỉ nghĩa thứ hai mới đỡ được luận điểm chống bịa.
     """
     n = len(field_order)
     do_lon = float(np.linalg.norm(x))
@@ -163,7 +208,7 @@ def _tim_to_hop_nho_nhat(
         if tot_nhat is not None:
             return tot_nhat, "tim_thay"
 
-    return None, "vo_nghiem"
+    return None, ("vo_nghiem" if tran_k == len(co_ung_vien) else "vuot_tran_thay_doi")
 
 
 def diagnose(
@@ -173,7 +218,7 @@ def diagnose(
     field_order: list,
     confidences: dict | None = None,
     tolerance_ratio: float = RESIDUAL_TOL,
-    max_changes: int | None = None,
+    max_changes: int | None = MAX_CHANGES_MAC_DINH,
     time_limit_s: float = TIME_LIMIT_S,
 ) -> Diagnosis:
     """
@@ -189,11 +234,18 @@ def diagnose(
       VERIFIED  — residual đã về 0 từ đầu. KHÔNG chạy tìm kiếm.
       REPAIRED  — tìm được tổ hợp ứng viên làm residual về 0.
       ABSTAIN   — không tổ hợp nào cho nghiệm, hoặc vượt trần thay đổi,
-                  hoặc hết giờ.
+                  hoặc hết giờ. `ma_ly_do` nói rõ là ca nào.
 
     ABSTAIN là câu trả lời ĐÚNG chứ không phải thất bại. Nó nghĩa là không
     cách đọc nào của tài liệu này làm bảng cân đối được, và một hệ nói
     "tôi không biết" đúng lúc thì giá trị hơn hẳn một hệ luôn trả về số.
+
+    Nhưng chỉ `ma_ly_do == "vo_nghiem"` mới mang đúng nghĩa đó. Với trần
+    thay đổi mặc định là 2, một tài liệu ba lỗi sẽ ABSTAIN với lý do
+    `vuot_tran_thay_doi` — nó không nói rằng tài liệu không sửa được, chỉ
+    nói rằng ta đã không tìm. Bảng kết quả phải đếm hai loại này riêng, nếu
+    không thì luận điểm chống bịa được tính công cho những ca nó không
+    chứng minh được gì.
 
     Thiếu trường thì cũng ABSTAIN: không dựng được vector thì không kiểm
     được ràng buộc, và đoán bừa giá trị thiếu chính là việc module này
@@ -207,6 +259,7 @@ def diagnose(
         return Diagnosis(
             verdict="ABSTAIN",
             solve_time_s=time.perf_counter() - bat_dau,
+            ma_ly_do="thieu_gia_tri",
             ly_do_abstain=f"thiếu giá trị cho: {', '.join(thieu)}",
         )
 
@@ -231,11 +284,16 @@ def diagnose(
         giai_thich = {
             "het_gio": f"hết {time_limit_s}s mà chưa tìm ra tổ hợp nào",
             "vo_nghiem": "không tổ hợp ứng viên nào làm residual về 0",
+            "vuot_tran_thay_doi": (
+                f"không tổ hợp nào từ {max_changes} trường trở xuống cho nghiệm "
+                f"— chưa duyệt tới các tổ hợp lớn hơn"
+            ),
         }[ly_do]
         return Diagnosis(
             verdict="ABSTAIN",
             residual_before=residual_truoc,
             solve_time_s=time.perf_counter() - bat_dau,
+            ma_ly_do=ly_do,
             ly_do_abstain=giai_thich,
         )
 
@@ -318,6 +376,13 @@ def diagnose_l1_continuous(
     hàm để đổi giữa các phương pháp bằng một cờ, không phải bằng một nhánh
     if trong runner.
 
+    `max_changes` cũng bị BỎ QUA, và mặc định của nó để `None` chứ không
+    theo trần chung để nói ra điều đó. Chặn số trường được sửa là khái niệm
+    của tìm kiếm rời rạc; ở đây delta chạy tự do và nghiệm đỉnh của bài quy
+    hoạch tuyến tính đã tự giới hạn số toạ độ khác 0 không vượt quá hạng của
+    A. Nhận tham số rồi lặng lẽ không dùng thì runner sẽ tưởng hai phương
+    pháp đang chạy cùng một ràng buộc.
+
     Baseline này KHÔNG BAO GIỜ ABSTAIN khi hệ có nghiệm — và đó là điểm
     yếu cần đo chứ không phải điểm mạnh: nó luôn trả về một bộ số cân đối,
     kể cả khi bộ số đó hoàn toàn bịa. Chỉ số chống bịa ở eval.metrics đo
@@ -330,6 +395,7 @@ def diagnose_l1_continuous(
         return Diagnosis(
             verdict="ABSTAIN",
             solve_time_s=time.perf_counter() - bat_dau,
+            ma_ly_do="thieu_gia_tri",
             ly_do_abstain=f"thiếu giá trị cho: {', '.join(thieu)}",
         )
 
@@ -356,6 +422,7 @@ def diagnose_l1_continuous(
             verdict="ABSTAIN",
             residual_before=residual_truoc,
             solve_time_s=time.perf_counter() - bat_dau,
+            ma_ly_do="bo_giai_that_bai",
             ly_do_abstain=f"bộ giải LP không trả nghiệm: {that_bai}",
         )
 
@@ -395,7 +462,7 @@ def diagnose_fellegi_holt_donor(
     donor_values: dict | None = None,
     confidences: dict | None = None,
     tolerance_ratio: float = RESIDUAL_TOL,
-    max_changes: int | None = None,
+    max_changes: int | None = MAX_CHANGES_MAC_DINH,
     time_limit_s: float = TIME_LIMIT_S,
 ) -> Diagnosis:
     """
@@ -439,6 +506,7 @@ def diagnose_fellegi_holt_donor(
         return Diagnosis(
             verdict="ABSTAIN",
             solve_time_s=time.perf_counter() - bat_dau,
+            ma_ly_do="thieu_gia_tri",
             ly_do_abstain=f"thiếu giá trị cho: {', '.join(thieu)}",
         )
 
@@ -532,12 +600,19 @@ def diagnose_fellegi_holt_donor(
                 verdict="ABSTAIN",
                 residual_before=residual_truoc,
                 solve_time_s=time.perf_counter() - bat_dau,
+                ma_ly_do="het_gio",
                 ly_do_abstain=f"hết {time_limit_s}s",
             )
 
+    het_moi_tap = max_changes is None or max_changes >= n
     return Diagnosis(
         verdict="ABSTAIN",
         residual_before=residual_truoc,
         solve_time_s=time.perf_counter() - bat_dau,
-        ly_do_abstain="không tập trường nào cho nghiệm trong trần thay đổi",
+        ma_ly_do="vo_nghiem" if het_moi_tap else "vuot_tran_thay_doi",
+        ly_do_abstain=(
+            "không tập trường nào cho nghiệm"
+            if het_moi_tap
+            else f"không tập từ {max_changes} trường trở xuống nào cho nghiệm"
+        ),
     )

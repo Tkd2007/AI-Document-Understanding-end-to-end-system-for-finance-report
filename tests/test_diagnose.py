@@ -9,11 +9,14 @@ và toàn bộ lập luận chống bịa sụp.
 Ví dụ dùng xuyên suốt là a + b = c, đủ nhỏ để kiểm mọi khẳng định bằng mắt.
 """
 
+import inspect
+
 import numpy as np
 import pytest
 
 from repair.candidates import Candidate
 from repair.diagnose import (
+    MAX_CHANGES_MAC_DINH,
     diagnose,
     diagnose_fellegi_holt_donor,
     diagnose_l1_continuous,
@@ -252,6 +255,74 @@ def test_gia_tri_sau_sua_tra_ve_bo_so_hoan_chinh():
         "b": 20,
         "c": 30,
     }
+
+
+# --- Phân loại lý do ABSTAIN -------------------------------------------------
+#
+# Hai loại ABSTAIN mang ý nghĩa khoa học khác hẳn nhau, và chỉ một trong hai
+# đỡ được luận điểm chống bịa. Gộp chúng lại là tính công cho phương pháp ở
+# những ca nó không chứng minh được gì.
+
+
+def test_vet_can_het_ma_khong_thay_thi_vo_nghiem():
+    """
+    Trần không cắt ngắn cuộc duyệt, nên "không tìm thấy" ở đây đồng nghĩa
+    với "không tồn tại" — và CHỈ nghĩa đó mới chứng minh được rằng không
+    cách đọc nào của tài liệu làm bảng cân đối được.
+    """
+    ket_qua = diagnose(
+        {"a": 10, "b": 20, "c": 35}, {"c": [_uv(99)]}, A, THU_TU, max_changes=None
+    )
+
+    assert ket_qua.verdict == "ABSTAIN"
+    assert ket_qua.ma_ly_do == "vo_nghiem"
+
+
+def test_tran_cat_ngan_tim_kiem_thi_KHONG_duoc_bao_la_vo_nghiem():
+    """
+    Ba trường đều có ứng viên nhưng trần chỉ cho duyệt tới k=1. Một nghiệm
+    hai trường vẫn có thể tồn tại, chỉ là không được tìm — nên báo vô nghiệm
+    ở đây là khẳng định một thứ chưa chứng minh.
+    """
+    ung_vien = {"a": [_uv(99)], "b": [_uv(99)], "c": [_uv(99)]}
+    ket_qua = diagnose({"a": 10, "b": 20, "c": 35}, ung_vien, A, THU_TU, max_changes=1)
+
+    assert ket_qua.verdict == "ABSTAIN"
+    assert ket_qua.ma_ly_do == "vuot_tran_thay_doi"
+
+
+def test_thieu_gia_tri_co_ma_ly_do_rieng():
+    ket_qua = diagnose({"a": 10, "b": None, "c": 35}, {}, A, THU_TU)
+
+    assert ket_qua.ma_ly_do == "thieu_gia_tri"
+
+
+def test_khong_abstain_thi_ma_ly_do_rong():
+    """
+    Trạng thái phải đọc được từ chính khoá đó, không phải suy ra từ verdict.
+    """
+    assert diagnose({"a": 10, "b": 20, "c": 30}, {}, A, THU_TU).ma_ly_do == ""
+    assert (
+        diagnose({"a": 10, "b": 20, "c": 35}, {"c": [_uv(30)]}, A, THU_TU).ma_ly_do == ""
+    )
+
+
+def test_hai_nhanh_roi_rac_dung_CUNG_tran_thay_doi_mac_dinh():
+    """
+    H3 so ở CÙNG NGÂN SÁCH, và trần thay đổi là một phần của ngân sách đó:
+    cho phương pháp đề xuất duyệt tới k=3 trong khi baseline 9 dừng ở k=2 là
+    so hai thứ khác nhau rồi gọi hiệu số đó là đóng góp.
+
+    Baseline 8 nằm ngoài vì delta của nó chạy tự do — chặn số trường được
+    sửa là khái niệm của tìm kiếm rời rạc, không áp lên quy hoạch tuyến tính
+    được. Để mặc định None là cách nói ra chuyện đó thay vì nhận tham số rồi
+    lặng lẽ không dùng.
+    """
+    for ham in (diagnose, diagnose_fellegi_holt_donor):
+        mac_dinh = inspect.signature(ham).parameters["max_changes"].default
+        assert mac_dinh == MAX_CHANGES_MAC_DINH
+
+    assert inspect.signature(diagnose_l1_continuous).parameters["max_changes"].default is None
 
 
 # --- Baseline 8: L1 liên tục -------------------------------------------------

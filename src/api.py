@@ -13,7 +13,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import PlainTextResponse
 
 from extract_vlm import require_config
-from metrics import get_totals
+from metrics import render_prometheus
 from router import route_document
 
 # api.py là entrypoint của service, nên đây ĐÚNG là chỗ để fail fast: thiếu
@@ -158,9 +158,7 @@ async def extract(file: UploadFile = File(...)):
 
 @app.get("/metrics", response_class=PlainTextResponse)
 def metrics():
-    lines = []
-    for name, value in get_totals().items():
-        metric = PREFIX + name
-        lines.append(f"# TYPE {metric} counter")
-        lines.append(f"{metric} {value}")
-    return "\n".join(lines) + "\n"
+    # Việc dựng chuỗi nằm ở metrics.py: định dạng exposition là kiến thức
+    # của module số liệu, và đặt ở đó thì test được mà không phải dựng cả
+    # một ứng dụng HTTP.
+    return render_prometheus(PREFIX)

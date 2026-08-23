@@ -210,12 +210,70 @@ _totals: dict[str, float] = {
     "documents_error_total": 0,
 }
 
+# Biên bucket cho histogram thời gian, đơn vị GIÂY, phải tăng dần.
+#
+# Vì sao cần histogram khi đã có tổng thời gian cộng dồn: tổng chia cho số
+# lượt chạy chỉ cho TRUNG BÌNH, mà trung bình là con số vô dụng nhất với
+# một pipeline có đuôi dài. Chín lượt 100 giây và một lượt 900 giây cho
+# trung bình 180 — không lượt nào giống con số đó, và lượt duy nhất làm
+# người dùng bỏ đi thì trung bình giấu mất.
+#
+# Biên chọn theo số đo THẬT trong data/output/metrics.jsonl: tổng một lượt
+# rơi vào 115–335 giây, pdf_convert 8–173, layout 34–114, vlm 65–114. Nên
+# phần dày bucket đặt ở dải 30–300 giây, hai đầu để thưa. Bucket dưới 10
+# giây giữ lại cho lượt chạy hỏng sớm — biết một lượt chết trong 2 giây là
+# thông tin khác hẳn biết nó chết sau 300 giây.
+BUCKETS_GIAY = (0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0, 120.0, 180.0, 300.0, 600.0)
+
 # api.py chạy route_document() trong threadpool, nên nhiều request có thể
 # gọi merge_into_totals() cùng lúc. Phép cộng dồn dưới đây là
 # read-modify-write, KHÔNG atomic: hai thread đọc cùng một giá trị cũ rồi
 # cùng ghi đè thì mất một lượt đếm. Counter sai lệch âm thầm còn tệ hơn
 # không có counter, vì không có cách nào phát hiện.
+#
+# Khoá này canh CẢ _totals lẫn _histograms: hai bảng được cập nhật trong
+# cùng một lượt gọi merge_into_totals() và phải nhất quán với nhau, nếu
+# không thì _count của histogram lệch khỏi documents_total mà không lý do
+# nào giải thích được.
 _totals_lock = threading.Lock()
+
+# Phân phối thời gian, tách khỏi _totals vì cấu trúc khác hẳn: mỗi mục là
+# {"buckets": {biên: số lượt}, "sum": tổng giây, "count": số lượt}.
+_histograms: dict[str, dict] = {}
+
+
+def _ghi_histogram(ten: str, giay: float) -> None:
+    """
+    Cộng một số đo vào histogram. NGƯỜI GỌI phải đang giữ _totals_lock.
+
+    Bucket theo quy ước Prometheus là CỘNG DỒN: một số đo 7 giây làm tăng
+    mọi bucket có biên >= 7, không phải chỉ bucket chứa nó. Đếm không cộng
+    dồn thì histogram_quantile() cho ra số vô nghĩa mà vẫn vẽ được đồ thị.
+    """
+    hist = _histograms.setdefault(
+        ten,
+        {"buckets": dict.fromkeys(BUCKETS_GIAY, 0), "sum": 0.0, "count": 0},
+    )
+
+    hist["sum"] += giay
+    hist["count"] += 1
+
+    for bien in BUCKETS_GIAY:
+        if giay <= bien:
+            hist["buckets"][bien] += 1
+
+
+def get_histograms() -> dict[str, dict]:
+    """Bản sao sâu của các histogram, an toàn để đọc ngoài khoá."""
+    with _totals_lock:
+        return {
+            ten: {
+                "buckets": dict(hist["buckets"]),
+                "sum": hist["sum"],
+                "count": hist["count"],
+            }
+            for ten, hist in _histograms.items()
+        }
 
 
 def merge_into_totals(run: "RunMetrics") -> None:
@@ -241,9 +299,25 @@ def merge_into_totals(run: "RunMetrics") -> None:
         _totals[status_key] = _totals.get(status_key, 0) + 1
         _totals["seconds_total"] = _totals.get("seconds_total", 0) + data["total_seconds"]
 
+        # Histogram của TỔNG thời gian một lượt chạy: đây là con số người
+        # dùng cảm nhận được, nên nó mới là chỗ p95/p99 có nghĩa.
+        _ghi_histogram("document_seconds", data["total_seconds"])
+
         for name, value in data["stages"].items():
             key = f"stage_{name}_seconds_total"
             _totals[key] = _totals.get(key, 0) + value
+
+            # Histogram từng giai đoạn để trả lời câu hỏi tiếp theo sau
+            # "lượt chạy đuôi dài": nó chậm ở ĐÂU. Số đo thật cho thấy
+            # pdf_convert dao động 8–173 giây tuỳ báo cáo là scan hay
+            # text, tức nguồn phương sai lớn nhất, và tổng cộng dồn không
+            # nhìn ra được điều đó.
+            #
+            # Giữ luôn counter stage_*_seconds_total ở trên dù nó đúng
+            # bằng _sum của histogram: README và dashboard Prometheus đang
+            # dựa vào tên cũ, đổi tên metric là làm hỏng đồ thị của người
+            # khác mà không có gì báo.
+            _ghi_histogram(f"stage_{name}_seconds", value)
 
         for name, value in data["counters"].items():
             key = f"{name}_total"
@@ -255,3 +329,48 @@ def get_totals() -> dict[str, float]:
     # nếu một request khác chèn key mới giữa chừng.
     with _totals_lock:
         return dict(_totals)
+
+
+def _bien_thanh_nhan(bien: float) -> str:
+    """0.5 -> "0.5", 60.0 -> "60". Prometheus đọc được cả hai, người thì không."""
+    return f"{bien:g}"
+
+
+def render_prometheus(prefix: str = "doc_ai_") -> str:
+    """
+    Toàn bộ nội dung endpoint /metrics, ở định dạng exposition text.
+
+    Nằm ở metrics.py chứ không ở api.py vì hai lý do. Thứ nhất, kiến thức
+    về định dạng Prometheus thuộc về module quản lý số liệu — api.py chỉ
+    nên biết "gọi hàm này rồi trả chuỗi". Thứ hai, đặt ở đây thì test được
+    mà không phải dựng cả một ứng dụng HTTP, nên phần dễ sai nhất (bucket
+    cộng dồn) có test rẻ để canh.
+
+    Cần nói thẳng một giới hạn: p95/p99 lấy từ histogram_quantile() trên
+    các bucket này là NỘI SUY, không phải phân vị thật. Với bucket rộng
+    như 300–600 giây, một p99 rơi vào đó chỉ chính xác tới mức "đâu đó
+    giữa 300 và 600". Muốn con số chính xác thì phải giữ lại từng số đo,
+    và đó là việc của metrics.jsonl chứ không phải của endpoint này.
+    """
+    lines: list[str] = []
+
+    for name, value in get_totals().items():
+        metric = prefix + name
+        lines.append(f"# TYPE {metric} counter")
+        lines.append(f"{metric} {value}")
+
+    for name, hist in get_histograms().items():
+        metric = prefix + name
+        lines.append(f"# TYPE {metric} histogram")
+
+        for bien in BUCKETS_GIAY:
+            nhan = _bien_thanh_nhan(bien)
+            lines.append(f'{metric}_bucket{{le="{nhan}"}} {hist["buckets"][bien]}')
+
+        # Bucket +Inf bắt buộc phải có và phải bằng _count. Thiếu nó thì
+        # Prometheus coi histogram là hỏng và bỏ qua toàn bộ series.
+        lines.append(f'{metric}_bucket{{le="+Inf"}} {hist["count"]}')
+        lines.append(f"{metric}_sum {round(hist['sum'], 2)}")
+        lines.append(f"{metric}_count {hist['count']}")
+
+    return "\n".join(lines) + "\n"

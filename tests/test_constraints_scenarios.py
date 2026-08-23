@@ -1,16 +1,24 @@
 """
 Test các kịch bản mở rộng bộ ràng buộc.
 
-Phần đáng chốt không phải con số cụ thể của từng kịch bản — chúng sẽ đổi khi
-người chủ trì đối chiếu Phụ lục IV và sửa lại bộ đẳng thức. Thứ phải chốt là
-**định luật** rút ra từ chúng, vì nó là thứ quyết định hướng đi của cả H0:
+Bộ đẳng thức trong `constraints_scenarios.py` đã đối chiếu nguyên văn Công
+báo, nên con số của từng kịch bản là con số thật chứ không còn là ước lượng.
+Test ở đây chốt hai lớp.
+
+Lớp thứ nhất — **định luật**, thứ quyết định hướng đi của cả H0:
 
     Chỉ tiêu LÁ — xuất hiện trong đúng một đẳng thức, cùng với anh em của
     mình — không bao giờ định vị được, bất kể thêm bao nhiêu chỉ tiêu.
 
-Nếu một ngày test này đỏ vì một chỉ tiêu lá bỗng định vị được, thì hoặc
-`single_field_localizable` đã hỏng, hoặc kịch bản đã được sửa thành có liên
-kết chéo — cả hai đều là chuyện phải biết chứ không phải chuyện bỏ qua.
+Lớp thứ hai — **tỷ lệ trao đổi giữa các bước**, thứ quyết định chi tiêu:
+thêm một chỉ tiêu mua được bao nhiêu chỉ tiêu định vị được. Lớp này gồm cả
+một test chốt lại một kết luận ĐÃ BỊ BÁC BỎ, để nó không quay lại — xem
+`test_lien_ket_cheo_KHONG_hieu_qua_hon_phan_ra`.
+
+Nếu một ngày test đỏ vì một chỉ tiêu lá bỗng định vị được, hoặc vì tỷ lệ
+trao đổi đổi chiều, thì hoặc `single_field_localizable` đã hỏng, hoặc ai đó
+vừa thêm một đẳng thức KHÔNG có trong văn bản — cả hai đều là chuyện phải
+biết chứ không phải chuyện sửa test cho xanh.
 """
 
 from constraints import build_matrix, single_field_localizable
@@ -89,19 +97,53 @@ def test_lien_ket_cheo_lam_mot_chi_tieu_dinh_vi_duoc():
     assert dv["b"] is False
 
 
-def test_lien_ket_cheo_tang_ty_le_dinh_vi_manh_hon_moi_nhom_khac():
-    """
-    Nhóm E (liên kết chéo) phải mua được nhiều hơn hẳn các nhóm chỉ thêm
-    phân rã tổng–thành phần. Nếu một ngày điều này không còn đúng thì lập
-    luận "chỉ liên kết chéo mới đáng trả chi phí gán nhãn" đã sai và phải
-    viết lại.
-    """
-    theo_ma = {kb.ma: do(kb) for kb in KICH_BAN}
+def _ty_le_trao_doi() -> dict[str, float]:
+    """Mỗi bước mua được bao nhiêu chỉ tiêu định vị được, trên mỗi chỉ tiêu thêm vào."""
+    ket_qua = [do(kb) for kb in KICH_BAN]
+    ty_le = {}
 
-    buoc_phan_ra = theo_ma["D"].ty_le_dinh_vi - theo_ma["A"].ty_le_dinh_vi
-    buoc_cheo = theo_ma["E"].ty_le_dinh_vi - theo_ma["D"].ty_le_dinh_vi
+    for truoc, sau in zip(ket_qua, ket_qua[1:], strict=False):
+        them = sau.n_field - truoc.n_field
+        duoc = len(sau.dinh_vi_duoc) - len(truoc.dinh_vi_duoc)
+        ty_le[sau.kich_ban.ma] = duoc / them if them else 0.0
 
-    assert buoc_cheo > buoc_phan_ra
+    return ty_le
+
+
+def test_them_tong_nguon_von_la_buoc_re_nhat():
+    """
+    Phát hiện quyết định của Mốc 1: thêm ĐÚNG MỘT chỉ tiêu — Tổng cộng nguồn
+    vốn, mã 440 — mua được một chỉ tiêu định vị được. Tỷ lệ 1,00, cao hơn
+    mọi bước khác.
+
+    Nó rẻ vì văn bản khai báo tường minh HAI đẳng thức mà repo đang gộp làm
+    một: `Mã số 440 = Mã số 300 + Mã số 400`, và riêng `Tổng cộng Tài sản =
+    Tổng cộng Nguồn vốn`. Chỉ tiêu thêm vào lập tức nằm trong hai đẳng thức,
+    nên định vị được ngay. Nó còn là con số in ở cuối bảng cân đối, tức rẻ
+    cả về chi phí gán nhãn.
+    """
+    ty_le = _ty_le_trao_doi()
+
+    assert ty_le["B"] == max(ty_le.values())
+    assert ty_le["B"] >= 1.0
+
+
+def test_lien_ket_cheo_KHONG_hieu_qua_hon_phan_ra():
+    """
+    Chốt lại một kết luận ĐÃ BỊ BÁC BỎ, để nó không quay lại.
+
+    Bản đầu của `constraints_scenarios.py` dùng đẳng thức giả thuyết và kết
+    luận liên kết chéo hiệu quả gấp đôi phân rã. Đối chiếu Công báo bác bỏ:
+    hai đẳng thức từng được giả định — một liên kết giữa Lợi nhuận chưa phân
+    phối trên B01 với Lợi nhuận sau thuế trên B02, và một phân rã Vốn chủ sở
+    hữu — KHÔNG có trong văn bản. Với đẳng thức thật, bước liên kết chéo (E)
+    cho tỷ lệ THẤP HƠN bước phân rã (D).
+
+    Test này sẽ đỏ nếu ai đó thêm lại một đẳng thức không có trong văn bản.
+    """
+    ty_le = _ty_le_trao_doi()
+
+    assert ty_le["E"] < ty_le["D"]
 
 
 def test_khong_kich_ban_nao_dat_duoc_bo_toi_thieu():
@@ -119,7 +161,7 @@ def test_bang_markdown_neu_du_cot_can_doc():
 
     assert "rank" in bang
     assert "dim null" in bang
-    assert "Bộ tối thiểu" in bang
+    assert "Bước này mua được" in bang
     # Mỗi kịch bản một dòng, cộng hai dòng tiêu đề.
     assert len(bang.splitlines()) == len(KICH_BAN) + 2
 

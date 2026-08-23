@@ -22,11 +22,26 @@ KẾT QUẢ CHÍNH — một định luật về hình dạng đồ thị ràng 
     Một chỉ tiêu định vị được KHI VÀ CHỈ KHI tập đẳng thức chứa nó khác với
     tập đẳng thức của MỌI chỉ tiêu khác.
 
-Hệ quả trực tiếp, và nó quyết định hướng đi: hai chỉ tiêu "anh em" cùng nằm
-trong ĐÚNG MỘT đẳng thức phân rã tổng–thành phần luôn có cột giống hệt nhau
-trong ma trận A, nên KHÔNG BAO GIỜ phân biệt được — thêm bao nhiêu chỉ tiêu
-cùng loại cũng vô ích. Chỉ LIÊN KẾT CHÉO giữa các biểu mẫu mới phá được, vì
-chỉ nó mới làm một chỉ tiêu xuất hiện trong hai đẳng thức khác nhau.
+Hệ quả thứ nhất: hai chỉ tiêu "anh em" cùng nằm trong ĐÚNG MỘT đẳng thức
+phân rã có cột giống hệt nhau trong ma trận A, nên không bao giờ phân biệt
+được. Chỉ tiêu TỔNG của đẳng thức đó cũng vậy — cột của nó là [−1], tỷ lệ
+với cột [1] của thành phần.
+
+Hệ quả thứ hai, và đây là chỗ dễ phát biểu quá tay. Phân rã một chỉ tiêu
+KHÔNG vô ích: nó làm CHÍNH chỉ tiêu bị phân rã định vị được, vì chỉ tiêu đó
+giờ xuất hiện trong hai đẳng thức (đẳng thức của cha nó, và đẳng thức phân
+rã của chính nó) nên cột thành [1, −1], khác mọi cột khác. Nhưng nó sinh ra
+các thành phần MỚI, và những thành phần đó lại là lá không định vị được.
+
+Nên phân rã là một cái cối xay: mỗi vòng đổi một chỉ tiêu định vị được lấy
+n chỉ tiêu mới KHÔNG định vị được, mà n chỉ tiêu mới đó đều tốn chi phí gán
+nhãn tay nhân với 60 tài liệu. Số đo bên dưới cho thấy tỷ lệ trao đổi: các
+bước phân rã (A→D) thêm 8 chỉ tiêu và mua được 4 chỉ tiêu định vị được,
+trong khi bước liên kết chéo (D→E) thêm 7 chỉ tiêu và mua được 8. Gấp đôi
+hiệu suất trên mỗi đồng chi phí gán nhãn.
+
+Liên kết chéo hơn ở chỗ nó gắn đẳng thức thứ hai vào một chỉ tiêu ĐÃ CÓ
+SẴN, thay vì phải mở thêm cả một tầng lá mới bên dưới.
 
 Chạy:  PYTHONIOENCODING=utf-8 python src/constraints_scenarios.py
 """
@@ -242,8 +257,10 @@ if __name__ == "__main__":
     print()
     print(
         "Chúng đều là chỉ tiêu LÁ: xuất hiện trong đúng MỘT đẳng thức, cùng với\n"
-        "các anh em của mình, nên cột trong ma trận A giống hệt nhau. Không\n"
-        "lượng chỉ tiêu nào thêm vào phá được chuyện đó — chỉ liên kết chéo mới\n"
-        "phá được, và Phụ lục IV có bao nhiêu liên kết chéo là câu hỏi phải đọc\n"
-        "văn bản mới trả lời được."
+        "các anh em của mình, nên cột trong ma trận A giống hệt nhau.\n\n"
+        "Phân rã tiếp một chỉ tiêu lá sẽ làm CHÍNH nó định vị được, nhưng lại\n"
+        "sinh ra một tầng lá mới bên dưới — cái cối xay không bao giờ hết lá.\n"
+        "Thứ thoát ra được là đẳng thức THỨ HAI gắn vào một chỉ tiêu ĐÃ CÓ SẴN,\n"
+        "và Phụ lục IV có bao nhiêu quan hệ như vậy là câu hỏi phải đọc văn bản\n"
+        "mới trả lời được."
     )

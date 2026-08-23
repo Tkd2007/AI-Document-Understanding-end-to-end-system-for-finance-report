@@ -9,85 +9,127 @@ khoản đắt nhất của cả dự án.
 
 ---
 
-## 1. Câu hỏi thật của Mốc 1 đã đổi
+## 1. Vấn đề, giải thích bằng số thật
 
-Kế hoạch ban đầu hỏi "chốt bộ trường nào". Kết quả đo được cho thấy câu hỏi
-đó đặt sai chỗ.
+### 1.1 Ràng buộc phát hiện được lỗi, nhưng thường không chỉ ra lỗi ở đâu
 
-Chạy `python src/constraints_scenarios.py` cho bảng sau. Mỗi kịch bản là kịch
-bản trước cộng thêm một **nhóm** đẳng thức, nên đọc được đóng góp riêng của
-từng nhóm:
+Lấy đúng số của VNM Q1/2026, đơn vị đồng:
 
-| KB | Kịch bản | Chỉ tiêu | Đẳng thức | rank | dim null | Định vị được | Bộ tối thiểu |
-|---|---|---:|---:|---:|---:|---:|---|
-| A | Hiện tại | 11 | 3 | 3 | 8 | 1/11 (9%) | None |
-| B | + Tổng nguồn vốn | 12 | 4 | 4 | 8 | 2/12 (17%) | None |
-| C | + chuỗi lãi lỗ trên B02 | 15 | 6 | 6 | 9 | 3/15 (20%) | None |
-| D | + phân rã Tài sản ngắn hạn | 19 | 7 | 7 | 12 | 5/19 (26%) | None |
-| E | **+ liên kết chéo B01/B02/B03** | 26 | 11 | 11 | 15 | **13/26 (50%)** | None |
+```
+tai_san_ngan_han     29.403.116.984.122
+tai_san_dai_han      18.372.709.942.261
+                   + ────────────────────
+tong_tai_san         47.775.826.926.383   ✓ khớp
+```
 
-Đọc bảng này theo hai hướng.
+Giả sử hệ đọc sai **một chữ số** của `tai_san_ngan_han`, thành
+`29.403.116.984.**9**22` — lớn hơn giá trị thật 800 đồng. Bây giờ phép cộng
+lệch 800. **Ta phát hiện được là có lỗi.** Đó là công dụng của ràng buộc.
 
-**Hướng thứ nhất — thêm chỉ tiêu cùng loại gần như vô ích.** Từ A sang D, số
-chỉ tiêu tăng gần gấp đôi (11 → 19) nhưng tỷ lệ định vị được chỉ nhích từ 9%
-lên 26%. Mỗi chỉ tiêu thêm vào là chi phí gán nhãn nhân với 60 tài liệu, nên
-đây là cái giá đắt cho một khoản lợi nhỏ.
+Nhưng lỗi nằm ở đâu? Có đúng **ba** khả năng, và cả ba cho ra lệch 800 y hệt:
 
-**Hướng thứ hai — liên kết chéo mới là thứ đáng mua.** Riêng bước D → E đẩy
-tỷ lệ từ 26% lên 50%, gấp đôi, và nó là bước duy nhất làm được vậy.
+| Khả năng | Phép cộng lệch |
+|---|---|
+| `tai_san_ngan_han` lớn hơn thật 800 | +800 |
+| `tai_san_dai_han` lớn hơn thật 800 | +800 |
+| `tong_tai_san` nhỏ hơn thật 800 | +800 |
 
-### Vì sao, phát biểu thành một định luật
+Nhìn vào con số lệch, **không có cách nào** phân biệt ba khả năng đó. Không
+phải thuật toán của ta yếu — mà là **thông tin để phân biệt không tồn tại**.
+Mọi thuật toán trên đời đều đâm vào cùng bức tường này.
 
-> Một chỉ tiêu định vị được **khi và chỉ khi** cột của nó trong ma trận `A`
-> khác 0 và không tỷ lệ với cột nào khác. Tức là: tập đẳng thức chứa nó phải
-> khác tập đẳng thức của **mọi** chỉ tiêu còn lại.
+Đó chính là nghĩa của "không định vị được", và đó là lý do bảng
+identifiability hiện báo **1/11**.
 
-Hệ quả, và đây là chỗ quyết định:
+### 1.2 Cái phá được thế bí: một con số nằm trong HAI quan hệ
 
-- Trong một đẳng thức phân rã đơn lẻ `a + b = tổng`, **cả ba** chỉ tiêu đều
-  nằm ngoài tầm. `a` và `b` có cột bằng nhau; `tổng` có cột `[−1]` tỷ lệ với
-  cột `[1]`, nên lỗi `+δ` ở `a` và lỗi `−δ` ở `tổng` cho residual giống hệt
-  nhau.
-- Thêm bao nhiêu **chỉ tiêu anh em** cũng không phá được chuyện đó, vì mỗi
-  chỉ tiêu mới lại chỉ nằm trong đúng một đẳng thức.
-- Chỉ khi một chỉ tiêu xuất hiện trong **hai đẳng thức khác nhau** thì cột
-  của nó mới tách ra. Trong biểu mẫu BCTC, thứ làm được điều đó là **liên kết
-  chéo giữa các biểu mẫu**.
+Giả sử ngoài đẳng thức trên, ta còn biết thêm một quan hệ nữa — bảng cân đối
+cũng phân rã tài sản ngắn hạn ra:
 
-Định luật này đã chốt bằng test — xem `tests/test_constraints_scenarios.py`.
+```
+tien + đầu tư ngắn hạn + phải thu + hàng tồn kho + khác = tai_san_ngan_han
+```
 
-### Vậy phải tìm gì trong Phụ lục IV
+Giờ chạy lại ba khả năng, và xem **những đẳng thức nào** bị lệch:
 
-**Không phải "còn chỉ tiêu nào". Mà là: còn con số nào xuất hiện ở HAI CHỖ.**
-
-Ba ứng viên tôi dựng lại được từ kết cấu biểu mẫu, **chưa đối chiếu văn bản**:
-
-| Liên kết chéo | Nối gì | Cần xác nhận |
+| Khả năng | Đẳng thức 1 (TSNH+TSDH=TTS) | Đẳng thức 2 (phân rã TSNH) |
 |---|---|---|
-| Tiền cuối kỳ trên **B03** = Tiền và tương đương tiền trên **B01** | B03 ↔ B01 | Mã số của cả hai ở từng chuẩn |
-| Lợi nhuận chưa phân phối trên **B01** = LNCPP đầu kỳ + LNST trên **B02** − cổ tức | B01 ↔ B02 | Có mã số riêng cho LNCPP không, và cổ tức lấy ở đâu |
-| **Cột kỳ trước** cùng thoả một hệ đẳng thức | Trong cùng B01 | Proposal mục 6.1(d) hỏi nó làm hạng tăng bao nhiêu — chưa đo |
+| `tai_san_ngan_han` sai | **lệch** | **lệch** |
+| `tai_san_dai_han` sai | **lệch** | khớp |
+| `tong_tai_san` sai | **lệch** | khớp |
 
-Nếu Phụ lục IV **không** khai báo tường minh những liên kết này, đó cũng là
-một kết quả: nó xác nhận rằng ràng buộc kế toán đơn thuần không đủ, và trọng
-số của bài dồn sang mỏ neo đơn vị tính (mục 6.3) và bước đọc lại (mục 6.2) —
-đúng như proposal mục 6.1 đã lường trước dưới tên "chuẩn bị tinh thần cho kết
-quả bi quan".
+`tai_san_ngan_han` giờ để lại một **dấu vân tay** khác hẳn: nó làm hỏng
+*hai* đẳng thức, hai cái kia chỉ làm hỏng *một*. Ta phân biệt được nó.
 
-### Một chỉ tiêu vẫn nằm ngoài tầm ở MỌI kịch bản
+Đó là toàn bộ ý tưởng, phát biểu gọn:
 
-`hang_ton_kho` không định vị được ở A, B, C, D, lẫn E. Nó là chỉ tiêu lá, luôn
-đứng cùng các anh em trong đúng một đẳng thức.
+> Một chỉ tiêu **định vị được** khi tập các đẳng thức chứa nó khác với tập
+> đẳng thức của **mọi** chỉ tiêu khác. Con số nào chỉ nằm trong **một** quan
+> hệ, cùng với các anh em của nó, thì mãi mãi lẫn với anh em.
+
+Trong ngôn ngữ ma trận: cột của nó trong `A` phải khác 0 và không tỷ lệ với
+cột nào khác. `src/constraints.py` kiểm đúng điều đó.
+
+### 1.3 Nhưng phân rã là một cái cối xay
+
+Ở ví dụ trên, `tai_san_ngan_han` được cứu. Nhưng để cứu nó, ta vừa đưa thêm
+**năm chỉ tiêu mới** vào — tiền, đầu tư ngắn hạn, phải thu, hàng tồn kho,
+khác. Và mỗi chỉ tiêu mới đó giờ lại chỉ nằm trong **một** đẳng thức duy
+nhất, cùng với bốn anh em của nó. **Chúng là lá mới, và chúng không định vị
+được.**
+
+Phân rã tiếp một trong số chúng thì cũng vậy: cứu được nó, sinh ra một tầng
+lá mới bên dưới. Cối xay không bao giờ hết lá.
+
+Và đây là chỗ đau: **mỗi chỉ tiêu thêm vào là chi phí gán nhãn tay nhân với
+60 tài liệu.** Đó là khoản đắt nhất của cả dự án.
+
+Số đo cho thấy tỷ lệ trao đổi. Chạy `python src/constraints_scenarios.py`:
+
+| KB | Kịch bản | Chỉ tiêu | Đẳng thức | rank | Định vị được |
+|---|---|---:|---:|---:|---:|
+| A | Hiện tại | 11 | 3 | 3 | 1/11 (9%) |
+| B | + Tổng nguồn vốn | 12 | 4 | 4 | 2/12 (17%) |
+| C | + chuỗi lãi lỗ trên B02 | 15 | 6 | 6 | 3/15 (20%) |
+| D | + phân rã Tài sản ngắn hạn | 19 | 7 | 7 | 5/19 (26%) |
+| E | **+ quan hệ nối B01/B02/B03** | 26 | 11 | 11 | **13/26 (50%)** |
+
+- Các bước phân rã **A→D**: thêm **8** chỉ tiêu, mua được **4** chỉ tiêu
+  định vị được. Tỷ lệ 0,5.
+- Bước nối chéo **D→E**: thêm **7** chỉ tiêu, mua được **8**. Tỷ lệ 1,1.
+
+**Gấp đôi hiệu suất trên mỗi đồng chi phí gán nhãn.** Lý do: quan hệ nối
+chéo gắn đẳng thức thứ hai vào một chỉ tiêu **đã có sẵn trong bộ**, thay vì
+phải mở cả một tầng lá mới bên dưới.
+
+### 1.4 Nên khi đọc Phụ lục IV, tìm cái gì
+
+Không phải "còn chỉ tiêu nào chưa trích".
+
+**Mà là: con số nào ta ĐÃ trích lại xuất hiện trong một quan hệ THỨ HAI.**
+
+Ba ứng viên tôi dựng lại được từ kết cấu biểu mẫu — **đây là phỏng đoán,
+chưa đối chiếu văn bản, đó chính là việc bạn sắp làm**:
+
+| Ứng viên | Ý tưởng | Nó cứu chỉ tiêu nào |
+|---|---|---|
+| Tiền cuối kỳ trên **B03** chính là Tiền và tương đương tiền trên **B01** | Cùng một con số in ở hai biểu mẫu | `tien` — và qua đó cả nhóm tài sản ngắn hạn |
+| Lợi nhuận chưa phân phối trên **B01** = LNCPP đầu kỳ + LNST trên **B02** − cổ tức | Nối bảng cân đối với báo cáo lãi lỗ | `loi_nhuan_sau_thue` |
+| **Cột kỳ trước** cùng thoả một hệ đẳng thức | Đã có sẵn trên trang, không tốn gì thêm | Chưa đo — proposal mục 6.1(d) hỏi đúng câu này |
+
+### 1.5 Một chỉ tiêu vẫn nằm ngoài tầm ở MỌI kịch bản
+
+`hang_ton_kho` không định vị được ở A, B, C, D, lẫn E.
 
 Đáng chú ý vì đó **đúng là chỉ tiêu đã có lỗi đọc thật** trên báo cáo VNM —
-alias "Hàng tồn kho" khớp trúng dòng "Dự phòng giảm giá hàng tồn kho" (mã 142)
-và cho ra một giá trị nhỏ hơn giá trị thật khoảng nghìn lần nhưng hợp lệ về
-hình thức. Ràng buộc kế toán **chứng minh được là không bao giờ bắt được lỗi
-đó**. Chỉ mỏ neo đơn vị tính và việc đọc lại crop mới bắt được.
+alias "Hàng tồn kho" khớp trúng dòng "Dự phòng giảm giá hàng tồn kho" (mã
+142), cho ra giá trị nhỏ hơn thật khoảng nghìn lần nhưng hợp lệ về hình
+thức.
 
-Đây là một ví dụ cụ thể, có thật, để đưa vào bài.
-
----
+Nghĩa là: **ràng buộc kế toán chứng minh được là không bao giờ bắt được lỗi
+đó.** Chỉ mỏ neo đơn vị tính và việc đọc lại crop mới bắt được. Đây là ví dụ
+cụ thể, có thật, để đưa vào bài — và nó chính là lập luận bảo vệ đóng góp
+cốt lõi.
 
 ## 2. Lấy văn bản ở đâu
 
@@ -199,16 +241,64 @@ kịch bản B ở mục 1.
 
 ### 3.4 Đẳng thức tìm thêm được — điền vào đây
 
-> Ghi lại **mọi** dòng dạng `Mã số X = Mã số Y ± Mã số Z` tìm được, kể cả
-> những dòng chứa chỉ tiêu hiện chưa trích. Chưa cần quyết có đưa vào bộ
-> trường hay không — cứ ghi ra trước, rồi chạy `constraints_scenarios.py`
-> với bộ mới để xem nó mua được bao nhiêu, rồi mới quyết.
+Đây là phần chính của cả buổi làm việc. Sáu bước:
 
-| Biểu mẫu | Đẳng thức theo văn bản | Chuẩn | Có phải liên kết chéo? |
+**Bước 1.** Mở file, tìm phần **"Nội dung và phương pháp lập các chỉ tiêu"**
+của Báo cáo tình hình tài chính (TT99) hoặc Bảng cân đối kế toán (TT200).
+
+**Bước 2.** Tìm mọi lần xuất hiện của chuỗi `Mã số` đứng gần dấu `=`. Văn
+bản thường viết công thức ngay trong phần mô tả từng chỉ tiêu, kiểu:
+
+```
+Chỉ tiêu này phản ánh ...
+Mã số 100 = Mã số 110 + Mã số 120 + Mã số 130 + Mã số 140 + Mã số 150
+```
+
+**Bước 3.** Chép **nguyên văn** vào bảng bên dưới. Đừng dịch sang tên chỉ
+tiêu, đừng rút gọn — mã số là thứ đối chiếu được, tên thì mỗi chỗ viết một
+kiểu.
+
+**Bước 4.** Với mỗi đẳng thức, đánh dấu cột cuối: **có chỉ tiêu nào trong đó
+cũng xuất hiện ở một đẳng thức KHÁC không?** Đó là câu hỏi ăn tiền — xem mục
+1.4. Nếu có, ghi rõ đẳng thức kia là cái nào.
+
+**Bước 5.** Lặp lại cho **B02** (kết quả kinh doanh) và **B03** (lưu chuyển
+tiền tệ). B03 quan trọng dù hiện chưa trích chỉ tiêu nào từ đó, vì đó là chỗ
+nhiều khả năng có quan hệ nối sang B01 nhất.
+
+**Bước 6.** Làm cả hai Thông tư, ghi riêng. **Đừng giả định TT99 giống
+TT200** — chính chỗ đó đang là giả định chưa kiểm, xem mục 3.2(b).
+
+#### Ví dụ đã điền (minh hoạ cách ghi, KHÔNG phải số liệu thật)
+
+| Biểu mẫu | Đẳng thức theo văn bản | Chuẩn | Trùng chỉ tiêu với đẳng thức nào khác? |
+|---|---|---|---|
+| B01a | `Mã số 100 = MS 110 + MS 120 + MS 130 + MS 140 + MS 150` | TT99 | Có — MS 100 cũng nằm trong `MS 280 = MS 100 + MS 200` |
+| B01a | `Mã số 280 = Mã số 100 + Mã số 200` | TT99 | Có — MS 100 (ở trên), MS 200 |
+| B03a | `Mã số 70 = MS 60 + MS 50 + MS 61` | TT99 | *(điền sau khi kiểm MS 70 có bằng MS 110 của B01a không)* |
+
+Dòng thứ ba là loại đáng giá nhất nếu xác nhận được: nó nối **hai biểu mẫu
+khác nhau**, tức gắn một đẳng thức thứ hai vào một chỉ tiêu đã có sẵn.
+
+#### Bảng để bạn điền
+
+| Biểu mẫu | Đẳng thức theo văn bản | Chuẩn | Trùng chỉ tiêu với đẳng thức nào khác? |
 |---|---|---|---|
 |  |  |  |  |
 |  |  |  |  |
 |  |  |  |  |
+|  |  |  |  |
+|  |  |  |  |
+|  |  |  |  |
+
+#### Nếu KHÔNG tìm thấy đẳng thức nối chéo nào
+
+Đó cũng là một kết quả, và là kết quả phải báo cáo chứ không phải thất bại.
+Nó xác nhận rằng ràng buộc kế toán **đơn thuần** không đủ để định vị lỗi
+trên BCTC Việt Nam, và dồn trọng số của bài sang mỏ neo đơn vị tính (proposal
+mục 6.3) cùng bước đọc lại (mục 6.2) — tức sang đúng đóng góp cốt lõi.
+Proposal mục 6.1 đã lường trước dưới tên "chuẩn bị tinh thần cho kết quả bi
+quan".
 
 ---
 

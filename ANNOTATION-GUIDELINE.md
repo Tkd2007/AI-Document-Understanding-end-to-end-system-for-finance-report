@@ -45,8 +45,19 @@ Xem khung ở đầu file.
 |---|---|---|
 | Loại doanh nghiệp | **Phi tài chính** | Tổ chức tín dụng và chi nhánh ngân hàng nước ngoài theo chế độ kế toán riêng của Ngân hàng Nhà nước — mẫu biểu và mã số khác hẳn |
 | Loại báo cáo | Báo cáo **riêng** hoặc **hợp nhất**, nhưng phải ghi rõ | Hai loại có số khác nhau trên cùng một doanh nghiệp cùng một kỳ. Không ghi rõ là trộn hai tổng thể |
-| Biểu mẫu | B01/B01a và B02/B02a | B03 chỉ gán nhãn nếu bộ trường mở rộng sang đó — chờ Mốc 1 |
-| Cột | **Cột kỳ báo cáo**, tức cột đầu | Cột kỳ so sánh chỉ gán nhãn khi Mốc 1 quyết đưa nó vào ma trận ràng buộc |
+| Biểu mẫu | B01 và B02 (mọi biến thể kỳ: không hậu tố, `a`, `b`) | **Chốt 23/08/2026:** B03 KHÔNG gán nhãn. Bộ chỉ tiêu chốt ở kịch bản D, không chạm B03 |
+| Cột | **Cột kỳ báo cáo**, tức cột đầu | **Chốt 23/08/2026:** cột kỳ so sánh KHÔNG gán nhãn. Nó nhân đôi công mà không thêm một điểm nào cho trần định vị — lý do đầy đủ ở `PREREGISTRATION.md` mục Sửa đổi |
+
+**Bộ chỉ tiêu: 21 với TT99, 20 với TT200.** Danh sách chính thức là
+`FIELD_MAP` trong `src/fields_config.py`; đừng chép lại vào đây kẻo hai bản
+lệch nhau. Chênh lệch một chỉ tiêu là do **Tài sản sinh học ngắn hạn** chỉ
+tồn tại ở TT99.
+
+**Hậu tố `a`/`b` của ký hiệu mẫu biểu là KỲ BÁO CÁO, không phải Thông tư.**
+`B01-DN` là báo cáo năm, `B01a-DN` là giữa niên độ dạng đầy đủ (tức quý),
+`B01b-DN` là dạng tóm lược. Cả hai Thông tư đều dùng đủ ba ký hiệu, và biểu
+mẫu giữa niên độ dùng **cùng bộ mã số** với biểu mẫu năm. Xác định chuẩn
+bằng TÊN báo cáo (mục 3.7), đừng bao giờ bằng hậu tố này.
 
 ---
 
@@ -91,12 +102,32 @@ Ba trường hợp **khác nhau**, không được gộp:
 
 | Trên báo cáo | Ghi vào `values` | Nghĩa |
 |---|---|---|
-| `-` hoặc để trống | `null` | Chỉ tiêu không phát sinh trong kỳ |
+| `-` hoặc để trống | `0` | Chỉ tiêu có trên biểu mẫu nhưng không phát sinh trong kỳ |
 | `0` in rõ ràng | `0` | Doanh nghiệp khai báo tường minh bằng 0 |
-| Không có DÒNG đó trên biểu mẫu | `null` + ghi `notes` | Báo cáo không trình bày chỉ tiêu này |
+| Không có DÒNG đó trên biểu mẫu | `0` + ghi `notes` | Miễn trình bày vì không có số liệu |
+| Có dòng nhưng **đọc không ra** (mờ, rách, che) | `null` + ghi `notes` | Thật sự chưa biết |
 
-*Vì sao:* gộp `null` với `0` là tự tạo ra một chế độ lỗi không có thật, và
-làm hỏng mọi đẳng thức có chỉ tiêu đó.
+*Vì sao:* `null` phải để dành cho **"chưa biết"**, không dùng cho **"bằng
+không"**. Chỉ tiêu vắng mặt không phải là chưa biết — TT99 mục 1.2.3 nói rõ
+"các chỉ tiêu không có số liệu được miễn trình bày", tức chính văn bản bảo
+đảm rằng phần vắng mặt không đóng góp vào tổng.
+
+**Sửa đổi 23/08/2026, và lý do phải sửa.** Bản trước ghi cả hai ca vắng mặt
+là `null`. Quy tắc đó vô hại khi bộ chỉ tiêu chỉ có 3 đẳng thức trên các
+chỉ tiêu đầu bảng vốn luôn được in. Sau khi Mốc 1 thêm đẳng thức phân rã tài
+sản ngắn hạn — 5 thành phần ở TT200, 6 ở TT99 — nó thành ra tai hại: bước
+kiểm đẳng thức bỏ qua cả đẳng thức nếu **bất kỳ** thành phần nào là `null`,
+nên chỉ cần một dòng vắng mặt là đẳng thức giá trị nhất im lặng không chạy.
+Mà vắng mặt là chuyện thường, không phải ngoại lệ.
+
+Bằng chứng ngay trên tài liệu mẫu: báo cáo VNM Q1/2026 in tiêu đề chỉ tiêu
+kèm công thức **rút gọn của chính nó** — `Tài sản ngắn hạn (100 = 110 + 120
++ 130 + 140 + 160)` — bỏ hẳn mã 150 vì công ty không có tài sản sinh học.
+Doanh nghiệp lập báo cáo cũng coi dòng vắng mặt là không đóng góp.
+
+Ghi `notes` cho ca vắng dòng vẫn bắt buộc: nó phân biệt được "0 vì miễn
+trình bày" với "0 vì công ty khai là 0", và đó là thông tin cần khi phân
+tích bất đồng giữa hai người gán nhãn.
 
 ### 3.5 Làm tròn
 
@@ -123,13 +154,26 @@ Cặp hay nhầm phải kiểm kỹ:
 
 | Cần lấy | Dễ nhầm sang |
 |---|---|
-| Hàng tồn kho (140) | Dự phòng giảm giá hàng tồn kho (142) |
-| Tổng cộng tài sản (270 hoặc 280) | Tổng cộng nguồn vốn |
+| Hàng tồn kho (140) | Dự phòng giảm giá hàng tồn kho (142 ở TT99, 149 ở TT200) |
+| Tổng cộng tài sản (270 hoặc 280) | Tổng cộng nguồn vốn (440) — **giờ là hai chỉ tiêu riêng, phải lấy CẢ HAI** |
 | Doanh thu thuần (10) | Doanh thu bán hàng và cung cấp dịch vụ (01) |
 | Lợi nhuận sau thuế (60) | Lợi nhuận sau thuế của cổ đông công ty mẹ |
+| Lợi nhuận sau thuế (60) | Lợi nhuận sau thuế chưa phân phối (420) trên bảng cân đối |
+| Tài sản ngắn hạn khác (150 ở TT200, **160** ở TT99) | Dòng chi tiết ngay dưới nó (155 / 165) cùng tên |
+| Chi phí thuế TNDN hiện hành (51) | Chi phí thuế TNDN hoãn lại (52) |
 
-**Mã số ở TT200 và TT99 không giống nhau** — riêng tổng tài sản là 270 ở
-TT200 và 280 ở TT99. Xác định chuẩn trước, rồi mới tra mã.
+**BA mã số đổi nghĩa giữa hai chuẩn.** Xác định chuẩn trước, rồi mới tra mã
+— tra nhầm bảng không làm gì báo lỗi, nó trả về một con số hợp lệ của chỉ
+tiêu khác:
+
+| Mã | TT200 | TT99 |
+|---|---|---|
+| **270** | Tổng cộng tài sản | Tài sản dài hạn khác |
+| **150** | Tài sản ngắn hạn khác | **Tài sản sinh học ngắn hạn** |
+| **142** | (thuộc nhóm khác) | Dự phòng giảm giá hàng tồn kho |
+
+Kèm theo: **Tài sản sinh học ngắn hạn chỉ tồn tại ở TT99.** Với báo cáo
+TT200 thì chỉ tiêu này không có trên biểu mẫu — bỏ trống, đừng đi tìm.
 
 ### 3.7 Nhận diện chuẩn mẫu biểu
 

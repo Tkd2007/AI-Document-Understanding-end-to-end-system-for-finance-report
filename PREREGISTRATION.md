@@ -315,3 +315,73 @@ nghĩa là đã vét cạn mọi tổ hợp và không cách đọc nào làm b�
 `vuot_tran_thay_doi` chỉ nghĩa là ta đã không tìm. Gộp hai thứ lại là tính
 công cho phương pháp ở những ca nó không chứng minh được gì, nên mọi bảng
 kết quả phải đếm chúng riêng.
+
+### 23/08/2026 — Chốt bộ chỉ tiêu ở 21, và không gán nhãn cột kỳ so sánh
+
+**Sửa đổi.** Bộ chỉ tiêu mở rộng từ 11 lên **21** (kịch bản D của
+`src/constraints_scenarios.py`, cộng một chỉ tiêu chỉ có ở TT99). Bộ đẳng
+thức đi từ 3 lên **7**. Cột kỳ so sánh **không** được gán nhãn.
+
+**Lý do — thước cũ đo sai thứ.** Bảng kịch bản ban đầu xếp hạng theo "số chỉ
+tiêu định vị được trên mỗi chỉ tiêu thêm vào", và theo thước đó kịch bản B
+thắng với tỷ lệ 1,00. Thước đó có hai lỗ. Thứ nhất, nó gộp "cột toàn 0" với
+"lẫn với chỉ tiêu khác" làm một, trong khi cột toàn 0 nghĩa là lỗi vô hình
+với **cả H1 lẫn H2** còn lẫn lớp thì H1 vẫn bắt được. Thứ hai, "định vị
+được" là nhị phân trong khi H2 đo bằng Top-1/Top-3, mà một chỉ tiêu trong
+lớp lẫn 2 đạt trần Top-3 bằng 100% còn lớp lẫn 5 chỉ đạt 60%.
+
+Đo lại theo đúng chỉ số mà H1 và H2 báo cáo:
+
+| Kịch bản | Chỉ tiêu | Chỉ tiêu VÔ HÌNH | Trần Top-1 | Trần Top-3 |
+|---|---:|---:|---:|---:|
+| A (cũ) | 11 | 3 | 0,36 | 0,73 |
+| B | 12 | 3 | 0,42 | 0,75 |
+| C | 16 | 1 | 0,50 | 0,94 |
+| **D (chốt)** | **20–21** | **0** | **0,50** | **0,90** |
+| E | 26 | 0 | 0,54 | 0,96 |
+
+**Vì sao D chứ không phải C, dù Top-3 trung bình của D thấp hơn.** Con số
+0,90 thấp hơn 0,94 là **hiệu ứng cấu thành, không phải hồi quy**. Đo trên
+đúng 16 chỉ tiêu của kịch bản C, việc chuyển sang D nâng Top-3 từ 0,938 lên
+**0,975** — không một chỉ tiêu nào xấu đi. Trung bình tụt vì D thêm bốn chỉ
+tiêu vốn dĩ khó (các thành phần của mã 100, cùng lớp lẫn 5). Hệ quả bắt
+buộc cho bảng kết quả: **Top-k trung bình phải in kèm phân rã theo lớp lẫn**,
+nếu không bảng sẽ trông như D kém hơn C trong khi sự thật ngược lại.
+
+**Vì sao D chứ không phải B.** B không cứu chỉ tiêu vô hình nào. Trong ba
+chỉ tiêu vô hình của bộ cũ có `hang_ton_kho` — đúng chỉ tiêu đã có lỗi đọc
+THẬT trên báo cáo VNM (alias khớp trúng dòng Dự phòng giảm giá) và là ví dụ
+mở đầu của proposal mục 2.2. Ở bộ cũ, vòng đọc lại — đóng góp cốt lõi của cả
+bài — **không bao giờ được kích hoạt trên chính ví dụ minh hoạ của nó**. Ở D
+nó phát hiện được. Nó vẫn *không* định vị được (lẫn trong lớp 5 chỉ tiêu con
+của mã 100), và đó là kết quả H0 phải báo cáo trung thực.
+
+**Vì sao không E.** E hơn D trên mọi trần nhưng bắt gán nhãn B03, tức biểu
+mẫu thứ ba. 26 chỉ tiêu qua ba báo cáo trong 15 phút nhiều khả năng vỡ giao
+thức đo trần người ở ADDENDUM mục 6, mà giao thức đó đã viết vào
+`ANNOTATION-GUIDELINE.md` rồi; đổi nó là vi phạm Luật 3 và phải đo lại trần
+người từ đầu.
+
+**Cột kỳ so sánh: không gán nhãn.** Proposal mục 6.1(d) để ngỏ khả năng đây
+là "ràng buộc gần như miễn phí". Đo cho thấy ngược lại: thêm cột kỳ trước
+nhân đôi số chỉ tiêu mà trần Top-1 và Top-3 **không đổi một điểm nào** (D:
+0,50/0,90 trước và sau; E: 0,54/0,96 trước và sau). Lý do chứng minh được
+chứ không cần đo — hai cột thoả cùng một hệ đẳng thức một cách độc lập nên
+ma trận thành khối chéo `[[A,0],[0,A]]`, không residual nào nối hai cột. Kể
+cả khi nối chéo qua B03 (tiền đầu kỳ này bằng tiền cuối kỳ trước) cũng chỉ
+được 2 điểm Top-1 cho gấp đôi ngân sách gán nhãn. Mỏ neo chéo ở proposal mục
+6.3 vẫn giữ, nhưng nó là kiểm **biên độ** chứ không phải đẳng thức, nên chỉ
+cần một con số tổng tài sản kỳ trước, không cần cả cột.
+
+**Một khác biệt thật giữa hai chuẩn lộ ra khi thi công.** Phân rã tài sản
+ngắn hạn KHÔNG giống nhau: TT200 có `100 = 110+120+130+140+150` với 150 là
+Tài sản ngắn hạn khác, còn TT99 có `100 = 110+120+130+140+150+160` với 150
+là **Tài sản sinh học ngắn hạn** và 160 mới là Tài sản ngắn hạn khác. Nên
+TT99 có 21 chỉ tiêu và TT200 có 20, và mã 150 gia nhập nhóm mã đổi nghĩa
+giữa hai chuẩn cùng với 270 và 142. Đây là đẳng thức duy nhất trong cả cấu
+hình mà hai chuẩn không đẳng cấu.
+
+**Hệ quả cho phát biểu về trục TT200 → TT99.** Sáu trong bảy đẳng thức giống
+hệt nhau ở hai chuẩn. Nên ablation số 8 kiểm chủ yếu **tầng nhận diện và tra
+cứu mã số**, không kiểm khả năng tổng quát hoá của phần suy luận ràng buộc.
+Phải viết đúng phạm vi đó, không được phát biểu rộng hơn.

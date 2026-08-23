@@ -258,21 +258,30 @@ quả cụ thể ở **mục 3.5**; bản sửa là commit `023321c`.
 > hệt TT200 mà chưa ai kiểm; nếu sai thì trục nghiên cứu "TT200 → TT99" hỏng,
 > vì trục đó dựa vào việc hai chuẩn **khác nhau**.
 
-Đã đối chiếu: TT99 **giữ nguyên** cả ba quan hệ, chỉ đổi mã tổng tài sản từ
-270 sang 280. Code đang mô tả đúng.
+Đã đối chiếu: với **ba đẳng thức đang xét ở mục này**, TT99 giữ nguyên cả ba,
+chỉ đổi mã tổng tài sản từ 270 sang 280. Code đang mô tả đúng.
 
-Điều đó không làm hỏng trục nghiên cứu, nhưng nó **dời trục sang chỗ khác**,
-và chỗ mới đáng quan tâm hơn. Hai chuẩn không khác nhau ở **cấu trúc đại số**
-— ma trận `A` của chúng đẳng cấu — mà khác ở **cách đánh số và cách gọi tên**:
-mã 270 đổi nghĩa, mã dự phòng đổi từ 149 sang 142, và "Bảng cân đối kế toán"
-đổi tên thành "Báo cáo tình hình tài chính". Nói cách khác, chuyển đổi TT200 →
-TT99 là một phép **đổi tên ánh xạ**, không phải một phép đổi mô hình.
+> **Bổ sung 23/08/2026, sau khi thi công bộ chỉ tiêu mới.** Kết luận trên
+> đúng trong phạm vi ba đẳng thức, nhưng **không** tổng quát được thành "hai
+> chuẩn đẳng cấu". Khi mở sang bộ 7 đẳng thức của kịch bản D thì lộ ra một
+> khác biệt thật: phân rã tài sản ngắn hạn là `100 = 110+120+130+140+150` ở
+> TT200 nhưng `100 = 110+120+130+140+150+160` ở TT99, vì TT99 chèn thêm
+> **Tài sản sinh học ngắn hạn** vào mã 150 và đẩy Tài sản ngắn hạn khác sang
+> 160. Nên TT200 có 20 chỉ tiêu, TT99 có 21, và ma trận của chúng khác chiều.
+> Chi tiết ở `PREREGISTRATION.md` mục Sửa đổi ngày 23/08/2026.
 
-Hệ quả cho bài viết: distribution shift giữa hai chuẩn nằm ở **tầng nhận diện
-và tra cứu**, không nằm ở tầng ràng buộc. Ablation số 8 (transfer TT200 → TT99)
-vì thế kiểm đúng một thứ — hệ có nhận diện đúng chuẩn rồi tra đúng bảng mã
-không — chứ không kiểm khả năng tổng quát hoá của phần suy luận ràng buộc. Đó
-là một phát biểu hẹp hơn bản đăng ký ban đầu ngụ ý, và phải viết đúng như vậy.
+Dù vậy, **sáu trên bảy** đẳng thức vẫn giống hệt nhau, nên nhận xét về trọng
+tâm của trục nghiên cứu vẫn đứng: hai chuẩn khác nhau chủ yếu ở **cách đánh
+số và cách gọi tên** chứ không ở cấu trúc quan hệ kế toán. Mã 270 đổi nghĩa,
+mã 150 đổi nghĩa, dự phòng đổi từ 149 sang 142, và "Bảng cân đối kế toán" đổi
+tên thành "Báo cáo tình hình tài chính".
+
+Hệ quả cho bài viết: distribution shift giữa hai chuẩn nằm chủ yếu ở **tầng
+nhận diện và tra cứu**, không ở tầng ràng buộc. Ablation số 8 (transfer TT200
+→ TT99) vì thế kiểm chủ yếu một thứ — hệ có nhận diện đúng chuẩn rồi tra đúng
+bảng mã không — chứ không kiểm khả năng tổng quát hoá của phần suy luận ràng
+buộc. Đó là phát biểu hẹp hơn bản đăng ký ban đầu ngụ ý, và phải viết đúng
+như vậy.
 
 ### 3.3 Đẳng thức đang mã hoá
 

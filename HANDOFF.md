@@ -4,8 +4,9 @@ Viết để một phiên Claude khác đọc và làm tiếp mà **không cần
 Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
 
 - **Nhánh:** `research` (tách từ `main` tại `4216291`)
-- **Commit gần nhất:** `463bc5b` — **đã push hết**
-- **Test:** **334 xanh / 0 đỏ**. `ruff check src tests` sạch.
+- **Commit gần nhất:** `df96ff2`
+- **Test:** **340 xanh / 0 đỏ**. `ruff check src tests` sạch.
+- **Bộ chỉ tiêu:** 21 với TT99, 20 với TT200; 7 đẳng thức. MỐC 1 đã đóng.
 - **Cập nhật:** 23/08/2026
 
 ---
@@ -26,7 +27,8 @@ Trong repo, đọc theo thứ tự:
    gốc**; mọi thay đổi ghi vào mục "Sửa đổi" ở cuối kèm ngày và lý do, nếu
    không thì việc đăng ký trước mất hết giá trị.
 2. [MOC1-DOI-CHIEU.md](MOC1-DOI-CHIEU.md) — bảng đối chiếu ma trận ràng buộc
-   với Thông tư, **đã đối chiếu xong**. Mục 10 dưới đây tóm tắt kết quả.
+   với Thông tư, **đã đối chiếu xong và Mốc 1 đã đóng**. Mục 10 dưới đây tóm
+   tắt kết quả và quyết định bộ chỉ tiêu.
 3. [src/eval/stats.py](src/eval/stats.py) — docstring đầu module, nguyên tắc
    chi phối toàn bộ phần thống kê.
 4. [src/repair/diagnose.py](src/repair/diagnose.py) — docstring đầu module
@@ -39,9 +41,9 @@ Trong repo, đọc theo thứ tự:
 
 ## 2. Bối cảnh
 
-Repo gốc là pipeline **trích xuất** 11 chỉ tiêu tài chính từ PDF báo cáo
-tài chính Việt Nam: PDF → DocLayout-YOLO cắt vùng bảng → EasyOCR hoặc VLM
-(Gemma qua OpenRouter) → validation → FastAPI.
+Repo gốc là pipeline **trích xuất** chỉ tiêu tài chính từ PDF báo cáo tài
+chính Việt Nam — 11 chỉ tiêu lúc đầu, 21 sau Mốc 1: PDF → DocLayout-YOLO cắt
+vùng bảng → EasyOCR hoặc VLM (Gemma qua OpenRouter) → validation → FastAPI.
 
 Việc đang làm là biến nó thành hạ tầng **nghiên cứu**. Đóng góp cốt lõi nằm
 ở H3, gói trong một câu:
@@ -96,6 +98,9 @@ Ngoài ra `main` có `debac2f` (test khoá threading cho `merge_into_totals`).
 | **`023321c`** | A3 | **Sửa `FORM_MARKERS`: hậu tố a/b là KỲ, không phải Thông tư** — mục 10 |
 | **`6744bee`** | Mốc 1 | **Thay đẳng thức giả thuyết bằng đẳng thức đã đối chiếu** — mục 10 |
 | `e08d5e8` | Mốc 1 | Bảng đối chiếu đầy đủ cả hai chuẩn |
+| `32db2f7` | Mốc 1 | Đóng các ô chưa xác nhận của bảng đối chiếu |
+| **`4064519`** | **B4** | **Bộ chỉ tiêu lên 21, hai chuẩn hết đẳng cấu** — mục 10 |
+| **`df96ff2`** | **Mốc 1** | **Ghi quyết định vào đăng ký trước, đóng hai ô chờ của guideline** |
 
 Xen giữa là các commit cập nhật chính file này (`fa399e4`, `7c37ec9`,
 `7d93593`, `41c1a14`, `b53ed8f`, `b55722d`, `2a2198f`, `463bc5b`) và hai
@@ -154,6 +159,22 @@ minh việc phân cụm nới khoảng tin cậy hơn gấp đôi trên dữ li�
 khoảng tin cậy sẽ hẹp giả tạo bao nhiêu. **Không dùng DeLong** — lý do ở
 `PREREGISTRATION.md` mục 1 và docstring `src/eval/stats.py`. McNemar dùng
 kiểm định nhị thức **chính xác** nên phần đó không cần scipy.
+
+**B4.** Ba chỗ suýt sai khi mở bộ chỉ tiêu, cả ba đều là lỗi im lặng.
+
+*Một,* dựng ma trận TT200 trên toàn bộ `FIELD_MAP` sẽ kéo theo
+`tai_san_sinh_hoc_ngan_han` — chỉ tiêu TT200 không có — và bịa ra một cột
+toàn 0 không tồn tại, làm sai luôn chiều không gian null của TT200. Đó là lý
+do có `fields_for(standard)`; đừng quay lại dùng `list(FIELD_MAP)`.
+
+*Hai,* `report()` trước đây chỉ nhắc "cột toàn 0" trong ghi chú từng dòng
+của bảng, nên khi không còn chỉ tiêu nào vô hình thì báo cáo trông y hệt một
+báo cáo quên in phần đó. Nay có dòng tổng quan nêu số đó kể cả khi bằng 0.
+
+*Ba,* test giá trị thật `A @ x_ref ≈ 0` **không** bắt được việc bỏ sót hạng
+tử tài sản sinh học, vì giá trị của nó trên báo cáo VNM đúng bằng 0. Cái bắt
+được là test cột toàn 0. Bài học: test trên một bộ số thật không thay được
+test trên cấu trúc ma trận.
 
 **C1.** Năm nguồn ứng viên. `cost = −log(xác suất tiên nghiệm)` để cộng cost
 tương đương nhân xác suất. **Bốn xác suất trong `XAC_SUAT_TIEN_NGHIEM` chưa
@@ -382,9 +403,9 @@ Khối `__main__` của `ocr_compare.py` tự gỡ thư mục script khỏi `sys
 
 ---
 
-## 10. MỐC 1 — đã đối chiếu Công báo XONG, chỉ còn chờ chốt bộ trường
+## 10. MỐC 1 — ĐÃ ĐÓNG
 
-Người dùng đã tải bốn số Công báo vào `data/legal/` (đã gitignore). Trích
+Người dùng đã tải năm file Công báo vào `data/legal/` (đã gitignore). Trích
 bằng `pdftotext -layout` cho PDF và `antiword -m UTF-8.txt` cho `.doc` cũ.
 
 | File | Chuẩn | Nội dung |
@@ -493,30 +514,65 @@ dict phẳng; `form_markers_for(standard)` → `marker_for_form(form)`.
   tham số **bắt buộc** của `extract_field_by_code()`.
 - Dự phòng giảm giá hàng tồn kho: mã **149** ở TT200, mã **142** ở TT99.
 
-### Và một chỗ KHÔNG khác nhau — trục TT200 → TT99 hẹp hơn tưởng
+### Trục TT200 → TT99 hẹp hơn tưởng, nhưng KHÔNG rỗng
 
-`FIELD_IDENTITIES` khai báo TT99 ba đẳng thức giống hệt TT200. Trước khi đối
-chiếu, đó là giả định nặng nhất trong `fields_config.py`. Đối chiếu xong:
-**giả định đúng**, TT99 giữ nguyên cả ba quan hệ, chỉ đổi mã tổng tài sản từ
-270 sang 280.
+Ba đẳng thức của bộ chỉ tiêu cũ giống hệt nhau ở hai chuẩn. Khi mở sang bộ 7
+đẳng thức của kịch bản D thì lộ ra một khác biệt thật, và nó là **chỗ duy
+nhất** trong cả cấu hình mà hai chuẩn không đẳng cấu:
 
-Điều đó không làm hỏng trục nghiên cứu nhưng **dời nó sang chỗ khác**. Hai
-chuẩn không khác nhau ở cấu trúc đại số — ma trận `A` của chúng đẳng cấu — mà
-khác ở cách đánh số và cách gọi tên. Chuyển đổi TT200 → TT99 vì thế là một
-phép **đổi tên ánh xạ**, không phải một phép đổi mô hình.
+```
+TT200:  100 = 110 + 120 + 130 + 140 + 150          (150 = TSNH khác)
+TT99:   100 = 110 + 120 + 130 + 140 + 150 + 160    (150 = TS sinh học, 160 = TSNH khác)
+```
 
-Hệ quả phải viết đúng trong bài: ablation số 8 (transfer TT200 → TT99) kiểm
-**tầng nhận diện và tra cứu** — hệ có nhận đúng chuẩn rồi tra đúng bảng mã
-không — chứ **không** kiểm khả năng tổng quát hoá của phần suy luận ràng buộc.
-Đó là phát biểu hẹp hơn bản đăng ký ban đầu ngụ ý. Chi tiết ở
-[MOC1-DOI-CHIEU.md](MOC1-DOI-CHIEU.md) mục 3.2(b).
+Nên TT200 có **20** chỉ tiêu và TT99 có **21**, hạng 7 ở cả hai, chiều null
+13 và 14. Bỏ hạng tử tài sản sinh học đi thì đẳng thức TT99 lệch đúng bằng
+giá trị đàn vật nuôi hoặc vườn cây với doanh nghiệp nông nghiệp — cảnh báo
+SAI, ở đúng nhóm doanh nghiệp mà tập gold nhắm tới.
 
-### Việc còn chờ người quyết — cái duy nhất còn lại của Mốc 1
+Dù vậy sáu trên bảy đẳng thức vẫn trùng nhau, nên hệ quả cho bài viết giữ
+nguyên: ablation số 8 (transfer TT200 → TT99) kiểm chủ yếu **tầng nhận diện
+và tra cứu mã số** — hệ có nhận đúng chuẩn rồi tra đúng bảng không — chứ
+**không** kiểm khả năng tổng quát hoá của phần suy luận ràng buộc. Phát biểu
+hẹp hơn bản đăng ký ban đầu ngụ ý, và phải viết đúng phạm vi đó.
 
-**Chốt bộ trường (B4).** Số liệu đã đủ. Đề xuất: **kịch bản B** — một chỉ
-tiêu, tỷ lệ 1,00; rồi cân nhắc D nếu muốn bảo vệ `hang_ton_kho` (dù D vẫn
-không cứu được nó). Chốt xong ghi vào mục "Sửa đổi" của
-`PREREGISTRATION.md` kèm ngày và lý do, rồi sửa `fields_config.py` theo.
+### MỐC 1 ĐÃ ĐÓNG — bộ chỉ tiêu chốt ở kịch bản D
+
+Người dùng chốt ngày 23/08/2026: **kịch bản D**, và **không** gán nhãn cột kỳ
+so sánh. Đã ghi vào mục Sửa đổi của [PREREGISTRATION.md](PREREGISTRATION.md)
+và thi công ở commit `4064519`.
+
+**Đề xuất trong bản bàn giao trước là kịch bản B, và nó SAI vì dùng nhầm
+thước.** Ghi lại đây để phiên sau đừng lặp lại: bảng kịch bản xếp hạng theo
+"số chỉ tiêu định vị được trên mỗi chỉ tiêu thêm vào", một chỉ số có hai lỗ.
+Nó gộp *cột toàn 0* với *lẫn lớp* làm một, trong khi cột toàn 0 nghĩa là vô
+hình với **cả H1 lẫn H2** còn lẫn lớp thì H1 vẫn bắt được. Và nó nhị phân
+hoá "định vị được", trong khi H2 báo cáo bằng Top-1/Top-3 — lớp lẫn 2 đạt
+trần Top-3 100%, lớp lẫn 5 chỉ đạt 60%.
+
+Đo lại theo đúng chỉ số H1/H2 dùng:
+
+| KB | Chỉ tiêu | **Vô hình** | Trần Top-1 | Trần Top-3 | Ô gán nhãn (×60) |
+|---|---:|---:|---:|---:|---:|
+| A cũ | 11 | 3 | 0,36 | 0,73 | 660 |
+| B | 12 | 3 | 0,42 | 0,75 | 720 |
+| C | 16 | 1 | 0,50 | 0,94 | 960 |
+| **D chốt** | **20–21** | **0** | **0,50** | **0,90** | **1 200** |
+| E | 26 | 0 | 0,54 | 0,96 | 1 560 |
+
+**Cái bẫy đọc bảng này, và nó sẽ quay lại khi dựng bảng cho paper:** Top-3
+của D thấp hơn C nhìn như bước lùi, nhưng đo trên đúng 16 chỉ tiêu của C thì
+D cho **0,975** so với 0,938 của C — không chỉ tiêu nào xấu đi. Trung bình
+tụt vì D thêm bốn chỉ tiêu vốn dĩ khó. Đây là hiệu ứng cấu thành, và **bảng
+kết quả phải in Top-k kèm phân rã theo lớp lẫn**, nếu không người đọc sẽ rút
+ra kết luận ngược.
+
+Con số cho cột kỳ so sánh, trả lời proposal mục 6.1(d): thêm cột kỳ trước
+nhân đôi số chỉ tiêu mà trần Top-1 và Top-3 **không đổi một điểm nào**. Hai
+cột thoả cùng một hệ đẳng thức độc lập nên ma trận thành khối chéo
+`[[A,0],[0,A]]` — không residual nào nối chúng. Mỏ neo chéo ở proposal 6.3
+vẫn giữ, nhưng nó là kiểm biên độ nên chỉ cần **một** con số tổng tài sản kỳ
+trước, không cần cả cột.
 
 ---
 
@@ -555,7 +611,15 @@ Ghi lại để phiên sau không "sửa ngược" theo spec.
    cho MILP ở C2. Vẽ thẳng còn cho **bbox chính xác từng ô miễn phí**.
    SynFinTabs vẫn nên trích dẫn, nhưng **khác biệt phải giữ**: nội dung của
    họ là số ngẫu nhiên nên không đẳng thức kế toán nào đúng trên đó.
-9. **`src/constraints_scenarios.py` và `src/eval/ocr_compare.py` là module
+9. **`FIELDS_ONLY_IN` và `fields_for()` không có trong spec.** Spec giả định
+   mọi chỉ tiêu tồn tại ở cả hai chuẩn và bảo test phải chốt điều đó
+   (`test_moi_bang_config_phu_du_field`). Đối chiếu văn bản cho thấy giả
+   định sai: Tài sản sinh học ngắn hạn chỉ có ở TT99. Nới test để chấp nhận
+   mọi khoảng trống thì nó không còn phân biệt được "chuẩn không có chỉ tiêu
+   này" với "quên khai mã" — nên thay bằng khai báo tường minh, cộng hai test
+   canh chiều ngược lại (khai báo thừa, và khai báo trỏ tới chỉ tiêu không
+   tồn tại).
+10. **`src/constraints_scenarios.py` và `src/eval/ocr_compare.py` là module
    mới không có trong spec.** Cái đầu để trả lời câu hỏi thật của Mốc 1 bằng
    số thay vì cảm tính; cái sau để trả lời mục "engine OCR không được để
    trống" mà không phải chờ tập gold.
@@ -571,13 +635,44 @@ Theo thứ tự phụ thuộc trong `BUILD-SPEC.md` phần E.
 | C2, B5, Phần F, README | **XONG** | — |
 | Guideline gán nhãn, bảng đối chiếu Mốc 1 | **XONG** | — |
 | Đối chiếu Công báo | **XONG** — mục 10 | — |
-| **B4** mở rộng bộ trường | Chưa | **Chốt bộ trường** — mục 10 |
+| **B4** mở rộng bộ trường | **XONG** — `4064519` | — |
+| **MỐC 1** | **ĐÓNG** — `df96ff2` | — |
+| Bỏ qua đẳng thức khi thiếu thành phần | **Chưa** | Quyết định của người — xem dưới |
 | **C3** vòng lặp đọc lại | Chưa | **MỐC 3** — mục 13 |
 | **C4** verdict ba trạng thái | Chưa | C3 |
 | **D2** runner / **D3** bảng / **D4** hình | Chưa | C4, rồi D2 |
 
-Không còn việc nào làm được mà không chờ người: mọi thứ còn lại đều nằm sau
-việc chốt bộ trường hoặc sau Mốc 3.
+### Việc mở ra từ B4, cần quyết trước khi chạy pipeline trên tài liệu thật
+
+`validate_result()` bỏ qua **cả đẳng thức** nếu bất kỳ thành phần nào là
+`None` ([src/validation.py:168](src/validation.py#L168)). Với bộ đẳng thức
+cũ — 3 đẳng thức trên các chỉ tiêu đầu bảng vốn luôn được in — điều đó vô
+hại. Với đẳng thức phân rã tài sản ngắn hạn (5 thành phần ở TT200, 6 ở TT99)
+thì chỉ cần **một** dòng không đọc được là đẳng thức giá trị nhất im lặng
+không chạy.
+
+Phía **gán nhãn tay** đã xử lý: `ANNOTATION-GUIDELINE.md` mục 3.4 nay quy
+định dòng vắng mặt ghi `0` chứ không phải `null`, vì TT99 mục 1.2.3 bảo đảm
+chỉ tiêu không có số liệu được miễn trình bày — vắng mặt là *bằng không*,
+không phải *chưa biết*. Chính báo cáo VNM in công thức rút gọn của nó,
+`100 = 110 + 120 + 130 + 140 + 160`, bỏ hẳn mã 150.
+
+Phía **pipeline** thì chưa. VLM và OCR đều trả `None` cho dòng không đọc
+được, và ở đó `None` thật sự nhập nhằng giữa "dòng vắng mặt" với "đọc hỏng".
+Chưa sửa vì đây là đánh đổi có hai chiều thật, cần người quyết:
+
+- Coi `None` là 0 → đẳng thức chạy được trên phần lớn tài liệu, nhưng một
+  thành phần đọc hỏng sẽ sinh cảnh báo lệch đúng bằng giá trị của nó. Lệch
+  đó là **cảnh báo đúng hướng** (có gì đó sai thật) nhưng **quy trách nhiệm
+  sai chỗ**, và C1/C2 sẽ đi tìm ứng viên cho nhầm chỉ tiêu.
+- Giữ nguyên → an toàn nhưng đẳng thức mới gần như không bao giờ chạy, tức
+  phần lớn cái mà Mốc 1 mua được sẽ không tới được pipeline.
+
+Gợi ý nếu cần một hướng: phân biệt được hai ca bằng chính **mã số dòng** —
+nếu `extract_field_by_code()` tìm thấy dòng nhưng không đọc ra số thì là đọc
+hỏng, còn không tìm thấy dòng thì là vắng mặt. Đường đó cần B3 provenance,
+vốn đã có. Dù chọn hướng nào cũng phải ghi trạng thái **tường minh** vào kết
+quả, đừng để suy ra từ sự vắng mặt của khoá khác.
 
 ### Hằng số chưa hiệu chỉnh — đo lại trước khi tin
 
@@ -703,16 +798,30 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
 
 ## 16. Bước kế tiếp đề xuất
 
-1. **Chốt bộ trường** (mục 10). Đây là việc duy nhất còn lại của Mốc 1 —
-   phần đối chiếu văn bản đã xong. Số liệu để quyết đã có; đề xuất là kịch
-   bản B. Ghi quyết định vào mục "Sửa đổi" của `PREREGISTRATION.md`.
-2. **Người dùng chạy `fetch.py`** để có dữ liệu XBRL (mục 13).
+Mốc 1 đã đóng, nên đường găng giờ đi qua Mốc 3.
+
+1. **Quyết cách xử lý thành phần thiếu trong đẳng thức** (mục 12). Đây là
+   việc duy nhất còn lại mà B4 mở ra, và nó chặn việc chạy pipeline trên tài
+   liệu thật — không quyết thì đẳng thức phân rã tài sản ngắn hạn gần như
+   không bao giờ chạy, tức phần lớn cái Mốc 1 mua được không tới được
+   pipeline.
+2. **Người dùng chạy `fetch.py`** để có dữ liệu XBRL (mục 13). Việc này
+   không chặn bởi mục 1 — làm song song được.
 3. **Chạy MỐC 3** ngay khi có dữ liệu. **Đây là mốc phải dừng thật** — nếu
    baseline 9 ngang bằng thì toàn bộ novelty tầng 1 sai, dừng và lùi paper
    về tầng dataset + identifiability. Không chạy tiếp C3 và ablation trước
    khi biết kết quả, vì chạy tiếp chỉ để tích luỹ số liệu cho một luận điểm
    đã sai.
 4. **Sau khi qua Mốc 3:** C3 rồi C4, rồi D2/D3/D4.
+
+Ngoài đường găng, ba việc phải xong trước khi có con số vào paper, và không
+việc nào chặn việc nào:
+
+- **Pilot 20 tài liệu gold** rồi tính lại power (MỐC 2). Guideline đã sẵn
+  sàng, bộ chỉ tiêu đã chốt, nên việc này bắt đầu được ngay.
+- **Chốt người gán nhãn thứ hai** cho 20 tài liệu, hoặc dùng phương án dự
+  phòng ở `ADDENDUM` mục 5 (tự gán lại sau hai tuần).
+- **Đo trần người** trên 10 tài liệu, 15 phút mỗi tài liệu.
 
 **Lưu ý khi merge sang `main`:** CI chỉ chạy trên `main` và trên pull
 request, nên lỗi thiếu thư viện ở mục 8 chỉ lộ ra ở lần merge đầu tiên. Nó

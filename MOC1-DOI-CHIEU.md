@@ -211,7 +211,7 @@ Nguồn: `src/fields_config.py`, `FIELD_LINE_CODES`.
 **(a) Ký hiệu mẫu biểu của TT200 là `B01-DN` hay `B01a-DN`?**
 
 `FORM_MARKERS` trong `fields_config.py` đang giả định TT200 dùng `B 01` không
-có hậu tố `a`, và TT99 dùng `B 01a`. Regex của TT200 mang `(?!s*a)` chính vì
+có hậu tố `a`, và TT99 dùng `B 01a`. Regex của TT200 mang `(?!\s*a)` chính vì
 chuỗi `"B 01"` nằm gọn trong `"B 01a"` — không có phần đó thì marker TT200 sẽ
 khớp luôn trang TT99. Nếu giả định này sai thì **nhận diện chuẩn sai ở mọi tài
 liệu**, và đó là một chế độ lỗi nằm ngay đầu chuỗi xử lý.
@@ -382,7 +382,7 @@ Trong khi đó `src/fields_config.py` đang ghi ngược lại:
 
 > "TT200 dùng `Mẫu số B 01 - DN`, TT99 dùng `Mẫu số B 01a - DN`."
 
-**Hậu quả cụ thể.** Marker TT200 mang `(?!s*a)` nên **không khớp** trang
+**Hậu quả cụ thể.** Marker TT200 mang `(?!\s*a)` nên **không khớp** trang
 `B01a-DN`. Mà `B01a-DN` chính là báo cáo **quý** theo TT200 — đúng loại tài
 liệu dự án đang xử lý, kể cả báo cáo VNM Q1/2026 dùng làm mẫu. Khi marker
 không khớp, `extract_field_by_code()` trả `None`, tức **đường dự phòng theo
@@ -400,7 +400,7 @@ Nên việc nhận diện CHUẨN không hỏng; chỉ việc nhận diện MẪ
 Hệ quả thiết kế: vì chuẩn đã được `detect_standard()` xác định trước, và
 `extract_field_by_code()` nhận `standard` làm tham số bắt buộc, `FORM_MARKERS`
 **không cần phân biệt chuẩn chút nào** — nó chỉ cần phân biệt B01/B02/B03
-trong phạm vi một chuẩn đã biết. Toàn bộ cơ chế `(?!s*a)` đang giải một bài
+trong phạm vi một chuẩn đã biết. Toàn bộ cơ chế `(?!\s*a)` đang giải một bài
 toán mà chỗ khác đã giải rồi.
 
 #### Nếu KHÔNG tìm thấy đẳng thức nối chéo nào

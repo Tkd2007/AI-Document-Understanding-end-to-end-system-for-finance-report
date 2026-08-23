@@ -28,6 +28,66 @@ UPLOAD_DIR = Path("data/samples")
 ALLOWED_SUFFIXES = {".pdf", ".png", ".jpg", ".jpeg"}
 PREFIX = "doc_ai_"
 
+# Trần kích thước một file upload. Hằng số này KHÔNG nằm ở fields_config.py
+# dù quy ước chung của repo là gom hằng số về đó: fields_config giữ hằng số
+# MIỀN (tên chỉ tiêu, mã số dòng, biên giá trị hợp lệ), còn đây là giới hạn
+# của tầng vận chuyển HTTP, không có ý nghĩa gì với phần nghiên cứu.
+#
+# 50 MB chọn theo tài liệu thật: báo cáo VNM Q1/2026 là bản scan 55 trang
+# nặng khoảng 9 MB, nên trần này còn dư chỗ cho báo cáo hợp nhất dày hơn
+# nhiều mà vẫn chặn được thứ rõ ràng không phải BCTC.
+MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+
+# Đọc theo khối thay vì đọc một phát cả file. Con số không quan trọng lắm,
+# chỉ cần đủ lớn để không gọi read() hàng chục nghìn lần.
+CHUNK_BYTES = 1024 * 1024
+
+
+async def luu_upload_co_tran(file: UploadFile, dest: Path, max_bytes: int) -> int:
+    """
+    Ghi nội dung upload ra `dest`, huỷ giữa chừng nếu vượt `max_bytes`.
+
+    Trả về số byte đã ghi. Ném HTTPException 413 khi vượt trần, và xoá
+    luôn phần đã ghi dở — để lại nửa file trong data/samples/ thì lần chạy
+    sau sẽ gặp một PDF cụt và báo lỗi parse ở tận trong pdf2image, cách xa
+    nguyên nhân thật.
+
+    Vì sao phải đọc theo khối chứ không kiểm `file.size` rồi `read()`:
+    bản cũ gọi `await file.read()` nạp TRỌN file vào RAM rồi mới ghi, nên
+    một upload 4 GB là 4 GB thường trú trong tiến trình. Container có giới
+    hạn bộ nhớ sẽ bị OOM-kill — cả service chết, không riêng request đó.
+
+    Giới hạn cần nói thẳng: hàm này chạy SAU khi Starlette đã nhận xong
+    toàn bộ body và đệm nó vào SpooledTemporaryFile, nên nó không hề ngăn
+    được việc truyền dữ liệu lên. Nó chỉ chặn phần ta tự làm mình chết —
+    nạp hết vào RAM và ghi hết ra đĩa. Chặn ngay ở lúc truyền là việc của
+    reverse proxy (`client_max_body_size` của nginx), tầng mà repo này
+    chưa có.
+    """
+    da_ghi = 0
+
+    try:
+        with open(dest, "wb") as f:
+            while chunk := await file.read(CHUNK_BYTES):
+                da_ghi += len(chunk)
+
+                if da_ghi > max_bytes:
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"File vượt quá giới hạn "
+                               f"{max_bytes // (1024 * 1024)} MB",
+                    )
+
+                f.write(chunk)
+    except BaseException:
+        # BaseException chứ không phải Exception: xoá file dở phải xảy ra
+        # cả khi request bị huỷ (asyncio.CancelledError kế thừa
+        # BaseException), vốn đúng là thứ hay xảy ra với upload lớn.
+        dest.unlink(missing_ok=True)
+        raise
+
+    return da_ghi
+
 
 @app.post("/extract")
 async def extract(file: UploadFile = File(...)):
@@ -58,26 +118,25 @@ async def extract(file: UploadFile = File(...)):
     # file <stem>_routed.json ở data/output, vốn cũng bị ghi đè y hệt.
     stem = Path(safe_name).stem
     save_path = UPLOAD_DIR / f"{stem}_{uuid.uuid4().hex[:8]}{suffix}"
-    save_path.write_bytes(await file.read())
+    await luu_upload_co_tran(file, save_path, MAX_UPLOAD_BYTES)
 
     try:
         # route_document() chạy OCR/YOLO/VLM, mất từ vài chục giây tới vài
         # phút. Gọi thẳng trong endpoint async sẽ chặn event loop và treo mọi
         # request khác, nên đẩy sang threadpool.
         #
-        # save=True là TẠM THỜI, để debug: đang cần mở file _routed.json xem
-        # output sau mỗi lần upload qua /docs. Đích đến là save=False; chi
-        # tiết ở mục "Kết quả upload qua API được ghi ra file (trạng thái
-        # debug hiện tại)" trong README.
-        #
-        # Cái giá của nó: mỗi request để lại một file trong data/output/ và
-        # không ai dọn. Tên file mang hậu tố ngẫu nhiên của request
-        # (report_a3f2b1c9_routed.json) nên upload cùng một báo cáo ba lần ra
-        # ba file nội dung giống nhau, không tra cứu theo tên được. Dữ liệu
-        # thì đã có sẵn ở hai chỗ khác: response HTTP bên dưới, và
+        # save=False: đường API không ghi data/output/<stem>_routed.json.
+        # Dữ liệu đã có ở hai chỗ khác — response HTTP ngay bên dưới, và
         # metrics.jsonl (chỗ này còn ghi được cả lượt chạy THẤT BẠI, vì
         # metrics.save() nằm trong finally còn save_result() thì không).
-        extraction = await run_in_threadpool(route_document, str(save_path), save=True)
+        # File thứ ba chỉ để lại rác: mỗi request một file không ai dọn,
+        # tên mang hậu tố ngẫu nhiên của request
+        # (report_a3f2b1c9_routed.json) nên upload cùng một báo cáo ba lần
+        # ra ba file giống hệt nhau mà không tra cứu theo tên được.
+        #
+        # Đường CLI vẫn để mặc định save=True, vì ở đó file kia CHÍNH LÀ
+        # output của lệnh.
+        extraction = await run_in_threadpool(route_document, str(save_path), save=False)
     finally:
         # Xoá file tạm kể cả khi pipeline ném lỗi. Không có bước này thì
         # data/samples/ phình vô hạn theo số request — mỗi lượt upload để

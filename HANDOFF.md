@@ -4,11 +4,10 @@ Viết để một phiên Claude khác đọc và làm tiếp mà **không cần
 Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
 
 - **Nhánh:** `research` (tách từ `main` tại `4216291`)
-- **Commit gần nhất:** `2015e8c`
-- **Test:** **318 xanh / 0 đỏ**. `ruff check src tests` sạch.
-- **CHƯA PUSH:** sáu commit của ngày 23/08 — `895b731`, `66296a6`,
-  `3abc812`, `100afb9`, `a3a5ea7`, `2015e8c`. `origin/research` đang ở
-  `fa399e4`.
+- **Commit gần nhất:** `2c14420`
+- **Test:** **329 xanh / 0 đỏ**. `ruff check src tests` sạch.
+- **Đã push tới `2015e8c`.** Bốn commit sau đó (`1d3f89d`, `9724504`,
+  `2c14420`) chưa push.
 - **Cập nhật:** 23/08/2026
 
 ---
@@ -84,6 +83,9 @@ mọi phần tử phải truy được về một chỗ cụ thể trên tài li
 | `100afb9` | F | Histogram latency, tự chia bucket |
 | **`a3a5ea7`** | **F** | **Đo engine OCR trên ô số — quyết định GIỮ EasyOCR**, mục 6c |
 | `2015e8c` | — | README khớp lại hiện trạng |
+| **`1d3f89d`** | **Mốc 1** | **`constraints_scenarios.py` + `MOC1-DOI-CHIEU.md`** — mục 7 |
+| `9724504` | — | `ANNOTATION-GUIDELINE.md` — guideline gán nhãn |
+| `2c14420` | — | dry-run của `fetch.py` kiểm `SEC_USER_AGENT` |
 
 Ba commit `f1d236e`, `1dacb34`, `9c3f7c9` là việc ngày 22/08/2026; sáu
 commit cuối là việc ngày 23/08/2026. Ngoài ra `main` có `debac2f` (test
@@ -451,6 +453,50 @@ một-trường định vị được. Nút thắt là số **ĐẲNG THỨC**, 
 tiêu. Thêm field mà không thêm đẳng thức thì 1/11 không nhúc nhích và H2 vẫn
 vô nghĩa.
 
+### Câu hỏi của mốc này ĐÃ ĐỔI — `1d3f89d`
+
+`src/constraints_scenarios.py` đo xem mỗi nhóm đẳng thức ứng viên mua được
+bao nhiêu. Kết quả đổi hẳn câu hỏi phải hỏi:
+
+| KB | Kịch bản | Chỉ tiêu | Đẳng thức | rank | Định vị được |
+|---|---|---:|---:|---:|---:|
+| A | Hiện tại | 11 | 3 | 3 | 1/11 (9%) |
+| B | + Tổng nguồn vốn | 12 | 4 | 4 | 2/12 (17%) |
+| C | + chuỗi lãi lỗ B02 | 15 | 6 | 6 | 3/15 (20%) |
+| D | + phân rã TS ngắn hạn | 19 | 7 | 7 | 5/19 (26%) |
+| E | **+ liên kết chéo B01/B02/B03** | 26 | 11 | 11 | **13/26 (50%)** |
+
+Thêm chỉ tiêu cùng loại gần như vô ích: A→D tăng gần gấp đôi số chỉ tiêu mà
+chỉ được 9%→26%, trong khi mỗi chỉ tiêu là chi phí gán nhãn nhân 60 tài
+liệu. Riêng D→E gấp đôi tỷ lệ, và là bước duy nhất làm được vậy.
+
+**Định luật đứng sau, đã chốt bằng test:** một chỉ tiêu định vị được khi và
+chỉ khi tập đẳng thức chứa nó khác tập đẳng thức của mọi chỉ tiêu khác.
+Trong một đẳng thức phân rã đơn lẻ `a + b = tổng` thì CẢ BA nằm ngoài tầm —
+hai thành phần có cột bằng nhau, còn cột của tổng là `[−1]` tỷ lệ với cột
+`[1]`, nên lỗi `+δ` ở `a` và `−δ` ở `tổng` cho residual giống hệt nhau.
+
+Nên câu hỏi hỏi Phụ lục IV **không phải "còn chỉ tiêu nào"** mà **"còn con
+số nào xuất hiện ở HAI CHỖ"**.
+
+`hang_ton_kho` không định vị được ở MỌI kịch bản, kể cả E — nó là chỉ tiêu
+lá luôn đứng cùng anh em. Mà đó đúng là chỉ tiêu đã có lỗi đọc thật trên
+báo cáo VNM. Ràng buộc kế toán **chứng minh được** là không bao giờ bắt
+được lỗi đó; chỉ mỏ neo đơn vị tính và bước đọc lại mới bắt được. Ví dụ cụ
+thể, có thật, để đưa vào bài.
+
+**CẢNH BÁO:** các đẳng thức trong `constraints_scenarios.py` là GIẢ THUYẾT
+dựng lại từ kết cấu biểu mẫu, **chưa đối chiếu văn bản**. Chúng để biết NÊN
+TÌM GÌ, không thay được việc đọc Thông tư — BUILD-SPEC mục 0.5.
+
+### Bảng đối chiếu đã dựng sẵn
+
+[MOC1-DOI-CHIEU.md](MOC1-DOI-CHIEU.md) có: nguồn văn bản chính thức trên
+`congbao.chinhphu.vn` (lưu ý TT99 bị tách thành **10 số công báo**, Phụ lục
+IV nằm ở các số cuối), chuỗi cần tìm trong file — đáng giá nhất là tìm mọi
+lần xuất hiện của `Mã số` kèm dấu `=` — nơi đặt file (`data/legal/`, đã
+gitignore), bảng tick từng mã số, và ô trống để điền đẳng thức tìm thêm.
+
 **Người chủ trì phải làm:**
 
 1. Đối chiếu từng dòng bảng mã trong
@@ -524,6 +570,8 @@ Theo thứ tự phụ thuộc trong `BUILD-SPEC.md` phần E.
 | C2, B5 | **XONG** | — |
 | **Phần F** dọn dẹp | **XONG (8/8)** — mục 6b, 6c | — |
 | **README** | **XONG** (`2015e8c`) | — |
+| Guideline gán nhãn | **XONG** (`9724504`) — điều kiện của pilot 20 tài liệu | — |
+| Bảng đối chiếu Mốc 1 | **XONG** (`1d3f89d`) | — |
 | **B4** mở rộng bộ trường | Chưa | Mốc 1 (mục 7) |
 | **C3** vòng lặp đọc lại | Chưa | **MỐC 3** — mục 10 |
 | **C4** verdict ba trạng thái | Chưa | C3 |
@@ -577,11 +625,18 @@ C2 đã xong nên mốc này đang mở. Tầng XBRL vừa dựng là thứ làm
 được ở quy mô có power, nhưng cần dữ liệu thật — mà container không ra được
 sec.gov, nên phần này người dùng phải chạy:
 
+Quy mô đã chốt: **pilot 1 công ty, 3 hồ sơ**. Đủ để chạy Mốc 3 đầu-cuối và
+xem chiều kết quả, chưa đủ power để kết luận — nhưng nó lộ mọi trục trặc
+đường ống trước khi tốn thời gian tải nhiều.
+
 ```bash
 export SEC_USER_AGENT="Trần Kim Danh trankimdanh2007@gmail.com"
 python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run   # xem trước
 python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --out data/xbrl
 ```
+
+`--dry-run` giờ kiểm luôn `SEC_USER_AGENT` và in rõ thiếu hay đủ (`2c14420`)
+— trước đó nó chạy trơn tru rồi lượt chạy thật mới hỏng ở request đầu.
 
 SEC chặn IP nếu thiếu `User-Agent` có tên thật và email, hoặc quá 10
 request/giây; script đặt trần 5/giây và **ném lỗi ngay** khi thiếu
@@ -672,8 +727,9 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
    đã sai.
 4. **Sau khi qua Mốc 3:** C3 rồi C4, rồi D2/D3/D4.
 
-**Không còn việc "trong lúc chờ".** Phần F, engine OCR và README đã xong
-hết; mọi thứ còn lại đều nằm sau Mốc 1 hoặc Mốc 3.
+**Không còn việc "trong lúc chờ".** Phần F, engine OCR, README, guideline
+gán nhãn và bảng đối chiếu Mốc 1 đã xong hết; mọi thứ còn lại đều nằm sau
+Mốc 1 hoặc Mốc 3.
 
 **Sáu commit của ngày 23/08 chưa push** — `895b731`, `66296a6`, `3abc812`,
 `100afb9`, `a3a5ea7`, `2015e8c`. `origin/research` đang ở `fa399e4`. Muốn

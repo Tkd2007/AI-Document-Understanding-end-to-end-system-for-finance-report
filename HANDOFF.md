@@ -105,11 +105,16 @@ biết:* điều kiện áp dụng đọc từ một field cũng do model trích
 điều kiện bị đọc sai thành âm sẽ làm luật tự tắt —
 `test_field_dieu_kien_bi_doc_sai_thi_luat_tu_tat` chốt hành vi đó.
 
-**A3.** Chuỗi `"B 01"` nằm gọn trong `"B 01a"`, nên marker TT200 sẽ khớp
-luôn trang TT99 nếu để trần; marker TT200 vì vậy mang `(?!\s*a)`.
-`detect_standard()` trả `None` khi không đủ dấu hiệu hoặc khi trang nhắc cả
-hai chuẩn — **không bao giờ đoán bừa**, vì nhận diện sai chuẩn là một chế độ
-lỗi riêng cần đo được.
+**A3.** `detect_standard()` trả `None` khi không đủ dấu hiệu hoặc khi trang
+nhắc cả hai chuẩn — **không bao giờ đoán bừa**, vì nhận diện sai chuẩn là
+một chế độ lỗi riêng cần đo được. Dấu hiệu nó dùng là TÊN báo cáo, và tên đó
+đã đối chiếu văn bản, đúng.
+
+> **Phần suy luận về ký hiệu mẫu biểu ở mục này ĐÃ BỊ BÁC BỎ.** Bản trước
+> lập luận rằng chuỗi `"B 01"` nằm trong `"B 01a"` nên marker TT200 phải
+> mang `(?!\s*a)` để không khớp trang TT99. Đối chiếu Công báo cho thấy tiền
+> đề sai: hậu tố `a`/`b` phân biệt KỲ BÁO CÁO chứ không phân biệt Thông tư.
+> Đã sửa ở `023321c` — xem mục 7b.
 
 **A4.** Mỏ neo tuyệt đối duy nhất phá được bất biến scale. Hệ ràng buộc
 thuần nhất nên `Aδ = (c−1)Ax* = 0`: sai đơn vị toàn cục **luôn** vô hình với

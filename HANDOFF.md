@@ -4,9 +4,9 @@ Viết để một phiên Claude khác đọc và làm tiếp mà **không cần
 Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
 
 - **Nhánh:** `research` (tách từ `main` tại `4216291`)
-- **Commit gần nhất:** `023321c`
-- **Test:** **333 xanh / 0 đỏ**. `ruff check src tests` sạch.
-- **Đã push tới `b53ed8f`.** Commit `023321c` chưa push.
+- **Commit gần nhất:** `e08d5e8`
+- **Test:** **334 xanh / 0 đỏ**. `ruff check src tests` sạch.
+- **Đã push hết.**
 - **Cập nhật:** 23/08/2026
 
 ---
@@ -573,15 +573,52 @@ chiếu, đúng** — TT200 gọi "Bảng cân đối kế toán", TT99 gọi "B
 hình tài chính". `FORM_MARKERS` thành dict phẳng theo mẫu biểu;
 `form_markers_for(standard)` → `marker_for_form(form)`.
 
-### Còn thiếu — người dùng đang tải
+### Kết quả 3 — đã đủ Công báo, và một kết luận cũ BỊ BÁC BỎ
 
-| Chuẩn | Số công báo | Nội dung |
-|---|---|---|
-| TT200 | **287 + 288** | Điều 112 (bảng cân đối) + Điều 113 (B02) |
-| TT99 | **1577+1578 và/hoặc 1579+1580** | Báo cáo tình hình tài chính |
+Đã có nốt `287+288` (TT200) và `1579+1580` (TT99). Số `1577+1578` không chứa
+phần báo cáo tài chính. Toàn bộ đẳng thức trong `constraints_scenarios.py`
+giờ là **trích nguyên văn**, không còn giả thuyết.
 
-TT200 có 6 số (279+280 → 289+290), TT99 có 10 số (1563+1564 → 1581+1582).
-Kiểm nhanh sau khi tải: tìm `Mã số 270 =` (TT200) hoặc `Mã số 280 =` (TT99).
+Ba đẳng thức repo đang dùng **đều đúng**, nhưng cái thứ hai
+(`nợ + VCSH = tổng tài sản`) là đẳng thức **suy ra**: văn bản viết
+`Mã số 440 = Mã số 300 + Mã số 400` rồi viết **riêng** `Tổng cộng Tài sản =
+Tổng cộng Nguồn vốn`.
+
+| KB | Kịch bản | Chỉ tiêu | Định vị được | Bước này mua được |
+|---|---|---:|---:|---|
+| A | Hiện tại | 11 | 1/11 | — |
+| B | **+ Tổng cộng nguồn vốn (440)** | 12 | 2/12 | **+1 → +1, tỷ lệ 1,00** |
+| C | + chuỗi lãi lỗ B02 | 16 | 3/16 | +4 → +1, tỷ lệ 0,25 |
+| D | + phân rã TSNH | 20 | 5/20 | +4 → +2, tỷ lệ 0,50 |
+| E | + B03 và liên kết chéo | 26 | 7/26 | +6 → +2, tỷ lệ 0,33 |
+
+**Bước rẻ nhất: thêm ĐÚNG MỘT chỉ tiêu, Tổng cộng nguồn vốn.**
+
+> **BỊ BÁC BỎ:** bản trước của mục này nói liên kết chéo hiệu quả **gấp
+> đôi** phân rã. Sai — kết luận đó dựa trên hai đẳng thức giả thuyết KHÔNG
+> có trong văn bản (liên kết LNCPP↔LNST, và phân rã VCSH). Với đẳng thức
+> thật, liên kết chéo cho tỷ lệ 0,33, **thấp hơn** phân rã 0,50. Đã chốt
+> bằng `test_lien_ket_cheo_KHONG_hieu_qua_hon_phan_ra` để nó không quay lại.
+>
+> Bài học đã ghi vào docstring `constraints_scenarios.py`: **đừng để đẳng
+> thức giả thuyết chạy vào bảng kết quả**, kể cả khi chúng hợp lý về kế toán.
+
+**Hai chỗ khác nhau giữa hai chuẩn, đều là nguồn lỗi câm:**
+
+- **Mã 270 mang nghĩa khác hẳn** — TT200: "Tổng cộng tài sản"; TT99: "Tài
+  sản dài hạn khác" (`270 = 271+272+273+274`). Tra nhầm bảng mã thì đọc ra
+  một con số hợp lệ của chỉ tiêu hoàn toàn khác. Đây là lý do `standard`
+  phải là tham số bắt buộc của `extract_field_by_code()`.
+- Dự phòng giảm giá hàng tồn kho: mã **149** ở TT200, mã **142** ở TT99.
+
+`minimal_localizing_set()` vẫn trả `None` ở **mọi** kịch bản, và
+`hang_ton_kho` không định vị được ở kịch bản nào.
+
+### Việc còn chờ người quyết
+
+Chốt bộ trường (B4). Số liệu để quyết đã đủ — xem bảng trên và
+[MOC1-DOI-CHIEU.md](MOC1-DOI-CHIEU.md) mục 3.4. Quyết xong thì ghi vào mục
+"Sửa đổi" của `PREREGISTRATION.md` kèm ngày và lý do.
 
 ---
 

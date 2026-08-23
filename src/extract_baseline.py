@@ -31,8 +31,8 @@ from fields_config import (
     FIELD_MAP,
     Standard,
     detect_standard,
-    form_markers_for,
     line_codes_for,
+    marker_for_form,
 )
 
 # Một giá trị tiền tệ trong BCTC luôn có dấu phân cách nghìn
@@ -139,7 +139,7 @@ def extract_field_by_code(text: str, field_key: str, standard: Standard) -> int 
         return None
 
     form, code = entry
-    marker = form_markers_for(standard).get(form)
+    marker = marker_for_form(form)
     if marker is None or not re.search(marker, text, flags=re.IGNORECASE):
         return None
 

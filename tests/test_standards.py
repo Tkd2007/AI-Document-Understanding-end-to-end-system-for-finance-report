@@ -20,8 +20,8 @@ from fields_config import (
     FIELD_MAP,
     Standard,
     detect_standard,
-    form_markers_for,
     line_codes_for,
+    marker_for_form,
 )
 
 
@@ -112,9 +112,9 @@ def test_moi_ma_deu_tro_toi_mau_bieu_co_marker(standard):
     Mã số chỉ được dùng khi trang đúng mẫu biểu. Nếu một field trỏ tới mẫu
     không có marker thì extract_field_by_code() lặng lẽ trả None mãi mãi.
     """
-    markers = form_markers_for(standard)
-
-    thieu = sorted({form for form, _ in line_codes_for(standard).values() if form not in markers})
+    thieu = sorted(
+        {form for form, _ in line_codes_for(standard).values() if marker_for_form(form) is None}
+    )
 
     assert thieu == [], f"{standard} có mã trỏ tới mẫu biểu không marker: {thieu}"
 
@@ -129,28 +129,39 @@ def test_hai_chuan_khac_nhau_o_ma_tong_tai_san():
     assert line_codes_for(Standard.TT99)["tong_tai_san"][1] == "280"
 
 
-def test_marker_tt200_khong_khop_mau_bieu_cua_tt99():
+@pytest.mark.parametrize(
+    "ky_hieu",
+    ["Mẫu số B 01 - DN", "Mẫu số B01a-DN", "Mẫu số B01b-DN", "Mẫu số B 01a - DN"],
+)
+def test_marker_b01_khop_moi_bien_the_ky_bao_cao(ky_hieu):
+    r"""
+    Hậu tố "a"/"b" phân biệt KỲ BÁO CÁO, không phân biệt Thông tư — đã đối
+    chiếu Công báo 289+290 của TT200, nguyên văn: "Bảng cân đối kế toán
+    giữa niên độ (dạng đầy đủ) — Mẫu số B01a-DN". Cả ba biến thể đều là
+    cùng một biểu mẫu và TT200 nói rõ chúng dùng CÙNG bộ mã số.
+
+    Bản trước cài (?!\s*a) để chặn hậu tố "a", tưởng đó là dấu hiệu của
+    TT99. Hậu quả là marker trượt mọi báo cáo QUÝ theo TT200 — đúng loại
+    tài liệu dự án xử lý, gồm cả báo cáo VNM Q1/2026 dùng làm mẫu — và khi
+    trượt thì đường dự phòng theo mã số tắt hẳn mà không cảnh báo.
     """
-    Bẫy tinh vi nhất của việc tách hai chuẩn: chuỗi "B 01" nằm gọn bên
-    trong "B 01a", nên marker TT200 sẽ khớp luôn trang TT99 nếu không
-    chặn. Hậu quả là bảng mã TT200 được đem dùng trên báo cáo TT99 và mã
-    270 tra trên trang mà tổng tài sản mang mã 280 — sai dòng, không lỗi.
+    assert re.search(marker_for_form("B01"), ky_hieu, flags=re.IGNORECASE)
+
+
+def test_marker_khong_lan_giua_cac_bieu_mau():
     """
-    trang_tt99 = "Mẫu số B 01a - DN"
+    Việc marker phải làm là phân biệt B01 với B02 với B03 — trong một chuẩn
+    ĐÃ BIẾT. Lẫn giữa hai biểu mẫu là nguồn sai âm thầm thật sự, vì "10" là
+    Doanh thu thuần ở B02 nhưng là Biến động hàng tồn kho ở B03.
+    """
+    assert not re.search(marker_for_form("B02"), "Mẫu số B01a-DN", flags=re.IGNORECASE)
+    assert not re.search(marker_for_form("B03"), "Mẫu số B01a-DN", flags=re.IGNORECASE)
+    assert not re.search(marker_for_form("B01"), "Mẫu số B02a-DN", flags=re.IGNORECASE)
 
-    marker_tt200 = form_markers_for(Standard.TT200)["B01"]
-    marker_tt99 = form_markers_for(Standard.TT99)["B01a"]
 
-    assert re.search(marker_tt99, trang_tt99, flags=re.IGNORECASE)
-    assert not re.search(marker_tt200, trang_tt99, flags=re.IGNORECASE)
-
-
-def test_marker_tt99_khong_khop_mau_bieu_cua_tt200():
-    """Chiều ngược lại: "B 01a" không nằm trong "B 01" nên phải trượt."""
-    trang_tt200 = "Mẫu số B 01 - DN"
-
-    assert re.search(form_markers_for(Standard.TT200)["B01"], trang_tt200, flags=re.IGNORECASE)
-    assert not re.search(form_markers_for(Standard.TT99)["B01a"], trang_tt200, flags=re.IGNORECASE)
+def test_marker_khong_biet_mau_bieu_thi_tra_none():
+    """Trả None chứ không ném lỗi: người gọi đã có nhánh xử lý cho ca đó."""
+    assert marker_for_form("B09") is None
 
 
 def test_marker_van_chiu_duoc_bien_the_ocr():
@@ -159,7 +170,7 @@ def test_marker_van_chiu_duoc_bien_the_ocr():
     thành chữ l thường. Đây là quan sát thật trên báo cáo VNM, không phải
     ca giả định.
     """
-    assert re.search(form_markers_for(Standard.TT99)["B01a"], "Mâu B Ola", flags=re.IGNORECASE)
+    assert re.search(marker_for_form("B01"), "Mâu B Ola", flags=re.IGNORECASE)
 
 
 def test_hai_chuan_deu_co_mat_trong_bang_ma():

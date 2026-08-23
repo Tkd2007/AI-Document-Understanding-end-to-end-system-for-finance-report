@@ -48,7 +48,7 @@ DEFAULT_STANDARD = Standard.TT99
 
 
 FIELD_MAP = {
-    # --- B01a-DN: Báo cáo tình hình tài chính (bảng cân đối kế toán) ---
+    # --- B01: bảng cân đối kế toán (TT99 gọi là Báo cáo tình hình tài chính) ---
     "tai_san_ngan_han": "Tài sản ngắn hạn",
     "hang_ton_kho": "Hàng tồn kho",
     "tai_san_dai_han": "Tài sản dài hạn",
@@ -56,7 +56,7 @@ FIELD_MAP = {
     "no_phai_tra": "Nợ phải trả",
     "von_chu_so_huu": "Vốn chủ sở hữu",
 
-    # --- B02a-DN: Báo cáo kết quả hoạt động kinh doanh ---
+    # --- B02: Báo cáo kết quả hoạt động kinh doanh ---
     "doanh_thu_thuan": "Doanh thu thuần",
     "gia_von_hang_ban": "Giá vốn hàng bán",
     "loi_nhuan_gop": "Lợi nhuận gộp",
@@ -504,17 +504,17 @@ FIELD_LINE_CODES: dict[Standard, dict[str, tuple[str, str]]] = {
         "loi_nhuan_sau_thue":   ("B02", "60"),
     },
     Standard.TT99: {
-        "tai_san_ngan_han":     ("B01a", "100"),
-        "hang_ton_kho":         ("B01a", "140"),
-        "tai_san_dai_han":      ("B01a", "200"),
-        "tong_tai_san":         ("B01a", "280"),
-        "no_phai_tra":          ("B01a", "300"),
-        "von_chu_so_huu":       ("B01a", "400"),
-        "doanh_thu_thuan":      ("B02a", "10"),
-        "gia_von_hang_ban":     ("B02a", "11"),
-        "loi_nhuan_gop":        ("B02a", "20"),
-        "loi_nhuan_truoc_thue": ("B02a", "50"),
-        "loi_nhuan_sau_thue":   ("B02a", "60"),
+        "tai_san_ngan_han":     ("B01", "100"),
+        "hang_ton_kho":         ("B01", "140"),
+        "tai_san_dai_han":      ("B01", "200"),
+        "tong_tai_san":         ("B01", "280"),
+        "no_phai_tra":          ("B01", "300"),
+        "von_chu_so_huu":       ("B01", "400"),
+        "doanh_thu_thuan":      ("B02", "10"),
+        "gia_von_hang_ban":     ("B02", "11"),
+        "loi_nhuan_gop":        ("B02", "20"),
+        "loi_nhuan_truoc_thue": ("B02", "50"),
+        "loi_nhuan_sau_thue":   ("B02", "60"),
     },
 }
 
@@ -527,28 +527,38 @@ FIELD_LINE_CODES: dict[Standard, dict[str, tuple[str, str]]] = {
 _ZERO = r"[O0o]"      # 0 hay bị đọc thành O hoa hoặc o thường
 _ONE = r"[1lI|]"      # 1 hay bị đọc thành l thường, I hoa, hoặc gạch đứng
 
-# Mẫu biểu cũng mang KÝ HIỆU KHÁC NHAU giữa hai chuẩn: TT200 dùng
-# "Mẫu số B 01 - DN", TT99 dùng "Mẫu số B 01a - DN". Khác biệt chỉ là chữ
-# "a", nhưng nó đủ để regex của chuẩn này không khớp mẫu của chuẩn kia.
+# HẬU TỐ "a"/"b" KHÔNG PHÂN BIỆT THÔNG TƯ — nó phân biệt KỲ BÁO CÁO.
 #
-# Chiều nguy hiểm là chiều TT200: pattern "B 01" nằm gọn bên trong "B 01a",
-# nên nếu không chặn thì trang TT99 sẽ khớp luôn cả marker TT200 và bảng mã
-# sai được đem ra dùng. Vì vậy marker TT200 có (?!\s*a) — không được theo
-# sau bởi chữ a. Chiều ngược lại không cần chặn vì "B 01a" không nằm trong
-# "B 01".
-_KHONG_CO_A = r"(?!\s*a)"
-
-FORM_MARKERS: dict[Standard, dict[str, str]] = {
-    Standard.TT200: {
-        "B01": rf"B\s*{_ZERO}\s*{_ONE}\s*{_KHONG_CO_A}",
-        "B02": rf"B\s*{_ZERO}\s*2\s*{_KHONG_CO_A}",
-        "B03": rf"B\s*{_ZERO}\s*3\s*{_KHONG_CO_A}",
-    },
-    Standard.TT99: {
-        "B01a": rf"B\s*{_ZERO}\s*{_ONE}\s*a",
-        "B02a": rf"B\s*{_ZERO}\s*2\s*a",
-        "B03a": rf"B\s*{_ZERO}\s*3\s*a",
-    },
+# Bản trước ghi "TT200 dùng B 01 - DN, TT99 dùng B 01a - DN" và cài một
+# lookahead (?!\s*a) để marker TT200 không khớp trang TT99. Đối chiếu Công
+# báo số 289+290 (TT200) cho thấy điều đó sai: TT200 dùng ĐỦ CẢ ba ký hiệu
+# B01-DN, B01a-DN và B01b-DN. Nguyên văn tại chỗ khai báo biểu mẫu:
+#
+#     7. Bảng cân đối kế toán giữa niên độ (dạng đầy đủ) — Mẫu số B01a-DN
+#
+# Tức: không hậu tố = báo cáo NĂM, "a" = giữa niên độ dạng đầy đủ (báo cáo
+# QUÝ), "b" = giữa niên độ dạng tóm lược. Và TT200 nói rõ biểu mẫu giữa niên
+# độ dùng CÙNG BỘ MÃ SỐ với biểu mẫu năm.
+#
+# Hậu quả của bản cũ: marker TT200 trượt mọi trang B01a-DN, tức trượt mọi
+# báo cáo QUÝ theo TT200 — đúng loại tài liệu dự án xử lý, kể cả báo cáo VNM
+# Q1/2026 dùng làm mẫu. Khi marker trượt thì extract_field_by_code() trả
+# None và đường dự phòng theo mã số tắt hẳn, im lặng, không cảnh báo.
+#
+# VÌ SAO MARKER KHÔNG CẦN PHÂN BIỆT CHUẨN CHÚT NÀO: chuẩn đã được
+# detect_standard() xác định từ TÊN báo cáo ("Bảng cân đối kế toán" của
+# TT200 so với "Báo cáo tình hình tài chính" của TT99 — dấu hiệu này đã đối
+# chiếu và đúng), và extract_field_by_code() nhận `standard` làm tham số bắt
+# buộc. Nên marker chỉ còn một việc: phân biệt B01 với B02 với B03 TRONG
+# một chuẩn ĐÃ BIẾT. Cơ chế lookahead cũ đang giải một bài toán mà chỗ khác
+# đã giải rồi, và giải sai.
+#
+# Pattern dừng ngay sau chữ số nên nó khớp cả "B01", "B01a" lẫn "B01b" —
+# đúng ý, vì cả ba đều là cùng một biểu mẫu ở ba kỳ khác nhau.
+FORM_MARKERS: dict[str, str] = {
+    "B01": rf"B\s*{_ZERO}\s*{_ONE}",
+    "B02": rf"B\s*{_ZERO}\s*2",
+    "B03": rf"B\s*{_ZERO}\s*3",
 }
 
 
@@ -562,9 +572,16 @@ def identities_for(standard: Standard) -> list:
     return FIELD_IDENTITIES[standard]
 
 
-def form_markers_for(standard: Standard) -> dict[str, str]:
-    """Dấu hiệu nhận biết mẫu biểu, trong phạm vi một chuẩn."""
-    return FORM_MARKERS[standard]
+def marker_for_form(form: str) -> str | None:
+    """
+    Dấu hiệu nhận biết một mẫu biểu, hoặc None nếu mẫu chưa khai báo.
+
+    KHÔNG nhận `standard`: ký hiệu mẫu biểu giống nhau ở cả hai Thông tư,
+    và việc phân biệt chuẩn đã do detect_standard() làm bằng tên báo cáo.
+    Nhận thêm tham số rồi bỏ qua nó sẽ khiến người gọi tưởng marker có phân
+    biệt chuẩn — xem chú thích ở FORM_MARKERS.
+    """
+    return FORM_MARKERS.get(form)
 
 
 def _bo_dau(text: str) -> str:

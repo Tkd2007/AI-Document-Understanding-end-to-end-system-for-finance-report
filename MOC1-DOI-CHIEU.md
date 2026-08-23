@@ -328,30 +328,83 @@ phải **đã nằm trong một đẳng thức nào đó** thì mới có cái �
 thức đó là phân rã Tài sản ngắn hạn — nằm ở Điều 112, tức **Công báo 287 +
 288 mà ta chưa có**.
 
-#### CÒN THIẾU — cần tải thêm
+#### ĐÃ TRÍCH NỐT — 23/08/2026, đủ cả bốn số Công báo
 
-| Chuẩn | Cần | Nội dung | Đã có? |
-|---|---|---|---|
-| TT200 | Công báo **287 + 288** | Điều 112 (Bảng cân đối kế toán) + Điều 113 (B02) | ☐ |
-| TT200 | Công báo 289 + 290 | Điều 114 (B03) trở đi | ✅ |
-| TT99 | Công báo **1577 + 1578** và/hoặc **1579 + 1580** | Báo cáo tình hình tài chính + đầu B02a | ☐ |
-| TT99 | Công báo 1581 + 1582 | Cuối B02a + B03 | ✅ |
+Thêm `2015_287 + 288-200_2014_TT-BTC.pdf` (TT200, Điều 112–113) và
+`2025_1579 + 1580_99-2025-TT-BTC.doc` (TT99, Báo cáo tình hình tài chính +
+B02a). Số `1577 + 1578` **không chứa** phần báo cáo tài chính — 0 đẳng thức.
 
-TT200 có 6 số (279+280 → 289+290); TT99 có 10 số (1563+1564 → 1581+1582). Cả
-hai file đang có đều là **số cuối cùng**, nên phần bảng cân đối nằm ở các số
-trước đó.
+Bảng cân đối / Báo cáo tình hình tài chính, **cấu trúc giống nhau ở cả hai
+chuẩn**, chỉ khác mã số Tổng cộng tài sản:
 
-Cách kiểm nhanh sau khi tải: tìm chuỗi `Mã số 270 =` (TT200) hoặc
-`Mã số 280 =` (TT99). Có kết quả là đúng file.
+| Đẳng thức | TT200 | TT99 |
+|---|---|---|
+| Tổng tài sản | `270 = 100 + 200` | `280 = 100 + 200` |
+| **Tổng nguồn vốn** | `440 = 300 + 400` | `440 = 300 + 400` |
+| **Cân đối** | `270 = 440` | `280 = 440` |
+| Tài sản ngắn hạn | `100 = 110+120+130+140+150` | `100 = 110+…+150+160` |
+| Tiền | `110 = 111 + 112` | `110 = 111 + 112` |
+| Hàng tồn kho | `140 = 141 + **149**` | `140 = 141 + **142**` |
+| Nợ phải trả | `300 = 310 + 330` | `300 = 310 + 330` |
+| Vốn chủ sở hữu | `400 = 410 + 430` | `400 = 411 + 412 + …` |
 
-#### Bảng để điền tiếp
+Báo cáo kết quả kinh doanh, **giống hệt nhau ở cả hai chuẩn**:
 
-| Biểu mẫu | Đẳng thức theo văn bản | Chuẩn | Trùng chỉ tiêu với đẳng thức nào khác? |
-|---|---|---|---|
-|  |  |  |  |
-|  |  |  |  |
-|  |  |  |  |
-|  |  |  |  |
+| Đẳng thức | Nội dung |
+|---|---|
+| `10 = 01 − 02` | Doanh thu thuần |
+| `20 = 10 − 11` | Lợi nhuận gộp |
+| `40 = 31 − 32` | Lợi nhuận khác |
+| `50 = 30 + 40` | Lợi nhuận trước thuế |
+| `60 = 50 − (51 + 52)` | Lợi nhuận sau thuế |
+
+##### Ba đẳng thức repo đang dùng: đều ĐÚNG
+
+- `100 + 200 = 270/280` ✅ khớp nguyên văn
+- `300 + 400 = 270/280` ✅ đúng, nhưng là đẳng thức **suy ra** — văn bản viết
+  `440 = 300 + 400` rồi viết **riêng** `Tổng cộng Tài sản = Tổng cộng Nguồn
+  vốn`. Gộp làm một vẫn đúng về toán nhưng mất một quan sát đọc được.
+- `11 + 20 = 10` ✅ khớp `20 = 10 − 11`
+
+##### Kết quả đo — và một kết luận cũ bị bác bỏ
+
+Chạy `python src/constraints_scenarios.py`:
+
+| KB | Kịch bản | Chỉ tiêu | Định vị được | Bước này mua được |
+|---|---|---:|---:|---|
+| A | Hiện tại | 11 | 1/11 (9%) | — |
+| B | **+ Tổng cộng nguồn vốn (440)** | 12 | 2/12 (17%) | **+1 → +1, tỷ lệ 1,00** |
+| C | + chuỗi lãi lỗ B02 | 16 | 3/16 (19%) | +4 → +1, tỷ lệ 0,25 |
+| D | + phân rã Tài sản ngắn hạn | 20 | 5/20 (25%) | +4 → +2, tỷ lệ 0,50 |
+| E | + B03 và liên kết chéo | 26 | 7/26 (27%) | +6 → +2, tỷ lệ 0,33 |
+
+**Bước rẻ nhất là B: thêm ĐÚNG MỘT chỉ tiêu.** Tổng cộng nguồn vốn nằm ngay
+trong hai đẳng thức nên định vị được lập tức, và nó là con số in ở cuối bảng
+cân đối — rẻ cả về chi phí gán nhãn.
+
+> **Kết luận ở mục 1.3 đã bị bác bỏ.** Bản trước dùng đẳng thức giả thuyết
+> và nói liên kết chéo hiệu quả **gấp đôi** phân rã. Sai: hai đẳng thức từng
+> được giả định — liên kết Lợi nhuận chưa phân phối (B01) với Lợi nhuận sau
+> thuế (B02), và phân rã Vốn chủ sở hữu — **không có trong văn bản**. Với
+> đẳng thức thật, liên kết chéo cho tỷ lệ 0,33, **thấp hơn** phân rã 0,50.
+> Đã chốt bằng `test_lien_ket_cheo_KHONG_hieu_qua_hon_phan_ra`.
+
+##### Hai chỗ khác nhau giữa hai chuẩn — nguồn lỗi câm
+
+**Mã 270 mang nghĩa KHÁC HẲN.** Ở TT200 là "Tổng cộng tài sản"; ở TT99 là
+"Tài sản dài hạn khác" (`270 = 271+272+273+274`). Tra nhầm bảng mã thì đọc
+"Tài sản dài hạn khác" ra thành "Tổng tài sản" — có giá trị, hợp lệ hình
+thức, không cảnh báo. Đây là lý do `standard` phải là tham số **bắt buộc**
+của `extract_field_by_code()`.
+
+**Dự phòng giảm giá hàng tồn kho đổi mã:** `149` ở TT200, `142` ở TT99.
+
+##### Vẫn không đạt bộ tối thiểu
+
+`minimal_localizing_set()` trả `None` ở **mọi** kịch bản, và `hang_ton_kho`
+không định vị được ở kịch bản nào. Kết luận cho bài: ràng buộc kế toán đơn
+thuần **không đủ**, và trọng số dồn sang mỏ neo đơn vị tính (proposal 6.3)
+cùng bước đọc lại (6.2) — đúng như mục 6.1 đã lường trước.
 
 ### 3.5 PHÁT HIỆN NGOÀI DỰ KIẾN — `FORM_MARKERS` đang sai
 

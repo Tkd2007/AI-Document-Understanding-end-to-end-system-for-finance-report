@@ -389,12 +389,21 @@ bằng `pdftotext -layout` cho PDF và `antiword -m UTF-8.txt` cho `.doc` cũ.
 
 | File | Chuẩn | Nội dung |
 |---|---|---|
-| `2015_287 + 288-200_2014_TT-BTC.pdf` | TT200 | Điều 112–113 (bảng cân đối, B02) |
-| `2015_289 + 290-200_2014_TT-BTC.pdf` | TT200 | Điều 114 (B03) → hết |
-| `2025_1579 + 1580_99-2025-TT-BTC.doc` | TT99 | Báo cáo tình hình tài chính + B02a |
-| `2025_1581 + 1582_99-2025-TT-BTC.doc` | TT99 | cuối B02a + B03 |
+| `2015_287 + 288-200_2014_TT-BTC.pdf` | TT200 | Điều 88–113; đẳng thức B01 ở Điều 112, B02 ở Điều 113 |
+| `2015_289 + 290-200_2014_TT-BTC.pdf` | TT200 | Điều 114–130; đẳng thức B03 ở Điều 114 |
+| `2025_1577 + 1578_99-2025-TT-BTC.doc` | TT99 | **Phụ lục IV Mục 1 — biểu mẫu**, tức bảng mã số gốc |
+| `2025_1579 + 1580_99-2025-TT-BTC.doc` | TT99 | Báo cáo tình hình tài chính + B02 |
+| `2025_1581 + 1582_99-2025-TT-BTC.doc` | TT99 | cuối B02 + B03 + B09 |
 
-Số `1577 + 1578` **không chứa** phần báo cáo tài chính — 0 đẳng thức.
+**Bộ này đã đủ, không cần tìm thêm văn bản.** Năm file phủ trọn chương báo cáo
+tài chính của cả hai Thông tư, gồm cả B09 mà dự án chưa dùng tới.
+
+Đừng bỏ qua số `1577 + 1578` vì bản trước của tài liệu này ghi nhầm là nó
+"không chứa phần báo cáo tài chính". Nó không chứa đẳng thức viết bằng lời,
+nhưng nó chính là **Phụ lục IV Mục 1 — BIỂU MẪU BÁO CÁO TÀI CHÍNH**, tức đúng
+cái nguồn mà `BUILD-SPEC.md` mục A3 đòi phải lấy mã số dòng TT99 từ đó thay vì
+từ bài tóm tắt trên mạng. Biểu mẫu còn in sẵn đẳng thức ngay trong tên chỉ
+tiêu: `TỔNG CỘNG TÀI SẢN (280 = 100 + 200)`.
 
 Chi tiết đầy đủ ở [MOC1-DOI-CHIEU.md](MOC1-DOI-CHIEU.md). Tóm tắt:
 
@@ -483,6 +492,24 @@ dict phẳng; `form_markers_for(standard)` → `marker_for_form(form)`.
   con số hợp lệ của chỉ tiêu hoàn toàn khác. Đây là lý do `standard` phải là
   tham số **bắt buộc** của `extract_field_by_code()`.
 - Dự phòng giảm giá hàng tồn kho: mã **149** ở TT200, mã **142** ở TT99.
+
+### Và một chỗ KHÔNG khác nhau — trục TT200 → TT99 hẹp hơn tưởng
+
+`FIELD_IDENTITIES` khai báo TT99 ba đẳng thức giống hệt TT200. Trước khi đối
+chiếu, đó là giả định nặng nhất trong `fields_config.py`. Đối chiếu xong:
+**giả định đúng**, TT99 giữ nguyên cả ba quan hệ, chỉ đổi mã tổng tài sản từ
+270 sang 280.
+
+Điều đó không làm hỏng trục nghiên cứu nhưng **dời nó sang chỗ khác**. Hai
+chuẩn không khác nhau ở cấu trúc đại số — ma trận `A` của chúng đẳng cấu — mà
+khác ở cách đánh số và cách gọi tên. Chuyển đổi TT200 → TT99 vì thế là một
+phép **đổi tên ánh xạ**, không phải một phép đổi mô hình.
+
+Hệ quả phải viết đúng trong bài: ablation số 8 (transfer TT200 → TT99) kiểm
+**tầng nhận diện và tra cứu** — hệ có nhận đúng chuẩn rồi tra đúng bảng mã
+không — chứ **không** kiểm khả năng tổng quát hoá của phần suy luận ràng buộc.
+Đó là phát biểu hẹp hơn bản đăng ký ban đầu ngụ ý. Chi tiết ở
+[MOC1-DOI-CHIEU.md](MOC1-DOI-CHIEU.md) mục 3.2(b).
 
 ### Việc còn chờ người quyết — cái duy nhất còn lại của Mốc 1
 

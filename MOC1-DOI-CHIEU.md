@@ -186,58 +186,118 @@ git. Thứ vào git là **kết quả đối chiếu**, tức chính file này.
 
 ---
 
-## 3. Bảng đối chiếu — cần xác nhận từng dòng
+## 3. Bảng đối chiếu — đã xác nhận từng dòng
+
+> **Trạng thái: XONG, 23/08/2026.** Mọi ô ☐ trong mục này đã được đối chiếu
+> với Công báo và đóng lại. Hai câu hỏi mở của bản trước đều đã có đáp án, và
+> **một trong hai có đáp án ngược với giả định ban đầu** — xem 3.2.
+>
+> Nguồn dùng để đối chiếu, đều nằm trong `data/legal/` (đã gitignore):
+> TT200 ở `2015_287 + 288` (Điều 88–113) và `2015_289 + 290` (Điều 114–130);
+> TT99 ở `2025_1577 + 1578` (Phụ lục IV Mục 1 — biểu mẫu), `2025_1579 + 1580`
+> (B01 + B02) và `2025_1581 + 1582` (cuối B02 + B03 + B09). Trích bằng
+> `pdftotext -layout -enc UTF-8` cho PDF và `antiword -m UTF-8.txt` cho `.doc`.
 
 ### 3.1 Mã số dòng đang dùng trong code
 
-Nguồn: `src/fields_config.py`, `FIELD_LINE_CODES`.
+Nguồn trong code: `src/fields_config.py`, `FIELD_LINE_CODES`.
+
+Chỗ đối chiếu trong văn bản: TT200 Điều 112 (B01) và Điều 113 (B02); TT99
+phần "Nội dung và phương pháp lập các chỉ tiêu" của Báo cáo tình hình tài
+chính và của B02, cùng biểu mẫu ở Phụ lục IV Mục 1.
+
+**Cột chuẩn không còn ghi hậu tố `a`.** Bản trước ghi TT99 là `B01a` để phân
+biệt với `B01` của TT200. Cách ghi đó sai theo đúng phát hiện ở 3.5: hậu tố
+`a`/`b` phân biệt **kỳ báo cáo**, không phân biệt Thông tư, và cả hai chuẩn
+đều dùng đủ `B01`, `B01a`, `B01b` trên **cùng một bộ mã số**.
 
 | Chỉ tiêu | TT200 | TT99 | Đã xác nhận? |
 |---|---|---|---|
-| `tai_san_ngan_han` | B01 · 100 | B01a · 100 | ☐ |
-| `hang_ton_kho` | B01 · 140 | B01a · 140 | ☐ |
-| `tai_san_dai_han` | B01 · 200 | B01a · 200 | ☐ |
-| `tong_tai_san` | B01 · **270** | B01a · **280** | ☐ ← chỗ đã biết là khác nhau |
-| `no_phai_tra` | B01 · 300 | B01a · 300 | ☐ |
-| `von_chu_so_huu` | B01 · 400 | B01a · 400 | ☐ |
-| `doanh_thu_thuan` | B02 · 10 | B02a · 10 | ☐ |
-| `gia_von_hang_ban` | B02 · 11 | B02a · 11 | ☐ |
-| `loi_nhuan_gop` | B02 · 20 | B02a · 20 | ☐ |
-| `loi_nhuan_truoc_thue` | B02 · 50 | B02a · 50 | ☐ |
-| `loi_nhuan_sau_thue` | B02 · 60 | B02a · 60 | ☐ |
+| `tai_san_ngan_han` | B01 · 100 | B01 · 100 | ✔ |
+| `hang_ton_kho` | B01 · 140 | B01 · 140 | ✔ |
+| `tai_san_dai_han` | B01 · 200 | B01 · 200 | ✔ |
+| `tong_tai_san` | B01 · **270** | B01 · **280** | ✔ ← khác nhau, và xem cảnh báo dưới |
+| `no_phai_tra` | B01 · 300 | B01 · 300 | ✔ |
+| `von_chu_so_huu` | B01 · 400 | B01 · 400 | ✔ |
+| `doanh_thu_thuan` | B02 · 10 | B02 · 10 | ✔ |
+| `gia_von_hang_ban` | B02 · 11 | B02 · 11 | ✔ |
+| `loi_nhuan_gop` | B02 · 20 | B02 · 20 | ✔ |
+| `loi_nhuan_truoc_thue` | B02 · 50 | B02 · 50 | ✔ |
+| `loi_nhuan_sau_thue` | B02 · 60 | B02 · 60 | ✔ |
 
-### 3.2 Hai chỗ CHƯA xác nhận, đã biết là rủi ro
+Cả 11 mã đều khớp. Nhưng việc "khớp" không có nghĩa là an toàn, vì **hai mã
+số mang nghĩa khác nhau giữa hai chuẩn**, và cả hai đều là nguồn lỗi câm:
 
-**(a) Ký hiệu mẫu biểu của TT200 là `B01-DN` hay `B01a-DN`?**
+| Mã | TT200 | TT99 | Vì sao nguy hiểm |
+|---|---|---|---|
+| **270** | Tổng cộng tài sản | **Tài sản dài hạn khác** (`270 = 271+272+273+274`) | Tra nhầm bảng mã thì đọc ra một con số **hợp lệ** của một chỉ tiêu hoàn toàn khác. Không quy tắc kiểm nào bắt được |
+| **142** | Giá trị hao mòn luỹ kế thuộc nhóm hàng tồn kho | **Dự phòng giảm giá hàng tồn kho** (TT200 để mã **149**) | Cùng loại lỗi, quy mô nhỏ hơn |
 
-`FORM_MARKERS` trong `fields_config.py` đang giả định TT200 dùng `B 01` không
-có hậu tố `a`, và TT99 dùng `B 01a`. Regex của TT200 mang `(?!\s*a)` chính vì
-chuỗi `"B 01"` nằm gọn trong `"B 01a"` — không có phần đó thì marker TT200 sẽ
-khớp luôn trang TT99. Nếu giả định này sai thì **nhận diện chuẩn sai ở mọi tài
-liệu**, và đó là một chế độ lỗi nằm ngay đầu chuỗi xử lý.
+Đây chính là lý do `standard` là tham số **bắt buộc** của
+`extract_field_by_code()` chứ không có giá trị mặc định.
 
-**(b) Bộ đẳng thức của TT99 hiện đang DÙNG CHUNG với TT200.**
+### 3.2 Hai chỗ từng CHƯA xác nhận — nay đã đóng lại
 
-`FIELD_IDENTITIES` khai báo TT99 với đúng ba đẳng thức giống hệt TT200. Chưa
-ai đối chiếu xem TT99 có giữ nguyên quan hệ đó không. Đây là giả định nặng
-nhất trong cả file, vì toàn bộ trục nghiên cứu "TT200 → TT99" dựa vào việc
-hai chuẩn **khác nhau** — mà hiện code đang mô tả chúng là giống hệt.
+Giữ nguyên câu hỏi gốc để thấy được cái gì đã bị bác bỏ. Việc xoá đi rồi viết
+lại như thể chưa từng sai sẽ làm mất đúng thông tin đáng giá nhất của mục này.
+
+**(a) Ký hiệu mẫu biểu của TT200 là `B01-DN` hay `B01a-DN`? — ĐÃ BỊ BÁC BỎ.**
+
+> *Giả định của bản trước:* `FORM_MARKERS` cho rằng TT200 dùng `B 01` không có
+> hậu tố `a` còn TT99 dùng `B 01a`, nên regex TT200 phải mang `(?!\s*a)` để
+> khỏi khớp nhầm trang TT99.
+
+Văn bản trả lời: **cả hai chuẩn dùng đủ cả ba ký hiệu**, và chữ `a` không hề
+là dấu hiệu của Thông tư — nó là dấu hiệu của **kỳ báo cáo**. Toàn bộ lập
+luận trên đứng trên một tiền đề sai. Chi tiết, nguyên văn trích dẫn và hậu
+quả cụ thể ở **mục 3.5**; bản sửa là commit `023321c`.
+
+**(b) Bộ đẳng thức của TT99 dùng chung với TT200 — ĐÚNG, và đó là kết quả.**
+
+> *Lo ngại của bản trước:* `FIELD_IDENTITIES` khai báo TT99 ba đẳng thức giống
+> hệt TT200 mà chưa ai kiểm; nếu sai thì trục nghiên cứu "TT200 → TT99" hỏng,
+> vì trục đó dựa vào việc hai chuẩn **khác nhau**.
+
+Đã đối chiếu: TT99 **giữ nguyên** cả ba quan hệ, chỉ đổi mã tổng tài sản từ
+270 sang 280. Code đang mô tả đúng.
+
+Điều đó không làm hỏng trục nghiên cứu, nhưng nó **dời trục sang chỗ khác**,
+và chỗ mới đáng quan tâm hơn. Hai chuẩn không khác nhau ở **cấu trúc đại số**
+— ma trận `A` của chúng đẳng cấu — mà khác ở **cách đánh số và cách gọi tên**:
+mã 270 đổi nghĩa, mã dự phòng đổi từ 149 sang 142, và "Bảng cân đối kế toán"
+đổi tên thành "Báo cáo tình hình tài chính". Nói cách khác, chuyển đổi TT200 →
+TT99 là một phép **đổi tên ánh xạ**, không phải một phép đổi mô hình.
+
+Hệ quả cho bài viết: distribution shift giữa hai chuẩn nằm ở **tầng nhận diện
+và tra cứu**, không nằm ở tầng ràng buộc. Ablation số 8 (transfer TT200 → TT99)
+vì thế kiểm đúng một thứ — hệ có nhận diện đúng chuẩn rồi tra đúng bảng mã
+không — chứ không kiểm khả năng tổng quát hoá của phần suy luận ràng buộc. Đó
+là một phát biểu hẹp hơn bản đăng ký ban đầu ngụ ý, và phải viết đúng như vậy.
 
 ### 3.3 Đẳng thức đang mã hoá
 
-Cả hai chuẩn hiện dùng chung ba đẳng thức này:
+Cả hai chuẩn dùng chung ba đẳng thức này, và **cả ba đều đã đối chiếu, đều
+đúng**:
 
 | # | Đẳng thức | Xác nhận TT200 | Xác nhận TT99 |
 |---|---|---|---|
-| 1 | `tai_san_ngan_han + tai_san_dai_han = tong_tai_san` | ☐ | ☐ |
-| 2 | `no_phai_tra + von_chu_so_huu = tong_tai_san` | ☐ | ☐ |
-| 3 | `gia_von_hang_ban + loi_nhuan_gop = doanh_thu_thuan` | ☐ | ☐ |
+| 1 | `tai_san_ngan_han + tai_san_dai_han = tong_tai_san` | ✔ `Mã số 270 = Mã số 100 + Mã số 200` | ✔ `Mã số 280 = Mã số 100 + Mã số 200` |
+| 2 | `no_phai_tra + von_chu_so_huu = tong_tai_san` | ✔ **suy ra hai bước** | ✔ **suy ra hai bước** |
+| 3 | `gia_von_hang_ban + loi_nhuan_gop = doanh_thu_thuan` | ✔ `Mã số 20 = Mã số 10 - Mã số 11` | ✔ `Mã số 20 = Mã số 10 - Mã số 11` |
 
-Đẳng thức 2 đáng ngờ về mặt kết cấu: biểu mẫu in **Tổng cộng nguồn vốn** như
-một chỉ tiêu riêng, nên quan hệ thật nhiều khả năng là hai bước —
-`nợ + vốn = tổng nguồn vốn` rồi `tổng nguồn vốn = tổng tài sản`. Gộp lại làm
-một là mất một đẳng thức và mất một số đọc được từ trang giấy. Đó chính là
-kịch bản B ở mục 1.
+**Đẳng thức 2 không có trong văn bản dưới dạng một dòng.** Nghi ngờ của bản
+trước là đúng: cả hai Thông tư viết `Mã số 440 = Mã số 300 + Mã số 400`, rồi
+viết **riêng** ở một khối kẻ khung ngay sau đó:
+
+> Chỉ tiêu "Tổng cộng Tài sản Mã số 270" = Chỉ tiêu "Tổng cộng Nguồn vốn Mã số 440"
+
+(TT99 giống hệt, thay 270 bằng 280.)
+
+Tức quan hệ thật là **hai bước**, và code đang gộp chúng làm một. Gộp lại làm
+mất một đẳng thức và mất một con số đọc được từ trang giấy — **Tổng cộng nguồn
+vốn** in ngay cuối bảng cân đối. Đó chính là kịch bản B ở mục 1, và đó là lý do
+kịch bản B mua được tỷ lệ 1,00: nó không thêm ràng buộc mới, nó chỉ **thôi vứt
+đi** một ràng buộc mà văn bản vốn đã khai báo tách bạch.
 
 ### 3.4 Đẳng thức tìm thêm được — điền vào đây
 

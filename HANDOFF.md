@@ -4,10 +4,9 @@ Viết để một phiên Claude khác đọc và làm tiếp mà **không cần
 Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
 
 - **Nhánh:** `research` (tách từ `main` tại `4216291`)
-- **Commit gần nhất:** `2c14420`
-- **Test:** **329 xanh / 0 đỏ**. `ruff check src tests` sạch.
-- **Đã push tới `2015e8c`.** Bốn commit sau đó (`1d3f89d`, `9724504`,
-  `2c14420`) chưa push.
+- **Commit gần nhất:** `023321c`
+- **Test:** **333 xanh / 0 đỏ**. `ruff check src tests` sạch.
+- **Đã push tới `b53ed8f`.** Commit `023321c` chưa push.
 - **Cập nhật:** 23/08/2026
 
 ---
@@ -86,6 +85,8 @@ mọi phần tử phải truy được về một chỗ cụ thể trên tài li
 | **`1d3f89d`** | **Mốc 1** | **`constraints_scenarios.py` + `MOC1-DOI-CHIEU.md`** — mục 7 |
 | `9724504` | — | `ANNOTATION-GUIDELINE.md` — guideline gán nhãn |
 | `2c14420` | — | dry-run của `fetch.py` kiểm `SEC_USER_AGENT` |
+| `3fb6472` `b53ed8f` | Mốc 1 | **Trích đẳng thức từ Công báo** — mục 7b |
+| **`023321c`** | A3 | **Sửa `FORM_MARKERS`: hậu tố a/b là KỲ, không phải Thông tư** — mục 7b |
 
 Ba commit `f1d236e`, `1dacb34`, `9c3f7c9` là việc ngày 22/08/2026; sáu
 commit cuối là việc ngày 23/08/2026. Ngoài ra `main` có `debac2f` (test
@@ -509,6 +510,73 @@ gitignore), bảng tick từng mã số, và ô trống để điền đẳng th
    nào chưa khai thác?** Đó mới là đường ra cho H2.
 3. Chốt bộ trường — nó quyết định chi phí gán nhãn tay cho 60 tài liệu gold,
    khoản đắt nhất của cả dự án.
+
+---
+
+## 7b. Đã đối chiếu Công báo — hai kết quả, 23/08/2026
+
+Người dùng tải hai số Công báo vào `data/legal/` (đã gitignore). Trích bằng
+`pdftotext -layout` cho PDF và `antiword -m UTF-8.txt` cho `.doc` cũ.
+
+**Cả hai file đều là số CUỐI CÙNG của bộ**, nên chỉ chứa phần B03 trở đi:
+
+| File | Chuẩn | Nội dung |
+|---|---|---|
+| `2015_289 + 290-200_2014_TT-BTC.pdf` | TT200 | Điều 114 (B03) → hết |
+| `2025_1581 + 1582_99-2025-TT-BTC.doc` | TT99 | cuối B02a + B03 |
+
+### Kết quả 1 — liên kết chéo CÓ THẬT, khai báo tường minh
+
+TT200 Điều 114, mục "Tiền và tương đương tiền cuối kỳ (Mã số 70)":
+
+> Chỉ tiêu này bằng số "Tổng cộng" của các chỉ tiêu Mã số 50, 60 và 61 và
+> **bằng chỉ tiêu Mã số 110 trên Bảng cân đối kế toán kỳ đó**. Mã số 70 =
+> Mã số 50 + Mã số 60 + Mã số 61.
+
+TT99 nói y hệt, chỉ đổi tên biểu mẫu. Thêm: `Mã số 60` (tiền đầu kỳ) =
+`Mã số 110` **cột "Số đầu kỳ"**. Ghép lại:
+
+```
+B01.110 (cuối kỳ) = B01.110 (đầu kỳ) + lưu chuyển tiền thuần + ảnh hưởng tỷ giá
+```
+
+Nối bảng cân đối kỳ này với **kỳ trước** — chính là câu hỏi proposal mục
+6.1(d), và câu trả lời là cột kỳ trước CÓ ràng buộc thật nối vào.
+
+**Chưa trả tiền ngay:** 1/11 → 2/18. Liên kết chéo gắn đẳng thức thứ hai vào
+`B01.110`, nhưng `B01.110` phải đã nằm trong một đẳng thức thì mới có cái để
+gắn — đẳng thức đó là phân rã Tài sản ngắn hạn, ở Điều 112 tức **Công báo
+287+288 chưa có**. Có nó thì lên 5/21.
+
+### Kết quả 2 — `FORM_MARKERS` đang sai, đã sửa (`023321c`)
+
+Câu hỏi mục 3.2(a) của `MOC1-DOI-CHIEU.md` có đáp án, và nó lật ngược giả
+định trong `fields_config.py`. TT200 dùng ĐỦ CẢ `B01-DN`, `B01a-DN`,
+`B01b-DN`. Nguyên văn: *"Bảng cân đối kế toán giữa niên độ (dạng đầy đủ) —
+Mẫu số B01a-DN"*. Hậu tố phân biệt **kỳ báo cáo**, không phân biệt Thông tư:
+không hậu tố = năm, `a` = giữa niên độ dạng đầy đủ tức **quý**, `b` = tóm
+lược. TT200 nói rõ biểu mẫu giữa niên độ dùng **cùng bộ mã số**.
+
+Hậu quả bản cũ: lookahead `(?!\s*a)` làm marker TT200 trượt mọi trang
+`B01a-DN`, tức trượt mọi báo cáo **quý** theo TT200 — đúng loại tài liệu dự
+án xử lý, gồm cả VNM Q1/2026. Khi trượt thì `extract_field_by_code()` trả
+`None` và **đường dự phòng theo mã số tắt hẳn, im lặng**.
+
+Hướng sửa: bỏ hẳn việc dùng ký hiệu mẫu biểu để phân biệt chuẩn, vì
+`detect_standard()` đã làm việc đó bằng TÊN báo cáo và **dấu hiệu đó đã đối
+chiếu, đúng** — TT200 gọi "Bảng cân đối kế toán", TT99 gọi "Báo cáo tình
+hình tài chính". `FORM_MARKERS` thành dict phẳng theo mẫu biểu;
+`form_markers_for(standard)` → `marker_for_form(form)`.
+
+### Còn thiếu — người dùng đang tải
+
+| Chuẩn | Số công báo | Nội dung |
+|---|---|---|
+| TT200 | **287 + 288** | Điều 112 (bảng cân đối) + Điều 113 (B02) |
+| TT99 | **1577+1578 và/hoặc 1579+1580** | Báo cáo tình hình tài chính |
+
+TT200 có 6 số (279+280 → 289+290), TT99 có 10 số (1563+1564 → 1581+1582).
+Kiểm nhanh sau khi tải: tìm `Mã số 270 =` (TT200) hoặc `Mã số 280 =` (TT99).
 
 ---
 

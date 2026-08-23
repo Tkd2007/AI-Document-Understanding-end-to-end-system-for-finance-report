@@ -36,7 +36,7 @@ Render bằng font thiếu glyph sẽ NÉM LỖI chứ không im lặng vẽ ô 
 cả lượt thí nghiệm.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -79,6 +79,16 @@ class RenderedTable:
     image: Image.Image
     bboxes: dict[tuple[str, str], tuple[int, int, int, int]]
     header_bbox: tuple[int, int, int, int]
+
+    # Chuỗi ĐÚNG NHƯ đã được vẽ lên ảnh, khoá giống `bboxes`.
+    #
+    # Có mặt ở đây vì bộ đo OCR cần so cái đọc được với cái đã VẼ, không
+    # phải với giá trị số. Hai thứ đó khác nhau: 1234567.0 được vẽ thành
+    # "1,234,567", còn số âm thành "(1,234,567)". Để bên đo tự dựng lại
+    # chuỗi từ giá trị là chép lại quy tắc định dạng ở chỗ thứ hai, và
+    # ngày nào quy tắc đổi thì phép đo lệch đi mà không có gì báo — bộ đo
+    # sẽ tính là OCR đọc sai trong khi thật ra nó đọc đúng thứ trên ảnh.
+    texts: dict[tuple[str, str], str] = field(default_factory=dict)
 
 
 def _font(co_chu: int, font_path: str | None = None) -> ImageFont.FreeTypeFont:
@@ -205,6 +215,7 @@ def render(
 
     # Các dòng chỉ tiêu
     bboxes: dict[tuple[str, str], tuple[int, int, int, int]] = {}
+    texts: dict[tuple[str, str], str] = {}
     for i, concept in enumerate(table.concepts):
         y_dong = LE + cao_dong * (i + 2)
         ve.text(
@@ -217,13 +228,17 @@ def render(
         for j, ky in enumerate(table.periods):
             x_trai = LE + RONG_COT_NHAN + RONG_COT_SO * j
             x_phai = x_trai + RONG_COT_SO
+            chuoi = _dinh_dang(table.get(concept, ky))
             ve.text(
                 (x_phai, y_dong),
-                _dinh_dang(table.get(concept, ky)),
+                chuoi,
                 fill="black",
                 font=font,
                 anchor="ra",
             )
             bboxes[(concept, ky)] = (x_trai, y_dong, x_phai, y_dong + cao_dong)
+            texts[(concept, ky)] = chuoi
 
-    return RenderedTable(image=anh, bboxes=bboxes, header_bbox=header_bbox)
+    return RenderedTable(
+        image=anh, bboxes=bboxes, header_bbox=header_bbox, texts=texts
+    )

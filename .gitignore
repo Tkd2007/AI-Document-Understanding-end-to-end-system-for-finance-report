@@ -20,6 +20,13 @@ data/output/*
 # chieu do can neo vao mot commit cu the.
 !data/output/identifiability_*.md
 
+# Ngoai le: bao cao do engine OCR cung la KET QUA NGHIEN CUU. No do tren
+# bang TONG HOP sinh bang ham bang_tong_hop(), khong dung mot bao cao tai
+# chinh that nao, nen khong co du lieu doanh nghiep trong do. Phai vao git
+# vi no la bang chung cho quyet dinh GIU EasyOCR — thu ma reviewer se hoi,
+# va cau tra loi can neo vao mot commit cu the.
+!data/output/ocr_engine_*.md
+
 # OS/editor junk
 .DS_Store
 .vscode/

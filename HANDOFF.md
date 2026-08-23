@@ -4,7 +4,7 @@ Viết để một phiên Claude khác đọc và làm tiếp mà **không cần
 Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
 
 - **Nhánh:** `research` (tách từ `main` tại `4216291`)
-- **Commit gần nhất:** `df96ff2`
+- **Commit gần nhất:** `67beb66` — **chưa push**
 - **Test:** **340 xanh / 0 đỏ**. `ruff check src tests` sạch.
 - **Bộ chỉ tiêu:** 21 với TT99, 20 với TT200; 7 đẳng thức. MỐC 1 đã đóng.
 - **Cập nhật:** 23/08/2026

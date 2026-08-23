@@ -578,3 +578,47 @@ def test_bo_dieu_toc_ngu_dung_phan_con_thieu(monkeypatch):
     dong_ho[0] += 10.0
     dieu_toc.cho()
     assert len(da_ngu) == 1, "đã trôi quá khoảng cách thì không ngủ nữa"
+
+
+def test_dry_run_bao_khi_thieu_sec_user_agent(monkeypatch, capsys, tmp_path):
+    """
+    Dry-run tự nhận là "cách kiểm cấu hình trong container không có mạng",
+    mà SEC_USER_AGENT là biến cấu hình bắt buộc DUY NHẤT. Không kiểm thì
+    dry-run chạy trơn tru, người dùng tưởng đã sẵn sàng, rồi lượt chạy thật
+    hỏng ở request đầu tiên — tức dry-run báo an toàn cho đúng thứ nó sinh
+    ra để báo.
+    """
+    monkeypatch.delenv("SEC_USER_AGENT", raising=False)
+
+    fetch.tai_ho_so("0000320193", n=3, out_dir=str(tmp_path), dry_run=True)
+
+    ra = capsys.readouterr().out
+    assert "THIẾU CẤU HÌNH" in ra
+    assert "SEC_USER_AGENT" in ra
+
+
+def test_dry_run_xac_nhan_khi_da_co_sec_user_agent(monkeypatch, capsys, tmp_path):
+    monkeypatch.setenv("SEC_USER_AGENT", "Nguoi Thu Nghiem test@example.com")
+
+    fetch.tai_ho_so("0000320193", n=3, out_dir=str(tmp_path), dry_run=True)
+
+    ra = capsys.readouterr().out
+    assert "OK" in ra
+    assert "THIẾU CẤU HÌNH" not in ra
+
+
+def test_dry_run_khong_tao_thu_muc_va_khong_cham_mang(monkeypatch, tmp_path):
+    """
+    Dry-run mà vẫn tạo thư mục hoặc gọi mạng thì nó không còn là dry-run.
+    Thay _tai bằng hàm nổ để chốt: chạm mạng là test đỏ ngay.
+    """
+    monkeypatch.setenv("SEC_USER_AGENT", "Nguoi Thu Nghiem test@example.com")
+
+    def khong_duoc_goi(*a, **k):
+        raise AssertionError("dry-run KHÔNG được chạm mạng")
+
+    monkeypatch.setattr(fetch, "_tai", khong_duoc_goi)
+
+    dich = tmp_path / "chua_ton_tai"
+    assert fetch.tai_ho_so("0000320193", n=3, out_dir=str(dich), dry_run=True) == []
+    assert not dich.exists()

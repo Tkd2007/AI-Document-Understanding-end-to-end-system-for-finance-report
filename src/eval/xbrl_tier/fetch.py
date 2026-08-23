@@ -164,6 +164,23 @@ def tai_ho_so(
     dieu_toc = _BoDieuToc()
 
     if dry_run:
+        # Kiểm SEC_USER_AGENT NGAY Ở ĐÂY dù dry-run không chạm mạng.
+        #
+        # Lý do: docstring của chính chế độ này nói nó là "cách kiểm cấu
+        # hình", mà SEC_USER_AGENT là biến cấu hình bắt buộc duy nhất. Không
+        # kiểm thì dry-run chạy trơn tru, người dùng tưởng đã sẵn sàng, rồi
+        # lượt chạy thật hỏng ở request đầu tiên — dry-run báo an toàn cho
+        # đúng thứ nó sinh ra để báo.
+        #
+        # Báo bằng trạng thái tường minh chứ không ném lỗi: xem trước danh
+        # sách URL tự nó có ích, và chặn việc đó chỉ vì chưa đặt biến môi
+        # trường là lấy đi một công dụng thật.
+        try:
+            print(f"[dry-run] SEC_USER_AGENT = {user_agent()!r} — OK")
+        except RuntimeError as e:
+            print(f"[dry-run] THIẾU CẤU HÌNH: {e}")
+            print("[dry-run] Lượt chạy THẬT sẽ hỏng ngay ở request đầu tiên.")
+
         print(f"[dry-run] {url_submissions(cik)}")
         print(f"[dry-run] {url_companyfacts(cik)}")
         print(f"[dry-run] {n} hồ sơ {form}, mỗi hồ sơ 2 request nữa (index + cal.xml)")

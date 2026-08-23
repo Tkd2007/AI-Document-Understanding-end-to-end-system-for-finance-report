@@ -1,0 +1,21 @@
+# Phụ thuộc CHỈ dùng khi phát triển và chạy test. Không cài vào image.
+#
+# Lý do tách khỏi requirements.txt: Dockerfile chạy
+# `pip install -r requirements.txt` rồi image đó chạy production. pytest
+# nằm trong bộ chính nghĩa là mọi container đều mang theo một bộ test
+# framework không bao giờ được gọi — phình image và mở rộng bề mặt tấn
+# công bằng thứ không ai dùng tới.
+#
+# Cài cả hai khi phát triển:
+#     pip install -r requirements.txt -r requirements-dev.txt
+
+pytest==9.1.1
+
+# httpx vốn đã có trong môi trường theo chuỗi openai → httpx, nên dòng này
+# không cài thêm gì; nó nói ra một thư viện mà BỘ TEST đang phụ thuộc trực
+# tiếp. fastapi.testclient.TestClient được dựng trên httpx và sẽ ném
+# ImportError nếu thiếu. Cùng lý do đã khai báo scipy ở requirements.txt:
+# dựa vào phụ thuộc bắc cầu mà không khai báo là tự đặt bẫy cho ngày
+# openai đổi client HTTP — lúc đó cả bộ test API biến mất mà không có gì
+# báo trước.
+httpx==0.28.1

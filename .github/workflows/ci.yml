@@ -24,8 +24,16 @@ jobs:
       # Cố tình KHÔNG ghim version ở bước này (khác requirements.txt):
       # job docker bên dưới mới là chỗ kiểm bộ đã ghim, còn ở đây chạy
       # với bản mới nhất để lộ sớm khi thư viện thượng nguồn đổi hành vi.
+      #
+      # Danh sách này phải phủ MỌI thư viện được import ở mức module trong
+      # src/ và tests/, không chỉ những thứ `import router` cần. Thiếu một
+      # cái là pytest hỏng ngay ở bước COLLECT — cả file test biến mất chứ
+      # không phải một test đỏ, nên số test giảm mà không ai để ý:
+      #   - scipy    <- repair/diagnose.py (bộ giải LP của baseline 8)
+      #   - fastapi  <- api.py, và tests/test_api.py dựng TestClient trên nó
+      #   - httpx    <- fastapi.testclient.TestClient dựng trên httpx
       - name: Install dependencies
-        run: pip install pytest ruff numpy pillow openai python-dotenv
+        run: pip install pytest ruff numpy pillow openai python-dotenv scipy fastapi httpx python-multipart
 
       - name: Lint
         run: ruff check src tests

@@ -42,9 +42,10 @@ python-multipart==0.0.32   # bắt buộc để FastAPI nhận được UploadFi
 # --- Config ---
 python-dotenv==1.2.2
 
-# --- Test ---
-pytest==9.1.1
-
+# Ghi chú: pytest và httpx đã chuyển sang requirements-dev.txt. Image chạy
+# production không có lý do gì mang theo test framework. Khi phát triển thì
+# cài cả hai file: pip install -r requirements.txt -r requirements-dev.txt
+#
 # Ghi chú: torch được cài kèm theo easyocr và doclayout-yolo nên không
 # khai báo ở đây. Nếu muốn chạy GPU, cài torch riêng theo đúng bản CUDA
 # của máy TRƯỚC khi chạy lệnh này (xem https://pytorch.org/get-started).

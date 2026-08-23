@@ -27,6 +27,13 @@ data/output/*
 # va cau tra loi can neo vao mot commit cu the.
 !data/output/ocr_engine_*.md
 
+# Van ban quy pham phap luat tai ve. Ban than van ban KHONG co ban quyen
+# (Luat So huu tri tue dieu 15), nhung file PDF cong bao nang vai chuc MB va
+# lay lai duoc bat cu luc nao tu congbao.chinhphu.vn, nen khong dua vao git.
+# Thu can vao git la BANG DOI CHIEU rut ra tu chung: MOC1-DOI-CHIEU.md.
+data/legal/*
+!data/legal/.gitkeep
+
 # OS/editor junk
 .DS_Store
 .vscode/

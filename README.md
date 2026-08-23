@@ -5,6 +5,17 @@ End-to-end pipeline for extracting **11 structured financial line items**
 (balance sheet + income statement) from Vietnamese financial report PDFs.
 Final project for the "MasterClass AI Document Understanding" course.
 
+Repo hiện có **hai lớp**, và README này mô tả lớp thứ nhất:
+
+1. **Pipeline trích xuất** — phần dưới đây. Chạy được, đã đóng gói Docker,
+   có API và monitoring.
+2. **Hạ tầng nghiên cứu** đang xây trên nhánh `research`: đo identifiability
+   của hệ ràng buộc kế toán, định vị lỗi bằng ứng viên sinh từ chính tài
+   liệu, và sửa lỗi bằng cách ĐỌC LẠI nguồn thay vì suy ra từ donor. Bốn
+   giả thuyết và kế hoạch phân tích đã đăng ký trước ở
+   [PREREGISTRATION.md](PREREGISTRATION.md); trạng thái thi công và các
+   quyết định thiết kế ở [HANDOFF.md](HANDOFF.md).
+
 ## Architecture
 
 ```
@@ -25,14 +36,15 @@ Document Classifier & Router
    └── VLM Pipeline   (Vision-Language Model — đắt hơn nhưng đáng tin hơn)
         │
         ▼
-   Validation  (ép kiểu số, sanity checks, warnings)
+   Validation  (ép kiểu số, quy đổi đơn vị, sanity checks, warnings)
         │
         ▼
-   save_result()  →  data/output/<file>_routed.json
-        │
-        ▼
-   JSON response  {"data": {...}, "warnings": [...]}
+   JSON response  {"data": {...}, "meta": {...}, "confidence": {...}, "warnings": [...]}
 ```
+
+Đường CLI (`python src/router.py <file>`) đi qua đúng chuỗi đó rồi ghi thêm
+`data/output/<file>_routed.json`; đường API truyền `save=False` nên không ghi
+file — chi tiết ở mục Usage.
 
 ### Router quyết định thế nào
 
@@ -82,16 +94,33 @@ doc-ai-project/
 │   ├── ocr_baseline.py      # Step 1: document -> raw text (EasyOCR)
 │   ├── extract_baseline.py  # Step 2 (OCR branch): raw text -> structured JSON (regex)
 │   ├── extract_vlm.py       # Step 2 (VLM branch): table images -> structured JSON (VLM)
+│   ├── extraction_types.py  # FieldResult/Provenance/ExtractionResult, dùng chung
 │   ├── fields_config.py     # single source of truth: fields, aliases, rules, checks
 │   ├── validation.py        # ép kiểu số + sanity checks; cũng là gate quyết định fallback
 │   ├── router.py            # Document Classifier & Router: OCR (optional) -> VLM
 │   ├── api.py               # FastAPI Gateway: POST /extract endpoint
-│   └── metrics.py           # đo thời gian từng stage + đếm lần gọi VLM
-├── tests/
-│   ├── test_extract_baseline.py
-│   ├── test_metrics.py      # bộ đếm toàn cục cho endpoint /metrics
+│   ├── metrics.py           # đo thời gian từng stage + đếm lần gọi VLM
+│   ├── constraints.py       # ma trận ràng buộc A, hạng, không gian null (H0)
+│   ├── repair/              # định vị và sửa lỗi bằng ứng viên sinh từ tài liệu
+│   │   ├── candidates.py    #   sinh tập ứng viên từ chính trang giấy
+│   │   └── diagnose.py      #   min-cardinality diagnosis + hai baseline đối chứng
+│   └── eval/                # hạ tầng ĐO, tách hẳn khỏi hạ tầng CHẠY
+│       ├── schema.py        #   định dạng ground truth
+│       ├── metrics.py       #   chỉ số: lỗi câm, AUROC, top-k, chống bịa
+│       ├── stats.py         #   bootstrap THEO CỤM TÀI LIỆU, McNemar
+│       ├── split.py         #   chia tập theo TÀI LIỆU, không theo trang
+│       ├── ocr_compare.py   #   đo engine OCR trên ô số (xem data/output/)
+│       └── xbrl_tier/       #   tầng đánh giá quy mô lớn từ hồ sơ SEC XBRL
+├── tests/                   # 318 test, không cần model và không cần mạng
+│   ├── test_api.py          # giới hạn upload, dọn file tạm, /metrics
+│   ├── test_constraints.py  # ma trận ràng buộc và identifiability
+│   ├── test_diagnose.py     # định vị lỗi + baseline 8 và 9
+│   ├── test_early_stop.py   # điều kiện dừng sớm và cờ tắt khi ĐO
+│   ├── test_eval_stats.py   # bootstrap theo cụm, kiểm định ghép cặp
+│   ├── test_metrics.py      # bộ đếm toàn cục + histogram cho /metrics
+│   ├── test_ocr_compare.py  # bộ đo engine OCR (dùng engine giả)
 │   ├── test_router.py       # cổng quyết định fallback (không cần key/mạng)
-│   └── test_validation.py
+│   └── ...                  # provenance, units, standards, confidence, xbrl_tier
 ├── monitoring/
 │   ├── prometheus.yml       # scrape config, trỏ vào app:8000/metrics
 │   └── grafana/
@@ -107,7 +136,10 @@ doc-ai-project/
 ├── Dockerfile
 ├── .dockerignore
 ├── .gitignore
-├── requirements.txt
+├── requirements.txt         # bộ chạy production, phiên bản ghim
+├── requirements-dev.txt     # pytest + httpx, KHÔNG cài vào image
+├── PREREGISTRATION.md       # đăng ký trước giả thuyết — dấu thời gian git là bằng chứng
+├── HANDOFF.md               # trạng thái nghiên cứu, đọc trước khi làm tiếp
 └── README.md
 ```
 
@@ -317,8 +349,13 @@ bằng Python nên không phụ thuộc binary OCR bên ngoài.
 ### 2. Install Python dependencies
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.txt                          # để CHẠY
+python -m pip install -r requirements.txt -r requirements-dev.txt  # để PHÁT TRIỂN
 ```
+
+`pytest` và `httpx` nằm ở `requirements-dev.txt` chứ không ở bộ chính, vì
+`Dockerfile` chỉ cài bộ chính và image production không có lý do gì mang
+theo một bộ test framework không bao giờ được gọi.
 
 Lần chạy đầu tiên sẽ tự tải checkpoint của EasyOCR và DocLayout-YOLO về
 cache — mất vài phút và cần mạng, các lần sau thì không.
@@ -416,44 +453,19 @@ giữ nguyên và kết quả là `data/output/<file>_routed.json`.
 > không phải pipeline, cùng nguyên tắc như `require_config()` được đẩy ra
 > entrypoint.
 
-#### Kết quả upload qua API được ghi ra file (trạng thái debug hiện tại)
+#### Đường API không ghi file kết quả
 
-`api.py` đang truyền `save=True`, nên **mỗi request để lại một file JSON** trong
-`data/output/`:
+`api.py` truyền `save=False`, nên upload qua HTTP **không để lại file nào** trong
+`data/output/`. Cùng dữ liệu đó đã có ở hai chỗ: response HTTP, và
+`metrics.jsonl` — chỗ sau còn ghi được cả lượt chạy *thất bại*, vì
+`metrics.save()` nằm trong `finally` còn `save_result()` thì không; dòng thất bại
+nhận ra bằng khoá `"status": "error"`.
 
-```
-data/output/VNM_Q1_2026_a3f2b1c9_routed.json
-data/output/VNM_Q1_2026_7e4d0b88_routed.json    <- upload lần 2, cùng báo cáo
-```
+File thứ ba từng tồn tại và đã bỏ: tên nó mang hậu tố ngẫu nhiên của request
+(`VNM_Q1_2026_a3f2b1c9_routed.json`) nên upload cùng một báo cáo ba lần ra ba
+file nội dung giống nhau mà không tra cứu theo tên được, và không có gì tự dọn.
 
-Hai điều cần biết khi dùng:
-
-- **Tên file không đoán trước được.** Hậu tố 8 ký tự là hậu tố ngẫu nhiên của
-  request (xem ghi chú về file upload ở trên), nên upload cùng một báo cáo nhiều
-  lần sẽ ra nhiều file nội dung giống nhau. Tìm kết quả của lần chạy vừa rồi thì
-  sắp theo thời gian sửa file, đừng tìm theo tên:
-
-  ```bash
-  ls -t data/output/*_routed.json | head -1     # Linux / macOS
-  Get-ChildItem data/output/*_routed.json | Sort-Object LastWriteTime -Desc | Select -First 1   # PowerShell
-  ```
-
-- **Không có gì tự dọn.** `data/output/` phình theo số request. Dọn định kỳ bằng
-  tay, chú ý giữ lại `metrics.jsonl`:
-
-  ```bash
-  rm data/output/*_routed.json
-  ```
-
-  Chạy bằng Docker thì file nằm trong container, chỉ ra tới máy bạn nếu đã gắn
-  volume `./data:/app/data` (mặc định trong `docker-compose.yml` là có).
-
-Trạng thái này là **tạm thời để debug**. Cùng dữ liệu đó đã có ở hai chỗ khác:
-response HTTP, và `metrics.jsonl` — chỗ sau còn ghi được cả lượt chạy *thất bại*,
-vì `metrics.save()` nằm trong `finally` còn `save_result()` thì không; dòng thất
-bại nhận ra bằng khoá `"status": "error"`. Kế hoạch là đổi về `save=False`.
-
-Không cần file thì dùng CLI, tên giữ nguyên nên dễ tra:
+Muốn có file thì dùng CLI, tên giữ nguyên nên dễ tra:
 
 ```bash
 python src/router.py data/samples/report.pdf   # -> data/output/report_routed.json
@@ -602,11 +614,15 @@ khớp `FORM_MARKERS` của đúng mẫu đó.
   tiên — Prometheus chưa có series thì `rate()` trả rỗng và alert dựng trên
   nó không bao giờ bắn.
   Truyền `metrics=None` thì mọi hàm vẫn chạy standalone như cũ.
-  **Prometheus** scrape `/metrics` mỗi 15s, giữ 15 ngày. Grafana dựng qua 
-  provisioning nên dashboard nằm trong repo. Chưa có Alertmanager (cảnh báo) 
-  và Loki (log); latency mới có trung bình, chưa có p95/p99 vì bộ đếm chưa 
-  dùng histogram.
-- **Unit test**: 19 test với `pytest`, không cần model hay mạng nên chạy
+  Latency có **histogram** (`doc_ai_document_seconds`, và một histogram cho
+  mỗi giai đoạn), nên `histogram_quantile()` dựng được p95/p99. Biên bucket
+  chọn theo số đo thật trong `metrics.jsonl` chứ không theo cảm tính. Con số
+  lấy từ bucket là **nội suy**, không phải phân vị thật — muốn chính xác thì
+  đọc từng số đo trong `metrics.jsonl`.
+  **Prometheus** scrape `/metrics` mỗi 15s, giữ 15 ngày. Grafana dựng qua
+  provisioning nên dashboard nằm trong repo. Chưa có Alertmanager (cảnh báo)
+  và Loki (log).
+- **Unit test**: 318 test với `pytest`, không cần model hay mạng nên chạy
   trong vài giây. Đáng chú ý là test đẳng thức kế toán: sửa một chỉ tiêu
   lệch 10 triệu đồng trên tổng tài sản 47 nghìn tỷ vẫn bị bắt — kiểm chứng
   được lựa chọn `IDENTITY_TOLERANCE_RATIO=1e-7`. `test_router.py` phủ cổng
@@ -616,9 +632,12 @@ khớp `FORM_MARKERS` của đúng mẫu đó.
   động, vì đó là điều kiện để alert bắn được.
 - **CI**: GitHub Actions chạy hai job mỗi lần push và pull request.
   - `test` — `ruff check` + `pytest`. Cố tình KHÔNG cài `requirements.txt`
-    mà chỉ cài phần nhẹ (`numpy pillow openai python-dotenv`): `easyocr` và
-    `doclayout-yolo` được import lười bên trong `get_reader()`/`get_model()`
-    nên test không cần tới, mà cài đủ bộ là tải PyTorch ~2GB.
+    mà chỉ cài phần nhẹ: `easyocr` và `doclayout-yolo` được import lười bên
+    trong `get_reader()`/`get_model()` nên test không cần tới, mà cài đủ bộ
+    là tải PyTorch ~2GB. Danh sách cài phải phủ MỌI thư viện được import ở
+    mức module trong `src/` và `tests/` — thiếu một cái thì pytest hỏng ở
+    bước *collect*, tức cả file test biến mất chứ không phải một test đỏ, và
+    số test giảm mà không ai để ý. Đã xảy ra một lần với `scipy`.
   - `docker` — build image rồi **chạy thử thật**: khởi động container và
     gọi `/metrics`. Build xong không đảm bảo chạy được; cả ba bug ở mục
     "Vài thứ chỉ lộ ra khi chạy thật" bên dưới đều chỉ lộ lúc runtime.
@@ -630,11 +649,22 @@ khớp `FORM_MARKERS` của đúng mẫu đó.
 - Unit test mới phủ phần logic thuần (parse số, validation, cổng fallback
   của router, bộ đếm `/metrics`). Chưa có test cho OCR và VLM — những phần cần model hoặc gọi
   mạng, sẽ cần mock/fixture ảnh thay vì gọi thật.
-- Monitoring: đã có thu thập per-run ra file, endpoint `/metrics` và Prometheus
-  scrape + lưu lịch sử. Chưa có Alertmanager (cảnh báo), chưa có Loki cho log.
-- Chuẩn hoá đơn vị tính: prompt yêu cầu VLM giữ nguyên đơn vị hiển thị trong
-  ảnh, nên hai báo cáo dùng đơn vị khác nhau ("đồng" vs "triệu đồng") sẽ cho
-  ra số không cùng thang đo. Cần thêm field đơn vị hoặc bước quy đổi.
+- Monitoring: đã có thu thập per-run ra file, endpoint `/metrics` (kèm
+  histogram latency) và Prometheus scrape + lưu lịch sử. Chưa có Alertmanager
+  (cảnh báo), chưa có Loki cho log.
+- Chặn upload lớn mới làm ở tầng ứng dụng (`MAX_UPLOAD_BYTES` trong `api.py`).
+  Nó ngăn được việc nạp cả file vào RAM, nhưng KHÔNG ngăn được việc truyền dữ
+  liệu lên — chỗ chặn đúng là reverse proxy, tầng repo này chưa có.
+
+Đã xong so với bản trước của mục này:
+
+- **Chuẩn hoá đơn vị tính** — prompt đọc dòng "Đơn vị tính:" ở header bảng,
+  `UNIT_MULTIPLIERS` quy đổi hết về đồng **trước** mọi phép kiểm. Cần thiết vì
+  hệ ràng buộc thuần nhất: sai đơn vị toàn cục luôn vô hình với mọi đẳng thức
+  kế toán, nên chỉ một biên trị tuyệt đối mới bắt được nó.
+- **Engine OCR** — câu hỏi "EasyOCR có đủ tốt không" đã đo, không còn để trống.
+  Kết quả và cách chạy lại: [`src/eval/ocr_compare.py`](src/eval/ocr_compare.py)
+  và `data/output/ocr_engine_easyocr.md`.
 
 
 ## Vài thứ chỉ lộ ra khi chạy thật

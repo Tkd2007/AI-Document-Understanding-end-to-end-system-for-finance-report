@@ -344,6 +344,24 @@ def parse_response(text: str) -> dict | None:
 # trang chữ ký, trang trắng, hoặc trang mà YOLO cắt nhầm.
 PATIENCE_PAGES = 3
 
+# Tắt HOÀN TOÀN mọi điều kiện dừng sớm. CHỈ DÙNG KHI ĐO.
+#
+# Dừng sớm là tối ưu chi phí cho đường phục vụ, nhưng nó làm hỏng phép đo
+# theo một kiểu khó thấy. Nhánh PATIENCE_PAGES dừng khi đã đủ field BẮT
+# BUỘC — tức nó cố ý bỏ qua phần đuôi tài liệu. Sau B4 mở rộng bộ trường,
+# một chỉ tiêu mới có thể nằm đúng ở phần đuôi đó, và khi ấy tỷ lệ "không
+# đọc được" của nó sẽ là tạo tác của điều kiện dừng chứ không phải của mô
+# hình. Không ai phát hiện được từ bảng kết quả, vì trường bị bỏ qua và
+# trường đọc hỏng trông giống hệt nhau: cùng là một ô null.
+#
+# Cùng lý do với DISABLE_CONSTRAINT_GATE ở router.py — đo một hệ trên đầu
+# ra mà chính hệ đó đã cắt xén thì con số thu được không nói lên điều gì.
+DISABLE_EARLY_STOP = os.getenv("DISABLE_EARLY_STOP", "false").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+}
+
 
 def _lay_mau_vung(
     base64_image: str,
@@ -500,10 +518,18 @@ def extract_fields_from_regions(
     Điều kiện dừng sớm gồm hai nhánh, vì mục tiêu là lấy ĐỦ field nhưng
     không quét vô ích tới hết tài liệu:
       1. Đủ cả field trong FIELD_MAP -> chắc chắn không còn gì để tìm.
+         Kiểm sau mỗi VÙNG, không đợi hết trang.
       2. Đủ field BẮT BUỘC và đã PATIENCE_PAGES trang liên tiếp không có
          thêm field mới -> gần như chắc chắn đã qua hết phần bảng biểu.
+         Kiểm ở cuối mỗi trang, vì bộ đếm kiên nhẫn đếm theo trang.
     Nếu chỉ dùng nhánh 1, chỉ cần một field không bao giờ đọc được là phải
     gọi API cho cả 55 trang.
+
+    Cả hai nhánh tắt được bằng DISABLE_EARLY_STOP=true, và dù bật hay tắt
+    thì `meta["early_stop"]` luôn ghi lại đã dừng hay chưa, vì lý do gì, ở
+    trang nào, và những field nào còn thiếu lúc đó. Nhánh 2 mới là nhánh
+    đáng ngờ khi ĐO: nó dừng lúc chưa đủ field, nên field còn thiếu có thể
+    chưa từng được nhìn tới chứ không phải model đọc hỏng.
     """
     if n_samples > 1 and temperature == 0:
         raise ValueError(
@@ -522,6 +548,19 @@ def extract_fields_from_regions(
     }
     warnings: list[str] = []
     pages_without_new_field = 0
+
+    # Trạng thái dừng sớm là khoá TƯỜNG MINH trong meta, không để người đọc
+    # suy ra từ số trang đã quét. Lý do: một chỉ tiêu bị bỏ qua vì dừng sớm
+    # và một chỉ tiêu đọc hỏng cho ra cùng một thứ — ô null — nên nếu không
+    # ghi lại thì bảng kết quả không phân biệt được hai chuyện hoàn toàn
+    # khác nhau về bản chất.
+    dung_som = {
+        "da_dung_som": False,
+        "ly_do": "",
+        "trang_cuoi": None,
+        "field_con_thieu": [],
+    }
+    da_du_het = False
 
     for page in pages:
         page_no = page["page"]
@@ -567,25 +606,58 @@ def extract_fields_from_regions(
 
             print(f"--- Page {page_no}: {cac_mau[0]} ---")
 
-        # 1. Đủ hết -> không còn gì để tìm.
-        #    Điều kiện dừng vẫn tính trên FIELD_MAP chứ không trên cả
-        #    final_result: đơn vị tính chỉ in ở header bảng nên có trang
-        #    không có nó, và để nó chặn early-stop thì gặp báo cáo thiếu
-        #    dòng khai báo là quét tới hết tài liệu.
-        if all(final_result[khoa].value is not None for khoa in FIELD_MAP):
-            print(f"--- Đã tìm đủ cả {len(FIELD_MAP)} field, dừng ở trang {page_no} ---")
+            # 1. Đủ hết -> không còn gì để tìm. Kiểm ngay sau MỖI VÙNG chứ
+            #    không đợi hết trang: một trang thường có vài vùng bảng, và
+            #    nếu vùng đầu đã lấp nốt field cuối cùng thì các vùng còn
+            #    lại là những lời gọi VLM mua về đúng thứ đã có.
+            #
+            #    Điều kiện dừng vẫn tính trên FIELD_MAP chứ không trên cả
+            #    final_result: đơn vị tính chỉ in ở header bảng nên có
+            #    trang không có nó, và để nó chặn early-stop thì gặp báo
+            #    cáo thiếu dòng khai báo là quét tới hết tài liệu.
+            if not DISABLE_EARLY_STOP and all(
+                final_result[khoa].value is not None for khoa in FIELD_MAP
+            ):
+                print(
+                    f"--- Đã tìm đủ cả {len(FIELD_MAP)} field, dừng ở trang "
+                    f"{page_no} vùng {region_index} ---"
+                )
+                dung_som = {
+                    "da_dung_som": True,
+                    "ly_do": "du_het_field",
+                    "trang_cuoi": page_no,
+                    "field_con_thieu": [],
+                }
+                da_du_het = True
+                break
+
+        if da_du_het:
             break
 
         # 2. Đủ field bắt buộc và đã hết bảng để đọc
         pages_without_new_field = 0 if found_new_field else pages_without_new_field + 1
 
         gia_tri_hien_co = {khoa: kq.value for khoa, kq in final_result.items()}
-        if has_required_fields(gia_tri_hien_co) and pages_without_new_field >= PATIENCE_PAGES:
+        if (
+            not DISABLE_EARLY_STOP
+            and has_required_fields(gia_tri_hien_co)
+            and pages_without_new_field >= PATIENCE_PAGES
+        ):
             missing = [khoa for khoa, kq in final_result.items() if kq.value is None]
             print(
                 f"--- Đủ field bắt buộc, {PATIENCE_PAGES} trang liên tiếp không có "
                 f"field mới -> dừng ở trang {page_no}. Không tìm được: {missing} ---"
             )
+            # Đây là nhánh nguy hiểm cho phép đo: nó dừng khi CHƯA đủ field,
+            # chỉ đủ field bắt buộc. Những field trong field_con_thieu có
+            # thể nằm ở phần đuôi chưa hề được quét, nên đừng đếm chúng vào
+            # tỷ lệ "model không đọc được" mà không tách ra trước.
+            dung_som = {
+                "da_dung_som": True,
+                "ly_do": "het_bang_de_doc",
+                "trang_cuoi": page_no,
+                "field_con_thieu": missing,
+            }
             break
 
     # Đơn vị tính đi ra ở tầng meta chứ không nằm chung với các chỉ tiêu:
@@ -601,6 +673,7 @@ def extract_fields_from_regions(
             # Băm NỘI DUNG prompt chứ không phải số phiên bản: số phiên
             # bản đòi con người nhớ tăng nó, và người ta không nhớ.
             "prompt_hash": bam_prompt(prompt),
+            "early_stop": dung_som,
         },
         warnings=warnings,
         n_samples=n_samples,

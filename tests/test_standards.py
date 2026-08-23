@@ -18,6 +18,7 @@ import pytest
 from fields_config import (
     FIELD_LINE_CODES,
     FIELD_MAP,
+    FIELDS_ONLY_IN,
     Standard,
     detect_standard,
     line_codes_for,
@@ -98,12 +99,58 @@ def test_moi_chuan_co_du_ma_cho_moi_field(standard):
     Thiếu một mã là lỗi im lặng: field vẫn được trích bằng alias nhưng mất
     hẳn đường dự phòng theo mã số — đúng đường mà OCR cần khi nó làm hỏng
     tên chỉ tiêu tiếng Việt.
+
+    Ngoại lệ duy nhất là chỉ tiêu chỉ tồn tại ở một chuẩn, và nó phải được
+    khai báo TƯỜNG MINH trong FIELDS_ONLY_IN. Bắt khai báo thay vì cho phép
+    thiếu tuỳ ý chính là điểm mấu chốt: nếu chấp nhận mọi khoảng trống thì
+    test này không còn phân biệt được "chuẩn không có chỉ tiêu này" với
+    "quên khai báo mã", mà cái sau đúng là lỗi nó sinh ra để bắt.
     """
     codes = line_codes_for(standard)
+    rieng_chuan_khac = {
+        field
+        for chuan, fields in FIELDS_ONLY_IN.items()
+        for field in fields
+        if chuan is not standard
+    }
 
-    thieu = [key for key in FIELD_MAP if key not in codes]
+    thieu = [key for key in FIELD_MAP if key not in codes and key not in rieng_chuan_khac]
 
     assert thieu == [], f"{standard} thiếu mã cho: {thieu}"
+
+
+@pytest.mark.parametrize("standard", list(Standard))
+def test_field_khai_bao_rieng_chuan_khac_thi_khong_duoc_co_ma(standard):
+    """
+    Chiều ngược lại của test trên: một chỉ tiêu đã khai là chỉ có ở chuẩn A
+    thì tuyệt đối không được có mã ở chuẩn B.
+
+    Không có test này thì FIELDS_ONLY_IN thành cái van một chiều: nó nới
+    lỏng được kiểm tra nhưng không ai kiểm lại nó, nên một khai báo cũ còn
+    sót sẽ âm thầm miễn trừ một chỉ tiêu vốn đã có mã đầy đủ.
+    """
+    codes = line_codes_for(standard)
+    rieng_chuan_khac = {
+        field
+        for chuan, fields in FIELDS_ONLY_IN.items()
+        for field in fields
+        if chuan is not standard
+    }
+
+    thua = sorted(rieng_chuan_khac & codes.keys())
+
+    assert thua == [], f"{standard} không nên có mã cho: {thua}"
+
+
+def test_moi_field_khai_bao_rieng_deu_co_that_trong_field_map():
+    """
+    FIELDS_ONLY_IN chỉ được nhắc tới chỉ tiêu đang tồn tại. Một tên gõ sai
+    ở đó sẽ miễn trừ nhầm và không bao giờ bị phát hiện, vì miễn trừ một
+    chỉ tiêu không tồn tại thì chẳng có gì đỏ lên.
+    """
+    for chuan, fields in FIELDS_ONLY_IN.items():
+        la = sorted(set(fields) - FIELD_MAP.keys())
+        assert la == [], f"FIELDS_ONLY_IN[{chuan}] nhắc tới field không có: {la}"
 
 
 @pytest.mark.parametrize("standard", list(Standard))

@@ -47,21 +47,53 @@ class Standard(str, Enum):
 DEFAULT_STANDARD = Standard.TT99
 
 
+# Bộ chỉ tiêu chốt ở MỐC 1 ngày 23/08/2026 — kịch bản D của
+# `constraints_scenarios.py`, mở rộng từ 11 lên 21 chỉ tiêu.
+#
+# Vì sao mở rộng, tóm tắt số đo (chi tiết ở PREREGISTRATION.md mục Sửa đổi):
+# với 11 chỉ tiêu thì BA chỉ tiêu có cột toàn 0 trong ma trận ràng buộc —
+# hang_ton_kho, loi_nhuan_truoc_thue, loi_nhuan_sau_thue. Cột toàn 0 nghĩa là
+# lỗi ở đó không làm residual nhúc nhích, tức vô hình với CẢ H1 (phát hiện)
+# lẫn H2 (định vị), chứ không phải chỉ "khó định vị". Bộ 21 chỉ tiêu này đưa
+# số chỉ tiêu vô hình về 0.
+#
+# Đo trên đúng 16 chỉ tiêu của kịch bản C, việc mở rộng sang D nâng trần
+# Top-3 từ 0,938 lên 0,975: KHÔNG chỉ tiêu nào xấu đi khi thêm chỉ tiêu.
 FIELD_MAP = {
     # --- B01: bảng cân đối kế toán (TT99 gọi là Báo cáo tình hình tài chính) ---
     "tai_san_ngan_han": "Tài sản ngắn hạn",
+    "tien_va_tuong_duong_tien": "Tiền và các khoản tương đương tiền",
+    "dau_tu_tc_ngan_han": "Đầu tư tài chính ngắn hạn",
+    "phai_thu_ngan_han": "Các khoản phải thu ngắn hạn",
     "hang_ton_kho": "Hàng tồn kho",
+    # Chỉ TT99 có chỉ tiêu này (mã 150). TT200 không tách nó ra khỏi tài sản
+    # ngắn hạn khác — xem FIELDS_ONLY_IN và cảnh báo ở FIELD_LINE_CODES.
+    "tai_san_sinh_hoc_ngan_han": "Tài sản sinh học ngắn hạn",
+    "tsnh_khac": "Tài sản ngắn hạn khác",
     "tai_san_dai_han": "Tài sản dài hạn",
     "tong_tai_san": "Tổng tài sản",
     "no_phai_tra": "Nợ phải trả",
     "von_chu_so_huu": "Vốn chủ sở hữu",
+    "tong_nguon_von": "Tổng cộng nguồn vốn",
 
     # --- B02: Báo cáo kết quả hoạt động kinh doanh ---
     "doanh_thu_thuan": "Doanh thu thuần",
     "gia_von_hang_ban": "Giá vốn hàng bán",
     "loi_nhuan_gop": "Lợi nhuận gộp",
+    "ln_thuan_hdkd": "Lợi nhuận thuần từ hoạt động kinh doanh",
+    "ln_khac": "Lợi nhuận khác",
     "loi_nhuan_truoc_thue": "Lợi nhuận trước thuế",
+    "thue_tndn_hien_hanh": "Chi phí thuế thu nhập doanh nghiệp hiện hành",
+    "thue_tndn_hoan_lai": "Chi phí thuế thu nhập doanh nghiệp hoãn lại",
     "loi_nhuan_sau_thue": "Lợi nhuận sau thuế",
+}
+
+# Chỉ tiêu chỉ tồn tại ở MỘT chuẩn. Khai báo tường minh thay vì để suy ra từ
+# việc thiếu khoá trong FIELD_LINE_CODES, vì "thiếu vì chuẩn không có chỉ
+# tiêu này" và "thiếu vì quên khai báo" là hai chuyện khác hẳn nhau và phải
+# phân biệt được — test đối chiếu cấu hình dựa vào đúng bảng này.
+FIELDS_ONLY_IN: dict[Standard, set[str]] = {
+    Standard.TT99: {"tai_san_sinh_hoc_ngan_han"},
 }
 
 # Quy tắc kiểm tra gắn với từng field.
@@ -72,18 +104,38 @@ FIELD_MAP = {
 #   required — field bắt buộc phải có thì kết quả mới được coi là đạt.
 #     Không đánh dấu tất cả là required: càng nhiều field bắt buộc thì
 #     càng dễ phải fallback VLM chỉ vì một chỉ tiêu phụ không tìm thấy.
+#
+# KHÔNG mở rộng danh sách required khi thêm chỉ tiêu ở MỐC 1: mười chỉ tiêu
+# mới đều là thành phần chi tiết, và nhiều cái vắng mặt hợp lệ trên báo cáo
+# thật (TT99 mục 1.2.3 cho phép miễn trình bày chỉ tiêu không có số liệu).
+# Đánh dấu chúng required sẽ làm router fallback sang VLM chỉ vì một dòng
+# doanh nghiệp không có — đắt tiền mà không mua được gì.
 FIELD_RULES = {
-    "tai_san_ngan_han":     {"allow_negative": False, "required": False},
-    "hang_ton_kho":         {"allow_negative": False, "required": False},
-    "tai_san_dai_han":      {"allow_negative": False, "required": False},
-    "tong_tai_san":         {"allow_negative": False, "required": True},
-    "no_phai_tra":          {"allow_negative": False, "required": False},
-    "von_chu_so_huu":       {"allow_negative": True,  "required": False},
-    "doanh_thu_thuan":      {"allow_negative": False, "required": True},
-    "gia_von_hang_ban":     {"allow_negative": False, "required": False},
-    "loi_nhuan_gop":        {"allow_negative": True,  "required": False},
-    "loi_nhuan_truoc_thue": {"allow_negative": True,  "required": False},
-    "loi_nhuan_sau_thue":   {"allow_negative": True,  "required": True},
+    "tai_san_ngan_han":          {"allow_negative": False, "required": False},
+    "tien_va_tuong_duong_tien":  {"allow_negative": False, "required": False},
+    "dau_tu_tc_ngan_han":        {"allow_negative": False, "required": False},
+    "phai_thu_ngan_han":         {"allow_negative": False, "required": False},
+    "hang_ton_kho":              {"allow_negative": False, "required": False},
+    "tai_san_sinh_hoc_ngan_han": {"allow_negative": False, "required": False},
+    "tsnh_khac":                 {"allow_negative": False, "required": False},
+    "tai_san_dai_han":           {"allow_negative": False, "required": False},
+    "tong_tai_san":              {"allow_negative": False, "required": True},
+    "no_phai_tra":               {"allow_negative": False, "required": False},
+    "von_chu_so_huu":            {"allow_negative": True,  "required": False},
+    "tong_nguon_von":            {"allow_negative": False, "required": False},
+    "doanh_thu_thuan":           {"allow_negative": False, "required": True},
+    "gia_von_hang_ban":          {"allow_negative": False, "required": False},
+    "loi_nhuan_gop":             {"allow_negative": True,  "required": False},
+    "ln_thuan_hdkd":             {"allow_negative": True,  "required": False},
+    "ln_khac":                   {"allow_negative": True,  "required": False},
+    "loi_nhuan_truoc_thue":      {"allow_negative": True,  "required": False},
+    # Hai chỉ tiêu thuế cho phép âm vì chính văn bản quy định vậy: TT200
+    # Điều 113 mục 3.16 và 3.17 (TT99 mục 3.17 và 3.18) nói số liệu "được
+    # ghi vào chỉ tiêu này bằng số âm dưới hình thức ghi trong ngoặc đơn"
+    # khi phát sinh bên Nợ — tức khi là THU NHẬP thuế chứ không phải chi phí.
+    "thue_tndn_hien_hanh":       {"allow_negative": True,  "required": False},
+    "thue_tndn_hoan_lai":        {"allow_negative": True,  "required": False},
+    "loi_nhuan_sau_thue":        {"allow_negative": True,  "required": True},
 }
 
 def _khong_am(value) -> bool:
@@ -188,43 +240,99 @@ FIELD_RELATIONS = [
 #
 # Mỗi mục: (danh sách field cộng lại, field tổng, mô tả).
 # Chỉ kiểm tra khi TẤT CẢ field liên quan đều có giá trị.
+# Sáu đẳng thức chung cho cả hai chuẩn. Cái thứ bảy — phân rã Tài sản ngắn
+# hạn — KHÁC NHAU giữa hai chuẩn nên khai báo riêng bên dưới.
+#
+# Mọi đẳng thức ở đây đều đã đối chiếu nguyên văn với Công báo; mã số ghi
+# kèm để tra ngược lại được. Bài học từ Mốc 1: đừng để đẳng thức GIẢ THUYẾT
+# chạy vào cấu hình, kể cả khi nó hợp lý về kế toán.
 _DANG_THUC_CHUNG = [
     (
         ["tai_san_ngan_han", "tai_san_dai_han"],
         "tong_tai_san",
         "Tài sản ngắn hạn + Tài sản dài hạn phải bằng Tổng tài sản",
     ),
+    # Tách làm hai bước đúng như văn bản khai báo, thay vì gộp thành
+    # `nợ + vốn = tổng tài sản` như trước. Văn bản viết `Mã số 440 = Mã số
+    # 300 + Mã số 400` ở phần mô tả chỉ tiêu, rồi viết RIÊNG trong một khối
+    # kẻ khung `Tổng cộng Tài sản = Tổng cộng Nguồn vốn`. Gộp hai thành một
+    # vẫn đúng về toán nhưng vứt đi Tổng cộng nguồn vốn — một con số in sẵn
+    # ở cuối bảng cân đối. Giữ lại nó làm chính nó ĐỊNH VỊ ĐƯỢC, và đó là
+    # bước có tỷ lệ trao đổi tốt nhất trong cả năm kịch bản ở Mốc 1.
     (
         ["no_phai_tra", "von_chu_so_huu"],
+        "tong_nguon_von",
+        "Nợ phải trả + Vốn chủ sở hữu phải bằng Tổng cộng nguồn vốn (mã 440)",
+    ),
+    (
+        ["tong_nguon_von"],
         "tong_tai_san",
-        "Nợ phải trả + Vốn chủ sở hữu phải bằng Tổng tài sản",
+        "Tổng cộng nguồn vốn phải bằng Tổng cộng tài sản",
     ),
     (
         ["gia_von_hang_ban", "loi_nhuan_gop"],
         "doanh_thu_thuan",
         "Giá vốn hàng bán + Lợi nhuận gộp phải bằng Doanh thu thuần",
     ),
+    # Hai đẳng thức B02 dưới đây kéo loi_nhuan_truoc_thue và
+    # loi_nhuan_sau_thue ra khỏi tình trạng CỘT TOÀN 0. Trước Mốc 1, hai chỉ
+    # tiêu này không nằm trong đẳng thức nào — sai bao nhiêu cũng không ràng
+    # buộc nào thấy, dù chúng là đầu ra người dùng thật sự cần.
+    (
+        ["ln_thuan_hdkd", "ln_khac"],
+        "loi_nhuan_truoc_thue",
+        "Lợi nhuận thuần từ HĐKD + Lợi nhuận khác phải bằng Lợi nhuận trước thuế",
+    ),
+    # Văn bản viết `Mã số 60 = Mã số 50 - (Mã số 51 + Mã số 52)`. Chuyển vế
+    # thành dạng cộng để khớp cấu trúc (danh sách cộng, tổng) mà ma trận A
+    # dựng trên đó.
+    (
+        ["loi_nhuan_sau_thue", "thue_tndn_hien_hanh", "thue_tndn_hoan_lai"],
+        "loi_nhuan_truoc_thue",
+        "Lợi nhuận sau thuế + chi phí thuế hiện hành + hoãn lại "
+        "phải bằng Lợi nhuận trước thuế",
+    ),
 ]
+
+# Phân rã Tài sản ngắn hạn — CHỖ HAI CHUẨN KHÁC NHAU THẬT.
+#
+#   TT200: Mã số 100 = 110 + 120 + 130 + 140 + 150
+#   TT99:  Mã số 100 = 110 + 120 + 130 + 140 + 150 + 160
+#
+# TT99 chèn thêm "Tài sản sinh học ngắn hạn" và cho nó mã 150, đẩy "Tài sản
+# ngắn hạn khác" từ 150 sang 160. Đây là đẳng thức duy nhất trong cả cấu hình
+# mà hai chuẩn KHÔNG đẳng cấu — mọi đẳng thức khác giống hệt nhau.
+#
+# Bỏ hạng tử tài sản sinh học đi thì với doanh nghiệp nông nghiệp hoặc chăn
+# nuôi, đẳng thức TT99 sẽ lệch đúng bằng giá trị đàn vật nuôi hoặc vườn cây —
+# một cảnh báo SAI, và sai ở đúng nhóm doanh nghiệp mà tập gold nhắm tới.
+_PHAN_RA_TSNH_TT200 = (
+    ["tien_va_tuong_duong_tien", "dau_tu_tc_ngan_han", "phai_thu_ngan_han",
+     "hang_ton_kho", "tsnh_khac"],
+    "tai_san_ngan_han",
+    "Các thành phần tài sản ngắn hạn phải cộng bằng Tài sản ngắn hạn "
+    "(TT200: mã 100 = 110+120+130+140+150)",
+)
+_PHAN_RA_TSNH_TT99 = (
+    ["tien_va_tuong_duong_tien", "dau_tu_tc_ngan_han", "phai_thu_ngan_han",
+     "hang_ton_kho", "tai_san_sinh_hoc_ngan_han", "tsnh_khac"],
+    "tai_san_ngan_han",
+    "Các thành phần tài sản ngắn hạn phải cộng bằng Tài sản ngắn hạn "
+    "(TT99: mã 100 = 110+120+130+140+150+160)",
+)
 
 # Đẳng thức tách theo CHUẨN mẫu biểu.
 #
-# Hiện hai chuẩn dùng chung một bộ đẳng thức, vì ba quan hệ trên là quan hệ
-# KẾ TOÁN chứ không phải quy ước trình bày: tài sản vẫn bằng nguồn vốn dù
-# mẫu biểu có đổi tên hay đổi mã số dòng. Vẫn tách theo chuẩn thay vì dùng
-# chung một list phẳng vì hai lý do:
+# Việc tách theo chuẩn từng là biện pháp phòng xa — hai chuẩn khi đó dùng
+# chung đúng một bộ đẳng thức. Sau khi đối chiếu Công báo ở Mốc 1 thì nó
+# thành cần thiết thật: phân rã Tài sản ngắn hạn khác nhau giữa hai chuẩn.
 #
-#   1. constraints.py dựng ma trận A RIÊNG cho từng chuẩn. Đồ thị ràng buộc
-#      là thứ quyết định kết quả identifiability, nên phải nói được "ma
-#      trận này của chuẩn nào" chứ không được giả định hai chuẩn giống nhau.
-#   2. TT99 đổi tên "Bảng cân đối kế toán" thành "Báo cáo tình hình tài
-#      chính". Đổi tên thường đi kèm đổi cấu trúc, nên nếu sau này phát
-#      hiện khác biệt thì sửa được đúng một chuẩn mà không đụng chuẩn kia.
-#
-# CẦN NGƯỜI ĐỐI CHIẾU: bộ đẳng thức của TT99 phải kiểm lại với Phụ lục IV
-# văn bản gốc trước khi tin vào bất kỳ số identifiability nào.
+# ĐÃ ĐỐI CHIẾU 23/08/2026 với Công báo số 287+288 và 289+290 (TT200) và số
+# 1577+1578, 1579+1580, 1581+1582 (TT99). Bảng đối chiếu từng dòng ở
+# MOC1-DOI-CHIEU.md mục 3.
 FIELD_IDENTITIES: dict[Standard, list] = {
-    Standard.TT200: _DANG_THUC_CHUNG,
-    Standard.TT99: _DANG_THUC_CHUNG,
+    Standard.TT200: [*_DANG_THUC_CHUNG, _PHAN_RA_TSNH_TT200],
+    Standard.TT99: [*_DANG_THUC_CHUNG, _PHAN_RA_TSNH_TT99],
 }
 
 # Dung sai cho đẳng thức, tính theo tỷ lệ trên giá trị tổng.
@@ -380,8 +488,26 @@ FIELD_ALIASES = {
     "tai_san_ngan_han": [
         "Tài sản ngắn hạn",
     ],
+    "tien_va_tuong_duong_tien": [
+        "Tiền và các khoản tương đương tiền",
+        "Tiền và tương đương tiền",
+    ],
+    "dau_tu_tc_ngan_han": [
+        "Đầu tư tài chính ngắn hạn",
+        "Các khoản đầu tư tài chính ngắn hạn",
+    ],
+    "phai_thu_ngan_han": [
+        "Các khoản phải thu ngắn hạn",
+        "Phải thu ngắn hạn",
+    ],
     "hang_ton_kho": [
         "Hàng tồn kho",
+    ],
+    "tai_san_sinh_hoc_ngan_han": [
+        "Tài sản sinh học ngắn hạn",
+    ],
+    "tsnh_khac": [
+        "Tài sản ngắn hạn khác",
     ],
     "tai_san_dai_han": [
         "Tài sản dài hạn",
@@ -395,6 +521,10 @@ FIELD_ALIASES = {
     ],
     "von_chu_so_huu": [
         "Vốn chủ sở hữu",
+    ],
+    "tong_nguon_von": [
+        "Tổng cộng nguồn vốn",
+        "Tổng nguồn vốn",
     ],
     "doanh_thu_thuan": [
         "Doanh thu thuần về bán hàng và cung cấp dịch vụ",
@@ -411,9 +541,25 @@ FIELD_ALIASES = {
         "Lợi nhuận gộp về bán hàng và cung cấp dịch vụ",
         "Lợi nhuận gộp",
     ],
+    "ln_thuan_hdkd": [
+        "Lợi nhuận thuần từ hoạt động kinh doanh",
+        "Lợi nhuận thuần từ HĐKD",
+    ],
+    "ln_khac": [
+        "Lợi nhuận khác",
+    ],
     "loi_nhuan_truoc_thue": [
+        "Tổng lợi nhuận kế toán trước thuế",
         "Lợi nhuận kế toán trước thuế",
         "Lợi nhuận trước thuế",
+    ],
+    "thue_tndn_hien_hanh": [
+        "Chi phí thuế thu nhập doanh nghiệp hiện hành",
+        "Chi phí thuế TNDN hiện hành",
+    ],
+    "thue_tndn_hoan_lai": [
+        "Chi phí thuế thu nhập doanh nghiệp hoãn lại",
+        "Chi phí thuế TNDN hoãn lại",
     ],
     "loi_nhuan_sau_thue": [
         "Lợi nhuận sau thuế thu nhập doanh nghiệp",
@@ -484,37 +630,69 @@ FIELD_EXCLUDE = {
 # đếm như một chế độ lỗi riêng.
 #
 # ==========================================================================
-# CHƯA ĐƯỢC NGƯỜI ĐỐI CHIẾU. Hai bảng dưới đây phải kiểm từng dòng với
-# Phụ lục IV của văn bản gốc (Thông tư 200/2014/TT-BTC và Thông tư
-# 99/2025/TT-BTC), KHÔNG lấy từ bài tóm tắt trên mạng. Sai một mã là toàn
-# bộ kết quả identifiability sai mà không có gì báo.
+# ĐÃ ĐỐI CHIẾU 23/08/2026 với Công báo, từng dòng một. TT200 ở số 287+288
+# (Điều 112, 113); TT99 ở số 1577+1578 (Phụ lục IV Mục 1 — biểu mẫu) và
+# 1579+1580 (nội dung và phương pháp lập). Bảng đối chiếu ở
+# MOC1-DOI-CHIEU.md mục 3.1.
+#
+# BA MÃ MANG NGHĨA KHÁC NHAU GIỮA HAI CHUẨN — đây là nguồn lỗi câm, vì tra
+# nhầm bảng mã không làm gì nổ, nó chỉ lặng lẽ trả về một con số HỢP LỆ của
+# một chỉ tiêu hoàn toàn khác:
+#
+#   mã 270 — TT200: Tổng cộng tài sản. TT99: Tài sản dài hạn khác
+#   mã 150 — TT200: Tài sản ngắn hạn khác. TT99: Tài sản sinh học ngắn hạn
+#   mã 142 — TT200: (thuộc nhóm khác). TT99: Dự phòng giảm giá hàng tồn kho
+#            (TT200 để dự phòng ở mã 149)
+#
+# Vì vậy `standard` là tham số BẮT BUỘC của extract_field_by_code(), không
+# có giá trị mặc định.
 # ==========================================================================
 FIELD_LINE_CODES: dict[Standard, dict[str, tuple[str, str]]] = {
     Standard.TT200: {
-        "tai_san_ngan_han":     ("B01", "100"),
-        "hang_ton_kho":         ("B01", "140"),
-        "tai_san_dai_han":      ("B01", "200"),
-        "tong_tai_san":         ("B01", "270"),
-        "no_phai_tra":          ("B01", "300"),
-        "von_chu_so_huu":       ("B01", "400"),
-        "doanh_thu_thuan":      ("B02", "10"),
-        "gia_von_hang_ban":     ("B02", "11"),
-        "loi_nhuan_gop":        ("B02", "20"),
-        "loi_nhuan_truoc_thue": ("B02", "50"),
-        "loi_nhuan_sau_thue":   ("B02", "60"),
+        "tai_san_ngan_han":          ("B01", "100"),
+        "tien_va_tuong_duong_tien":  ("B01", "110"),
+        "dau_tu_tc_ngan_han":        ("B01", "120"),
+        "phai_thu_ngan_han":         ("B01", "130"),
+        "hang_ton_kho":              ("B01", "140"),
+        "tsnh_khac":                 ("B01", "150"),
+        "tai_san_dai_han":           ("B01", "200"),
+        "tong_tai_san":              ("B01", "270"),
+        "no_phai_tra":               ("B01", "300"),
+        "von_chu_so_huu":            ("B01", "400"),
+        "tong_nguon_von":            ("B01", "440"),
+        "doanh_thu_thuan":           ("B02", "10"),
+        "gia_von_hang_ban":          ("B02", "11"),
+        "loi_nhuan_gop":             ("B02", "20"),
+        "ln_thuan_hdkd":             ("B02", "30"),
+        "ln_khac":                   ("B02", "40"),
+        "loi_nhuan_truoc_thue":      ("B02", "50"),
+        "thue_tndn_hien_hanh":       ("B02", "51"),
+        "thue_tndn_hoan_lai":        ("B02", "52"),
+        "loi_nhuan_sau_thue":        ("B02", "60"),
     },
     Standard.TT99: {
-        "tai_san_ngan_han":     ("B01", "100"),
-        "hang_ton_kho":         ("B01", "140"),
-        "tai_san_dai_han":      ("B01", "200"),
-        "tong_tai_san":         ("B01", "280"),
-        "no_phai_tra":          ("B01", "300"),
-        "von_chu_so_huu":       ("B01", "400"),
-        "doanh_thu_thuan":      ("B02", "10"),
-        "gia_von_hang_ban":     ("B02", "11"),
-        "loi_nhuan_gop":        ("B02", "20"),
-        "loi_nhuan_truoc_thue": ("B02", "50"),
-        "loi_nhuan_sau_thue":   ("B02", "60"),
+        "tai_san_ngan_han":          ("B01", "100"),
+        "tien_va_tuong_duong_tien":  ("B01", "110"),
+        "dau_tu_tc_ngan_han":        ("B01", "120"),
+        "phai_thu_ngan_han":         ("B01", "130"),
+        "hang_ton_kho":              ("B01", "140"),
+        # Mã 150 ở TT99 KHÔNG phải tài sản ngắn hạn khác — xem cảnh báo trên.
+        "tai_san_sinh_hoc_ngan_han": ("B01", "150"),
+        "tsnh_khac":                 ("B01", "160"),
+        "tai_san_dai_han":           ("B01", "200"),
+        "tong_tai_san":              ("B01", "280"),
+        "no_phai_tra":               ("B01", "300"),
+        "von_chu_so_huu":            ("B01", "400"),
+        "tong_nguon_von":            ("B01", "440"),
+        "doanh_thu_thuan":           ("B02", "10"),
+        "gia_von_hang_ban":          ("B02", "11"),
+        "loi_nhuan_gop":             ("B02", "20"),
+        "ln_thuan_hdkd":             ("B02", "30"),
+        "ln_khac":                   ("B02", "40"),
+        "loi_nhuan_truoc_thue":      ("B02", "50"),
+        "thue_tndn_hien_hanh":       ("B02", "51"),
+        "thue_tndn_hoan_lai":        ("B02", "52"),
+        "loi_nhuan_sau_thue":        ("B02", "60"),
     },
 }
 
@@ -570,6 +748,26 @@ def line_codes_for(standard: Standard) -> dict[str, tuple[str, str]]:
 def identities_for(standard: Standard) -> list:
     """Bộ đẳng thức kế toán của một chuẩn."""
     return FIELD_IDENTITIES[standard]
+
+
+def fields_for(standard: Standard) -> list[str]:
+    """
+    Các chỉ tiêu THẬT SỰ tồn tại ở một chuẩn, giữ nguyên thứ tự FIELD_MAP.
+
+    Dùng cái này thay vì `list(FIELD_MAP)` ở mọi chỗ dựng ma trận ràng buộc.
+    Lý do: FIELD_MAP là hợp của cả hai chuẩn, nên dựng ma trận TT200 trên
+    toàn bộ FIELD_MAP sẽ kèm theo `tai_san_sinh_hoc_ngan_han` — một chỉ tiêu
+    TT200 không có. Cột của nó toàn 0, và báo cáo identifiability sẽ liệt kê
+    nó vào nhóm "không được ràng buộc nào bảo vệ", tức bịa ra một điểm yếu
+    không tồn tại và làm sai luôn số chiều không gian null của TT200.
+    """
+    rieng_chuan_khac = {
+        field
+        for chuan, fields in FIELDS_ONLY_IN.items()
+        for field in fields
+        if chuan is not standard
+    }
+    return [field for field in FIELD_MAP if field not in rieng_chuan_khac]
 
 
 def marker_for_form(form: str) -> str | None:

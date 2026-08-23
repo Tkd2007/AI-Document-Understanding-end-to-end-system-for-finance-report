@@ -36,7 +36,7 @@ from pathlib import Path
 
 import numpy as np
 
-from fields_config import FIELD_MAP, Standard, identities_for
+from fields_config import Standard, fields_for, identities_for
 
 # Dung sai đặt TƯỜNG MINH thay vì để numpy tự chọn.
 #
@@ -358,6 +358,14 @@ def report(
         f"- Chiều không gian null `dim null(A)`: **{chieu_null}**",
         f"- Số field định vị được lỗi một-trường: "
         f"**{sum(dinh_vi.values())} / {n}**",
+        # Nêu tường minh cả khi bằng 0. Trước đây con số này chỉ hiện ra gián
+        # tiếp qua ghi chú từng dòng của bảng bên dưới, nên một bộ chỉ tiêu
+        # KHÔNG còn field vô hình và một báo cáo quên mất phần đó trông giống
+        # hệt nhau. Đây là chỉ số nặng hơn "định vị được": cột toàn 0 nghĩa là
+        # lỗi vô hình với cả H1 lẫn H2, chứ không riêng H2.
+        f"- Số field có **cột toàn 0** (lỗi không PHÁT HIỆN được): "
+        f"**{len(cot_khong)} / {n}**"
+        + (f" — {', '.join(f'`{t}`' for t in cot_khong)}" if cot_khong else " — không có"),
         "",
         f"Nghĩa là **{chieu_null}/{n}** chiều trong không gian lỗi hoàn toàn vô hình",
         "với mọi phương pháp dựa trên ràng buộc — residual bằng 0 tuyệt đối.",
@@ -435,7 +443,7 @@ if __name__ == "__main__":
         sys.stdout.reconfigure(encoding="utf-8")
 
     for chuan in Standard:
-        cac_field = list(FIELD_MAP)
+        cac_field = fields_for(chuan)
         A, field_order = build_matrix(cac_field, identities_for(chuan))
 
         duong_dan = Path("data/output") / f"identifiability_{chuan.value}.md"

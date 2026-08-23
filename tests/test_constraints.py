@@ -23,7 +23,7 @@ from constraints import (
     single_field_localizable,
     zero_columns,
 )
-from fields_config import FIELD_MAP, Standard, identities_for
+from fields_config import Standard, fields_for, identities_for
 
 # --- Ví dụ tính tay: a + b = c ---------------------------------------------
 #
@@ -92,44 +92,82 @@ def test_khong_rang_buoc_nao_thi_moi_huong_deu_vo_hinh():
 
 # --- Bộ field thật ---------------------------------------------------------
 
+# Số liệu ĐỌC TAY từ chính báo cáo trong data/samples (bản soát xét Q1/2026,
+# riêng, mẫu B01a-DN và B02a-DN theo Thông tư 99/2025). Không lấy từ đầu ra
+# pipeline — nếu lấy từ đó thì test chỉ chứng minh pipeline nhất quán với
+# chính nó, chứ không chứng minh ma trận A dựng đúng.
+#
+# tai_san_sinh_hoc_ngan_han = 0 chứ không phải None, và đó là con số ĐÚNG:
+# VNM không có tài sản sinh học nên TT99 mục 1.2.3 cho phép miễn trình bày,
+# và báo cáo in thẳng công thức rút gọn "100 = 110 + 120 + 130 + 140 + 160"
+# ngay dưới tên chỉ tiêu. Dòng vắng mặt nghĩa là bằng 0, không phải chưa
+# biết — xem ghi chú về chế độ bỏ qua đẳng thức ở HANDOFF.md.
 VNM_Q1_2026 = {
     "tai_san_ngan_han": 29403116984122,
+    "tien_va_tuong_duong_tien": 1362241151028,
+    "dau_tu_tc_ngan_han": 17709033917800,
+    "phai_thu_ngan_han": 4737004862410,
     "hang_ton_kho": 5393002084291,
+    "tai_san_sinh_hoc_ngan_han": 0,
+    "tsnh_khac": 201834968593,
     "tai_san_dai_han": 18372709942261,
     "tong_tai_san": 47775826926383,
     "no_phai_tra": 16666572149360,
     "von_chu_so_huu": 31109254777023,
+    "tong_nguon_von": 47775826926383,
     "doanh_thu_thuan": 13217639635987,
     "gia_von_hang_ban": 7278764406353,
     "loi_nhuan_gop": 5938875229634,
+    "ln_thuan_hdkd": 2498569420889,
+    "ln_khac": 25317726196,
     "loi_nhuan_truoc_thue": 2523887147085,
+    "thue_tndn_hien_hanh": 426210619002,
+    "thue_tndn_hoan_lai": 48429318301,
     "loi_nhuan_sau_thue": 2049247209782,
 }
 
 
 def _ma_tran_that(standard: Standard):
-    return build_matrix(list(FIELD_MAP), identities_for(standard))
+    return build_matrix(fields_for(standard), identities_for(standard))
 
 
 @pytest.mark.parametrize("standard", list(Standard))
-def test_ba_dang_thuc_hien_tai_doc_lap_tuyen_tinh(standard):
+def test_bay_dang_thuc_hien_tai_doc_lap_tuyen_tinh(standard):
     """
-    Hạng 3 nghĩa là ba đẳng thức thật sự độc lập, không cái nào suy ra
-    được từ hai cái kia. Không giả định điều này — nếu sau này ai thêm một
-    đẳng thức trùng lặp thì hạng đứng yên và test nói ra ngay.
+    Hạng 7 nghĩa là bảy đẳng thức thật sự độc lập, không cái nào suy ra
+    được từ những cái kia. Không giả định điều này — nếu sau này ai thêm
+    một đẳng thức trùng lặp thì hạng đứng yên và test nói ra ngay.
     """
     A, _ = _ma_tran_that(standard)
 
-    assert A.shape[0] == 3
-    assert rank(A) == 3
+    assert A.shape[0] == 7
+    assert rank(A) == 7
 
 
-@pytest.mark.parametrize("standard", list(Standard))
-def test_tam_tren_muoi_mot_chieu_loi_la_vo_hinh(standard):
-    """Con số trung tâm của H0 với bộ chỉ tiêu hiện tại."""
+@pytest.mark.parametrize(
+    ("standard", "n_field", "chieu_null"),
+    [(Standard.TT200, 20, 13), (Standard.TT99, 21, 14)],
+)
+def test_chieu_khong_gian_null_theo_tung_chuan(standard, n_field, chieu_null):
+    """
+    Con số trung tâm của H0 với bộ chỉ tiêu chốt ở Mốc 1.
+
+    Hai chuẩn KHÔNG cùng số chiều, và đây là chỗ duy nhất trong cả cấu hình
+    thể hiện điều đó: TT99 có thêm Tài sản sinh học ngắn hạn nên nhiều hơn
+    một chỉ tiêu, trong khi hạng vẫn là 7 ở cả hai.
+
+    Ghi cả n_field lẫn chiều null thay vì chỉ ghi hiệu số, để nếu ai đó thêm
+    chỉ tiêu mà quên thêm đẳng thức thì test chỉ ra được là hỏng ở vế nào.
+
+    Lưu ý khi đọc kết quả: mở rộng bộ chỉ tiêu KHÔNG thu hẹp không gian null
+    theo chiều tuyệt đối — 11 chỉ tiêu cho 8 chiều, 21 chỉ tiêu cho 14. Cái
+    được cải thiện là số chỉ tiêu PHÁT HIỆN và ĐỊNH VỊ được, nên đừng đọc
+    dim null một mình như thước đo tiến bộ.
+    """
     A, _ = _ma_tran_that(standard)
 
-    assert null_space(A).shape == (len(FIELD_MAP), 8)
+    assert len(fields_for(standard)) == n_field
+    assert null_space(A).shape == (n_field, chieu_null)
 
 
 def test_bat_bien_scale_nam_trong_khong_gian_null():
@@ -159,52 +197,77 @@ def test_bo_so_that_thoa_moi_dang_thuc():
     np.testing.assert_allclose(A @ x_ref, 0, atol=1e-6)
 
 
-def test_ba_field_khong_duoc_rang_buoc_nao_bao_ve():
+@pytest.mark.parametrize("standard", list(Standard))
+def test_khong_con_field_nao_vo_hinh_voi_rang_buoc(standard):
     """
-    Tình trạng NẶNG HƠN việc không định vị được: cột toàn 0 nghĩa là lỗi ở
-    field đó cho residual đúng bằng 0, tức không PHÁT HIỆN được chứ không
-    chỉ là không định vị được.
+    Đây là thứ MỐC 1 mua được, và là lý do chính chọn kịch bản D.
 
-    hang_ton_kho đáng chú ý nhất — đây chính là field mà báo cáo VNM đã có
-    lỗi đọc thật (alias khớp trúng dòng Dự phòng giảm giá), và ràng buộc kế
-    toán hoàn toàn không giúp gì được.
+    Cột toàn 0 là tình trạng NẶNG HƠN việc không định vị được: lỗi ở chỉ
+    tiêu đó cho residual đúng bằng 0, tức không PHÁT HIỆN được — vô hình với
+    cả H1 lẫn H2, không chỉ H2.
+
+    Với bộ 11 chỉ tiêu cũ, ba chỉ tiêu ở tình trạng đó: hang_ton_kho,
+    loi_nhuan_truoc_thue, loi_nhuan_sau_thue. Riêng hang_ton_kho là chỉ tiêu
+    mà báo cáo VNM đã có lỗi đọc THẬT (alias khớp trúng dòng Dự phòng giảm
+    giá, mã 142) — tức ví dụ mở đầu của cả proposal nằm ngoài tầm với của
+    phương pháp. Phân rã Tài sản ngắn hạn kéo nó vào một đẳng thức.
+
+    Nó vẫn CHƯA định vị được (lẫn trong lớp 5 chỉ tiêu con của mã 100), và
+    đó là kết quả H0 phải báo cáo trung thực. Nhưng phát hiện được thì vòng
+    đọc lại còn có chỗ bám; vô hình thì không.
     """
-    A, field_order = _ma_tran_that(Standard.TT99)
+    A, field_order = _ma_tran_that(standard)
 
-    assert zero_columns(A, field_order) == [
-        "hang_ton_kho",
+    assert zero_columns(A, field_order) == []
+
+
+@pytest.mark.parametrize("standard", list(Standard))
+def test_nam_chi_tieu_dinh_vi_duoc_va_dung_nam_chi_tieu_do(standard):
+    """
+    Kết quả H0 với bộ chỉ tiêu chốt ở Mốc 1: 5 chỉ tiêu có cột riêng biệt,
+    tăng từ đúng 1 (`tong_tai_san`) của bộ 11 chỉ tiêu cũ.
+
+    Chốt cả DANH SÁCH chứ không chỉ số lượng, vì con số 5 có thể giữ nguyên
+    trong khi thành phần đổi — và thành phần mới là thứ quyết định bảng kết
+    quả H2 đọc ra sao.
+
+    Hai chuẩn cho cùng danh sách dù TT99 nhiều hơn một chỉ tiêu: Tài sản
+    sinh học ngắn hạn rơi vào đúng lớp lẫn của các thành phần mã 100, nên nó
+    không tự định vị được và cũng không kéo ai ra khỏi lớp đó.
+    """
+    A, field_order = _ma_tran_that(standard)
+    dinh_vi = single_field_localizable(A, field_order)
+
+    assert [ten for ten, duoc in dinh_vi.items() if duoc] == [
+        "tai_san_ngan_han",
+        "tai_san_dai_han",
+        "tong_tai_san",
+        "tong_nguon_von",
         "loi_nhuan_truoc_thue",
-        "loi_nhuan_sau_thue",
     ]
 
 
-def test_chi_mot_tren_muoi_mot_field_dinh_vi_duoc():
+def test_van_khong_ton_tai_bo_field_nao_dinh_vi_duoc_hoan_toan():
     """
-    Kết quả H0 quan trọng nhất với bộ chỉ tiêu hiện tại, và là lý do B4
-    (mở rộng bộ trường) không phải việc tuỳ chọn: chỉ tong_tai_san có cột
-    riêng biệt, mọi field còn lại hoặc không được bảo vệ, hoặc lẫn với một
-    field khác.
+    Trả None là một KẾT QUẢ NGHIÊN CỨU hợp lệ, không phải lỗi, và nó SỐNG
+    SÓT qua việc mở rộng bộ chỉ tiêu: kể cả với 21 chỉ tiêu và 7 đẳng thức,
+    không tập con nào làm mọi lỗi một-trường đều định vị được.
+
+    Đây là phát biểu H0 mà bài phải bảo vệ, và nó không dịu đi khi thêm chỉ
+    tiêu — mỗi phân rã làm chính chỉ tiêu bị phân rã định vị được nhưng đẻ
+    ra một tầng lá mới cùng lớp lẫn với nhau. Hệ quả: ràng buộc đơn thuần
+    không bao giờ đủ, và trọng số dồn sang mỏ neo đơn vị tính với bước đọc
+    lại — đúng như proposal mục 6.1 đã lường trước.
+
+    Khác bộ 11 chỉ tiêu ở một điểm về PHƯƠNG PHÁP, không về kết luận: 21 chỉ
+    tiêu là quá nhiều để vét cạn mọi tập con, nên hàm rơi về tìm kiếm tham
+    lam và trả `chac_chan=False`. Cờ đó phải được đọc đúng — "không tìm
+    thấy" chứ không phải "đã chứng minh không tồn tại".
     """
-    A, field_order = _ma_tran_that(Standard.TT99)
-    dinh_vi = single_field_localizable(A, field_order)
-
-    assert [ten for ten, duoc in dinh_vi.items() if duoc] == ["tong_tai_san"]
-
-
-def test_khong_ton_tai_bo_field_nao_dinh_vi_duoc_voi_dang_thuc_hien_co():
-    """
-    Trả None là một KẾT QUẢ NGHIÊN CỨU hợp lệ, không phải lỗi: với ba đẳng
-    thức hiện có, không cách nào chọn tập con nào của 11 chỉ tiêu này để
-    mọi lỗi một-trường đều định vị được.
-
-    Hệ quả cho kế hoạch: muốn H2 có nghĩa thì phải thêm ĐẲNG THỨC, không
-    phải chỉ thêm chỉ tiêu. Đây đúng là câu hỏi mà Mốc 1 cần người trả lời
-    khi đối chiếu Thông tư.
-    """
-    bo, chac_chan = minimal_localizing_set(list(FIELD_MAP), identities_for(Standard.TT99))
+    bo, chac_chan = minimal_localizing_set(fields_for(Standard.TT99), identities_for(Standard.TT99))
 
     assert bo is None
-    assert chac_chan, "11 field thì phải vét cạn được, không được rơi vào tham lam"
+    assert not chac_chan, "21 field thì không vét cạn nổi, phải báo là kết quả tham lam"
 
 
 # --- minimal_localizing_set trên ví dụ có lời giải --------------------------
@@ -279,8 +342,8 @@ def test_must_include_luon_co_mat_trong_ket_qua():
 def test_bao_cao_neu_ro_cac_con_so_quan_trong(tmp_path):
     """
     Báo cáo là artifact người dùng phải đọc và đối chiếu với Thông tư, nên
-    ba con số quyết định (hạng, chiều null, số field định vị được) và bảng
-    ma trận có tên field phải nằm trong đó.
+    bốn con số quyết định (hạng, chiều null, số field định vị được, số field
+    cột toàn 0) và bảng ma trận có tên field phải nằm trong đó.
     """
     A, field_order = _ma_tran_that(Standard.TT99)
     duong_dan = tmp_path / "identifiability.md"
@@ -288,8 +351,25 @@ def test_bao_cao_neu_ro_cac_con_so_quan_trong(tmp_path):
     noi_dung = report(A, field_order, identities_for(Standard.TT99), out_path=duong_dan)
 
     assert duong_dan.read_text(encoding="utf-8") == noi_dung
-    assert "`rank(A)`: **3**" in noi_dung
-    assert "`dim null(A)`: **8**" in noi_dung
-    assert "**1 / 11**" in noi_dung
+    assert "`rank(A)`: **7**" in noi_dung
+    assert "`dim null(A)`: **14**" in noi_dung
+    assert "**5 / 21**" in noi_dung
     assert "tong_tai_san" in noi_dung
     assert "cột toàn 0" in noi_dung
+
+
+def test_bao_cao_noi_ro_KHONG_CO_field_cot_toan_0_thay_vi_im_lang(tmp_path):
+    """
+    Với bộ chỉ tiêu chốt ở Mốc 1 thì không còn field nào cột toàn 0, và báo
+    cáo phải NÓI RA điều đó.
+
+    Vì sao cần một test riêng: nếu chỉ dựa vào ghi chú từng dòng trong bảng
+    thì "không còn field vô hình" và "quên in phần đó" trông giống hệt nhau
+    trên trang giấy. Người đọc báo cáo không có cách nào phân biệt, mà đây
+    lại đúng là con số Mốc 1 mua được.
+    """
+    A, field_order = _ma_tran_that(Standard.TT99)
+
+    noi_dung = report(A, field_order, identities_for(Standard.TT99))
+
+    assert "**cột toàn 0** (lỗi không PHÁT HIỆN được): **0 / 21** — không có" in noi_dung

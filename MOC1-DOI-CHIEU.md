@@ -211,7 +211,7 @@ Nguồn: `src/fields_config.py`, `FIELD_LINE_CODES`.
 **(a) Ký hiệu mẫu biểu của TT200 là `B01-DN` hay `B01a-DN`?**
 
 `FORM_MARKERS` trong `fields_config.py` đang giả định TT200 dùng `B 01` không
-có hậu tố `a`, và TT99 dùng `B 01a`. Regex của TT200 mang `(?!\s*a)` chính vì
+có hậu tố `a`, và TT99 dùng `B 01a`. Regex của TT200 mang `(?!s*a)` chính vì
 chuỗi `"B 01"` nằm gọn trong `"B 01a"` — không có phần đó thì marker TT200 sẽ
 khớp luôn trang TT99. Nếu giả định này sai thì **nhận diện chuẩn sai ở mọi tài
 liệu**, và đó là một chế độ lỗi nằm ngay đầu chuỗi xử lý.
@@ -280,7 +280,71 @@ TT200** — chính chỗ đó đang là giả định chưa kiểm, xem mục 3.
 Dòng thứ ba là loại đáng giá nhất nếu xác nhận được: nó nối **hai biểu mẫu
 khác nhau**, tức gắn một đẳng thức thứ hai vào một chỉ tiêu đã có sẵn.
 
-#### Bảng để bạn điền
+#### ĐÃ TRÍCH ĐƯỢC — 23/08/2026
+
+Nguồn: `data/legal/2015_289 + 290-200_2014_TT-BTC.pdf` (TT200, Điều 114) và
+`data/legal/2025_1581 + 1582_99-2025-TT-BTC.doc` (TT99, phần B03). Trích bằng
+`pdftotext -layout` và `antiword`.
+
+Cả hai chuẩn khai báo **giống hệt nhau**, chỉ khác tên biểu mẫu B01:
+
+| # | Đẳng thức theo văn bản | Cả hai chuẩn? | Liên kết chéo? |
+|---|---|---|---|
+| 1 | `Mã số 50 = Mã số 20 + Mã số 30 + Mã số 40` | Có | Không — nội bộ B03 |
+| 2 | `Mã số 70 = Mã số 50 + Mã số 60 + Mã số 61` | Có | Không — nội bộ B03 |
+| 3 | `Mã số 70` (B03) **= Mã số 110** trên B01, cột "Số cuối kỳ" | Có | **CÓ** |
+| 4 | `Mã số 60` (B03) **= Mã số 110** trên B01, cột "Số đầu kỳ" | Có | **CÓ — và nối sang KỲ TRƯỚC** |
+
+Nguyên văn TT200, Điều 114, mục "Tiền và tương đương tiền cuối kỳ (Mã số 70)":
+
+> Chỉ tiêu này bằng số "Tổng cộng" của các chỉ tiêu Mã số 50, 60 và 61 và
+> **bằng chỉ tiêu Mã số 110 trên Bảng cân đối kế toán kỳ đó**. Mã số 70 =
+> Mã số 50 + Mã số 60 + Mã số 61.
+
+TT99 nói y hệt, chỉ thay "Bảng cân đối kế toán" bằng "Báo cáo tình hình tài
+chính".
+
+**Ý nghĩa.** Đây đúng là loại quan hệ mục 1.4 đi tìm, và nó được văn bản
+khai báo tường minh chứ không phải suy diễn. Ghép mục 2, 3, 4 lại cho:
+
+```
+B01.110 (cuối kỳ) = B01.110 (đầu kỳ) + B03.50 + B03.61
+```
+
+Tức nó nối **bảng cân đối kỳ này với bảng cân đối kỳ trước**. Đó chính là câu
+hỏi ở proposal mục 6.1(d) về giá trị của cột kỳ trước — và câu trả lời là
+cột kỳ trước **có** ràng buộc thật nối vào, qua báo cáo lưu chuyển tiền tệ.
+
+**Nhưng nó chưa trả tiền ngay.** Đo bằng `constraints.py`:
+
+| Bộ | Chỉ tiêu | Đẳng thức | Định vị được |
+|---|---:|---:|---:|
+| Hiện tại | 11 | 3 | 1/11 |
+| + chuỗi B03 đã xác nhận | 18 | 5 | 2/18 |
+| + phân rã TSNH (**chưa xác nhận**) | 21 | 6 | **5/21** |
+
+Lý do: liên kết chéo gắn đẳng thức thứ hai vào `B01.110`, nhưng `B01.110`
+phải **đã nằm trong một đẳng thức nào đó** thì mới có cái để gắn thêm. Đẳng
+thức đó là phân rã Tài sản ngắn hạn — nằm ở Điều 112, tức **Công báo 287 +
+288 mà ta chưa có**.
+
+#### CÒN THIẾU — cần tải thêm
+
+| Chuẩn | Cần | Nội dung | Đã có? |
+|---|---|---|---|
+| TT200 | Công báo **287 + 288** | Điều 112 (Bảng cân đối kế toán) + Điều 113 (B02) | ☐ |
+| TT200 | Công báo 289 + 290 | Điều 114 (B03) trở đi | ✅ |
+| TT99 | Công báo **1577 + 1578** và/hoặc **1579 + 1580** | Báo cáo tình hình tài chính + đầu B02a | ☐ |
+| TT99 | Công báo 1581 + 1582 | Cuối B02a + B03 | ✅ |
+
+TT200 có 6 số (279+280 → 289+290); TT99 có 10 số (1563+1564 → 1581+1582). Cả
+hai file đang có đều là **số cuối cùng**, nên phần bảng cân đối nằm ở các số
+trước đó.
+
+Cách kiểm nhanh sau khi tải: tìm chuỗi `Mã số 270 =` (TT200) hoặc
+`Mã số 280 =` (TT99). Có kết quả là đúng file.
+
+#### Bảng để điền tiếp
 
 | Biểu mẫu | Đẳng thức theo văn bản | Chuẩn | Trùng chỉ tiêu với đẳng thức nào khác? |
 |---|---|---|---|
@@ -288,8 +352,56 @@ khác nhau**, tức gắn một đẳng thức thứ hai vào một chỉ tiêu 
 |  |  |  |  |
 |  |  |  |  |
 |  |  |  |  |
-|  |  |  |  |
-|  |  |  |  |
+
+### 3.5 PHÁT HIỆN NGOÀI DỰ KIẾN — `FORM_MARKERS` đang sai
+
+Mục 3.2(a) đặt câu hỏi "ký hiệu mẫu biểu TT200 là `B01-DN` hay `B01a-DN`".
+Văn bản trả lời: **cả hai**, và chữ `a` không hề là dấu hiệu của chuẩn.
+
+Đếm trong Công báo 289+290 của TT200 thấy đủ `B01-DN`, `B01a-DN`, `B01b-DN`,
+`B02-DN`, `B02a-DN`, `B02b-DN`, `B03-DN`, `B03a-DN`, `B03b-DN`. Nguyên văn
+tại chỗ khai báo biểu mẫu:
+
+> 7. Bảng cân đối kế toán **giữa niên độ (dạng đầy đủ)** — Mẫu số **B01a-DN**
+
+Tức hậu tố phân biệt **kỳ báo cáo**, không phân biệt Thông tư:
+
+| Ký hiệu | Nghĩa |
+|---|---|
+| `B01-DN` | Bảng cân đối kế toán **năm** |
+| `B01a-DN` | **giữa niên độ, dạng đầy đủ** — tức báo cáo quý |
+| `B01b-DN` | giữa niên độ, dạng tóm lược |
+
+Và TT200 nói rõ biểu mẫu giữa niên độ dùng **cùng bộ mã số** với biểu mẫu
+năm:
+
+> (*) Nội dung các chỉ tiêu và mã số của báo cáo này như các chỉ tiêu của
+> Báo cáo lưu chuyển tiền tệ năm - Mẫu B03-DN
+
+Trong khi đó `src/fields_config.py` đang ghi ngược lại:
+
+> "TT200 dùng `Mẫu số B 01 - DN`, TT99 dùng `Mẫu số B 01a - DN`."
+
+**Hậu quả cụ thể.** Marker TT200 mang `(?!s*a)` nên **không khớp** trang
+`B01a-DN`. Mà `B01a-DN` chính là báo cáo **quý** theo TT200 — đúng loại tài
+liệu dự án đang xử lý, kể cả báo cáo VNM Q1/2026 dùng làm mẫu. Khi marker
+không khớp, `extract_field_by_code()` trả `None`, tức **đường dự phòng theo
+mã số tắt hẳn** — im lặng, không cảnh báo. Đó đúng là đường sinh ra để cứu
+khi OCR làm hỏng tên chỉ tiêu.
+
+Chiều ngược lại: TT99 in `Mẫu số B03-DN` và `B09-DN` **không có** hậu tố `a`,
+nên marker TT99 vốn đòi `a` cũng sẽ trượt.
+
+**Điểm sáng:** `detect_standard()` không dùng `FORM_MARKERS` mà dùng
+`STANDARD_MARKERS`, dựa vào tên báo cáo — và cái đó **đúng**, đã đối chiếu:
+TT200 gọi "Bảng cân đối kế toán", TT99 gọi "Báo cáo tình hình tài chính".
+Nên việc nhận diện CHUẨN không hỏng; chỉ việc nhận diện MẪU BIỂU hỏng.
+
+Hệ quả thiết kế: vì chuẩn đã được `detect_standard()` xác định trước, và
+`extract_field_by_code()` nhận `standard` làm tham số bắt buộc, `FORM_MARKERS`
+**không cần phân biệt chuẩn chút nào** — nó chỉ cần phân biệt B01/B02/B03
+trong phạm vi một chuẩn đã biết. Toàn bộ cơ chế `(?!s*a)` đang giải một bài
+toán mà chỗ khác đã giải rồi.
 
 #### Nếu KHÔNG tìm thấy đẳng thức nối chéo nào
 

@@ -383,6 +383,7 @@ OPENROUTER_API_KEY=your_openrouter_key
 OPENROUTER_MODEL=google/gemma-4-31b-it:free
 USE_OCR_FIRST=false
 DISABLE_CONSTRAINT_GATE=false
+DISABLE_LINE_PROBE=false
 GRAFANA_USER=admin
 GRAFANA_PASSWORD=${GRAFANA_PASSWORD}
 ```
@@ -395,6 +396,12 @@ GRAFANA_PASSWORD=${GRAFANA_PASSWORD}
   computer.
 - `USE_OCR_FIRST` bật/tắt nhánh OCR + regex (mặc định `false` — xem
   "Vì sao nhánh OCR đang tắt mặc định" ở trên).
+- `DISABLE_LINE_PROBE` tắt bước **dò sự tồn tại của dòng** (mặc định `false`,
+  tức probe đang BẬT). Probe chạy EasyOCR trên các trang đã duyệt và tra theo
+  **mã số dòng** để biết một chỉ tiêu vắng mặt trên biểu mẫu hay chỉ là đọc
+  hỏng — hai chuyện trước đây cùng cho ra `null` và vì thế làm bước kiểm đẳng
+  thức phải bỏ qua cả đẳng thức. Tắt là **mất tính năng, không sinh số sai**:
+  không có dấu vết thì không chỉ tiêu nào được điền 0.
 - `DISABLE_CONSTRAINT_GATE` **chỉ dùng khi ĐO, không dùng khi phục vụ**
   (mặc định `false`). Bật lên thì pipeline chạy đúng một nhánh, không gọi
   `is_acceptable()`, không fallback, và trả kết quả thô. Nó tồn tại vì
@@ -454,7 +461,9 @@ auto-generated docs at `http://127.0.0.1:8000/docs`).
 Chạy standalone bằng `python src/router.py` thì không có chuyện đó — tên file
 giữ nguyên và kết quả là `data/output/<file>_routed.json`.
 
-> `route_document(file_path, save=True)` — tham số `save` quyết định có ghi
+> `route_document(file_path, save=True, standard=None)` — `standard` để `None`
+> thì lùi về `DEFAULT_STANDARD` và ghi rõ việc lùi đó vào
+> `meta["standard_nguon"]`. Tham số `save` quyết định có ghi
 > `data/output/<stem>_routed.json` hay không, và **người gọi quyết định** chứ
 > không phải pipeline, cùng nguyên tắc như `require_config()` được đẩy ra
 > entrypoint.
@@ -511,26 +520,51 @@ Defined in `src/fields_config.py` — the single source of truth used by both
 the OCR and VLM branches, so adding a new field only requires editing this
 one file.
 
-**B01a-DN — Báo cáo tình hình tài chính (bảng cân đối kế toán)**
+**Bộ chỉ tiêu: 21 với TT99, 20 với TT200.** Chênh một chỉ tiêu vì Tài sản
+sinh học ngắn hạn chỉ tồn tại ở TT99.
 
-| Key | Chỉ tiêu | Mã số | Bắt buộc |
-|---|---|---|---|
-| `tai_san_ngan_han` | Tài sản ngắn hạn | 100 | |
-| `hang_ton_kho` | Hàng tồn kho | 140 | |
-| `tai_san_dai_han` | Tài sản dài hạn | 200 | |
-| `tong_tai_san` | Tổng tài sản | 280 | ✅ |
-| `no_phai_tra` | Nợ phải trả | 300 | |
-| `von_chu_so_huu` | Vốn chủ sở hữu | 400 | |
+**BA MÃ ĐỔI NGHĨA GIỮA HAI CHUẨN** — đây là nguồn lỗi câm, vì tra nhầm bảng mã
+không làm gì nổ, nó chỉ lặng lẽ trả về một con số hợp lệ của chỉ tiêu khác:
+mã **270** (Tổng cộng tài sản ở TT200, Tài sản dài hạn khác ở TT99), mã **150**
+(Tài sản ngắn hạn khác ở TT200, Tài sản sinh học ở TT99), và mã **142/149**
+(dự phòng giảm giá hàng tồn kho). Vì vậy `standard` là tham số **bắt buộc** của
+`extract_field_by_code()` và của `validate_result()`.
 
-**B02a-DN — Báo cáo kết quả hoạt động kinh doanh**
+**B01 — Bảng cân đối kế toán (TT200) / Báo cáo tình hình tài chính (TT99)**
+
+| Key | Chỉ tiêu | Mã TT200 | Mã TT99 | Bắt buộc |
+|---|---|---|---|---|
+| `tai_san_ngan_han` | Tài sản ngắn hạn | 100 | 100 | |
+| `tien_va_tuong_duong_tien` | Tiền và các khoản tương đương tiền | 110 | 110 | |
+| `dau_tu_tc_ngan_han` | Đầu tư tài chính ngắn hạn | 120 | 120 | |
+| `phai_thu_ngan_han` | Các khoản phải thu ngắn hạn | 130 | 130 | |
+| `hang_ton_kho` | Hàng tồn kho | 140 | 140 | |
+| `tai_san_sinh_hoc_ngan_han` | Tài sản sinh học ngắn hạn | — | 150 | |
+| `tsnh_khac` | Tài sản ngắn hạn khác | 150 | **160** | |
+| `tai_san_dai_han` | Tài sản dài hạn | 200 | 200 | |
+| `tong_tai_san` | Tổng tài sản | 270 | **280** | ✅ |
+| `no_phai_tra` | Nợ phải trả | 300 | 300 | |
+| `von_chu_so_huu` | Vốn chủ sở hữu | 400 | 400 | |
+| `tong_nguon_von` | Tổng cộng nguồn vốn | 440 | 440 | |
+
+**B02 — Báo cáo kết quả hoạt động kinh doanh** (mã số giống nhau ở hai chuẩn)
 
 | Key | Chỉ tiêu | Mã số | Bắt buộc |
 |---|---|---|---|
 | `doanh_thu_thuan` | Doanh thu thuần | 10 | ✅ |
 | `gia_von_hang_ban` | Giá vốn hàng bán | 11 | |
 | `loi_nhuan_gop` | Lợi nhuận gộp | 20 | |
+| `ln_thuan_hdkd` | Lợi nhuận thuần từ hoạt động kinh doanh | 30 | |
+| `ln_khac` | Lợi nhuận khác | 40 | |
 | `loi_nhuan_truoc_thue` | Lợi nhuận trước thuế | 50 | |
+| `thue_tndn_hien_hanh` | Chi phí thuế TNDN hiện hành | 51 | |
+| `thue_tndn_hoan_lai` | Chi phí thuế TNDN hoãn lại | 52 | |
 | `loi_nhuan_sau_thue` | Lợi nhuận sau thuế | 60 | ✅ |
+
+Danh sách `required` cố ý **ngắn**: càng nhiều chỉ tiêu bắt buộc thì càng dễ
+phải fallback sang VLM chỉ vì một dòng doanh nghiệp không có. Mười chỉ tiêu
+thêm ở Mốc 1 đều là dòng chi tiết, và nhiều cái vắng mặt hợp lệ trên báo cáo
+thật — Thông tư 99 mục 1.2.3 cho phép miễn trình bày chỉ tiêu không có số liệu.
 
 ### Các bảng cấu hình trong `fields_config.py`
 
@@ -577,6 +611,33 @@ tiếp theo **mã số dòng** (`FIELD_LINE_CODES`): trên báo cáo VNM, EasyOC
 `TỔNG TÀI SẢN` thành `TỖNG TÀISẢN` nên alias thất bại, còn mã `280` thì đọc đúng
 tuyệt đối. Mã số chỉ duy nhất **trong một mẫu biểu**, nên chỉ được dùng khi trang
 khớp `FORM_MARKERS` của đúng mẫu đó.
+
+### Ngữ nghĩa đầu ra: số `0` không phải lúc nào cũng là "doanh nghiệp khai 0"
+
+Kể từ khi có bước dò dòng, `data` trả về **có thể chứa `0` cho một chỉ tiêu mà
+báo cáo không in dòng nào cả**. Đó là kết luận có căn cứ, không phải phỏng
+đoán: Thông tư 99 mục 1.2.3 bảo đảm "các chỉ tiêu không có số liệu được miễn
+trình bày", tức văn bản pháp quy khẳng định phần vắng mặt không đóng góp vào
+tổng. Chính báo cáo VNM in công thức rút gọn của nó — `100 = 110+120+130+140+160`,
+bỏ hẳn mã 150.
+
+Vì vậy `meta["trang_thai_chi_tieu"]` ghi lý do cho **từng** chỉ tiêu, tập đóng
+ba giá trị:
+
+| Trạng thái | Giá trị trong `data` | Nghĩa |
+|---|---|---|
+| `co_gia_tri` | số đọc được | Bình thường |
+| `vang_mat` | `0` | Biểu mẫu KHÔNG có dòng đó — probe đã xác nhận |
+| `khong_doc_duoc` | `null` | Có dòng mà không đọc ra, hoặc probe không kết luận được |
+
+**Đừng suy ra trạng thái từ chính con số.** Một số `0` có thể là doanh nghiệp
+khai bằng 0 (`co_gia_tri`) hoặc là dòng vắng mặt (`vang_mat`), và hai chuyện đó
+khác hẳn nhau khi phân tích.
+
+`meta["line_probe"]` cho biết probe có chạy trong lượt đó không — lượt có probe
+và lượt không có cho ra dữ liệu khác nhau về chất nên không so thẳng được.
+
+---
 
 ## Status
 

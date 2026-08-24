@@ -385,3 +385,50 @@ hình mà hai chuẩn không đẳng cấu.
 hệt nhau ở hai chuẩn. Nên ablation số 8 kiểm chủ yếu **tầng nhận diện và tra
 cứu mã số**, không kiểm khả năng tổng quát hoá của phần suy luận ràng buộc.
 Phải viết đúng phạm vi đó, không được phát biểu rộng hơn.
+
+---
+
+### 24/08/2026 — Dòng vắng mặt trên biểu mẫu được ghi `0`, không phải `null`
+
+**Sửa đổi.** Khi hệ xác định được rằng một chỉ tiêu **không có dòng nào trên
+biểu mẫu**, giá trị trả về là `0` chứ không phải `null`. Áp cho cả tập gold
+(đã quy định ở `ANNOTATION-GUIDELINE.md` mục 3.4) lẫn đầu ra pipeline (thi
+công ở commit `ada6f75`). `null` từ nay chỉ còn một nghĩa: **chưa biết**.
+
+**Vì sao đây là sửa đổi của ĐĂNG KÝ TRƯỚC chứ không phải chi tiết cài đặt.**
+Nó đổi giá trị của hai chỉ số đã chốt trước ở mục 9. `eval/metrics.py` quy
+định `None` chỉ khớp với `None`, nên khi gold ghi `0` mà pipeline trả `null`
+thì mọi dòng vắng mặt bị tính là SAI:
+
+- **`field_accuracy`** bị trừ điểm trên mọi tài liệu có dòng vắng mặt — mà
+  vắng mặt là chuyện thường, không phải ngoại lệ.
+- **`document_fully_correct`** đòi cả 20–21 chỉ tiêu khớp, nên chỉ một dòng
+  vắng mặt là cả tài liệu trượt. Chỉ số này sẽ tụt về gần 0 vì lý do quy ước.
+- **`silent_error_rate`** KHÔNG bị ảnh hưởng, vì nó loại `null` khỏi mẫu số.
+
+Sai lệch này đổ đều cho phương pháp đề xuất lẫn cả 10 baseline nên phép **so
+sánh** vẫn sống, nhưng **con số tuyệt đối** in ra giấy thì sai theo quy ước.
+Ghi vào đây để người đọc bài biết định nghĩa nào đang dùng.
+
+**Căn cứ pháp lý, không phải quy ước tiện tay.** Thông tư 99 mục 1.2.3: "các
+chỉ tiêu không có số liệu được miễn trình bày", tức chính văn bản bảo đảm
+phần vắng mặt không đóng góp vào tổng. Báo cáo VNM Q1/2026 in công thức rút
+gọn của chính nó — `100 = 110 + 120 + 130 + 140 + 160`, bỏ hẳn mã 150.
+
+**Ranh giới, và đây là chỗ phải giữ.** Chỉ ghi `0` khi xác định được dòng
+**vắng mặt trên biểu mẫu**. Ca "có dòng mà đọc không ra" giữ `null`. Gộp hai
+ca lại là bịa ra một con số: đẳng thức sẽ lệch đúng bằng giá trị thật bị mất,
+và bước chẩn đoán đi tìm ứng viên sửa cho nhầm chỉ tiêu — cảnh báo đúng hướng
+nhưng quy trách nhiệm sai chỗ, tức làm hỏng chính chỉ số Top-k của H2.
+
+Việc phân biệt hai ca do một **oracle tất định** đảm nhiệm: dò **mã số dòng**
+trên text OCR của các trang đã duyệt, và chỉ kết luận "vắng mặt" khi đã thấy
+mẫu biểu ở đâu đó mà không trang nào chứa mã đó. Cố ý **không** hỏi model,
+vì model tự khai "dòng này không có" là một phán đoán, và phán đoán sai sẽ
+lặng lẽ thành `0` đi vào đẳng thức — đúng chỗ nhạy cảm nhất với việc bịa số.
+
+**Trạng thái ghi tường minh.** `meta["trang_thai_chi_tieu"]` ghi cho từng chỉ
+tiêu một trong ba giá trị `co_gia_tri` / `vang_mat` / `khong_doc_duoc`, và
+`meta["line_probe"]` ghi lượt chạy đó có bật oracle hay không. Bảng kết quả
+phải đọc trạng thái từ khoá này chứ không suy ra từ con số: một số `0` có thể
+là doanh nghiệp khai bằng 0, cũng có thể là dòng vắng mặt.

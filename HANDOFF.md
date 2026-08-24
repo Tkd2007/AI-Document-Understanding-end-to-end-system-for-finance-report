@@ -4,10 +4,15 @@ Viết để một phiên Claude khác đọc và làm tiếp mà **không cần
 Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
 
 - **Nhánh:** `research` (tách từ `main` tại `4216291`)
-- **Commit gần nhất:** `f819f4e` — **chưa push** (origin/research đang ở `fafe4ad`)
-- **Test:** **374 xanh / 0 đỏ**. `ruff check src tests` sạch.
+- **Commit gần nhất:** `709e58c` — đã push, `research` khớp `origin/research`
+- **Test:** **374 xanh / 0 đỏ** ở CẢ `USE_OCR_FIRST=true` lẫn `false`.
+  `ruff check src tests` sạch.
 - **Bộ chỉ tiêu:** 21 với TT99, 20 với TT200; 7 đẳng thức. MỐC 1 đã đóng.
-- **Đang làm dở:** phương án C của mục 12 — xem **Phụ lục B** cuối file này
+- **`main`:** **KHÔNG BAO GIỜ MERGE** — chỉ thị của người dùng, 24/08/2026.
+  `research` đi trước 56 commit và cứ để vậy. Hệ quả: CI hiện chỉ chạy trên
+  `main` và trên pull request, nên **CI thực tế không bao giờ chạy** — mọi
+  việc kiểm phải làm tại chỗ. Muốn CI có ích thì thêm `research` vào phần
+  trigger của `.github/workflows/ci.yml`, KHÔNG phải merge.
 - **Cập nhật:** 24/08/2026
 
 ---
@@ -102,6 +107,21 @@ Ngoài ra `main` có `debac2f` (test khoá threading cho `merge_into_totals`).
 | `32db2f7` | Mốc 1 | Đóng các ô chưa xác nhận của bảng đối chiếu |
 | **`4064519`** | **B4** | **Bộ chỉ tiêu lên 21, hai chuẩn hết đẳng cấu** — mục 10 |
 | **`df96ff2`** | **Mốc 1** | **Ghi quyết định vào đăng ký trước, đóng hai ô chờ của guideline** |
+
+### Ngày 24/08/2026
+
+| Commit | Mục | Nội dung |
+|---|---|---|
+| `5810ea2` | — | Vá bốn chỗ tài liệu tự mâu thuẫn; chốt nơi nộp (mục 17) |
+| **`fa5c6d2`** | **C** | **Chuẩn đi tới nơi kiểm đẳng thức; meta hợp nhất thay vì đè** |
+| **`88a77f5`** | **C** | **Bộ chỉ tiêu đi theo chuẩn ở prompt, trích xuất, dừng sớm** |
+| **`19fe938`** | **C** | **Oracle `tim_theo_ma_so()`; ô số hỏng thôi mượn số dòng dưới** |
+| **`ada6f75`** | **C** | **Probe dò dòng + điền 0; đẳng thức phân rã chạy được** |
+| `0088218` | — | Gộp bảng đối chiếu Mốc 1 và sổ thi công vào file này |
+| `fc7fc42` | — | Thôi OCR một trang hai lần; test thôi phụ thuộc `.env` |
+| `709e58c` | — | Đo lại trần `max_changes` trên bộ chỉ tiêu đã chốt |
+
+Chi tiết đầy đủ của phương án C ở **Phụ lục B**.
 
 Xen giữa là các commit cập nhật chính file này (`fa399e4`, `7c37ec9`,
 `7d93593`, `41c1a14`, `b53ed8f`, `b55722d`, `2a2198f`, `463bc5b`) và hai
@@ -265,7 +285,22 @@ nối ASCII, và `render()` kiểm mọi ký tự rồi **ném `ValueError`**.
 ### Kết quả chạy thử toàn chuỗi
 
 Chuỗi `linkbase → bảng → inject → sinh ứng viên → chẩn đoán` đã chạy thông
-đầu-cuối trên bảng 8 chỉ tiêu, 3 đẳng thức:
+đầu-cuối trên bảng 8 chỉ tiêu, 3 đẳng thức.
+
+> **Bảng 8 chỉ tiêu này KHÔNG phải bộ chỉ tiêu TT200/TT99.** Dự án có hai
+> bảng số tách biệt hẳn nhau, và trộn chúng là hiểu sai cả mục 7 lẫn mục 12:
+>
+> | | Bộ chỉ tiêu Việt Nam | Bảng tầng XBRL |
+> |---|---|---|
+> | Khai ở | `src/fields_config.py` | `src/eval/xbrl_tier/` |
+> | Nguồn | Thông tư 200 và 99 | Linkbase hồ sơ SEC (Mỹ) |
+> | Quy mô | 20–21 chỉ tiêu, 7 đẳng thức | 8 chỉ tiêu, 3 đẳng thức |
+> | Dùng để | Trích xuất báo cáo Việt Nam thật | Sinh lỗi có kiểm soát cho H2/H3 |
+>
+> `diagnose()` không biết gì về bộ chỉ tiêu nào cả — nó nhận `A` và
+> `field_order` từ nơi gọi, nên chạy trên **cả hai**.
+
+Kết quả:
 
 1. Inject `DIGIT_SUB` vào `Cash` (`1 → 9`) làm đúng **1 đẳng thức** vi phạm.
 2. Giá trị thật **không** nằm trong tập ứng viên vì cặp `1→9` không thuộc
@@ -638,7 +673,8 @@ Theo thứ tự phụ thuộc trong `BUILD-SPEC.md` phần E.
 | Đối chiếu Công báo | **XONG** — mục 10 | — |
 | **B4** mở rộng bộ trường | **XONG** — `4064519` | — |
 | **MỐC 1** | **ĐÓNG** — `df96ff2` | — |
-| Bỏ qua đẳng thức khi thiếu thành phần | **Chưa** | Quyết định của người — xem dưới |
+| Bỏ qua đẳng thức khi thiếu thành phần | **XONG** — phương án C, `ada6f75` | — |
+| Nhận diện chuẩn thật (nguồn `nhan_dien`) | **Chưa** — bước D, Phụ lục B | Quyết định của người |
 | **C3** vòng lặp đọc lại | Chưa | **MỐC 3** — mục 13 |
 | **C4** verdict ba trạng thái | Chưa | C3 |
 | **D2** runner / **D3** bảng / **D4** hình | Chưa | C4, rồi D2 |
@@ -831,6 +867,11 @@ python src/router.py data/samples/<file>.pdf
 
 # Chế độ ĐO cho H1 — tắt hoàn toàn cổng ràng buộc
 DISABLE_CONSTRAINT_GATE=true python src/router.py data/samples/<file>.pdf
+
+# Tắt bước dò sự tồn tại của dòng (probe OCR). Tắt là MẤT tính năng chứ
+# không sinh số sai: dòng vắng mặt thôi được điền 0 nên đẳng thức phân rã
+# lại hay bị bỏ qua. Dùng để đo chính cái giá của probe.
+DISABLE_LINE_PROBE=true python src/router.py data/samples/<file>.pdf
 
 # Đo engine OCR trên ô số (cần easyocr; vài phút vì chạy CPU)
 PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/ocr_compare.py easyocr

@@ -40,6 +40,13 @@ data/output/*
 data/legal/*
 !data/legal/.gitkeep
 
+# Ho so XBRL tai tu EDGAR. Du lieu cua chinh phu My nen khong vuong ban
+# quyen, nhung nang vai MB va lay lai duoc bat cu luc nao bang fetch.py —
+# cung ly do da ap cho data/legal/. Thu can vao git la KET QUA rut ra tu
+# chung: data/output/moc3_*.md.
+data/xbrl/*
+!data/xbrl/.gitkeep
+
 # OS/editor junk
 .DS_Store
 .vscode/

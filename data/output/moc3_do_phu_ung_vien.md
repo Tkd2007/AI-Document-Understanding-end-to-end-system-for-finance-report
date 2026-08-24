@@ -17,3 +17,4 @@ Nguồn nào sinh ra được giá trị thật (đếm trước trần, có th�
 | `o_lan_can` | 0 |
 | `dau` | 131 |
 | `scale` | 0 |
+

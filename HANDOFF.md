@@ -20,6 +20,55 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
 
 ---
 
+## 0. CÂU HỎI ĐANG CHỜ NGƯỜI DÙNG TRẢ LỜI
+
+Mục này là nơi DUY NHẤT liệt kê những thứ đang chờ quyết định. Phiên Claude
+mới đọc mục này trước tiên; nếu người dùng chưa trả lời thì hỏi lại đúng
+những câu dưới đây chứ đừng tự chọn, vì cả hai câu đều đổi kết luận khoa
+học chứ không phải chi tiết cài đặt.
+
+Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "Câu 1 chọn ...,
+Câu 2 chọn ...".
+
+### Câu 1 — Chấm chỉ số định vị thế nào khi một phương pháp TỪ CHỐI trả lời?
+
+Bối cảnh đầy đủ ở mục 13b. Tóm tắt: baseline 9 giải LP nên nặn được số thực
+bất kỳ và KHÔNG BAO GIỜ bỏ phiếu trắng — nó đoán 234 lần, trúng ~50%.
+Phương pháp đề xuất chỉ sửa khi tập ứng viên đóng chứa cách đọc hợp lệ — nó
+ra tay 122 lần, trúng ~70%. Cách chấm hiện tại chia cho TỔNG số lượt, nên
+mỗi lần từ chối bị tính là một lần định vị trượt, và bảng kết quả thành
+0.212 so với 0.295 — tức đang đo **mức sẵn sàng đoán** chứ không đo độ đúng.
+
+- **(a)** Báo cáo cả hai, kèm tỷ lệ ra tay — *đề nghị của phiên trước.*
+  Trung thực nhất và khớp cách selective prediction thường báo cáo, nhưng
+  làm bảng kết quả rộng thêm một cột.
+- **(b)** Giữ nguyên cách chia cho tổng số lượt. Đơn giản, nhưng phải viết
+  thẳng trong bài rằng chỉ số này phạt việc từ chối, kẻo reviewer tưởng
+  phương pháp đề xuất yếu hơn thật.
+- **(c)** Chỉ chấm trên các lượt có ra tay. **KHÔNG NÊN** — nó thưởng cho
+  việc im lặng nhiều, và một phương pháp chỉ trả lời đúng một lần rồi im
+  sẽ đạt 100%.
+
+Trả lời xong thì sửa `bao_cao()` trong [src/eval/moc3.py](src/eval/moc3.py)
+và ghi tu chính vào `PREREGISTRATION.md`.
+
+### Câu 2 — Làm việc nào trước?
+
+- **(a)** Đo ma trận nhầm lẫn chữ số từ dữ liệu thật (mục 13b). Đây là thứ
+  chặn cứng việc đóng Mốc 3, và nó là việc kỹ thuật thuần tuý.
+- **(b)** Chốt Câu 1 trước rồi mới chạy lại, để chỉ chạy một lượt.
+
+Lượt chạy Mốc 3 mất khoảng 90 phút nên thứ tự này có giá thật, không phải
+câu hỏi hình thức.
+
+### Đã quyết rồi, KHÔNG cần hỏi lại
+
+- Kịch bản E cho bộ chỉ tiêu (mục 17.1) — đã quyết, chưa thi công.
+- Tập gold khoảng 100 tài liệu (mục 17.2) — đã quyết, tài liệu chưa cập nhật.
+- `main` không bao giờ merge; commit đứng tên người dùng, không trailer.
+
+---
+
 ## 1. Đọc gì trước
 
 Bốn tài liệu nguồn do người dùng giữ, nằm ở thư mục `MD file/` **và nội dung
@@ -943,11 +992,10 @@ một tu chính TRƯỚC khi chạy lại. Ghi rõ trong bài rằng ma trận �
 5. Toàn bộ dữ liệu là doanh nghiệp Mỹ theo US-GAAP, chưa có báo cáo Việt
    Nam nào.
 
-Script đo độ phủ nằm ngoài repo (thư mục tạm của phiên). Nếu cần chạy lại
-thì viết lại theo mô tả trên: nạp hồ sơ, tiêm 1 lỗi, dựng ứng viên bằng
-`_ung_vien_cho_bang()`, đếm xem `InjectedError.original` có khớp ứng viên
-nào của `InjectedError.concept` không, so khớp theo tỷ lệ chứ không tuyệt
-đối vì giá trị cỡ 1e13.
+Script đo độ phủ đã vào repo: [src/eval/do_phu_ung_vien.py](src/eval/do_phu_ung_vien.py).
+Lệnh ở mục 15. Nó không gọi `diagnose()` nên chạy nhanh, dùng lại được mỗi
+lần đụng vào bộ sinh ứng viên hoặc bộ tiêm lỗi — và **phải chạy lại mỗi lần
+đó**, vì độ phủ chính là thứ quyết định bảng Mốc 3 đọc ra nghĩa gì.
 
 ---
 
@@ -1025,6 +1073,10 @@ antiword -m UTF-8.txt "data/legal/<file>.doc" > out.txt
 # CHẬM: bảng XBRL Mỹ có 150-250 chỉ tiêu nên mỗi hồ sơ mất vài phút.
 # Tiến độ in ra stderr; kết quả in ra stdout.
 PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/moc3.py > data/output/moc3.md
+
+# Đo ĐỘ PHỦ ỨNG VIÊN — phải chạy TRƯỚC khi đọc bảng Mốc 3, xem mục 13b.
+# Nhanh (không gọi diagnose(), chỉ dựng ứng viên rồi so khớp).
+PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/do_phu_ung_vien.py     > data/output/moc3_do_phu_ung_vien.md
 
 # Tải hồ sơ XBRL — chạy được từ shell trên máy người dùng.
 # (Cảnh báo "container không ra được sec.gov" trong docstring fetch.py chỉ

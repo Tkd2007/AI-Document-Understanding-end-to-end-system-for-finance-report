@@ -120,6 +120,11 @@ Ngoài ra `main` có `debac2f` (test khoá threading cho `merge_into_totals`).
 | `0088218` | — | Gộp bảng đối chiếu Mốc 1 và sổ thi công vào file này |
 | `fc7fc42` | — | Thôi OCR một trang hai lần; test thôi phụ thuộc `.env` |
 | `709e58c` | — | Đo lại trần `max_changes` trên bộ chỉ tiêu đã chốt |
+| `f09c407` | — | Bốn file MD khớp lại hiện trạng |
+| **`62b5be5`** | **MỐC 3** | **Runner `src/eval/moc3.py`; pilot Apple lộ 3 trục trặc** |
+| `7ad3cc1` | — | Hồ sơ XBRL thôi nằm trong git |
+| `29995f7` | — | Ghi kết quả pilot và mục 17 (lưu ý việc đã quyết chưa làm) |
+| **`e6c286c`** | **MỐC 3** | **Xử được nhiều công ty; donor thôi lấy từ công ty đang xét** |
 
 Chi tiết đầy đủ của phương án C ở **Phụ lục B**.
 
@@ -912,7 +917,14 @@ PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/ocr_compare.py easyocr
 pdftotext -layout -enc UTF-8 "data/legal/<file>.pdf" out.txt
 antiword -m UTF-8.txt "data/legal/<file>.doc" > out.txt
 
-# Tải hồ sơ XBRL — CHỈ CHẠY ĐƯỢC TRÊN MÁY NGƯỜI DÙNG
+# Chạy MỐC 3 — so baseline 9 với phương pháp đề xuất.
+# CHẬM: bảng XBRL Mỹ có 150-250 chỉ tiêu nên mỗi hồ sơ mất vài phút.
+# Tiến độ in ra stderr; kết quả in ra stdout.
+PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/moc3.py > data/output/moc3.md
+
+# Tải hồ sơ XBRL — chạy được từ shell trên máy người dùng.
+# (Cảnh báo "container không ra được sec.gov" trong docstring fetch.py chỉ
+#  đúng với Docker. Từ shell thường thì sec.gov với tới được bình thường.)
 export SEC_USER_AGENT="Tên thật email@example.com"
 python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
 ```
@@ -921,21 +933,28 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
 
 ## 16. Bước kế tiếp đề xuất
 
-Mốc 1 đã đóng, nên đường găng giờ đi qua Mốc 3.
+Cập nhật 24/08/2026. Hai việc đầu của danh sách cũ **đã xong**: cách xử lý
+thành phần thiếu đã quyết và thi công (phương án C, mục 12), và dữ liệu XBRL
+đã tải (15 công ty, 26 hồ sơ). Đường găng vẫn đi qua Mốc 3, và nó vẫn chưa
+đóng.
 
-1. **Quyết cách xử lý thành phần thiếu trong đẳng thức** (mục 12). Đây là
-   việc duy nhất còn lại mà B4 mở ra, và nó chặn việc chạy pipeline trên tài
-   liệu thật — không quyết thì đẳng thức phân rã tài sản ngắn hạn gần như
-   không bao giờ chạy, tức phần lớn cái Mốc 1 mua được không tới được
-   pipeline.
-2. **Người dùng chạy `fetch.py`** để có dữ liệu XBRL (mục 13). Việc này
-   không chặn bởi mục 1 — làm song song được.
-3. **Chạy MỐC 3** ngay khi có dữ liệu. **Đây là mốc phải dừng thật** — nếu
-   baseline 9 ngang bằng thì toàn bộ novelty tầng 1 sai, dừng và lùi paper
-   về tầng dataset + identifiability. Không chạy tiếp C3 và ablation trước
-   khi biết kết quả, vì chạy tiếp chỉ để tích luỹ số liệu cho một luận điểm
-   đã sai.
-4. **Sau khi qua Mốc 3:** C3 rồi C4, rồi D2/D3/D4.
+1. **Chạy xong MỐC 3 và đọc kết quả** (mục 13). Lệnh ở mục 15. **CHẬM** —
+   bảng XBRL Mỹ có 150–250 chỉ tiêu nên `diagnose()` phải duyệt `C(n,2)` tổ
+   hợp; đo được khoảng **3–4 phút một hồ sơ**, tức chừng **90 phút** cho 26
+   hồ sơ. Chạy nền và đừng tưởng nó treo: tiến độ in ra stderr.
+2. **Quyết cách tính chỉ số định vị khi một phương pháp TỪ CHỐI trả lời.**
+   Đây là quyết định của người, và nó đổi kết luận. Baseline 9 không bao giờ
+   ABSTAIN nên luôn có cơ hội định vị đúng; phương pháp đề xuất ABSTAIN khi
+   tập ứng viên đóng không chứa cách đọc hợp lệ nào — mà đó chính là hành vi
+   nó được thiết kế để có. Đếm ABSTAIN là "định vị trượt" tức đang đo **mức
+   sẵn sàng đoán**, không đo độ đúng.
+3. **Sửa việc chọn kỳ để cột so sánh có số.** Hiện 0/158 chỉ tiêu có giá trị
+   ở kỳ thứ hai, nên COL_SHIFT không inject được và nguồn ứng viên chéo kỳ
+   không đóng góp gì — chỉ 3 trong 4 chế độ lỗi thật sự chạy.
+4. **Nếu Mốc 3 qua:** thi công kịch bản E (mục 17.1) → chốt quy mô tập gold
+   (mục 17.2) → gán nhãn → C3 → C4 → D2/D3/D4.
+   **Nếu Mốc 3 không qua:** dừng, báo cáo, lùi bài về tầng dataset +
+   identifiability. Kịch bản E và 100 tài liệu khi đó phải xét lại từ đầu.
 
 ### ĐỪNG gán nhãn trước khi biết kết quả MỐC 3
 

@@ -1101,6 +1101,40 @@ Applications và Software). Cái mất là slot oral tự động và thời gia
 
 ### Đối thủ mới cần thêm vào related work
 
+**Cập nhật 24/08/2026 — đã tra lại theo yêu cầu người dùng.** Kết quả đầy đủ
+ghi ở `MD file/FINAL-proposal-reread-dont-repair.md` **mục 14b** (file đó bị
+gitignore nên chỉ có trên máy người dùng). Tóm tắt cho người đọc bàn giao:
+
+**Đóng góp lõi vẫn chưa ai làm.** Đọc lại nguồn thay vì sửa trên tập số cố
+định — chưa có. H0 identifiability — chưa có. ViFinKIE — chưa có.
+
+**Một đối thủ mới, đáng kể: arXiv 2608.14639** (đăng 08/2026), *Valid Per-Field
+Selective Risk Control for Document Extraction*, chạy trên Claude-Sonnet-5 với
+800 hoá đơn CORD. Nó **không** dùng ràng buộc miền, **không** sửa (chỉ từ chối),
+**không** sinh ứng viên từ ảnh, **không** phân tích identifiability — nên không
+chiếm chỗ đóng góp lõi. Nhưng nó **thu hẹp kết quả dự kiến số 4**: phần đường
+cong risk–coverage nay phải phát biểu là "ràng buộc miền làm bộ điểm thứ ba",
+không được phát biểu là "chúng tôi làm selective prediction".
+
+Ngược lại nó **làm mạnh thêm H1**: nó ghi nhận các chế độ hỏng của cách tiếp
+cận dựa trên confidence, gồm cả phân cụm theo tài liệu — tức có công trình độc
+lập hậu thuẫn cho việc đi tìm một tín hiệu tốt hơn confidence.
+
+**Hai cái đã kiểm và KHÔNG chiếm chỗ:** *Blueprint* (VLDB) chỉ chấm điểm các
+phương án trích xuất đã có, không đọc lại ảnh; *FinStat2SQL* (arXiv 2506.23273)
+tuy là tài chính Việt Nam nhưng lấy Excel từ FiinPro, không OCR, không PDF,
+không phát hành benchmark.
+
+**Một câu đáng trích dẫn nguyên văn**, từ ban tổ chức ICDAR 2026 HIPE-OCRepair:
+*"Trong thực hành hậu-xử-lý OCR chuẩn, hệ thống chỉ làm việc trên văn bản và
+không có quyền truy cập ảnh tài liệu gốc."* Dùng ở Introduction thì luận điểm
+"không ai đọc lại nguồn" có người ngoài chứng thực.
+
+**Nhịp lấp của mảng này là lý do thật để đi nhanh** — đối thủ gần nhất đăng
+đúng tháng tra cứu.
+
+#### Đối thủ ghi nhận trước đó
+
 **FinReporting** — arXiv 2604.05966 (05/2026). Agentic workflow cho báo cáo
 tài chính đa quốc gia, ontology hợp nhất ba báo cáo, LLM làm *constrained
 verifier* dưới luật quyết định tường minh, có khâu anomaly logging; đánh giá

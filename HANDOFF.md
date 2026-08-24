@@ -4,10 +4,11 @@ Viết để một phiên Claude khác đọc và làm tiếp mà **không cần
 Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
 
 - **Nhánh:** `research` (tách từ `main` tại `4216291`)
-- **Commit gần nhất:** `67beb66` — **chưa push**
-- **Test:** **340 xanh / 0 đỏ**. `ruff check src tests` sạch.
+- **Commit gần nhất:** `f819f4e` — **chưa push** (origin/research đang ở `fafe4ad`)
+- **Test:** **374 xanh / 0 đỏ**. `ruff check src tests` sạch.
 - **Bộ chỉ tiêu:** 21 với TT99, 20 với TT200; 7 đẳng thức. MỐC 1 đã đóng.
-- **Cập nhật:** 23/08/2026
+- **Đang làm dở:** phương án C của mục 12 — xem [NOTES-PHUONG-AN-C.md](NOTES-PHUONG-AN-C.md)
+- **Cập nhật:** 24/08/2026
 
 ---
 
@@ -641,6 +642,35 @@ Theo thứ tự phụ thuộc trong `BUILD-SPEC.md` phần E.
 | **C3** vòng lặp đọc lại | Chưa | **MỐC 3** — mục 13 |
 | **C4** verdict ba trạng thái | Chưa | C3 |
 | **D2** runner / **D3** bảng / **D4** hình | Chưa | C4, rồi D2 |
+
+### ĐÃ QUYẾT VÀ ĐÃ THI CÔNG — 24/08/2026
+
+Người dùng chốt **phương án C**: phân biệt "dòng vắng mặt" với "dòng đọc
+hỏng" bằng cách dò **mã số dòng** trên text OCR, và ghi số `0` của dòng vắng
+mặt vào **cả `data` đầu ra** kèm khoá trạng thái tường minh.
+
+Đã thi công ở bốn commit — chi tiết đầy đủ, kèm bẫy đã gặp và việc còn lại, ở
+[NOTES-PHUONG-AN-C.md](NOTES-PHUONG-AN-C.md):
+
+| Commit | Nội dung |
+|---|---|
+| `fa5c6d2` | Chuẩn đi tới nơi kiểm đẳng thức; meta hợp nhất thay vì đè |
+| `88a77f5` | Bộ chỉ tiêu đi theo chuẩn ở prompt, trích xuất, điều kiện dừng sớm |
+| `19fe938` | Oracle `tim_theo_ma_so()` nói ra lý do; sửa lỗi mượn số dòng dưới |
+| `ada6f75` | Probe OCR + `dien_dong_vang_mat()`; đẳng thức phân rã chạy được |
+
+**Kết quả đo được.** Trên bộ số kiểu VNM với hàng tồn kho đọc nhầm sang dòng
+dự phòng — lỗi có thật, ví dụ mở đầu của proposal — cảnh báo phân rã tài sản
+ngắn hạn đi từ **không có** sang **bắt được**.
+
+**Việc còn lại (bước D):** `chon_chuan()` vẫn chỉ có nguồn `tham_so` và
+`mac_dinh`, chưa có `nhan_dien`. Trên cấu hình mặc định mọi tài liệu vẫn được
+xử như TT99 vì lùi mặc định — nay có kêu ra log và ghi vào
+`meta["standard_nguon"]` thay vì im lặng. Vướng mắc đã khảo sát và ghi ở
+NOTES: tiêu đề báo cáo, dấu hiệu duy nhất phân biệt hai chuẩn, gần như chắc
+chắn nằm NGOÀI vùng bảng đã cắt vì `PADDING` chỉ có 8 pixel.
+
+Phần mô tả bên dưới giữ nguyên làm hồ sơ bài toán ban đầu.
 
 ### Việc mở ra từ B4, cần quyết trước khi chạy pipeline trên tài liệu thật
 

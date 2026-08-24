@@ -786,7 +786,7 @@ quả, đừng để suy ra từ sự vắng mặt của khoá khác.
 
 ---
 
-## 13. MỐC 3 — ĐÃ CHẠY PILOT, VẪN CHƯA KẾT LUẬN ĐƯỢC
+## 13. MỐC 3 — ĐÃ CHẠY ĐẦY ĐỦ, VẪN CHƯA KẾT LUẬN ĐƯỢC
 
 **Cập nhật 24/08/2026.** Đã tải 3 hồ sơ 10-K của Apple từ EDGAR (`fetch.py`
 chạy được từ shell trên máy người dùng — cảnh báo "container không ra được
@@ -855,6 +855,99 @@ trên cùng bộ tài liệu, cùng ngân sách, cùng trần. Theo `PREREGISTRA
 hai chỉ số phải báo cáo cùng lúc — tỷ lệ lỗi câm giảm bao nhiêu, **VÀ** chỉ
 số chống bịa có tăng không. Thắng chiều một mà thua chiều hai là kết quả
 tiêu cực và phải nói ra. Đếm riêng `vo_nghiem` với `vuot_tran_thay_doi`.
+
+### 13b. Lượt chạy đầy đủ 14 công ty — và phép đo giải thích nó
+
+**24/08/2026, sau pilot Apple.** Đã chạy trên 26 hồ sơ của 14 công ty
+(`data/output/moc3_15congty.md`), 400 lượt, mỗi lượt tiêm đúng 1 lỗi.
+
+| Chỉ số | Đề xuất | Baseline 9 |
+|---|---:|---:|
+| Tỷ lệ lỗi câm sau sửa | 0.005 | 0.006 |
+| Tỷ lệ bịa | 0.005 | 0.006 |
+| Định vị đúng trường bị lỗi | 0.212 | **0.295** |
+| VERIFIED / REPAIRED / ABSTAIN | 106 / 122 / 172 | 106 / 234 / 60 |
+
+Đọc thô thì baseline 9 thắng chỉ số định vị, tức chạm điều kiện dừng của
+`PREREGISTRATION.md` mục 4. **Nhưng phép đo bên dưới cho thấy con số đó
+không đo phương pháp.**
+
+#### Độ phủ ứng viên — phép đo phải chạy trước khi đọc bảng trên
+
+Câu hỏi: khi tiêm 1 lỗi, giá trị THẬT của ô bị hỏng có nằm trong tập ứng
+viên sinh từ tài liệu không? Nếu không thì việc `diagnose()` bỏ phiếu
+trắng chẳng nói gì về phương pháp — nó nói tầng XBRL không chứa thông tin
+để đọc lại. Kết quả ở `data/output/moc3_do_phu_ung_vien.md`:
+
+| Chế độ lỗi | Lượt | Phủ trước trần | Phủ sau trần |
+|---|---:|---:|---:|
+| `sign` | 130 | 1.000 | 1.000 |
+| `digit_substitution` | 130 | 0.092 | 0.046 |
+| `row_shift` | 130 | 0.008 | 0.008 |
+| `col_shift` | 10 | 0.000 | 0.000 |
+| **TỔNG** | 400 | 0.357 | 0.343 |
+
+Nguồn `tu_o_lan_can()` sinh đúng giá trị thật **0 lần trên 400**, dù
+docstring của nó tự mô tả là "nguồn giá trị nhất".
+
+#### Ba kết luận, theo thứ tự quan trọng
+
+**1. Phương pháp đã hành xử ĐÚNG như thiết kế, và điều đó bị chỉ số che
+mất.** Phủ 137/400, REPAIRED 122, VERIFIED 106 — tức `diagnose()` sửa gần
+đúng khi và chỉ khi tài liệu chứa câu trả lời, và im lặng khi không chứa.
+Nó không bịa lấy một lần trong 400 lượt. Đó chính là luận điểm của bài
+báo. Tính riêng trên các lượt CÓ RA TAY: đề xuất ~85/122 ≈ 70% định vị
+đúng, baseline 9 ~118/234 ≈ 50%. Baseline thắng bảng tổng vì nó giải LP
+nên nặn được số thực bất kỳ ([diagnose.py](src/repair/diagnose.py) hàm
+`diagnose_fellegi_holt_donor`) — nó đoán nhiều gấp đôi và trúng ít hơn.
+
+**2. Độ phủ `digit_sub` thấp là do HAI MÔ HÌNH LỖI KHÔNG KHỚP, không phải
+lỗi bộ sinh ứng viên.** Bộ tiêm `_doi_mot_chu_so()` đổi một chữ số sang
+"một chữ số khác bất kỳ", đều xác suất trên 9 chữ số còn lại. Bộ sinh
+`tu_nham_chu_so()` chỉ đảo 4 cặp `CAP_CHU_SO_NHAM = (0,8) (1,7) (3,8)
+(5,6)`. Xác suất trùng ≈ (7/10) × (1/9) ≈ 0.078, đo được 0.092 — khớp gần
+hoàn toàn. Con số 9.2% là tỷ lệ trùng của hai bảng chữ số, không mang
+thông tin gì về phương pháp.
+
+**3. `row_shift` không đo được VỀ NGUYÊN TẮC ở tầng XBRL.** Khi một ô bị
+ghi đè bằng giá trị dòng bên cạnh, giá trị gốc biến mất khỏi bảng. Pipeline
+thật đọc lại ảnh là lấy lại được; tầng XBRL không có ảnh. Cùng lý do đó,
+`tu_phieu_vlm()` cũng không đóng góp gì vì không có phiếu VLM. Nghĩa là ta
+đang đo phương pháp trong điều kiện bị tháo mất một phần cơ chế.
+
+#### CẠM BẪY — đọc trước khi định chạy lại
+
+Cho bộ tiêm và bộ sinh ứng viên dùng CHUNG một ma trận nhầm lẫn sẽ đẩy độ
+phủ `digit_sub` lên gần 1.0, làm ABSTAIN sụp xuống, và phương pháp đề xuất
+gần như chắc chắn thắng baseline 9. **Tham số này quyết định kết quả của
+cả thí nghiệm.** Chỉnh nó SAU KHI đã thấy kết quả chính là thứ
+preregistration sinh ra để ngăn.
+
+Cách hợp lệ duy nhất: đo ma trận nhầm lẫn chữ số **từ dữ liệu thật** —
+chạy EasyOCR trên các báo cáo trong `data/` và đối chiếu với nhãn — rồi
+dùng đúng ma trận đó cho CẢ HAI phía, và ghi vào `PREREGISTRATION.md` như
+một tu chính TRƯỚC khi chạy lại. Ghi rõ trong bài rằng ma trận đến từ đo
+đạc chứ không phải chọn tay.
+
+#### Trạng thái Mốc 3
+
+**VẪN CHƯA ĐÓNG**, và lý do nay đã cụ thể hơn trước:
+
+1. Ma trận nhầm lẫn chữ số chưa đo từ dữ liệu thật (chặn `digit_sub`).
+2. Cột kỳ so sánh rỗng nên `col_shift` bỏ 120/130 lượt.
+3. `row_shift` cần ảnh, tức cần `data/gold`, không cứu được ở tầng XBRL.
+4. Chỉ số định vị hiện phạt ABSTAIN, tức đo mức sẵn sàng đoán chứ không đo
+   độ đúng. Cần quyết cách chấm — đề nghị báo cáo cả hai: định vị trên
+   toàn bộ lượt VÀ định vị có điều kiện trên các lượt có ra tay, kèm tỷ lệ
+   ra tay. Đây là quyết định của người dùng, chưa chốt.
+5. Toàn bộ dữ liệu là doanh nghiệp Mỹ theo US-GAAP, chưa có báo cáo Việt
+   Nam nào.
+
+Script đo độ phủ nằm ngoài repo (thư mục tạm của phiên). Nếu cần chạy lại
+thì viết lại theo mô tả trên: nạp hồ sơ, tiêm 1 lỗi, dựng ứng viên bằng
+`_ung_vien_cho_bang()`, đếm xem `InjectedError.original` có khớp ứng viên
+nào của `InjectedError.concept` không, so khớp theo tỷ lệ chứ không tuyệt
+đối vì giá trị cỡ 1e13.
 
 ---
 
@@ -946,13 +1039,16 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
 
 Cập nhật 24/08/2026. Hai việc đầu của danh sách cũ **đã xong**: cách xử lý
 thành phần thiếu đã quyết và thi công (phương án C, mục 12), và dữ liệu XBRL
-đã tải (15 công ty, 26 hồ sơ). Đường găng vẫn đi qua Mốc 3, và nó vẫn chưa
-đóng.
+đã tải (15 công ty, 26 hồ sơ), và lượt chạy Mốc 3 đầy đủ đã xong (mục 13b).
+Đường găng vẫn đi qua Mốc 3, và nó vẫn chưa đóng — nay vì phép đo chưa hợp
+lệ chứ không phải vì chưa chạy.
 
-1. **Chạy xong MỐC 3 và đọc kết quả** (mục 13). Lệnh ở mục 15. **CHẬM** —
-   bảng XBRL Mỹ có 150–250 chỉ tiêu nên `diagnose()` phải duyệt `C(n,2)` tổ
-   hợp; đo được khoảng **3–4 phút một hồ sơ**, tức chừng **90 phút** cho 26
-   hồ sơ. Chạy nền và đừng tưởng nó treo: tiến độ in ra stderr.
+1. **Đo ma trận nhầm lẫn chữ số từ dữ liệu thật** (mục 13b). Lượt chạy đầy
+   đủ 26 hồ sơ ĐÃ XONG, nhưng phép đo độ phủ ứng viên cho thấy bộ tiêm và bộ
+   sinh ứng viên đang dùng hai mô hình lỗi khác nhau, nên chỉ số `digit_sub`
+   không mang thông tin về phương pháp. Phải đo ma trận từ EasyOCR trên báo
+   cáo thật, dùng chung cho cả hai phía, và ghi tu chính vào
+   `PREREGISTRATION.md` TRƯỚC khi chạy lại — xem cạm bẫy ở mục 13b.
 2. **Quyết cách tính chỉ số định vị khi một phương pháp TỪ CHỐI trả lời.**
    Đây là quyết định của người, và nó đổi kết luận. Baseline 9 không bao giờ
    ABSTAIN nên luôn có cơ hội định vị đúng; phương pháp đề xuất ABSTAIN khi
@@ -984,7 +1080,7 @@ một câu hỏi khác hẳn.
 
 ### Ba việc song song, không cái nào chặn cái nào
 
-- **Người dùng chạy `fetch.py`** (mục 13). Vài phút, và nó mở khoá MỐC 3.
+- ~~Người dùng chạy `fetch.py`~~ — **đã xong**, 26 hồ sơ trong `data/xbrl/`.
 - **Tìm người hướng dẫn hoặc đồng tác giả.** Đây là việc nâng xác suất được
   nhận nhiều nhất trên mỗi đơn vị công sức — hơn bất kỳ thí nghiệm nào còn
   lại. Bài Q1 đầu tay không có người hướng dẫn mạnh thường chết ở khâu

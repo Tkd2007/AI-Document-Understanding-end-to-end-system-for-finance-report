@@ -714,8 +714,28 @@ quả, đừng để suy ra từ sự vắng mặt của khoá khác.
 3. `FIELD_RATIO_BOUNDS` và `REVENUE_TO_ASSETS_LIMIT` — hiệu chỉnh trên
    **đúng một công ty** (VNM Q1/2026). Người dùng đã ra chỉ thị rõ: **không
    chỉnh các ngưỡng này khi dữ liệu mới chỉ có một công ty**.
-4. `MAX_CHANGES_MAC_DINH = 2` — đo trên bài toán 8 chỉ tiêu, **chưa đo trên
-   25**. Đo lại sau khi chốt bộ trường.
+4. `MAX_CHANGES_MAC_DINH = 2` — **ĐÃ ĐO LẠI 24/08/2026 trên bộ chỉ tiêu đã
+   chốt, giữ nguyên giá trị 2.** Số đo cũ lấy trên bảng 8 chỉ tiêu của tầng
+   XBRL; số mới lấy trên chính ma trận ràng buộc TT200/TT99, ca vô nghiệm
+   (đắt nhất), 5 ứng viên mỗi chỉ tiêu:
+
+   | Chuẩn | Chỉ tiêu | Ứng viên | `max_changes` | Thời gian |
+   |---|---:|---:|---:|---:|
+   | TT200 | 20 | 100 | 2 | **33 ms** |
+   | TT200 | 20 | 100 | 3 | 958 ms |
+   | TT200 | 20 | 100 | không đặt | **hết giờ 30 s** |
+   | TT99 | 21 | 105 | 2 | **56 ms** |
+   | TT99 | 21 | 105 | 3 | 1 128 ms |
+   | TT99 | 21 | 105 | không đặt | **hết giờ 30 s** |
+
+   Kết luận: trần 2 vẫn thừa sức ở bộ 21, và **mỗi nấc `max_changes` đắt lên
+   khoảng 20 lần**. Bỏ trần thì vẫn hết giờ y như ở bộ 8 — chi phí nằm trọn ở
+   việc chứng minh KHÔNG có nghiệm, đúng như kết luận cũ.
+
+   Hệ quả cho việc mở rộng bộ chỉ tiêu về sau: ở `max_changes = 2` chi phí đi
+   theo `C(n,2)`, nên tăng từ 21 lên 40 chỉ tiêu chỉ đắt lên chừng 3,7 lần —
+   vẫn dưới một phần tư giây. **Ràng buộc thật khi mở rộng là chi phí gán
+   nhãn tay, không phải chi phí tính toán.**
 5. Bảng bốn cặp nhầm chữ số trong `repair/candidates.py` — cặp áp đảo `9→0`
    **không nằm trong bảng**. Lý do chưa sửa ở mục 9.
 6. `MAX_UPLOAD_BYTES = 50 MB` trong `api.py` — chọn theo đúng một tài liệu.

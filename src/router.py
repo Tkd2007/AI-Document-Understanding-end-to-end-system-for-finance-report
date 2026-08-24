@@ -27,10 +27,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from extract_baseline import extract_all_fields
+from extract_baseline import extract_all_fields, tim_theo_ma_so, tong_hop_dau_vet
 from extract_vlm import extract_fields_from_regions, require_config
 from extraction_types import ExtractionResult, FieldResult
-from fields_config import DEFAULT_STANDARD, UNIT_KEY, Standard, empty_result
+from fields_config import DEFAULT_STANDARD, UNIT_KEY, Standard, empty_result, fields_for
 from metrics import RunMetrics, merge_into_totals, thong_tin_tai_lap, timer
 from ocr_baseline import iter_table_regions, ocr_page_regions
 from validation import has_required_fields, validate_result
@@ -61,6 +61,18 @@ USE_OCR_FIRST = _co_bat("USE_OCR_FIRST")
 # Đây là mục rẻ nhất trong cả kế hoạch thi công, và bỏ qua nó thì toàn bộ
 # kết quả H1 vô giá trị bất kể phần còn lại làm tốt tới đâu.
 DISABLE_CONSTRAINT_GATE = _co_bat("DISABLE_CONSTRAINT_GATE")
+
+# Tắt bước dò sự tồn tại của dòng theo mã số.
+#
+# Probe chạy EasyOCR trên các trang đã duyệt, nên nó CÓ chi phí — đó là cái
+# giá của việc phân biệt "dòng vắng mặt" với "dòng đọc hỏng" mà không phải
+# hỏi model. Cờ này để đo đúng cái giá đó, và để chạy nhanh khi không cần.
+#
+# TẮT LÀ AN TOÀN, KHÔNG PHẢI NGƯỢC LẠI: không có dấu vết thì mọi chỉ tiêu
+# thiếu giá trị mang trạng thái "khong_doc_duoc", tức KHÔNG kết luận gì và
+# không gán 0 cho ai. Hệ quả là đẳng thức phân rã lại hay bị bỏ qua như
+# trước — mất tính năng, không sinh số sai.
+DISABLE_LINE_PROBE = _co_bat("DISABLE_LINE_PROBE")
 
 # Khoá tạm để nhánh VLM chuyển meta của nó ra tới route_document, tách khỏi
 # các khoá dùng cho thong_tin_tai_lap(). Đặt tên thành hằng số thay vì viết
@@ -101,6 +113,99 @@ def chon_chuan(standard: Standard | None) -> tuple[Standard, str]:
         f"dòng và sai bộ đẳng thức."
     )
     return DEFAULT_STANDARD, "mac_dinh"
+
+
+def do_dau_vet_dong(cached_pages: list, standard: Standard, metrics=None) -> dict:
+    """
+    OCR các trang ĐÃ DUYỆT rồi dò từng chỉ tiêu theo mã số dòng.
+
+    Trả về {field: DauVetDong} đã gộp qua mọi trang.
+
+    VÌ SAO PHẢI CHẠY OCR Ở ĐÂY, dù nhánh OCR đang tắt mặc định. Câu hỏi
+    "dòng này có trên biểu mẫu không" chỉ trả lời được từ chính tài liệu,
+    và đường VLM không sinh ra một chữ text nào — nó gửi ảnh vùng thẳng cho
+    model. Báo cáo mẫu lại là bản scan (`pdftotext -layout` chỉ ra 152 ký
+    tự cho 12 trang), nên đường rẻ hơn là đọc text layer cũng không dùng
+    được. Không có OCR thì không có oracle.
+
+    HAI THỨ LÀM CHI PHÍ ĐÓ CHỊU ĐƯỢC:
+
+    Một, probe dò theo MÃ SỐ chứ không theo tên chỉ tiêu. Mã số là chữ số,
+    và `data/output/ocr_engine_easyocr.md` đo EasyOCR đạt 0,999 Levenshtein
+    trên ô số. Chỗ EasyOCR hỏng là chữ tiếng Việt có dấu — thứ probe không
+    dùng tới. Nên probe đứng vững ở đúng chỗ nhánh regex từng thất bại.
+
+    Hai, nó chỉ chạy trên `cached_pages`, tức những trang pipeline THẬT SỰ
+    đã duyệt. Convert PDF và YOLO đã chạy rồi và kết quả nằm sẵn trong đó,
+    nên probe không mua lại hai khâu đắt nhất; dừng sớm ở trang 10 nghĩa là
+    probe cũng chỉ đọc 10 trang.
+
+    Tắt bằng DISABLE_LINE_PROBE=true. Khi tắt thì mọi chỉ tiêu thiếu giá
+    trị đều mang trạng thái "khong_doc_duoc" — an toàn, vì đó là kết luận
+    KHÔNG suy ra điều gì.
+    """
+    dau_vet_tung_trang: dict[str, list] = {khoa: [] for khoa in fields_for(standard)}
+
+    for page in cached_pages:
+        with timer(metrics, "line_probe_ocr"):
+            text = ocr_page_regions(page)["text"]
+
+        for khoa in dau_vet_tung_trang:
+            dau_vet_tung_trang[khoa].append(tim_theo_ma_so(text, khoa, standard))
+
+    return {
+        khoa: tong_hop_dau_vet(cac_dau_vet)
+        for khoa, cac_dau_vet in dau_vet_tung_trang.items()
+    }
+
+
+def dien_dong_vang_mat(gia_tri: dict, dau_vet: dict) -> tuple[dict, dict]:
+    """
+    Điền 0 cho dòng VẮNG MẶT, giữ None cho dòng chưa biết. Trả (giá trị, trạng thái).
+
+    Ba trạng thái đi ra, tập ĐÓNG:
+      "co_gia_tri"     — đọc được số.
+      "vang_mat"       — biểu mẫu không có dòng đó, nên giá trị là 0.
+      "khong_doc_duoc" — có dòng mà không đọc ra, hoặc probe không kết luận
+                         được. Giá trị giữ None, nghĩa là CHƯA BIẾT.
+
+    VÌ SAO VẮNG MẶT LÀ 0 CHỨ KHÔNG PHẢI None. TT99 mục 1.2.3 bảo đảm "các
+    chỉ tiêu không có số liệu được miễn trình bày", tức văn bản pháp quy
+    khẳng định phần vắng mặt không đóng góp vào tổng. Chính báo cáo VNM in
+    công thức rút gọn của nó — `100 = 110 + 120 + 130 + 140 + 160`, bỏ hẳn
+    mã 150 — nên doanh nghiệp lập báo cáo cũng hiểu vắng mặt là bằng không.
+
+    Guideline gán nhãn mục 3.4 đã quy định gold ghi `0` cho ca này. Pipeline
+    trả None thì `eval/metrics.py` tính là SAI ("None chỉ khớp với None"),
+    nên field_accuracy và document_fully_correct bị trừ điểm oan trên mọi
+    tài liệu có dòng vắng mặt. Đây là chỗ đóng khoảng cách đó.
+
+    CHỖ NGUY HIỂM, ĐỌC KỸ TRƯỚC KHI SỬA: chỉ được gán 0 khi oracle KHẲNG
+    ĐỊNH dòng vắng. Gán 0 cho ca "chưa biết" là bịa ra một con số, và nó
+    không dừng ở đó — đẳng thức sẽ lệch đúng bằng giá trị thật bị mất, rồi
+    C1/C2 đi tìm ứng viên sửa cho nhầm chỉ tiêu.
+    """
+    ra_gia_tri = dict(gia_tri)
+    ra_trang_thai = {}
+
+    for khoa, gia_tri_hien_co in gia_tri.items():
+        if khoa == UNIT_KEY:
+            continue
+
+        if gia_tri_hien_co is not None:
+            ra_trang_thai[khoa] = "co_gia_tri"
+            continue
+
+        # Không có dấu vết nghĩa là probe chưa chạy hoặc không phủ tới chỉ
+        # tiêu này. Mặc định phải là "chưa biết", không phải "vắng mặt".
+        ket_luan = dau_vet.get(khoa)
+        if ket_luan is not None and ket_luan.trang_thai == "khong_thay_dong":
+            ra_gia_tri[khoa] = 0
+            ra_trang_thai[khoa] = "vang_mat"
+        else:
+            ra_trang_thai[khoa] = "khong_doc_duoc"
+
+    return ra_gia_tri, ra_trang_thai
 
 
 def khung_rong(standard: Standard) -> dict[str, FieldResult]:
@@ -369,7 +474,19 @@ def route_document(
         # chuỗi, nên nếu lưu thẳng result thô thì file _routed.json và
         # response HTTP sẽ khác nhau về kiểu dữ liệu cho cùng một lượt
         # chạy — rất khó lần khi đi đối chiếu.
-        da_kiem = validate_result(gia_tri_tran(result), standard)
+        # Dò sự tồn tại của dòng TRƯỚC khi kiểm đẳng thức, vì kết quả dò
+        # quyết định chỉ tiêu nào được điền 0. Điền sau bước kiểm thì đẳng
+        # thức vẫn bị bỏ qua đúng như cũ và cả cơ chế thành vô nghĩa.
+        dau_vet = (
+            {}
+            if DISABLE_LINE_PROBE
+            else do_dau_vet_dong(cached_pages, standard, metrics)
+        )
+        gia_tri_da_dien, trang_thai_chi_tieu = dien_dong_vang_mat(
+            gia_tri_tran(result), dau_vet
+        )
+
+        da_kiem = validate_result(gia_tri_da_dien, standard)
         data = da_kiem["data"]
 
         # Ghi giá trị đã ép kiểu và quy đổi NGƯỢC vào FieldResult, giữ
@@ -405,6 +522,12 @@ def route_document(
                 **meta_vlm,
                 **da_kiem["meta"],
                 "standard_nguon": nguon_chuan,
+                # Vì sao trạng thái phải đi kèm giá trị: sau bước điền, một
+                # số 0 trong data có thể là "doanh nghiệp khai bằng 0" hoặc
+                # "biểu mẫu không có dòng đó". Hai chuyện khác hẳn nhau khi
+                # phân tích, và không suy ra được từ chính con số 0.
+                "trang_thai_chi_tieu": trang_thai_chi_tieu,
+                "line_probe": not DISABLE_LINE_PROBE,
             },
             warnings=da_kiem["warnings"],
         )

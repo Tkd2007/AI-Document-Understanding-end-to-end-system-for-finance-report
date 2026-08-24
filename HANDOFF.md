@@ -814,16 +814,89 @@ Mốc 1 đã đóng, nên đường găng giờ đi qua Mốc 3.
    đã sai.
 4. **Sau khi qua Mốc 3:** C3 rồi C4, rồi D2/D3/D4.
 
-Ngoài đường găng, ba việc phải xong trước khi có con số vào paper, và không
-việc nào chặn việc nào:
+### ĐỪNG gán nhãn trước khi biết kết quả MỐC 3
 
-- **Pilot 20 tài liệu gold** rồi tính lại power (MỐC 2). Guideline đã sẵn
-  sàng, bộ chỉ tiêu đã chốt, nên việc này bắt đầu được ngay.
-- **Chốt người gán nhãn thứ hai** cho 20 tài liệu, hoặc dùng phương án dự
-  phòng ở `ADDENDUM` mục 5 (tự gán lại sau hai tuần).
-- **Đo trần người** trên 10 tài liệu, 15 phút mỗi tài liệu.
+Guideline đã sẵn sàng và bộ chỉ tiêu đã chốt, nên việc gán nhãn **kỹ thuật
+mà nói** bắt đầu được ngay. Đừng bắt đầu.
+
+Gán nhãn 60 tài liệu tốn khoảng **45–60 giờ công người**: tìm và tải tài
+liệu đủ tiêu chí (15–20 giờ), gán nhãn 60 × 21 chỉ tiêu (20–25 giờ), gán
+nhãn đôi 20 tài liệu và phân xử (8–10 giờ), đo trần người (3 giờ). Toàn bộ
+khoản đó phục vụ một luận điểm mà **MỐC 3 có thể bác bỏ**, và MỐC 3 chỉ tốn
+1–2 ngày cộng vài phút chạy `fetch.py`.
+
+Thứ tự đúng: MỐC 3 trước, gán nhãn sau. Nếu baseline 9 hoà thì phạm vi bài
+lùi về dataset + identifiability, và lúc đó quy mô tập gold cần bao nhiêu là
+một câu hỏi khác hẳn.
+
+### Ba việc song song, không cái nào chặn cái nào
+
+- **Người dùng chạy `fetch.py`** (mục 13). Vài phút, và nó mở khoá MỐC 3.
+- **Tìm người hướng dẫn hoặc đồng tác giả.** Đây là việc nâng xác suất được
+  nhận nhiều nhất trên mỗi đơn vị công sức — hơn bất kỳ thí nghiệm nào còn
+  lại. Bài Q1 đầu tay không có người hướng dẫn mạnh thường chết ở khâu
+  framing và khâu trả lời reviewer, không phải ở khâu kết quả.
+- **Đo throughput API thật trên 5 tài liệu.** B2 dùng self-consistency k=5;
+  nhân với 10 baseline, nhiều model, nhiều seed, cộng tầng XBRL hàng nghìn
+  tài liệu thì đây là hàng chục nghìn lời gọi trên free tier OpenRouter. Rủi
+  ro này không làm chậm lịch, nó có thể **chặn hẳn việc tạo ra con số**. Biết
+  sớm còn kịp tính chuyện trả tiền cho phần tầng XBRL.
+
+Sau khi MỐC 3 qua, mới tới: chốt người gán nhãn thứ hai (hoặc dùng phương án
+dự phòng ở `ADDENDUM` mục 5 — tự gán lại sau **ít nhất hai tuần**, nên phải
+bắt đầu sớm chứ không để cuối), pilot 20 tài liệu, tính lại power (MỐC 2),
+rồi hoàn tất 60 tài liệu.
 
 **Lưu ý khi merge sang `main`:** CI chỉ chạy trên `main` và trên pull
 request, nên lỗi thiếu thư viện ở mục 8 chỉ lộ ra ở lần merge đầu tiên. Nó
 đã được sửa, nhưng nguyên tắc thì còn: thêm bất kỳ import mức module nào
 cũng phải sửa danh sách cài trong `.github/workflows/ci.yml`.
+
+---
+
+## 17. Nơi nộp — đã chốt 24/08/2026
+
+**Đích: ICDAR 2027 main track, hạn nộp 28/02/2027.** Kuala Lumpur, 18–22/08/2027.
+Springer LNCS, tối đa 17 trang kể cả hình và tài liệu tham khảo, phản biện ẩn
+danh hai chiều có rebuttal, cho phép đăng arXiv trước.
+
+Proposal mục 13 đề xuất **ICDAR-IJDAR journal track** làm đích tốt nhất. Đã
+đổi, vì hai lý do tra được:
+
+**Một — hạn journal track là 15/11/2026, không đủ thời gian.** Còn khoảng 12
+tuần kể từ khi chốt, trong khi phần việc còn lại ước lượng 13–16 tuần: gán
+nhãn 60 tài liệu (45–60 giờ công người), chạy 10 baseline trên 3 tầng (2–3
+tuần wall-clock, phần lớn là chờ API), viết bài 20 trang (3–4 tuần). Ép vào
+12 tuần nghĩa là nộp bản chưa chín vào đúng venue khó nhất. Hạn ICDAR main
+cho **27 tuần**, và quan trọng hơn: nó chừa chỗ để lùi phạm vi nếu MỐC 3 ra
+kết quả xấu mà vẫn kịp cùng hạn đó.
+
+**Hai — journal track loại bản mở rộng từ hội nghị, và điều đó phá chiến
+lược "nộp song song" của proposal.** Nguyên văn CFP: *"Journal versions of
+previously published conference papers or survey papers will not be
+considered for this special issue."* Nên **KHÔNG nộp RIVF hay SoICT** với
+nội dung trùng — proposal mục 13 khuyên nộp song song để lấy phản biện sớm,
+và lời khuyên đó ở đây gây hại nhiều hơn lợi: nó vừa đóng cửa journal track,
+vừa tạo vấn đề trùng lặp với ICDAR main. (Hạn tham khảo nếu sau này cần: RIVF
+2026 hết 31/08/2026, SoICT 2026 hết 16/09/2026.)
+
+**Đường lên Q1 không mất.** Chính CFP đó nói bài đã đăng hội nghị vẫn nộp
+IJDAR được qua **quy trình thường**, chỉ là không vào được special issue. Lộ
+trình: ICDAR 2027 main → mở rộng thành bài IJDAR thường sau đó. IJDAR có IF
+2,5, SJR 0,83, **Q1** ở Computer Vision & Pattern Recognition (Q2 ở CS
+Applications và Software). Cái mất là slot oral tự động và thời gian.
+
+### Đối thủ mới cần thêm vào related work
+
+**FinReporting** — arXiv 2604.05966 (05/2026). Agentic workflow cho báo cáo
+tài chính đa quốc gia, ontology hợp nhất ba báo cáo, LLM làm *constrained
+verifier* dưới luật quyết định tường minh, có khâu anomaly logging; đánh giá
+trên hồ sơ Mỹ, Nhật, Trung.
+
+**Không chiếm chỗ:** nó không định vị lỗi bằng ma trận ràng buộc, không phân
+tích identifiability, và **không đọc lại ảnh nguồn để sinh ứng viên**. Là
+trích dẫn phải thêm, không phải lý do đổi hướng. Nhưng nó cho thấy mảng này
+đang lấp dần, nên đừng kéo dài quá hạn 28/02/2027.
+
+Luật dừng của proposal vẫn giữ: kiểm lại arXiv **một lần duy nhất** ngay
+trước khi nộp, không tra liên tục.

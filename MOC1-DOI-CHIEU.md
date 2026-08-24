@@ -390,18 +390,25 @@ cột kỳ trước **có** ràng buộc thật nối vào, qua báo cáo lưu c
 |---|---:|---:|---:|
 | Hiện tại | 11 | 3 | 1/11 |
 | + chuỗi B03 đã xác nhận | 18 | 5 | 2/18 |
-| + phân rã TSNH (**chưa xác nhận**) | 21 | 6 | **5/21** |
+| + phân rã TSNH (**đã xác nhận**) | 21 | 6 | **5/21** |
 
 Lý do: liên kết chéo gắn đẳng thức thứ hai vào `B01.110`, nhưng `B01.110`
 phải **đã nằm trong một đẳng thức nào đó** thì mới có cái để gắn thêm. Đẳng
-thức đó là phân rã Tài sản ngắn hạn — nằm ở Điều 112, tức **Công báo 287 +
-288 mà ta chưa có**.
+thức đó là phân rã Tài sản ngắn hạn — nằm ở Điều 112.
 
-#### ĐÃ TRÍCH NỐT — 23/08/2026, đủ cả bốn số Công báo
+#### ĐÃ TRÍCH NỐT — 23/08/2026, đủ cả năm file Công báo
 
-Thêm `2015_287 + 288-200_2014_TT-BTC.pdf` (TT200, Điều 112–113) và
-`2025_1579 + 1580_99-2025-TT-BTC.doc` (TT99, Báo cáo tình hình tài chính +
-B02a). Số `1577 + 1578` **không chứa** phần báo cáo tài chính — 0 đẳng thức.
+Thêm `2015_287 + 288-200_2014_TT-BTC.pdf` (TT200, Điều 88–113, có phân rã
+Tài sản ngắn hạn ở Điều 112) và `2025_1579 + 1580_99-2025-TT-BTC.doc` (TT99,
+Báo cáo tình hình tài chính + B02).
+
+> **Đính chính.** Bản trước ghi số `1577 + 1578` "không chứa phần báo cáo
+> tài chính — 0 đẳng thức". Sai, và sai theo hướng nguy hiểm: nó không chứa
+> đẳng thức viết bằng lời, nhưng nó chính là **Phụ lục IV Mục 1 — BIỂU MẪU
+> BÁO CÁO TÀI CHÍNH**, tức đúng nguồn mà `BUILD-SPEC.md` mục A3 bắt phải lấy
+> mã số dòng TT99 từ đó thay vì từ bài tóm tắt trên mạng. Biểu mẫu còn in
+> sẵn đẳng thức ngay trong tên chỉ tiêu: `TỔNG CỘNG TÀI SẢN (280 = 100 +
+> 200)`. Đừng bỏ qua file này.
 
 Bảng cân đối / Báo cáo tình hình tài chính, **cấu trúc giống nhau ở cả hai
 chuẩn**, chỉ khác mã số Tổng cộng tài sản:

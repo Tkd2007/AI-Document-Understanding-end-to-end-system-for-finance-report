@@ -333,7 +333,8 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 - [ ] `unit_declared` chép **nguyên văn**; `unit_multiplier` khớp
 - [ ] Mọi giá trị đã quy đổi về **đồng**
 - [ ] Số âm ghi bằng dấu trừ, không phải ngoặc
-- [ ] Ô trống là `null`, khác với `0` in rõ
+- [ ] Ô trống, dấu gạch, và dòng vắng mặt đều ghi `0`; `null` **chỉ** dùng
+      khi có dòng mà đọc không ra (mục 3.4)
 - [ ] Đã đối chiếu **mã số**, không chỉ tên chỉ tiêu
 - [ ] Đã kiểm riêng các cặp dễ nhầm ở mục 3.6
 - [ ] Không sửa số cho cân đẳng thức; lệch đáng kể thì ghi `notes`
@@ -347,4 +348,28 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 > Mọi thay đổi guideline ghi vào đây kèm **ngày** và **lý do**, và ghi rõ
 > **những tài liệu nào phải gán nhãn lại**. Không sửa đè lên nội dung trên.
 
-*(chưa có sửa đổi nào)*
+### 23/08/2026 — Bộ chỉ tiêu, phạm vi biểu mẫu, và quy tắc ô trống
+
+**Phải gán nhãn lại: không tài liệu nào.** Chưa có tài liệu nào được gán
+nhãn tại thời điểm sửa (`data/gold/` còn trống), nên Luật 3 được thoả mà
+không tốn công làm lại.
+
+Bốn thay đổi, đều là hệ quả của việc Mốc 1 chốt bộ chỉ tiêu ở kịch bản D:
+
+**(a) Bộ chỉ tiêu lên 21 với TT99 và 20 với TT200** (trước là 11). Danh sách
+chính thức nằm ở `FIELD_MAP` trong `src/fields_config.py`, không chép lại
+vào guideline để hai bản khỏi lệch nhau.
+
+**(b) Hai ô phạm vi ở mục 2 đã chốt:** không gán nhãn B03, không gán nhãn
+cột kỳ so sánh. Lý do đầy đủ ở `PREREGISTRATION.md` mục Sửa đổi cùng ngày.
+
+**(c) Mục 3.4 đổi quy tắc ô trống: dòng vắng mặt ghi `0`, không phải `null`.**
+Đây là thay đổi có ảnh hưởng thật tới số liệu, nên nêu lý do đầy đủ ngay
+trong mục 3.4. Tóm tắt: bước kiểm đẳng thức bỏ qua **cả đẳng thức** nếu bất
+kỳ thành phần nào là `null`, mà đẳng thức phân rã tài sản ngắn hạn có 5–6
+thành phần — nên quy tắc cũ làm đẳng thức giá trị nhất im lặng không chạy
+trên phần lớn tài liệu. `null` từ nay chỉ có nghĩa "có dòng mà đọc không
+ra". Danh mục kiểm ở mục 8 đã sửa theo.
+
+**(d) Mục 3.6 thêm ba mã đổi nghĩa giữa hai chuẩn** (270, 150, 142) và các
+cặp dễ nhầm mới sinh ra từ bộ chỉ tiêu mở rộng.

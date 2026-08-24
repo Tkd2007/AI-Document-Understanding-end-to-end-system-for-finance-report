@@ -51,8 +51,8 @@ file — chi tiết ở mục Usage.
 Router coi kết quả là **đạt** khi thoả cả hai điều kiện:
 
 1. Có đủ các chỉ tiêu **bắt buộc** (`required` trong `FIELD_RULES`) — không đòi đủ
-   cả 11 field, vì danh sách càng dài thì càng dễ thiếu một chỉ tiêu phụ và lần nào
-   cũng phải fallback.
+   mọi field, vì danh sách càng dài thì càng dễ thiếu một chỉ tiêu phụ và lần nào
+   cũng phải fallback. Điều này càng đúng sau khi Mốc 1 mở bộ chỉ tiêu lên 21.
 2. `validate_result()` **không sinh warning nào**. Chỉ kiểm tra "có giá trị" là chưa
    đủ: regex có thể bắt trúng một con số SAI (không phải `None`) và router sẽ tin
    dùng luôn mà không bao giờ gọi VLM.
@@ -72,10 +72,16 @@ số sai vẫn nằm nguyên đó và cả validation gate thành vô nghĩa.
 - Nhánh VLM một mình trả đúng cả 11/11 field và dừng ở trang 10.
 
 Từ đó regex đã khá lên nhiều nhờ dò theo **mã số dòng** và luật loại trừ hai chiều:
-trên đúng OCR text ấy, nhánh regex hiện trích đúng **11/11 chỉ tiêu** và không sinh
+trên đúng OCR text ấy, nhánh regex trích đúng **11/11 chỉ tiêu** và không sinh
 warning nào — tức là sẽ không cần fallback VLM nữa. Nhưng mặc định vẫn để `false`
 cho tới khi đo được trên nhiều báo cáo khác, vì đây mới là **một** tài liệu và
 regex vốn nhạy với cách OCR cắt chữ ở từng bản in.
+
+> **Mọi con số 11/11 ở trên đo dưới bộ chỉ tiêu CŨ (11 chỉ tiêu).** Mốc 1 ngày
+> 23/08/2026 đã mở bộ chỉ tiêu lên 21 với TT99 và 20 với TT200, và **chưa đo lại**.
+> Mười chỉ tiêu mới đều là dòng chi tiết nằm sâu hơn trong bảng, nên đừng suy ra
+> rằng tỷ lệ sẽ giữ nguyên — nhất là với nhánh regex, vốn nhạy với cách OCR cắt
+> chữ. Đo lại là một phần của pilot ở MỐC 2.
 
 Code nhánh OCR được **giữ nguyên**, bật lại bằng `USE_OCR_FIRST=true` trong `.env`.
 
@@ -578,10 +584,12 @@ khớp `FORM_MARKERS` của đúng mẫu đó.
   và cắt riêng từng vùng bảng trước khi đưa vào OCR/VLM.
 - **OCR Pipeline** (EasyOCR + regex): working nhưng **tắt mặc định**
   (`USE_OCR_FIRST=false`). Trên OCR text của báo cáo VNM Q1/2026, kết hợp alias +
-  mã số dòng hiện trích đúng **11/11 chỉ tiêu**, nhưng vẫn chậm hơn nhiều so với
-  chạy thẳng VLM — xem phần lý do ở trên.
+  mã số dòng trích đúng **11/11 chỉ tiêu** *dưới bộ chỉ tiêu cũ*, nhưng vẫn chậm
+  hơn nhiều so với chạy thẳng VLM — xem phần lý do ở trên. Bộ 21 chỉ tiêu sau Mốc 1
+  chưa đo lại.
 - **VLM Pipeline** (Gemma 4 31B via OpenRouter): working, verified accurate
-  on the same 54-page report — 11/11 field, dừng sớm ở trang 10. Có retry với
+  on the same 54-page report — 11/11 field *dưới bộ chỉ tiêu cũ*, dừng sớm ở
+  trang 10. Có retry với
   exponential backoff khi gặp 429, và dừng sớm theo `PATIENCE_PAGES`.
 - **Document Classifier & Router**: implemented — gọi VLM khi kết quả chưa đủ
   field bắt buộc **hoặc** validation còn warning. Layout detection và convert

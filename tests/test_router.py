@@ -72,6 +72,15 @@ def _lap_pipeline_gia(monkeypatch, ket_qua_vlm: dict):
     và hai chỗ ghi số liệu. Phần logic điều phối — thứ duy nhất đang được
     test — giữ nguyên.
     """
+    # GHIM cờ nhánh OCR thay vì để nó đọc từ .env.
+    #
+    # router.USE_OCR_FIRST được đọc MỘT LẦN lúc import, nên không ghim thì
+    # cả bộ test đổi hành vi theo cấu hình máy người chạy: bật lên là
+    # route_document đi nhánh OCR, mà nhánh đó cần ảnh thật nên mọi test
+    # dựng pipeline giả sẽ đỏ vì lý do chẳng liên quan tới thứ đang kiểm.
+    # Đã xảy ra thật khi người dùng đổi .env thành true.
+    monkeypatch.setattr(router, "USE_OCR_FIRST", False)
+
     monkeypatch.setattr(router, "require_config", lambda: None)
     monkeypatch.setattr(router, "iter_table_regions", lambda *a, **k: iter([]))
     monkeypatch.setattr(
@@ -224,6 +233,15 @@ def test_meta_giu_lai_early_stop_cua_nhanh_vlm(monkeypatch):
         "trang_cuoi": 7,
         "field_con_thieu": ["hang_ton_kho"],
     }
+    # GHIM cờ nhánh OCR thay vì để nó đọc từ .env.
+    #
+    # router.USE_OCR_FIRST được đọc MỘT LẦN lúc import, nên không ghim thì
+    # cả bộ test đổi hành vi theo cấu hình máy người chạy: bật lên là
+    # route_document đi nhánh OCR, mà nhánh đó cần ảnh thật nên mọi test
+    # dựng pipeline giả sẽ đỏ vì lý do chẳng liên quan tới thứ đang kiểm.
+    # Đã xảy ra thật khi người dùng đổi .env thành true.
+    monkeypatch.setattr(router, "USE_OCR_FIRST", False)
+
     monkeypatch.setattr(router, "require_config", lambda: None)
     monkeypatch.setattr(router, "iter_table_regions", lambda *a, **k: iter([]))
     monkeypatch.setattr(

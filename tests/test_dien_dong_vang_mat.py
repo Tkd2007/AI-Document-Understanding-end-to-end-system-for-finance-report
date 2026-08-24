@@ -192,6 +192,9 @@ def _lap_pipeline_co_ocr(monkeypatch, gia_tri_vlm: dict, text_ocr: str):
             meta={"don_vi_tinh": gia_tri_vlm.get("don_vi_tinh")},
         )
 
+    # Ghim cờ nhánh OCR — xem chú thích trong tests/test_router.py.
+    monkeypatch.setattr(router, "USE_OCR_FIRST", False)
+
     monkeypatch.setattr(router, "require_config", lambda: None)
     monkeypatch.setattr(
         router, "iter_table_regions", lambda *a, **k: iter([{"page": 1, "regions": []}])

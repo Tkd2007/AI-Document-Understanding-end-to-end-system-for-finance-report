@@ -115,7 +115,30 @@ def chon_chuan(standard: Standard | None) -> tuple[Standard, str]:
     return DEFAULT_STANDARD, "mac_dinh"
 
 
-def do_dau_vet_dong(cached_pages: list, standard: Standard, metrics=None) -> dict:
+def text_ocr_cua_trang(page, bo_nho: dict, metrics=None) -> str:
+    """
+    Text OCR của một trang, đọc một lần rồi nhớ lại theo số trang.
+
+    VÌ SAO CẦN GHI NHỚ. Khi USE_OCR_FIRST bật, cùng một trang bị OCR ở HAI
+    chỗ: nhánh regex đọc nó để trích chỉ tiêu, rồi bước dò sự tồn tại của
+    dòng đọc lại đúng trang ấy. EasyOCR chạy CPU và là khâu đắt nhất còn
+    lại sau khi convert PDF với YOLO đã được cache, nên đọc hai lần là
+    nhân đôi đúng chỗ đắt nhất.
+
+    Khoá theo số trang chứ không theo object: `_remaining_pages()` yield
+    lại chính các dict trong cached_pages nên so sánh đồng nhất cũng chạy,
+    nhưng số trang là khoá ổn định và đọc log ra hiểu ngay.
+    """
+    so_trang = page["page"]
+    if so_trang not in bo_nho:
+        with timer(metrics, "ocr"):
+            bo_nho[so_trang] = ocr_page_regions(page)["text"]
+    return bo_nho[so_trang]
+
+
+def do_dau_vet_dong(
+    cached_pages: list, standard: Standard, bo_nho_text: dict, metrics=None
+) -> dict:
     """
     OCR các trang ĐÃ DUYỆT rồi dò từng chỉ tiêu theo mã số dòng.
 
@@ -147,8 +170,7 @@ def do_dau_vet_dong(cached_pages: list, standard: Standard, metrics=None) -> dic
     dau_vet_tung_trang: dict[str, list] = {khoa: [] for khoa in fields_for(standard)}
 
     for page in cached_pages:
-        with timer(metrics, "line_probe_ocr"):
-            text = ocr_page_regions(page)["text"]
+        text = text_ocr_cua_trang(page, bo_nho_text, metrics)
 
         for khoa in dau_vet_tung_trang:
             dau_vet_tung_trang[khoa].append(tim_theo_ma_so(text, khoa, standard))
@@ -292,25 +314,25 @@ def _tu_extraction(extraction: ExtractionResult) -> dict[str, FieldResult]:
     return phang
 
 
-def _ocr_mot_trang(page, metrics=None) -> dict[str, FieldResult]:
+def _ocr_mot_trang(page, bo_nho_text: dict, metrics=None) -> dict[str, FieldResult]:
     """
     OCR một trang rồi trích bằng regex, trả về dạng FieldResult.
 
     Nhánh OCR không đo được confidence nên mọi giá trị đi ra với
     confidence 1.0 theo nghĩa "không đo được" — xem FieldResult.khong_do().
     """
-    with timer(metrics, "ocr"):
-        ocr_result = ocr_page_regions(page)
+    text = text_ocr_cua_trang(page, bo_nho_text, metrics)
 
     return {
         khoa: FieldResult.khong_do(gia_tri)
-        for khoa, gia_tri in extract_all_fields(ocr_result["text"]).items()
+        for khoa, gia_tri in extract_all_fields(text).items()
         if gia_tri is not None
     }
 
 
 def run_ocr_first(
-    pages_iter, cached_pages: list, result: dict, standard: Standard, metrics=None
+    pages_iter, cached_pages: list, result: dict, standard: Standard,
+    bo_nho_text: dict, metrics=None,
 ) -> dict:
     """
     Quét OCR theo từng trang, merge dần, dừng khi kết quả đã đáng tin.
@@ -324,7 +346,7 @@ def run_ocr_first(
     """
     for page in pages_iter:
         cached_pages.append(page)
-        _lap_cho_trong(result, _ocr_mot_trang(page, metrics))
+        _lap_cho_trong(result, _ocr_mot_trang(page, bo_nho_text, metrics))
 
         if is_acceptable(gia_tri_tran(result), standard):
             print(f"--- OCR đã đủ và hợp lệ, dừng ở trang {page['page']} ---")
@@ -345,7 +367,8 @@ def _remaining_pages(pages_iter, cached_pages: list):
 
 
 def run_unconstrained(
-    pages_iter, cached_pages: list, result: dict, standard: Standard, metrics=None, ghi_lai=None
+    pages_iter, cached_pages: list, result: dict, standard: Standard,
+    bo_nho_text: dict, metrics=None, ghi_lai=None,
 ) -> dict:
     """
     Chạy ĐÚNG MỘT nhánh, không cổng ràng buộc, không fallback.
@@ -368,7 +391,7 @@ def run_unconstrained(
     if USE_OCR_FIRST:
         for page in pages_iter:
             cached_pages.append(page)
-            _lap_cho_trong(result, _ocr_mot_trang(page, metrics))
+            _lap_cho_trong(result, _ocr_mot_trang(page, bo_nho_text, metrics))
 
         return result
 
@@ -453,16 +476,22 @@ def route_document(
         pages_iter = iter_table_regions(file_path, metrics)
         cached_pages: list = []
         result = khung_rong(standard)
+
+        # Text OCR dùng chung cho nhánh regex và bước dò dòng, để một trang
+        # không bị đọc hai lần khi USE_OCR_FIRST bật.
+        bo_nho_text: dict = {}
         thong_tin_vlm: dict = {}
 
         if DISABLE_CONSTRAINT_GATE:
             print("--- CỔNG RÀNG BUỘC ĐANG TẮT: chế độ ĐO, không dùng để phục vụ ---")
             result = run_unconstrained(
-                pages_iter, cached_pages, result, standard, metrics, thong_tin_vlm
+                pages_iter, cached_pages, result, standard, bo_nho_text, metrics, thong_tin_vlm
             )
         else:
             if USE_OCR_FIRST:
-                result = run_ocr_first(pages_iter, cached_pages, result, standard, metrics)
+                result = run_ocr_first(
+                    pages_iter, cached_pages, result, standard, bo_nho_text, metrics
+                )
 
             if not is_acceptable(gia_tri_tran(result), standard):
                 if USE_OCR_FIRST:
@@ -480,7 +509,7 @@ def route_document(
         dau_vet = (
             {}
             if DISABLE_LINE_PROBE
-            else do_dau_vet_dong(cached_pages, standard, metrics)
+            else do_dau_vet_dong(cached_pages, standard, bo_nho_text, metrics)
         )
         gia_tri_da_dien, trang_thai_chi_tieu = dien_dong_vang_mat(
             gia_tri_tran(result), dau_vet

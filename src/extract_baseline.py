@@ -23,6 +23,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 from fields_config import (
     DEFAULT_STANDARD,
@@ -56,6 +57,21 @@ LOOKAHEAD_CHARS = 80
 # ("Dự phòng giảm giá " trước "hàng tồn kho"). Để rộng hơn thì đoạn này
 # tràn sang cả dòng chỉ tiêu phía trên và sinh loại trừ oan.
 LOOKBEHIND_CHARS = 40
+
+# Đoạn được phép nằm giữa MÃ SỐ và giá trị của nó: hết phần còn lại của
+# dòng mang mã, cộng TỐI ĐA MỘT lần xuống dòng, cộng phần đầu dòng sau.
+#
+# VÌ SAO PHẢI CHẶN Ở MỘT DÒNG. Bản trước dùng `(.{0,80}?)` kèm cờ DOTALL,
+# tức dấu chấm nuốt cả ký tự xuống dòng. Khi ô số của một chỉ tiêu không
+# đọc được, pattern đi tiếp xuống các dòng sau và lấy về giá trị của CHỈ
+# TIÊU KẾ TIẾP — đo được: với mã 130 bị mờ, hàm trả về đúng con số của mã
+# 140. Đó là lỗi câm tệ nhất: một giá trị hợp lệ của một chỉ tiêu hoàn
+# toàn khác, không cảnh báo, không dấu vết.
+#
+# Một lần xuống dòng là đủ và cần: cột "Mã số" đứng cuối dòng nhãn nên giá
+# trị luôn nằm ở dòng ngay sau, và cho phép nhiều hơn là mở lại đúng lỗ
+# vừa bịt.
+_GIUA_MA_VA_SO = rf"[^\n]{{0,{LOOKAHEAD_CHARS}}}?\n?[^\n]{{0,{LOOKAHEAD_CHARS}}}?"
 
 
 def load_raw_text(file_path: str) -> str:
@@ -121,6 +137,116 @@ def extract_field_by_alias(text: str, field_key: str) -> int | None:
     return None
 
 
+class DauVetDong(NamedTuple):
+    """
+    Kết quả dò MỘT chỉ tiêu theo mã số trên MỘT trang, kèm lý do.
+
+    Tách giá trị khỏi lý do vì `None` trần không phân biệt được bốn chuyện
+    hoàn toàn khác nhau, và chính sự nhập nhằng đó là thứ làm bước kiểm
+    đẳng thức phải bỏ qua cả đẳng thức. Trạng thái thuộc tập ĐÓNG:
+
+      "co_gia_tri"        — thấy mã số và đọc ra số.
+      "thay_dong_khong_ra_so" — thấy mã số nhưng không có số đọc được sau
+                            nó. Dòng CÓ trên giấy, chỉ là đọc hỏng.
+      "khong_thay_dong"   — trang này đúng mẫu biểu nhưng không có mã số
+                            đó. BẰNG CHỨNG MỘT PHẦN cho việc dòng vắng
+                            mặt; chưa đủ để kết luận vì một mẫu biểu trải
+                            qua nhiều trang.
+      "khong_thay_mau_bieu" — trang này không phải mẫu biểu chứa chỉ tiêu
+                            đó, nên không kết luận được gì cả.
+      "khong_khai_bao"    — chỉ tiêu không có trong bảng mã của chuẩn này.
+
+    VÌ SAO "khong_thay_dong" CHƯA ĐỦ ĐỂ KẾT LUẬN: bảng cân đối trải qua
+    nhiều trang, và mã 150 có thể nằm ở trang sau trang mang tiêu đề mẫu
+    biểu. Kết luận "dòng vắng mặt" chỉ được rút ra sau khi đã duyệt hết
+    các trang của mẫu biểu đó — xem tong_hop_dau_vet().
+    """
+
+    gia_tri: int | None
+    trang_thai: str
+
+
+def tim_theo_ma_so(text: str, field_key: str, standard: Standard) -> DauVetDong:
+    """
+    Như extract_field_by_code() nhưng nói ra LÝ DO khi không có giá trị.
+
+    Đây là nền của phương án phân biệt "dòng vắng mặt" với "dòng đọc hỏng".
+    Bản trước gộp cả bốn ca vào một `None` trần, nên tầng trên không có
+    cách nào biết `None` nghĩa là *bằng không* hay *chưa biết* — mà hai
+    nghĩa đó dẫn tới hai hành vi trái ngược ở bước kiểm đẳng thức.
+    """
+    entry = line_codes_for(standard).get(field_key)
+    if entry is None:
+        return DauVetDong(None, "khong_khai_bao")
+
+    form, code = entry
+    marker = marker_for_form(form)
+    if marker is None or not re.search(marker, text, flags=re.IGNORECASE):
+        return DauVetDong(None, "khong_thay_mau_bieu")
+
+    # Dò sự TỒN TẠI của mã số tách khỏi việc đọc giá trị: mã số phải nằm
+    # cuối dòng đúng như pattern lấy giá trị đòi hỏi, nhưng không kèm yêu
+    # cầu phải có số phía sau. Đó chính là chỗ hai ca tách nhau.
+    co_dong = re.search(
+        rf"(?:^|\s){re.escape(code)}\s*$", text, flags=re.MULTILINE
+    )
+    if co_dong is None:
+        return DauVetDong(None, "khong_thay_dong")
+
+    pattern = (
+        rf"(?:^|\s){re.escape(code)}\s*$"
+        rf"({_GIUA_MA_VA_SO})({NUMBER_RE})"
+    )
+    for match in re.finditer(pattern, text, flags=re.MULTILINE):
+        try:
+            return DauVetDong(parse_number(match.group(2)), "co_gia_tri")
+        except ValueError:
+            continue
+
+    return DauVetDong(None, "thay_dong_khong_ra_so")
+
+
+# Thứ tự ƯU TIÊN khi gộp dấu vết của cùng một chỉ tiêu qua nhiều trang.
+#
+# Càng đầu danh sách càng mang nhiều thông tin. Gộp theo thứ tự này thay vì
+# lấy trang cuối cùng, vì một chỉ tiêu đọc được ở trang 4 không được để
+# trang 9 — trang chẳng liên quan tới mẫu biểu đó — ghi đè thành "không
+# kết luận được".
+_UU_TIEN_TRANG_THAI = (
+    "co_gia_tri",
+    "thay_dong_khong_ra_so",
+    "khong_thay_dong",
+    "khong_thay_mau_bieu",
+    "khong_khai_bao",
+)
+
+
+def tong_hop_dau_vet(cac_dau_vet: list[DauVetDong]) -> DauVetDong:
+    """
+    Gộp dấu vết của MỘT chỉ tiêu qua nhiều trang thành một kết luận.
+
+    Trả về trạng thái mang nhiều thông tin nhất trong các trang đã duyệt.
+    Danh sách rỗng nghĩa là chưa duyệt trang nào, và câu trả lời trung thực
+    cho ca đó là "không thấy mẫu biểu" — không kết luận được, chứ không
+    phải "dòng vắng mặt".
+
+    ĐÂY LÀ CHỖ AN TOÀN CỦA CẢ CƠ CHẾ. Kết luận "dòng vắng mặt" chỉ được rút
+    ra khi đã thấy mẫu biểu ở đâu đó mà không trang nào có mã số ấy. Nếu
+    rút kết luận đó từ một trang lẻ thì mọi chỉ tiêu nằm ở trang sau sẽ bị
+    coi là vắng mặt và bị gán 0 — tức bịa ra một con số, đúng thứ mà cả
+    phương án này sinh ra để tránh.
+    """
+    if not cac_dau_vet:
+        return DauVetDong(None, "khong_thay_mau_bieu")
+
+    for trang_thai in _UU_TIEN_TRANG_THAI:
+        for dau_vet in cac_dau_vet:
+            if dau_vet.trang_thai == trang_thai:
+                return dau_vet
+
+    return DauVetDong(None, "khong_thay_mau_bieu")
+
+
 def extract_field_by_code(text: str, field_key: str, standard: Standard) -> int | None:
     """
     Tìm giá trị theo MÃ SỐ dòng — dự phòng khi OCR làm hỏng tên chỉ tiêu.
@@ -135,33 +261,7 @@ def extract_field_by_code(text: str, field_key: str, standard: Standard) -> int 
     nhầm bảng mã cũng là một nguồn sai âm thầm y hệt. Bắt người gọi nói rõ
     chuẩn là cách rẻ nhất để lỗi đó không xảy ra được.
     """
-    entry = line_codes_for(standard).get(field_key)
-    if entry is None:
-        return None
-
-    form, code = entry
-    marker = marker_for_form(form)
-    if marker is None or not re.search(marker, text, flags=re.IGNORECASE):
-        return None
-
-    # Mã số phải nằm ở CUỐI một dòng. Cột "Mã số" là cột cuối trước khi
-    # sang cột giá trị, nên OCR luôn xuống dòng ngay sau nó — hoặc mã
-    # đứng riêng một dòng ("280"), hoặc khép lại dòng công thức
-    # ("...+ 260 + 270) 200"). Ràng buộc cuối dòng là thứ phân biệt mã số
-    # với một con số bất kỳ nằm giữa câu.
-    #
-    # Sau mã có thể còn cột thuyết minh (V.5, VI.1...) rồi mới tới giá
-    # trị. NUMBER_RE bắt buộc có dấu phân cách nghìn nên số thuyết minh
-    # và các mã số khác không lọt vào.
-    pattern = rf"(?:^|\s){re.escape(code)}\s*$(.{{0,{LOOKAHEAD_CHARS}}}?)({NUMBER_RE})"
-
-    for match in re.finditer(pattern, text, flags=re.MULTILINE | re.DOTALL):
-        try:
-            return parse_number(match.group(2))
-        except ValueError:
-            continue
-
-    return None
+    return tim_theo_ma_so(text, field_key, standard).gia_tri
 
 
 def extract_field(text: str, field_key: str, standard: Standard) -> int | None:

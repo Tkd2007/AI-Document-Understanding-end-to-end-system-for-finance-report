@@ -61,6 +61,24 @@ và ghi tu chính vào `PREREGISTRATION.md`.
 Lượt chạy Mốc 3 mất khoảng 90 phút nên thứ tự này có giá thật, không phải
 câu hỏi hình thức.
 
+### Câu 3 — Nhận diện chuẩn thật bằng cách nào? *(KHÔNG chặn Mốc 3, hoãn được)*
+
+Đây là **bước D** của phương án C, đã khảo sát xong nhưng chưa chọn hướng —
+bối cảnh đầy đủ ở Phụ lục B, phần "Hai vướng mắc của bước D". Hiện
+`chon_chuan()` chỉ có nguồn `tham_so` và `mac_dinh`, nên trên cấu hình mặc
+định **mọi tài liệu đều bị coi là TT99** trừ khi người gọi chỉ định tay.
+
+Vướng mắc chặn: dấu hiệu duy nhất là TÊN BÁO CÁO ở tiêu đề trang, mà
+`iter_table_regions()` chỉ trả vùng bảng đã cắt với `PADDING` 8 pixel — tiêu
+đề gần như chắc chắn nằm ngoài. Ba hướng đã nêu ở Phụ lục B: (1) OCR cả
+trang chỉ để nhận diện, (2) nới `PADDING` riêng cho bước nhận diện, (3) nhận
+diện bằng bộ MÃ SỐ thay vì bằng tên.
+
+**Việc phải làm TRƯỚC khi chọn**, và nó là việc kỹ thuật chứ không cần người
+dùng: in text OCR vài trang đầu báo cáo VNM ra xem tiêu đề có lọt vào vùng
+cắt không. Suy luận "tiêu đề nằm ngoài" mới là suy từ cấu trúc code, chưa đo
+trên tài liệu thật. Đo xong rồi hỏi thì câu hỏi mới có nghĩa.
+
 ### Đã quyết rồi, KHÔNG cần hỏi lại
 
 - Kịch bản E cho bộ chỉ tiêu (mục 17.1) — đã quyết, chưa thi công.

@@ -27,6 +27,12 @@ data/output/*
 # va cau tra loi can neo vao mot commit cu the.
 !data/output/ocr_engine_*.md
 
+# Ngoai le: bao cao Moc 3. No do tren ho so XBRL cong khai cua SEC, khong
+# co du lieu doanh nghiep Viet Nam nao trong do. Phai vao git vi Moc 3 la
+# mot MOC DUNG da dang ky truoc, va ket qua cua no — ke ca ket qua chua
+# ket luan duoc — phai neo vao mot commit cu the de doi chieu lai.
+!data/output/moc3_*.md
+
 # Van ban quy pham phap luat tai ve. Ban than van ban KHONG co ban quyen
 # (Luat So huu tri tue dieu 15), nhung file PDF cong bao nang vai chuc MB va
 # lay lai duoc bat cu luc nao tu congbao.chinhphu.vn, nen khong dua vao git.

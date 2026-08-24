@@ -64,17 +64,28 @@ CHE_DO_LOI = [ErrorType.DIGIT_SUB, ErrorType.ROW_SHIFT, ErrorType.COL_SHIFT, Err
 CAC_SEED = [0, 1, 2, 3, 4]
 
 
-def nap_ho_so(thu_muc: Path = THU_MUC_XBRL) -> tuple[dict, list[tuple[str, list]]]:
+def nap_ho_so(thu_muc: Path = THU_MUC_XBRL) -> list[tuple[str, list, dict, str]]:
     """
-    Đọc companyfacts và các calculation linkbase đã tải về.
+    Đọc mọi companyfacts và calculation linkbase đã tải về.
 
-    Trả về (companyfacts, [(accn, equations)]). Ném lỗi khi thư mục trống,
-    vì "chạy xong không có kết quả nào" và "chưa tải dữ liệu" là hai chuyện
-    khác hẳn nhau mà một bảng rỗng không phân biệt được.
+    Trả về [(accn, equations, companyfacts, cik)] — MỖI hồ sơ mang theo
+    companyfacts của đúng công ty nó.
+
+    VÌ SAO PHẢI GẮN COMPANYFACTS THEO TỪNG HỒ SƠ: bản trước đọc đúng một
+    file facts rồi dùng chung cho mọi linkbase. Với một công ty thì vô hại,
+    nhưng Mốc 3 chỉ kết luận được khi có NHIỀU công ty — donor của
+    Fellegi-Holt phải đến từ một tổng thể nhiều thực thể. Dùng chung một
+    file facts cho hồ sơ của công ty khác thì `_chon_fact()` không tìm thấy
+    accn nào khớp và bảng ra rỗng, tức mọi hồ sơ ngoài công ty đầu tiên bị
+    bỏ IM LẶNG — mà số hồ sơ chạy được đúng là thứ quyết định phép so có
+    nghĩa hay không.
+
+    Ném lỗi khi thư mục trống, vì "chạy xong không có kết quả nào" và "chưa
+    tải dữ liệu" là hai chuyện khác hẳn nhau mà bảng rỗng không phân biệt.
     """
     import json
 
-    cac_facts = list(thu_muc.glob("*_facts.json"))
+    cac_facts = sorted(thu_muc.glob("*_facts.json"))
     if not cac_facts:
         raise SystemExit(
             f"Không có file *_facts.json trong {thu_muc}. Chạy fetch.py trước:\n"
@@ -82,15 +93,41 @@ def nap_ho_so(thu_muc: Path = THU_MUC_XBRL) -> tuple[dict, list[tuple[str, list]
             f"python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --out data/xbrl"
         )
 
-    companyfacts = json.loads(cac_facts[0].read_text(encoding="utf-8"))
+    # accn -> cik, dựng bằng cách hỏi chính companyfacts xem nó chứa những
+    # hồ sơ nào. Ghép theo tên file sẽ hỏng ngay khi quy ước đặt tên đổi,
+    # còn accn thì nằm trong chính dữ liệu.
+    facts_theo_cik: dict[str, dict] = {}
+    accn_ve_cik: dict[str, str] = {}
+    for f in cac_facts:
+        cf = json.loads(f.read_text(encoding="utf-8"))
+        cik = str(cf.get("cik", f.stem))
+        facts_theo_cik[cik] = cf
+        for nhom in cf.get("facts", {}).values():
+            for concept in nhom.values():
+                for danh_sach in concept.get("units", {}).values():
+                    for fact in danh_sach:
+                        if fact.get("accn"):
+                            accn_ve_cik[fact["accn"]] = cik
 
     ho_so = []
     for cal in sorted(thu_muc.glob("*_cal.xml")):
         accn = cal.name.replace("_cal.xml", "")
+        cik = accn_ve_cik.get(accn)
+        if cik is None:
+            continue
         equations = parse_calculation_linkbase(cal.read_text(encoding="utf-8"))
-        ho_so.append((accn, equations))
+        ho_so.append((accn, equations, facts_theo_cik[cik], cik))
 
-    return companyfacts, ho_so
+    return ho_so
+
+
+# Bảng đã dựng, nhớ theo accn.
+#
+# `_du_lieu_donor()` cần bảng của MỌI hồ sơ khác để lấy trung vị, nên nếu
+# không nhớ thì với n hồ sơ ta dựng n×(n−1) lần — 650 lần với 26 hồ sơ, mỗi
+# lần duyệt một companyfacts vài MB. Bảng chỉ phụ thuộc (accn, equations)
+# nên nhớ lại là an toàn tuyệt đối, không đổi một con số nào của kết quả.
+_NHO_BANG: dict = {}
 
 
 def _bang_sach(companyfacts: dict, accn: str, equations: list):
@@ -101,44 +138,57 @@ def _bang_sach(companyfacts: dict, accn: str, equations: list):
     nào có concept ngoài danh sách, đúng như A2 làm, vì coi chỉ tiêu không
     trích được là 0 sẽ làm hạng ma trận cao lên giả tạo.
     """
+    if accn in _NHO_BANG:
+        return _NHO_BANG[accn]
+
     concepts = concepts_xuat_hien(equations)
     bang = build_table(companyfacts, concepts, accn, n_periods=2)
 
     ky = bang.cot_chinh()
     du = [c for c in bang.concepts if bang.get(c, ky) is not None]
     if len(du) < 2:
-        return None, None, None
+        _NHO_BANG[accn] = (None, None, None)
+        return _NHO_BANG[accn]
 
     bang = build_table(companyfacts, du, accn, periods=bang.periods)
     A, thu_tu = to_matrix(equations, du)
     if A.size == 0 or A.shape[0] == 0:
-        return None, None, None
+        _NHO_BANG[accn] = (None, None, None)
+        return _NHO_BANG[accn]
 
-    return bang, A, thu_tu
+    _NHO_BANG[accn] = (bang, A, thu_tu)
+    return _NHO_BANG[accn]
 
 
-def _du_lieu_donor(
-    companyfacts: dict, ho_so: list, thu_tu: list, accn_dang_xet: str
-) -> dict:
+def _du_lieu_donor(ho_so: list, thu_tu: list, cik_dang_xet: str) -> dict:
     """
-    Giá trị donor: trung vị của chính chỉ tiêu đó trên CÁC HỒ SƠ KHÁC.
+    Giá trị donor: trung vị của chính chỉ tiêu đó trên các CÔNG TY KHÁC.
 
     Đây là phần làm baseline 9 trung thực. Fellegi-Holt kinh điển điền từ
     bản ghi donor, nên donor phải là dữ liệu thật của cùng chỉ tiêu ở tài
     liệu khác — không phải số ngẫu nhiên, vốn sẽ làm baseline thua oan và
     biến cả thí nghiệm thành vô giá trị.
 
-    PHẢI LOẠI HỒ SƠ ĐANG XÉT, và đây là lỗi rò rỉ đã mắc một lần rồi. Bản
-    trước gộp cả hồ sơ đang xét vào trung vị, nên donor CHỨA chính giá trị
-    thật: đo được 32% chỉ tiêu có donor trùng khít giá trị thật và 36% lệch
-    dưới 1%. Baseline 9 khi đó không còn là baseline nữa mà là một oracle
-    được đưa sẵn đáp án, và mọi so sánh với nó đều vô nghĩa.
+    PHẢI LOẠI CẢ CÔNG TY ĐANG XÉT, không chỉ hồ sơ đang xét. Hai bản trước
+    đều sai ở đây và mỗi lần sai đều làm lợi cho baseline 9:
+
+      - Bản 1 gộp cả hồ sơ đang xét, nên donor CHỨA chính giá trị thật —
+        đo được 32% chỉ tiêu trùng khít, 36% lệch dưới 1%. Baseline khi đó
+        là oracle được đưa sẵn đáp án.
+      - Bản 2 chỉ loại hồ sơ đang xét nhưng vẫn lấy từ báo cáo năm liền kề
+        của CHÍNH công ty đó. Tổng tài sản của một công ty lệch vài phần
+        trăm giữa hai năm, nên donor vẫn gần đáp án hơn hẳn thực tế.
+
+    Fellegi-Holt thật lấy donor từ một TỔNG THỂ nhiều thực thể, nơi giá trị
+    donor chẳng liên quan gì tới giá trị thật của bản ghi đang sửa. Chỉ khi
+    donor được lấy như vậy thì hiệu số giữa hai phương pháp mới đo đúng cái
+    cần đo: việc đọc lại nguồn có đáng gì không.
     """
     gom: dict[str, list[float]] = {ten: [] for ten in thu_tu}
-    for accn, equations in ho_so:
-        if accn == accn_dang_xet:
+    for accn, equations, cf, cik in ho_so:
+        if cik == cik_dang_xet:
             continue
-        bang, _, _ = _bang_sach(companyfacts, accn, equations)
+        bang, _, _ = _bang_sach(cf, accn, equations)
         if bang is None:
             continue
         for ten in thu_tu:
@@ -215,7 +265,7 @@ def _do_mot_luot(gia_tri_hong, gia_tri_that, ung_vien, A, thu_tu, donor):
 
 def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
     """Chạy toàn bộ Mốc 3 và trả về số liệu thô để in bảng."""
-    companyfacts, ho_so = nap_ho_so(thu_muc)
+    ho_so = nap_ho_so(thu_muc)
 
     tong: dict = {
         p: {
@@ -233,15 +283,23 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
     n_luot = 0
     bo_qua: Counter = Counter()
 
-    for accn, equations in ho_so:
+    cik_da_gap = set()
+
+    for accn, equations, companyfacts, cik in ho_so:
         bang, A, thu_tu = _bang_sach(companyfacts, accn, equations)
         if bang is None:
             bo_qua["khong_du_chi_tieu"] += 1
             continue
 
+        cik_da_gap.add(cik)
+        print(
+            f"[{len(cik_da_gap):>2}] {cik} {accn} — {len(thu_tu)} chỉ tiêu, "
+            f"{A.shape[0]} đẳng thức",
+            file=sys.stderr,
+        )
         ky = bang.cot_chinh()
         gia_tri_that = bang.values_cua_ky(ky)
-        donor = _du_lieu_donor(companyfacts, ho_so, thu_tu, accn)
+        donor = _du_lieu_donor(ho_so, thu_tu, cik)
 
         for che_do in CHE_DO_LOI:
             for seed in CAC_SEED:
@@ -272,7 +330,13 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
                         t["bia_sai"] += r["bia"]["bia"]
                         t["bia_mau"] += r["bia"]["co_gia_tri"]
 
-    return {"tong": tong, "n_luot": n_luot, "bo_qua": bo_qua, "n_ho_so": len(ho_so)}
+    return {
+        "tong": tong,
+        "n_luot": n_luot,
+        "bo_qua": bo_qua,
+        "n_ho_so": len(ho_so),
+        "n_cong_ty": len(cik_da_gap),
+    }
 
 
 def _ai_thang(d: dict, b: dict, khoa: str) -> str:
@@ -294,7 +358,7 @@ def bao_cao(kq: dict) -> str:
         return f"{x / y:.3f}" if y else "—"
 
     dong = [
-        f"MỐC 3 — {kq['n_ho_so']} hồ sơ, {n} lượt chạy "
+        f"MỐC 3 — {kq['n_cong_ty']} công ty, {kq['n_ho_so']} hồ sơ, {n} lượt chạy "
         f"({len(CHE_DO_LOI)} chế độ lỗi × {len(CAC_SEED)} seed)",
         "",
         "| Chỉ số | Đề xuất | Baseline 9 | Ai thắng |",
@@ -338,10 +402,9 @@ def bao_cao(kq: dict) -> str:
         "> **KẾT QUẢ NÀY CHƯA KẾT LUẬN ĐƯỢC MỐC 3.** Ba hạn chế đã biết, đều làm",
         "> lợi cho baseline 9 hoặc làm hẹp phạm vi đo:",
         ">",
-        "> 1. **Donor vẫn là hồ sơ của CÙNG một công ty.** Fellegi-Holt kinh điển",
-        ">    lấy donor từ một tổng thể nhiều thực thể khác nhau; lấy từ báo cáo",
-        ">    năm liền kề của chính công ty đó thì donor gần giá trị thật hơn hẳn",
-        ">    thực tế. Cần nhiều CIK mới có donor hợp lệ.",
+        "> 1. **Chỉ tổng thể donor là hợp lệ, phần còn lại thì chưa.** Donor nay",
+        ">    lấy từ các công ty KHÁC nên phần này đã đúng; nhưng toàn bộ dữ liệu",
+        ">    vẫn là doanh nghiệp Mỹ nộp theo US-GAAP, chưa có báo cáo Việt Nam nào.",
         "> 2. **Cột kỳ so sánh rỗng**, nên COL_SHIFT không inject được và nguồn",
         ">    ứng viên chéo kỳ không đóng góp gì. Chỉ 3 trong 4 chế độ lỗi chạy.",
         "> 3. **Chỉ số định vị phạt việc ABSTAIN.** Baseline 9 không bao giờ từ",

@@ -1,3 +1,4 @@
+from fields_config import Standard
 from validation import coerce_number, validate_result
 
 
@@ -44,7 +45,7 @@ VNM_Q1_2026 = {
 
 
 def test_bao_cao_that_khong_co_warning():
-    assert validate_result(VNM_Q1_2026)["warnings"] == []
+    assert validate_result(VNM_Q1_2026, Standard.TT99)["warnings"] == []
 
 
 def test_lech_mot_chu_so_bi_bat():
@@ -56,7 +57,7 @@ def test_lech_mot_chu_so_bi_bat():
     sai = dict(VNM_Q1_2026)
     sai["tai_san_ngan_han"] += 10_000_000
 
-    assert validate_result(sai)["warnings"] != []
+    assert validate_result(sai, Standard.TT99)["warnings"] != []
 
 
 # Doanh nghiệp lỗ nặng: lỗ luỹ kế đã ăn hết vốn nên VCSH âm, bán dưới giá
@@ -84,7 +85,7 @@ DOANH_NGHIEP_LO = {
 
 def _canh_bao_nhac_toi(result: dict, cum_tu: str) -> list[str]:
     """Các cảnh báo có nhắc tới cụm từ này — để assert đúng luật cần xét."""
-    return [w for w in validate_result(result)["warnings"] if cum_tu in w]
+    return [w for w in validate_result(result, Standard.TT99)["warnings"] if cum_tu in w]
 
 
 def test_doanh_nghiep_lo_khong_sinh_warning_nao():
@@ -92,7 +93,7 @@ def test_doanh_nghiep_lo_khong_sinh_warning_nao():
     Ca biên tổng hợp: cả ba bất đẳng thức có điều kiện đều bị vi phạm về
     mặt hình thức, nhưng bộ số hoàn toàn đúng nên không được báo gì.
     """
-    assert validate_result(DOANH_NGHIEP_LO)["warnings"] == []
+    assert validate_result(DOANH_NGHIEP_LO, Standard.TT99)["warnings"] == []
 
 
 def test_vcsh_am_thi_no_vuot_tong_tai_san_khong_bi_bao_oan():
@@ -147,3 +148,68 @@ def test_field_dieu_kien_bi_doc_sai_thi_luat_tu_tat():
     lot_luoi["loi_nhuan_gop"] = -lot_luoi["doanh_thu_thuan"]
 
     assert _canh_bao_nhac_toi(lot_luoi, "Giá vốn hàng bán") == []
+
+
+# Bộ số TT200 dựng để chốt việc chuẩn phải đi tới nơi kiểm đẳng thức.
+#
+# Phân rã tài sản ngắn hạn CỐ Ý lệch 500 tỷ: tổng các thành phần là 4.500
+# trong khi Tài sản ngắn hạn ghi 5.000. Không có tai_san_sinh_hoc_ngan_han
+# vì đó là chỉ tiêu TT200 KHÔNG có — chính chỗ đó là bẫy.
+BAO_CAO_TT200_LECH_PHAN_RA = {
+    "tai_san_ngan_han": 5_000_000_000_000,
+    "tien_va_tuong_duong_tien": 1_000_000_000_000,
+    "dau_tu_tc_ngan_han": 1_000_000_000_000,
+    "phai_thu_ngan_han": 1_000_000_000_000,
+    "hang_ton_kho": 1_000_000_000_000,
+    "tsnh_khac": 500_000_000_000,
+    "tai_san_dai_han": 5_000_000_000_000,
+    "tong_tai_san": 10_000_000_000_000,
+    "no_phai_tra": 4_000_000_000_000,
+    "von_chu_so_huu": 6_000_000_000_000,
+    "tong_nguon_von": 10_000_000_000_000,
+    "doanh_thu_thuan": 1_000_000_000_000,
+    "loi_nhuan_sau_thue": 100_000_000_000,
+    "don_vi_tinh": "đồng",
+}
+
+
+def _canh_bao_phan_ra(warnings) -> list:
+    return [w for w in warnings if "thành phần tài sản ngắn hạn" in w]
+
+
+def test_bao_cao_TT200_duoc_kiem_bang_dang_thuc_TT200():
+    """
+    Lệch phân rã tài sản ngắn hạn của báo cáo TT200 PHẢI bị bắt.
+
+    Đây là hồi quy cho một lỗi câm đã có thật. validate_result() từng để
+    standard=DEFAULT_STANDARD (tức TT99), nên báo cáo TT200 bị kiểm bằng
+    đẳng thức TT99. Đẳng thức TT99 chứa tai_san_sinh_hoc_ngan_han — chỉ
+    tiêu TT200 không có, nên luôn None, nên CẢ đẳng thức bị bỏ qua. Một lỗi
+    500 tỷ đi qua không một tiếng động.
+    """
+    warnings = validate_result(BAO_CAO_TT200_LECH_PHAN_RA, Standard.TT200)["warnings"]
+
+    assert _canh_bao_phan_ra(warnings), (
+        "Lệch 500 tỷ trong phân rã tài sản ngắn hạn TT200 mà không sinh cảnh báo — "
+        "gần như chắc chắn đang kiểm bằng đẳng thức của chuẩn khác"
+    )
+
+
+def test_dung_nham_chuan_thi_dang_thuc_phan_ra_im_lang():
+    """
+    Chốt CHIỀU NGƯỢC LẠI, tức chốt cái giá của việc nhận diện sai chuẩn.
+
+    Cùng bộ số đó đem kiểm bằng TT99 thì đẳng thức phân rã im lặng, vì
+    thiếu hạng tử tài sản sinh học. Test này tồn tại để nếu ai đó lỡ trả
+    mặc định về cho validate_result() thì test trên đỏ và test này giải
+    thích ngay vì sao.
+    """
+    warnings = validate_result(BAO_CAO_TT200_LECH_PHAN_RA, Standard.TT99)["warnings"]
+
+    assert not _canh_bao_phan_ra(warnings)
+
+
+def test_meta_ghi_dung_chuan_da_dung():
+    """Chuẩn nào được đem đi kiểm phải đọc lại được từ kết quả, không phải đoán."""
+    assert validate_result(VNM_Q1_2026, Standard.TT200)["meta"]["standard"] == "TT200"
+    assert validate_result(VNM_Q1_2026, Standard.TT99)["meta"]["standard"] == "TT99"

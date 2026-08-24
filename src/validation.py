@@ -13,7 +13,6 @@ Mọi quy tắc đều đọc từ fields_config.py chứ không hardcode tên f
 import re
 
 from fields_config import (
-    DEFAULT_STANDARD,
     FIELD_MAP,
     FIELD_RATIO_BOUNDS,
     FIELD_RELATIONS,
@@ -74,21 +73,31 @@ def has_required_fields(data: dict) -> bool:
     return True
 
 
-def validate_result(result: dict, standard: Standard = DEFAULT_STANDARD) -> dict:
+def validate_result(result: dict, standard: Standard) -> dict:
     """
     Trả về {"data": <đã ép kiểu số>, "warnings": [...]}.
 
     warnings rỗng nghĩa là không phát hiện bất thường. Không chặn kết
     quả — chỉ gắn cờ để người dùng (và router) biết chỗ nào cần xem lại.
 
-    standard quyết định dùng bộ đẳng thức của chuẩn mẫu biểu nào. Để mặc
-    định là DEFAULT_STANDARD chứ không bắt buộc truyền, vì hiện hai chuẩn
-    dùng chung một bộ đẳng thức nên giá trị này chưa đổi được kết quả.
+    standard quyết định dùng bộ đẳng thức của chuẩn mẫu biểu nào, và là
+    THAM SỐ BẮT BUỘC — không có mặc định.
 
-    KHI NÀO MẶC ĐỊNH NÀY THÀNH NGUY HIỂM: ngay khi việc đối chiếu Phụ lục
-    IV cho thấy hai chuẩn khác nhau về đẳng thức. Lúc đó router phải truyền
-    chuẩn đã nhận diện xuống đây, và mặc định này phải bỏ đi — nếu không,
-    báo cáo TT200 sẽ bị kiểm bằng đẳng thức của TT99 mà không ai biết.
+    VÌ SAO MẶC ĐỊNH ĐÃ BỊ BỎ ĐI. Bản trước để `standard=DEFAULT_STANDARD`
+    kèm lời cảnh báo rằng mặc định đó thành nguy hiểm "ngay khi việc đối
+    chiếu Phụ lục IV cho thấy hai chuẩn khác nhau về đẳng thức". Điều kiện
+    đó đã xảy ra: Mốc 1 (commit `4064519`) cho thấy phân rã Tài sản ngắn
+    hạn khác nhau thật — TT200 có `100 = 110+120+130+140+150`, còn TT99 có
+    thêm mã 160 vì mã 150 của nó là Tài sản sinh học ngắn hạn.
+
+    Hậu quả của bản cũ, đo được: báo cáo TT200 bị kiểm bằng đẳng thức TT99,
+    mà đẳng thức TT99 chứa `tai_san_sinh_hoc_ngan_han` — chỉ tiêu TT200
+    không có, nên luôn `None`, nên CẢ đẳng thức bị bỏ qua im lặng. Một lỗi
+    500 tỷ trong phân rã tài sản ngắn hạn của báo cáo TT200 đi qua mà không
+    sinh một cảnh báo nào. Đó đúng là đẳng thức đắt nhất mà Mốc 1 mua về.
+
+    Bắt người gọi nói rõ chuẩn là cách rẻ nhất để lỗi đó không xảy ra được
+    nữa — cùng lý do `extract_field_by_code()` cũng không có mặc định.
     """
     warnings = []
     data = {}

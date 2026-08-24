@@ -30,7 +30,7 @@ from dotenv import load_dotenv
 from extract_baseline import extract_all_fields
 from extract_vlm import extract_fields_from_regions, require_config
 from extraction_types import ExtractionResult, FieldResult
-from fields_config import UNIT_KEY, empty_result
+from fields_config import DEFAULT_STANDARD, UNIT_KEY, Standard, empty_result
 from metrics import RunMetrics, merge_into_totals, thong_tin_tai_lap, timer
 from ocr_baseline import iter_table_regions, ocr_page_regions
 from validation import has_required_fields, validate_result
@@ -61,6 +61,46 @@ USE_OCR_FIRST = _co_bat("USE_OCR_FIRST")
 # Đây là mục rẻ nhất trong cả kế hoạch thi công, và bỏ qua nó thì toàn bộ
 # kết quả H1 vô giá trị bất kể phần còn lại làm tốt tới đâu.
 DISABLE_CONSTRAINT_GATE = _co_bat("DISABLE_CONSTRAINT_GATE")
+
+# Khoá tạm để nhánh VLM chuyển meta của nó ra tới route_document, tách khỏi
+# các khoá dùng cho thong_tin_tai_lap(). Đặt tên thành hằng số thay vì viết
+# chuỗi tay ở hai nơi, vì quên đồng bộ một trong hai chỗ sẽ làm early_stop
+# lặng lẽ biến mất lần nữa — đúng lỗi vừa sửa.
+META_VLM = "_meta_vlm"
+
+
+def chon_chuan(standard: Standard | None) -> tuple[Standard, str]:
+    """
+    Chốt chuẩn mẫu biểu cho cả lượt chạy, kèm NGUỒN của kết luận đó.
+
+    Trả về (chuẩn, nguồn) với nguồn thuộc tập đóng:
+      "tham_so"  — người gọi chỉ định thẳng, khỏi phải đoán.
+      "mac_dinh" — không ai chỉ định và đường chạy này chưa dò được, nên
+                   lùi về DEFAULT_STANDARD.
+
+    VÌ SAO PHẢI TRẢ CẢ NGUỒN chứ không chỉ trả chuẩn: hai lượt chạy có cùng
+    `standard` nhưng một cái do người chỉ định còn một cái do lùi về mặc
+    định là hai thứ khác hẳn nhau về độ tin cậy, và bảng kết quả phải tách
+    được chúng. Nếu chỉ ghi chuẩn thì một lượt lùi mặc định trông y hệt một
+    lượt nhận diện chắc chắn, và chế độ lỗi "nhận diện sai chuẩn" biến mất
+    khỏi mọi phép đo — đúng thứ mà detect_standard() cố ý không đoán bừa để
+    giữ lại.
+
+    CHƯA CÓ NGUỒN "nhan_dien" Ở ĐÂY, và đó là hiện trạng chứ không phải ý
+    đồ. detect_standard() cần text của trang, mà đường VLM (USE_OCR_FIRST
+    tắt, tức cấu hình mặc định) không sinh ra text nào. Bước dò sự tồn tại
+    của dòng sẽ mang OCR tới đường đó, và khi có thì thêm nguồn thứ ba vào
+    đây.
+    """
+    if standard is not None:
+        return standard, "tham_so"
+
+    print(
+        f"[STANDARD] Không ai chỉ định chuẩn và đường chạy này chưa dò được — "
+        f"lùi về {DEFAULT_STANDARD.value}. Kết quả có thể dùng sai bảng mã số "
+        f"dòng và sai bộ đẳng thức."
+    )
+    return DEFAULT_STANDARD, "mac_dinh"
 
 
 def khung_rong() -> dict[str, FieldResult]:
@@ -116,6 +156,19 @@ def _ghi_lai_luot_vlm(ghi_lai, extraction: ExtractionResult) -> None:
         standard=extraction.meta.get("standard"),
     )
 
+    # early_stop đi theo đường RIÊNG, dưới khoá META_VLM, vì nó không phải
+    # thông tin tái lập mà là thông tin về việc lượt chạy đã CẮT BỚT những
+    # gì. thong_tin_tai_lap() có chữ ký cố định nên nhét thẳng vào sẽ nổ;
+    # route_document() lấy nó ra khỏi dict trước khi gọi hàm đó.
+    #
+    # Vì sao phải mang ra tận đây: extract_fields_from_regions() ghi
+    # meta["early_stop"] đúng như docstring của nó hứa, nhưng route_document
+    # trước đây gán meta = meta của validate_result(), tức ĐÈ mất. Nên trên
+    # đường chạy thật — API và CLI — không ai thấy được lượt chạy đã dừng ở
+    # trang nào và còn thiếu field gì, đúng thứ mà cờ dừng sớm sinh ra để
+    # không giấu.
+    ghi_lai[META_VLM] = {"early_stop": extraction.meta.get("early_stop")}
+
 
 def _tu_extraction(extraction: ExtractionResult) -> dict[str, FieldResult]:
     """
@@ -151,7 +204,9 @@ def _ocr_mot_trang(page, metrics=None) -> dict[str, FieldResult]:
     }
 
 
-def run_ocr_first(pages_iter, cached_pages: list, result: dict, metrics=None) -> dict:
+def run_ocr_first(
+    pages_iter, cached_pages: list, result: dict, standard: Standard, metrics=None
+) -> dict:
     """
     Quét OCR theo từng trang, merge dần, dừng khi kết quả đã đáng tin.
 
@@ -166,7 +221,7 @@ def run_ocr_first(pages_iter, cached_pages: list, result: dict, metrics=None) ->
         cached_pages.append(page)
         _lap_cho_trong(result, _ocr_mot_trang(page, metrics))
 
-        if is_acceptable(gia_tri_tran(result)):
+        if is_acceptable(gia_tri_tran(result), standard):
             print(f"--- OCR đã đủ và hợp lệ, dừng ở trang {page['page']} ---")
             break
 
@@ -185,7 +240,7 @@ def _remaining_pages(pages_iter, cached_pages: list):
 
 
 def run_unconstrained(
-    pages_iter, cached_pages: list, result: dict, metrics=None, ghi_lai=None
+    pages_iter, cached_pages: list, result: dict, standard: Standard, metrics=None, ghi_lai=None
 ) -> dict:
     """
     Chạy ĐÚNG MỘT nhánh, không cổng ràng buộc, không fallback.
@@ -212,14 +267,18 @@ def run_unconstrained(
 
         return result
 
-    extraction = extract_fields_from_regions(_remaining_pages(pages_iter, cached_pages), metrics)
+    extraction = extract_fields_from_regions(
+        _remaining_pages(pages_iter, cached_pages), metrics, standard
+    )
     _ghi_lai_luot_vlm(ghi_lai, extraction)
     _lap_cho_trong(result, _tu_extraction(extraction))
 
     return result
 
 
-def run_vlm(pages_iter, cached_pages: list, result: dict, metrics=None, ghi_lai=None) -> dict:
+def run_vlm(
+    pages_iter, cached_pages: list, result: dict, standard: Standard, metrics=None, ghi_lai=None
+) -> dict:
     """
     Chạy nhánh VLM và trộn kết quả vào result.
 
@@ -230,9 +289,11 @@ def run_vlm(pages_iter, cached_pages: list, result: dict, metrics=None, ghi_lai=
          nguyên đó và cả validation gate thành vô nghĩa: tốn tiền gọi VLM
          rồi vứt kết quả đúng đi.
     """
-    has_warnings = bool(validate_result(gia_tri_tran(result))["warnings"])
+    has_warnings = bool(validate_result(gia_tri_tran(result), standard)["warnings"])
 
-    extraction = extract_fields_from_regions(_remaining_pages(pages_iter, cached_pages), metrics)
+    extraction = extract_fields_from_regions(
+        _remaining_pages(pages_iter, cached_pages), metrics, standard
+    )
     _ghi_lai_luot_vlm(ghi_lai, extraction)
     tu_vlm = _tu_extraction(extraction)
 
@@ -246,7 +307,9 @@ def run_vlm(pages_iter, cached_pages: list, result: dict, metrics=None, ghi_lai=
     return result
 
 
-def route_document(file_path: str, save: bool = True) -> ExtractionResult:
+def route_document(
+    file_path: str, save: bool = True, standard: Standard | None = None
+) -> ExtractionResult:
     """
     Chạy trọn pipeline cho một tài liệu.
 
@@ -273,6 +336,12 @@ def route_document(file_path: str, save: bool = True) -> ExtractionResult:
     # và để lỗi nổ ra trước khi tốn công convert PDF + chạy YOLO.
     require_config()
 
+    # Chốt chuẩn MỘT lần cho cả lượt chạy, trước khi đụng tới trang nào.
+    # Prompt VLM, bảng mã số dòng, bộ đẳng thức và câu cảnh báo đều phải
+    # nói về cùng một chuẩn; để mỗi nơi tự quyết là cách chắc chắn nhất để
+    # chúng lệch nhau mà không ai thấy.
+    standard, nguon_chuan = chon_chuan(standard)
+
     metrics = RunMetrics(file_path)
 
     try:
@@ -284,23 +353,23 @@ def route_document(file_path: str, save: bool = True) -> ExtractionResult:
         if DISABLE_CONSTRAINT_GATE:
             print("--- CỔNG RÀNG BUỘC ĐANG TẮT: chế độ ĐO, không dùng để phục vụ ---")
             result = run_unconstrained(
-                pages_iter, cached_pages, result, metrics, thong_tin_vlm
+                pages_iter, cached_pages, result, standard, metrics, thong_tin_vlm
             )
         else:
             if USE_OCR_FIRST:
-                result = run_ocr_first(pages_iter, cached_pages, result, metrics)
+                result = run_ocr_first(pages_iter, cached_pages, result, standard, metrics)
 
-            if not is_acceptable(gia_tri_tran(result)):
+            if not is_acceptable(gia_tri_tran(result), standard):
                 if USE_OCR_FIRST:
                     missing = [k for k, kq in result.items() if kq.value is None]
                     print(f"--- OCR chưa đạt (thiếu/nghi ngờ: {missing}), chuyển sang VLM ---")
-                result = run_vlm(pages_iter, cached_pages, result, metrics, thong_tin_vlm)
+                result = run_vlm(pages_iter, cached_pages, result, standard, metrics, thong_tin_vlm)
 
         # Ép kiểu số TRƯỚC khi lưu và trả về. VLM đôi khi trả số dưới dạng
         # chuỗi, nên nếu lưu thẳng result thô thì file _routed.json và
         # response HTTP sẽ khác nhau về kiểu dữ liệu cho cùng một lượt
         # chạy — rất khó lần khi đi đối chiếu.
-        da_kiem = validate_result(gia_tri_tran(result))
+        da_kiem = validate_result(gia_tri_tran(result), standard)
         data = da_kiem["data"]
 
         # Ghi giá trị đã ép kiểu và quy đổi NGƯỢC vào FieldResult, giữ
@@ -318,9 +387,25 @@ def route_document(file_path: str, save: bool = True) -> ExtractionResult:
             if khoa != UNIT_KEY
         }
 
+        # Lấy meta của nhánh VLM ra TRƯỚC khi thong_tin_tai_lap() nhận dict
+        # này — hàm đó có chữ ký cố định nên khoá lạ sẽ làm nó nổ.
+        meta_vlm = thong_tin_vlm.pop(META_VLM, {})
+
+        # HỢP NHẤT meta, không đè. Bản trước gán thẳng meta = da_kiem["meta"]
+        # nên mọi thứ nhánh trích xuất biết mà validate_result không biết —
+        # early_stop và prompt_hash — bị vứt ngay tại cửa ra.
+        #
+        # standard và nguon_chuan ghi thành HAI khoá riêng: biết chuẩn nào
+        # được dùng là chưa đủ, còn phải biết kết luận đó đến từ đâu. Một
+        # lượt lùi về mặc định và một lượt do người chỉ định cho ra cùng chữ
+        # "TT99", và gộp chúng lại là xoá mất một chế độ lỗi khỏi phép đo.
         extraction = ExtractionResult(
             data=ket_qua_cuoi,
-            meta=da_kiem["meta"],
+            meta={
+                **meta_vlm,
+                **da_kiem["meta"],
+                "standard_nguon": nguon_chuan,
+            },
             warnings=da_kiem["warnings"],
         )
 
@@ -353,9 +438,14 @@ def route_document(file_path: str, save: bool = True) -> ExtractionResult:
         print(metrics.summary())
 
 
-def is_acceptable(result: dict) -> bool:
+def is_acceptable(result: dict, standard: Standard) -> bool:
     """
     Kết quả có đáng tin để dừng sớm / khỏi cần fallback VLM không?
+
+    standard bắt buộc vì điều kiện 2 gọi validate_result(), và bộ đẳng thức
+    khác nhau giữa hai chuẩn kể từ Mốc 1. Cổng này quyết định có gọi VLM hay
+    không, nên kiểm bằng đẳng thức của nhầm chuẩn sẽ vừa bỏ sót lỗi thật vừa
+    gọi VLM cho những ca vốn đã đúng.
 
     Hai điều kiện, cả hai đều phải đạt:
     1. Đủ các field BẮT BUỘC (theo FIELD_RULES). Field bổ sung thiếu vẫn
@@ -369,7 +459,7 @@ def is_acceptable(result: dict) -> bool:
     if not has_required_fields(result):
         return False
 
-    return not validate_result(result)["warnings"]
+    return not validate_result(result, standard)["warnings"]
 
 
 def save_result(file_path: str, result: dict) -> Path:

@@ -778,7 +778,39 @@ quả, đừng để suy ra từ sự vắng mặt của khoá khác.
 
 ---
 
-## 13. MỐC 3 — mốc phải dừng thật, và nó đang mở
+## 13. MỐC 3 — ĐÃ CHẠY PILOT, VẪN CHƯA KẾT LUẬN ĐƯỢC
+
+**Cập nhật 24/08/2026.** Đã tải 3 hồ sơ 10-K của Apple từ EDGAR (`fetch.py`
+chạy được từ shell trên máy người dùng — cảnh báo "container không ra được
+sec.gov" trong docstring chỉ đúng với Docker) và chạy pilot bằng
+[src/eval/moc3.py](src/eval/moc3.py). Kết quả ở
+`data/output/moc3_pilot_apple.md`.
+
+**Pilot làm đúng việc nó được giao: lộ trục trặc đường ống.** Ba chỗ, hai
+trong đó là lỗi của chính runner và đã sửa:
+
+1. **Rò rỉ đáp án** — donor tính trung vị trên cả hồ sơ đang xét, nên 32% chỉ
+   tiêu có donor trùng khít giá trị thật. Baseline 9 khi đó là oracle. Đã sửa;
+   sau khi sửa, chỉ số chống bịa **đảo chiều** sang có lợi cho đề xuất.
+2. **Tắt mất nguồn ứng viên quan trọng nhất** — gọi `generate()` không truyền
+   `o_lan_can`, tức bỏ hẳn việc đọc lại ô lân cận, đúng cơ chế cần chứng minh.
+   Đã sửa.
+3. **Cột kỳ so sánh rỗng** — 0/158 chỉ tiêu có giá trị ở kỳ thứ hai, nên
+   COL_SHIFT không inject được. **CHƯA SỬA.**
+
+**VÌ SAO CHƯA KẾT LUẬN ĐƯỢC, và đừng coi số hiện tại là kết quả Mốc 3:**
+donor vẫn lấy từ hồ sơ của **cùng một công ty**, trong khi Fellegi-Holt kinh
+điển lấy donor từ một tổng thể nhiều thực thể — nên baseline 9 vẫn đang được
+lợi thế giả tạo. Cộng thêm chỉ 3 trong 4 chế độ lỗi chạy được, và chỉ số định
+vị đang phạt việc ABSTAIN, tức đo mức sẵn sàng đoán chứ không đo độ đúng.
+
+**Việc phải làm để Mốc 3 kết luận được:** tải hồ sơ của **nhiều CIK khác
+nhau** để có tổng thể donor hợp lệ, sửa việc chọn kỳ cho cột so sánh có số,
+và chốt cách tính chỉ số định vị khi một phương pháp từ chối trả lời.
+
+---
+
+### Bối cảnh gốc của mốc này
 
 `BUILD-SPEC.md` phần E:
 
@@ -945,7 +977,67 @@ cũng phải sửa danh sách cài trong `.github/workflows/ci.yml`.
 
 ---
 
-## 17. Nơi nộp — đã chốt 24/08/2026
+## 17. LƯU Ý — việc người dùng đã quyết nhưng CHƯA thi công
+
+Mục này giữ những việc đã có quyết định nhưng cố ý hoãn lại. Đọc mục này
+trước khi bắt đầu bất kỳ việc gì ở mục 16, kẻo làm theo con số cũ.
+
+### 17.1 Đổi bộ chỉ tiêu từ kịch bản D sang **kịch bản E** — CHƯA LÀM
+
+Người dùng chốt ngày 24/08/2026: dùng **E**, vì E đúng hơn về học thuật. Số
+đo hậu thuẫn: E hơn D trên mọi trần (Top-1 0,54 so 0,50; Top-3 0,96 so 0,90),
+và D vốn chỉ được chọn vì tính khả thi của việc gán nhãn chứ không phải vì
+tốt hơn.
+
+E thêm **6 chỉ tiêu và 2 đẳng thức** của báo cáo lưu chuyển tiền tệ B03:
+tiền đầu kỳ (mã 60), ba dòng lưu chuyển (20, 30, 40), lưu chuyển thuần (50),
+ảnh hưởng tỷ giá (61). Tổng thành **26 chỉ tiêu / 9 đẳng thức**.
+
+Việc phải làm khi thi công, theo thứ tự:
+
+1. Khai thêm 6 chỉ tiêu vào `FIELD_MAP`, `FIELD_LINE_CODES` (cả hai chuẩn),
+   `FIELD_ALIASES`, `FIELD_RULES`. Mẫu biểu B03 đã có marker sẵn trong
+   `FORM_MARKERS`, không phải thêm.
+2. Khai 2 đẳng thức vào `_DANG_THUC_CHUNG`. **Cả hai đã đối chiếu Công báo
+   rồi** — nguyên văn ở Phụ lục A mục 3.4 — nên không phải tra văn bản lại.
+3. Chạy lại `constraints.py` và `constraints_scenarios.py`, sinh lại hai báo
+   cáo identifiability.
+4. **Đo lại trần người** với 26 chỉ tiêu qua ba biểu mẫu. Đây là việc dễ bị
+   bỏ qua nhất và cũng là lý do E từng bị loại: `ADDENDUM` mục 6 chốt giao
+   thức 15 phút một tài liệu, và 26 chỉ tiêu rải qua ba báo cáo nhiều khả
+   năng vỡ giao thức đó. Nếu vỡ thì phải sửa giao thức **trước** khi gán
+   nhãn tài liệu đầu tiên.
+5. Sửa `ANNOTATION-GUIDELINE.md` mục 2 (phạm vi biểu mẫu nay gồm B03) và ghi
+   vào mục Sửa đổi của nó.
+6. Ghi vào mục Sửa đổi của `PREREGISTRATION.md`.
+
+**Cửa sổ để làm việc này đang mở và sẽ đóng.** `data/gold/` còn trống nên
+Luật 3 được thoả mà không tốn công gán nhãn lại. Ngay khi tài liệu đầu tiên
+được gán nhãn, đổi sang E buộc phải quay lại cả tập đã làm.
+
+### 17.2 Quy mô tập gold lên **khoảng 100 tài liệu** — CHƯA CẬP NHẬT TÀI LIỆU
+
+Người dùng chốt ngày 24/08/2026: tìm khoảng **100** tài liệu thay vì 60.
+Việc sửa tài liệu cho khớp con số này được **cố ý hoãn**, và đây là danh sách
+chỗ phải sửa khi làm:
+
+- `ANNOTATION-GUIDELINE.md` mục 7 — đang ghi "60 tài liệu, chia 30 TT200 +
+  30 TT99". Giữ tỷ lệ 50/50 vì trục transfer của ablation 8 dựa vào đó.
+- `PREREGISTRATION.md` — thêm mục Sửa đổi. Bắt buộc: quy mô mẫu là tham số
+  của mọi phép tính power.
+- `ADDENDUM` mục 4 — mọi con số tính power đều lấy 60 làm số cụm độc lập
+  ("1500 quan sát nhưng chỉ 60 cụm"). Với 100 tài liệu thì cả bảng đó đổi.
+
+**Điều phải nói kèm, kẻo con số 100 bị hiểu sai:** thêm tài liệu chủ yếu chỉ
+giúp **H1**. H2 và H3 đo trên **số lỗi**, không phải số trường — ở 60 tài
+liệu số lỗi rơi vào 75–225, lên 100 cũng chỉ thành 125–375. Đó đúng là lý do
+`ADDENDUM` mục 4 kết luận tầng XBRL là **bắt buộc** chứ không phải "nếu có
+thời gian". Muốn thêm số liệu cho H2/H3 thì **mở rộng tầng XBRL rẻ hơn hẳn**
+so với gán nhãn thêm tài liệu tay.
+
+---
+
+## 18. Nơi nộp — đã chốt 24/08/2026
 
 **Đích: ICDAR 2027 main track, hạn nộp 28/02/2027.** Kuala Lumpur, 18–22/08/2027.
 Springer LNCS, tối đa 17 trang kể cả hình và tài liệu tham khảo, phản biện ẩn

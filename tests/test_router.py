@@ -34,7 +34,7 @@ VNM_Q1_2026 = {
 
 
 def test_ket_qua_rong_thi_khong_dat():
-    assert is_acceptable(empty_result(), Standard.TT99) is False
+    assert is_acceptable(empty_result(Standard.TT99), Standard.TT99) is False
 
 
 def test_bao_cao_that_thi_dat():

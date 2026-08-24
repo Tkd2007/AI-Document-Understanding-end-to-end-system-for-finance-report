@@ -31,6 +31,7 @@ from fields_config import (
     FIELD_MAP,
     Standard,
     detect_standard,
+    fields_for,
     line_codes_for,
     marker_for_form,
 )
@@ -195,7 +196,7 @@ def extract_all_fields(text: str, standard: Standard | None = None) -> dict:
         else:
             print(f"[STANDARD] Trang dùng chuẩn {standard} (tin cậy {do_tin_cay:.2f})")
 
-    return {key: extract_field(text, key, standard) for key in FIELD_MAP}
+    return {key: extract_field(text, key, standard) for key in fields_for(standard)}
 
 
 if __name__ == "__main__":

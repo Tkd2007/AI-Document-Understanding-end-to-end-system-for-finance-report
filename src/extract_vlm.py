@@ -31,6 +31,7 @@ from fields_config import (
     UNIT_KEY,
     Standard,
     empty_result,
+    fields_for,
     line_codes_for,
 )
 from metrics import bam_prompt, timer
@@ -178,11 +179,20 @@ def build_prompt(standard: Standard = DEFAULT_STANDARD) -> str:
     """
     line_codes = line_codes_for(standard)
 
-    # Gom field theo mẫu biểu, giữ nguyên thứ tự khai báo trong FIELD_MAP
+    # Gom field theo mẫu biểu, giữ nguyên thứ tự khai báo trong FIELD_MAP.
+    #
+    # Duyệt fields_for(standard) chứ KHÔNG duyệt FIELD_MAP. FIELD_MAP là hợp
+    # của cả hai chuẩn, nên với báo cáo TT200 nó kéo theo
+    # tai_san_sinh_hoc_ngan_han — dòng TT200 không có. Chỉ tiêu đó rơi vào
+    # "NHÓM KHÁC" (không mã số để đối chiếu) và vào cả khuôn JSON bắt buộc,
+    # tức prompt đi bảo model tìm một dòng không tồn tại trên giấy. Luật 3 có
+    # dặn trả null khi không thấy, nhưng mời model đi tìm cái không có là tự
+    # tạo áp lực bịa ở đúng chỗ nhạy cảm nhất.
+    cac_field = fields_for(standard)
     grouped: dict[str, list[str]] = {}
     ungrouped: list[str] = []
 
-    for key in FIELD_MAP:
+    for key in cac_field:
         entry = line_codes.get(key)
         if entry is None:
             ungrouped.append(key)
@@ -211,7 +221,7 @@ def build_prompt(standard: Standard = DEFAULT_STANDARD) -> str:
     # don_vi_tinh nối vào CUỐI template và mang kiểu chuỗi, không phải số.
     # Nó là dữ liệu meta về cách đọc cả bảng chứ không phải một chỉ tiêu,
     # nên cố ý không nằm trong FIELD_MAP — xem chú thích ở UNIT_KEY.
-    o_so = ", ".join(f'"{key}": <số hoặc null>' for key in FIELD_MAP)
+    o_so = ", ".join(f'"{key}": <số hoặc null>' for key in cac_field)
     json_template = f'{o_so}, "{UNIT_KEY}": <chuỗi đơn vị hoặc null>'
 
     return f"""Bạn là một hệ thống trích xuất dữ liệu tài chính tự động.
@@ -543,8 +553,13 @@ def extract_fields_from_regions(
     # text OCR để dò, và một tài liệu thì chỉ theo đúng một chuẩn.
     prompt = build_prompt(standard)
 
+    # Bộ chỉ tiêu của ĐÚNG chuẩn này — thứ mà điều kiện dừng sớm nhánh 1
+    # đếm trên. Lấy một lần ở đây thay vì gọi lại trong vòng lặp vì nó cố
+    # định suốt cả tài liệu: một tài liệu chỉ theo đúng một chuẩn.
+    cac_field_can = fields_for(standard)
+
     final_result: dict[str, FieldResult] = {
-        khoa: FieldResult(value=None, confidence=0.0) for khoa in empty_result()
+        khoa: FieldResult(value=None, confidence=0.0) for khoa in empty_result(standard)
     }
     warnings: list[str] = []
     pages_without_new_field = 0
@@ -611,15 +626,21 @@ def extract_fields_from_regions(
             #    nếu vùng đầu đã lấp nốt field cuối cùng thì các vùng còn
             #    lại là những lời gọi VLM mua về đúng thứ đã có.
             #
-            #    Điều kiện dừng vẫn tính trên FIELD_MAP chứ không trên cả
-            #    final_result: đơn vị tính chỉ in ở header bảng nên có
-            #    trang không có nó, và để nó chặn early-stop thì gặp báo
-            #    cáo thiếu dòng khai báo là quét tới hết tài liệu.
+            #    Điều kiện tính trên fields_for(standard) chứ không trên cả
+            #    final_result: đơn vị tính chỉ in ở header bảng nên có trang
+            #    không có nó, và để nó chặn early-stop thì gặp báo cáo thiếu
+            #    dòng khai báo là quét tới hết tài liệu.
+            #
+            #    Và KHÔNG tính trên FIELD_MAP: FIELD_MAP là hợp của cả hai
+            #    chuẩn, nên với báo cáo TT200 thì tai_san_sinh_hoc_ngan_han
+            #    không bao giờ điền được và nhánh dừng sớm này thành BẤT KHẢ
+            #    THI. Mọi lượt chạy khi đó phải rơi xuống nhánh 2 — nhánh
+            #    dừng khi CHƯA đủ field, tức nhánh nguy hiểm cho phép đo.
             if not DISABLE_EARLY_STOP and all(
-                final_result[khoa].value is not None for khoa in FIELD_MAP
+                final_result[khoa].value is not None for khoa in cac_field_can
             ):
                 print(
-                    f"--- Đã tìm đủ cả {len(FIELD_MAP)} field, dừng ở trang "
+                    f"--- Đã tìm đủ cả {len(cac_field_can)} field, dừng ở trang "
                     f"{page_no} vùng {region_index} ---"
                 )
                 dung_som = {

@@ -103,7 +103,7 @@ def chon_chuan(standard: Standard | None) -> tuple[Standard, str]:
     return DEFAULT_STANDARD, "mac_dinh"
 
 
-def khung_rong() -> dict[str, FieldResult]:
+def khung_rong(standard: Standard) -> dict[str, FieldResult]:
     """
     Khung tích luỹ của router: mỗi chỉ tiêu một FieldResult chưa có gì.
 
@@ -112,7 +112,7 @@ def khung_rong() -> dict[str, FieldResult]:
     đây merge trả về giá trị trần nên mọi thứ biết được về độ tin cậy của
     một con số đều bị vứt ngay tại đây.
     """
-    return {khoa: FieldResult(value=None, confidence=0.0) for khoa in empty_result()}
+    return {khoa: FieldResult(value=None, confidence=0.0) for khoa in empty_result(standard)}
 
 
 def gia_tri_tran(tich_luy: dict[str, FieldResult]) -> dict:
@@ -347,7 +347,7 @@ def route_document(
     try:
         pages_iter = iter_table_regions(file_path, metrics)
         cached_pages: list = []
-        result = khung_rong()
+        result = khung_rong(standard)
         thong_tin_vlm: dict = {}
 
         if DISABLE_CONSTRAINT_GATE:

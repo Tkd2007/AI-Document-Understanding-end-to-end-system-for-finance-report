@@ -17,7 +17,7 @@ from PIL import Image
 
 import extract_vlm
 from extract_vlm import extract_fields_from_regions
-from fields_config import FIELD_MAP
+from fields_config import FIELD_MAP, Standard, fields_for
 from layout_detection import TableRegion
 
 # Ba chỉ tiêu này mang cờ required trong FIELD_RULES. Nhánh dừng vì
@@ -186,3 +186,36 @@ def test_khong_dung_som_van_ghi_khoa_trang_thai(monkeypatch):
     assert ket_qua.meta["early_stop"]["da_dung_som"] is False
     assert ket_qua.meta["early_stop"]["ly_do"] == ""
     assert ket_qua.meta["early_stop"]["trang_cuoi"] is None
+
+
+def test_bao_cao_TT200_van_dung_som_duoc_o_nhanh_du_het_field(monkeypatch):
+    """
+    Hồi quy: nhánh dừng sớm rẻ nhất phải KHẢ THI với báo cáo TT200.
+
+    Điều kiện nhánh 1 từng là `all(... for khoa in FIELD_MAP)`, tức đòi cả
+    21 chỉ tiêu. Nhưng FIELD_MAP là HỢP của hai chuẩn: Tài sản sinh học
+    ngắn hạn chỉ có ở TT99. Với báo cáo TT200 thì chỉ tiêu đó không tồn tại
+    trên giấy nên không bao giờ điền được, và nhánh 1 thành bất khả thi —
+    mọi lượt chạy phải rơi xuống nhánh 2.
+
+    Nhánh 2 chính là nhánh mà code tự dán nhãn "nguy hiểm cho phép đo": nó
+    dừng khi CHƯA đủ field, nên field còn thiếu có thể chưa từng được nhìn
+    tới. Nên lỗi này vừa tốn tiền API vừa làm mọi con số "model đọc không
+    được" của H1 thành nhập nhằng.
+
+    Phản hồi giả dưới đây mô phỏng đúng một báo cáo TT200 thật: đủ cả 20
+    chỉ tiêu của TT200, và KHÔNG có Tài sản sinh học ngắn hạn.
+    """
+    du_het_TT200 = {khoa: 100 for khoa in fields_for(Standard.TT200)}
+    assert "tai_san_sinh_hoc_ngan_han" not in du_het_TT200
+
+    trang = [{"page": 1, "regions": [_vung()]}, {"page": 2, "regions": [_vung()]}]
+    da_goi = _lap_vlm_gia(monkeypatch, [du_het_TT200])
+
+    ket_qua = extract_fields_from_regions(trang, standard=Standard.TT200)
+
+    assert ket_qua.meta["early_stop"]["ly_do"] == "du_het_field", (
+        "Đọc đủ mọi chỉ tiêu của TT200 mà vẫn không dừng — gần như chắc chắn "
+        "điều kiện đang đếm trên FIELD_MAP thay vì fields_for(standard)"
+    )
+    assert len(da_goi) == 1, "Đã đủ field mà vẫn đọc sang trang sau"

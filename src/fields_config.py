@@ -465,15 +465,21 @@ def parse_unit(raw: str | None) -> tuple[int | None, str]:
 TOTAL_ASSETS_BOUNDS = (1e10, 1e15)
 
 
-def empty_result() -> dict:
+def empty_result(standard: Standard) -> dict:
     """
-    Khung kết quả rỗng: mọi chỉ tiêu cộng thêm khoá đơn vị tính.
+    Khung kết quả rỗng của MỘT chuẩn: chỉ tiêu của chuẩn đó, cộng đơn vị tính.
 
     Gom vào một chỗ vì cả router.py lẫn extract_vlm.py đều dựng khung này,
     và trước đây cả hai đều dựng bằng {key: None for key in FIELD_MAP} —
     tức là khoá đơn vị tính do VLM trả về sẽ bị vứt lặng lẽ ở bước merge.
+
+    standard BẮT BUỘC, và dùng fields_for() chứ không dùng FIELD_MAP:
+    FIELD_MAP là HỢP của cả hai chuẩn, nên dựng khung TT200 trên nó sẽ kèm
+    theo tai_san_sinh_hoc_ngan_han — chỉ tiêu TT200 không có. Chỉ tiêu thừa
+    đó không bao giờ điền được, và mọi chỗ đếm "đã đủ field chưa" sẽ chờ nó
+    vĩnh viễn.
     """
-    khung = {key: None for key in FIELD_MAP}
+    khung = {key: None for key in fields_for(standard)}
     khung[UNIT_KEY] = None
     return khung
 

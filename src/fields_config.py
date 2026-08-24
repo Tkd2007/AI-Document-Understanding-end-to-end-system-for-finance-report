@@ -329,7 +329,7 @@ _PHAN_RA_TSNH_TT99 = (
 #
 # ĐÃ ĐỐI CHIẾU 23/08/2026 với Công báo số 287+288 và 289+290 (TT200) và số
 # 1577+1578, 1579+1580, 1581+1582 (TT99). Bảng đối chiếu từng dòng ở
-# MOC1-DOI-CHIEU.md mục 3.
+# HANDOFF.md, Phụ lục A mục 3.
 FIELD_IDENTITIES: dict[Standard, list] = {
     Standard.TT200: [*_DANG_THUC_CHUNG, _PHAN_RA_TSNH_TT200],
     Standard.TT99: [*_DANG_THUC_CHUNG, _PHAN_RA_TSNH_TT99],
@@ -639,7 +639,7 @@ FIELD_EXCLUDE = {
 # ĐÃ ĐỐI CHIẾU 23/08/2026 với Công báo, từng dòng một. TT200 ở số 287+288
 # (Điều 112, 113); TT99 ở số 1577+1578 (Phụ lục IV Mục 1 — biểu mẫu) và
 # 1579+1580 (nội dung và phương pháp lập). Bảng đối chiếu ở
-# MOC1-DOI-CHIEU.md mục 3.1.
+# HANDOFF.md, Phụ lục A mục 3.1.
 #
 # BA MÃ MANG NGHĨA KHÁC NHAU GIỮA HAI CHUẨN — đây là nguồn lỗi câm, vì tra
 # nhầm bảng mã không làm gì nổ, nó chỉ lặng lẽ trả về một con số HỢP LỆ của

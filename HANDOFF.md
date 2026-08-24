@@ -4,7 +4,10 @@ Viết để một phiên Claude khác đọc và làm tiếp mà **không cần
 Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
 
 - **Nhánh:** `research` (tách từ `main` tại `4216291`)
-- **Commit gần nhất:** `709e58c` — đã push, `research` khớp `origin/research`
+- **Commit gần nhất:** cố ý KHÔNG ghi hash ở đây — dòng này đã cũ đi ba lần
+  chỉ trong một ngày, vì chính commit cập nhật nó lại thành commit mới nhất.
+  Chạy `git log --oneline -1` và `git status -sb`. Quy ước: **push sau mỗi
+  commit**, nên `research` khớp `origin/research` là trạng thái bình thường.
 - **Test:** **374 xanh / 0 đỏ** ở CẢ `USE_OCR_FIRST=true` lẫn `false`.
   `ruff check src tests` sạch.
 - **Bộ chỉ tiêu:** 21 với TT99, 20 với TT200; 7 đẳng thức. MỐC 1 đã đóng.
@@ -809,9 +812,17 @@ donor vẫn lấy từ hồ sơ của **cùng một công ty**, trong khi Felleg
 lợi thế giả tạo. Cộng thêm chỉ 3 trong 4 chế độ lỗi chạy được, và chỉ số định
 vị đang phạt việc ABSTAIN, tức đo mức sẵn sàng đoán chứ không đo độ đúng.
 
-**Việc phải làm để Mốc 3 kết luận được:** tải hồ sơ của **nhiều CIK khác
-nhau** để có tổng thể donor hợp lệ, sửa việc chọn kỳ cho cột so sánh có số,
-và chốt cách tính chỉ số định vị khi một phương pháp từ chối trả lời.
+**Đã làm tiếp, 24/08 tối:** tải **15 công ty Mỹ đa ngành, 26 hồ sơ**, và sửa
+donor để loại **cả công ty đang xét** chứ không chỉ hồ sơ đang xét (`e6c286c`).
+Lượt chạy đầy đủ trên bộ này mất chừng 90 phút; kết quả ghi vào
+`data/output/moc3_15congty.md`.
+
+**Hai việc còn lại để Mốc 3 kết luận được:**
+
+1. **Sửa việc chọn kỳ** cho cột so sánh có số — hiện 0/158 chỉ tiêu có giá trị
+   ở kỳ thứ hai nên COL_SHIFT không inject được.
+2. **Chốt cách tính chỉ số định vị khi một phương pháp TỪ CHỐI trả lời.** Đây
+   là quyết định của người, không phải việc kỹ thuật — xem mục 16 điểm 2.
 
 ---
 

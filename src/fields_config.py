@@ -86,6 +86,25 @@ FIELD_MAP = {
     "thue_tndn_hien_hanh": "Chi phí thuế thu nhập doanh nghiệp hiện hành",
     "thue_tndn_hoan_lai": "Chi phí thuế thu nhập doanh nghiệp hoãn lại",
     "loi_nhuan_sau_thue": "Lợi nhuận sau thuế",
+
+    # --- B03: Báo cáo lưu chuyển tiền tệ ---
+    #
+    # Sáu chỉ tiêu này là kịch bản E của Mốc 1. Chúng đáng giá hơn mọi nhóm
+    # khác vì nhóm DUY NHẤT gắn được đẳng thức thứ hai vào một chỉ tiêu ĐÃ
+    # CÓ: mã 70 của B03 (tiền cuối kỳ) đồng nhất với mã 110 của B01, nên
+    # không cần khai riêng cho nó — dùng thẳng `tien_va_tuong_duong_tien`.
+    # Nhờ vậy sáu chỉ tiêu mới mua được hai đẳng thức, tỷ lệ trao đổi 0,33,
+    # tốt hơn phân rã tài sản ngắn hạn của kịch bản D.
+    #
+    # `tien_dau_ky` còn nối sang KỲ TRƯỚC: văn bản quy định nó lấy từ mã 110
+    # cột "Số đầu kỳ" của B01. Đó chính là câu trả lời cho proposal mục
+    # 6.1(d) — cột kỳ trước có ràng buộc thật nối vào, qua B03.
+    "lctt_hdkd": "Lưu chuyển tiền thuần từ hoạt động kinh doanh",
+    "lctt_dau_tu": "Lưu chuyển tiền thuần từ hoạt động đầu tư",
+    "lctt_tai_chinh": "Lưu chuyển tiền thuần từ hoạt động tài chính",
+    "lctt_thuan": "Lưu chuyển tiền thuần trong kỳ",
+    "tien_dau_ky": "Tiền và tương đương tiền đầu kỳ",
+    "anh_huong_ty_gia": "Ảnh hưởng của thay đổi tỷ giá hối đoái quy đổi ngoại tệ",
 }
 
 # Chỉ tiêu chỉ tồn tại ở MỘT chuẩn. Khai báo tường minh thay vì để suy ra từ
@@ -136,6 +155,20 @@ FIELD_RULES = {
     "thue_tndn_hien_hanh":       {"allow_negative": True,  "required": False},
     "thue_tndn_hoan_lai":        {"allow_negative": True,  "required": False},
     "loi_nhuan_sau_thue":        {"allow_negative": True,  "required": True},
+    # Bốn dòng lưu chuyển tiền CHO PHÉP ÂM, và đây không phải nới lỏng cho
+    # tiện: lưu chuyển tiền từ hoạt động đầu tư âm là doanh nghiệp đang mua
+    # tài sản, từ hoạt động tài chính âm là đang trả nợ hoặc chia cổ tức —
+    # cả hai đều là trạng thái bình thường và phổ biến. Đánh dấu chúng không
+    # âm sẽ biến mọi doanh nghiệp đang đầu tư thành lỗi trích xuất.
+    "lctt_hdkd":                 {"allow_negative": True,  "required": False},
+    "lctt_dau_tu":               {"allow_negative": True,  "required": False},
+    "lctt_tai_chinh":            {"allow_negative": True,  "required": False},
+    "lctt_thuan":                {"allow_negative": True,  "required": False},
+    # Ảnh hưởng tỷ giá âm khi đồng ngoại tệ mất giá — cũng là chuyện thường.
+    "anh_huong_ty_gia":          {"allow_negative": True,  "required": False},
+    # Tiền đầu kỳ thì KHÔNG âm được: nó là số dư tiền mặt của một thời điểm,
+    # bằng đúng mã 110 cột "Số đầu kỳ" trên bảng cân đối.
+    "tien_dau_ky":               {"allow_negative": False, "required": False},
 }
 
 def _khong_am(value) -> bool:
@@ -291,6 +324,32 @@ _DANG_THUC_CHUNG = [
         "loi_nhuan_truoc_thue",
         "Lợi nhuận sau thuế + chi phí thuế hiện hành + hoãn lại "
         "phải bằng Lợi nhuận trước thuế",
+    ),
+    # Hai đẳng thức B03 — kịch bản E. Cả hai chuẩn khai báo GIỐNG HỆT nhau,
+    # đã đối chiếu Công báo và chép nguyên văn ở Phụ lục A mục 3.4 của
+    # HANDOFF.md: `data/legal/2015_289 + 290-200_2014_TT-BTC.pdf` Điều 114
+    # cho TT200, và `data/legal/2025_1581 + 1582_99-2025-TT-BTC.doc` phần
+    # B03 cho TT99. Nên chúng nằm ở _DANG_THUC_CHUNG chứ không tách theo
+    # chuẩn như phân rã tài sản ngắn hạn.
+    (
+        ["lctt_hdkd", "lctt_dau_tu", "lctt_tai_chinh"],
+        "lctt_thuan",
+        "B03: Mã số 50 = Mã số 20 + Mã số 30 + Mã số 40",
+    ),
+    # ĐẲNG THỨC ĐÁNG GIÁ NHẤT CỦA CẢ MỐC 1, và lý do nằm ở vế phải.
+    #
+    # Văn bản viết `Mã số 70 = Mã số 50 + Mã số 60 + Mã số 61`, rồi nói thêm
+    # về mã 70: "bằng chỉ tiêu Mã số 110 trên Bảng cân đối kế toán kỳ đó"
+    # (TT99 thay bằng "Báo cáo tình hình tài chính"). Vì mã 70 ĐỒNG NHẤT với
+    # B01 mã 110 nên vế phải dùng thẳng `tien_va_tuong_duong_tien` thay vì
+    # khai một chỉ tiêu mới — đó chính là cơ chế làm liên kết chéo rẻ hơn
+    # phân rã: nó gắn đẳng thức thứ hai vào một chỉ tiêu ĐÃ CÓ, nên mua được
+    # khả năng định vị mà không phải trả thêm công gán nhãn cho vế phải.
+    (
+        ["lctt_thuan", "tien_dau_ky", "anh_huong_ty_gia"],
+        "tien_va_tuong_duong_tien",
+        "B03: Mã số 70 = Mã số 50 + Mã số 60 + Mã số 61, "
+        "và mã 70 ≡ mã 110 trên B01 — LIÊN KẾT CHÉO GIỮA HAI BIỂU MẪU",
     ),
 ]
 
@@ -494,6 +553,31 @@ FIELD_ALIASES = {
     "tai_san_ngan_han": [
         "Tài sản ngắn hạn",
     ],
+    "lctt_hdkd": [
+        "Lưu chuyển tiền thuần từ hoạt động kinh doanh",
+        "Lưu chuyển tiền tệ thuần từ hoạt động kinh doanh",
+    ],
+    "lctt_dau_tu": [
+        "Lưu chuyển tiền thuần từ hoạt động đầu tư",
+        "Lưu chuyển tiền tệ thuần từ hoạt động đầu tư",
+    ],
+    "lctt_tai_chinh": [
+        "Lưu chuyển tiền thuần từ hoạt động tài chính",
+        "Lưu chuyển tiền tệ thuần từ hoạt động tài chính",
+    ],
+    "lctt_thuan": [
+        "Lưu chuyển tiền thuần trong kỳ",
+        "Lưu chuyển tiền thuần trong năm",
+    ],
+    "tien_dau_ky": [
+        "Tiền và tương đương tiền đầu kỳ",
+        "Tiền và các khoản tương đương tiền đầu kỳ",
+        "Tiền và tương đương tiền đầu năm",
+    ],
+    "anh_huong_ty_gia": [
+        "Ảnh hưởng của thay đổi tỷ giá hối đoái quy đổi ngoại tệ",
+        "Ảnh hưởng của thay đổi tỷ giá hối đoái",
+    ],
     "tien_va_tuong_duong_tien": [
         "Tiền và các khoản tương đương tiền",
         "Tiền và tương đương tiền",
@@ -675,6 +759,18 @@ FIELD_LINE_CODES: dict[Standard, dict[str, tuple[str, str]]] = {
         "thue_tndn_hien_hanh":       ("B02", "51"),
         "thue_tndn_hoan_lai":        ("B02", "52"),
         "loi_nhuan_sau_thue":        ("B02", "60"),
+        # B03 — mã số GIỐNG NHAU ở cả hai chuẩn, đã đối chiếu Công báo.
+        # Không có mã 70 ở đây vì mã 70 đồng nhất với B01 mã 110, tức đã
+        # nằm sẵn ở `tien_va_tuong_duong_tien` bên trên. Khai thêm một dòng
+        # cho nó sẽ tạo ra hai chỉ tiêu cho cùng một con số, và ma trận
+        # ràng buộc sẽ có hai cột tỷ lệ với nhau — tức tự tay tạo ra đúng
+        # loại lỗi không định vị được mà H0 đi tìm.
+        "lctt_hdkd":                 ("B03", "20"),
+        "lctt_dau_tu":               ("B03", "30"),
+        "lctt_tai_chinh":            ("B03", "40"),
+        "lctt_thuan":                ("B03", "50"),
+        "tien_dau_ky":               ("B03", "60"),
+        "anh_huong_ty_gia":          ("B03", "61"),
     },
     Standard.TT99: {
         "tai_san_ngan_han":          ("B01", "100"),
@@ -699,6 +795,18 @@ FIELD_LINE_CODES: dict[Standard, dict[str, tuple[str, str]]] = {
         "thue_tndn_hien_hanh":       ("B02", "51"),
         "thue_tndn_hoan_lai":        ("B02", "52"),
         "loi_nhuan_sau_thue":        ("B02", "60"),
+        # B03 — mã số GIỐNG NHAU ở cả hai chuẩn, đã đối chiếu Công báo.
+        # Không có mã 70 ở đây vì mã 70 đồng nhất với B01 mã 110, tức đã
+        # nằm sẵn ở `tien_va_tuong_duong_tien` bên trên. Khai thêm một dòng
+        # cho nó sẽ tạo ra hai chỉ tiêu cho cùng một con số, và ma trận
+        # ràng buộc sẽ có hai cột tỷ lệ với nhau — tức tự tay tạo ra đúng
+        # loại lỗi không định vị được mà H0 đi tìm.
+        "lctt_hdkd":                 ("B03", "20"),
+        "lctt_dau_tu":               ("B03", "30"),
+        "lctt_tai_chinh":            ("B03", "40"),
+        "lctt_thuan":                ("B03", "50"),
+        "tien_dau_ky":               ("B03", "60"),
+        "anh_huong_ty_gia":          ("B03", "61"),
     },
 }
 

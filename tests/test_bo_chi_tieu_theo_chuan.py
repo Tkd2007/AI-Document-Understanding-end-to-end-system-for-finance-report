@@ -47,7 +47,7 @@ def test_prompt_TT99_van_hoi_ve_dong_ma_TT99_co():
 
 @pytest.mark.parametrize(
     "standard, so_field",
-    [(Standard.TT200, 20), (Standard.TT99, 21)],
+    [(Standard.TT200, 26), (Standard.TT99, 27)],
 )
 def test_khung_ket_qua_dung_so_chi_tieu_cua_chuan(standard, so_field):
     """

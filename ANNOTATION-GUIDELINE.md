@@ -45,13 +45,21 @@ Xem khung ở đầu file.
 |---|---|---|
 | Loại doanh nghiệp | **Phi tài chính** | Tổ chức tín dụng và chi nhánh ngân hàng nước ngoài theo chế độ kế toán riêng của Ngân hàng Nhà nước — mẫu biểu và mã số khác hẳn |
 | Loại báo cáo | Báo cáo **riêng** hoặc **hợp nhất**, nhưng phải ghi rõ | Hai loại có số khác nhau trên cùng một doanh nghiệp cùng một kỳ. Không ghi rõ là trộn hai tổng thể |
-| Biểu mẫu | B01 và B02 (mọi biến thể kỳ: không hậu tố, `a`, `b`) | **Chốt 23/08/2026:** B03 KHÔNG gán nhãn. Bộ chỉ tiêu chốt ở kịch bản D, không chạm B03 |
+| Biểu mẫu | B01, B02 **và B03** (mọi biến thể kỳ: không hậu tố, `a`, `b`) | **Sửa 25/08/2026:** bộ chỉ tiêu chuyển sang kịch bản E nên B03 nay CÓ gán nhãn — 6 chỉ tiêu. Xem mục Sửa đổi |
 | Cột | **Cột kỳ báo cáo**, tức cột đầu | **Chốt 23/08/2026:** cột kỳ so sánh KHÔNG gán nhãn. Nó nhân đôi công mà không thêm một điểm nào cho trần định vị — lý do đầy đủ ở `PREREGISTRATION.md` mục Sửa đổi |
 
-**Bộ chỉ tiêu: 21 với TT99, 20 với TT200.** Danh sách chính thức là
+**Bộ chỉ tiêu: 27 với TT99, 26 với TT200.** Danh sách chính thức là
 `FIELD_MAP` trong `src/fields_config.py`; đừng chép lại vào đây kẻo hai bản
 lệch nhau. Chênh lệch một chỉ tiêu là do **Tài sản sinh học ngắn hạn** chỉ
 tồn tại ở TT99.
+
+**Sáu chỉ tiêu B03 là phần mới nhất, và có một chỗ dễ sai:** mã số 70 của
+B03 (tiền và tương đương tiền cuối kỳ) **KHÔNG** phải một chỉ tiêu riêng.
+Văn bản quy định nó bằng đúng mã 110 trên B01 kỳ đó, nên nó đã nằm sẵn ở
+`tien_va_tuong_duong_tien`. Gán nhãn nó thành một trường thứ hai sẽ tạo ra
+hai chỉ tiêu cho cùng một con số. Nếu số ở hai chỗ **khác nhau** thì đó là
+lỗi của chính báo cáo hoặc của việc bạn đọc — dừng lại và ghi vào ghi chú,
+đừng tự chọn một trong hai.
 
 **Hậu tố `a`/`b` của ký hiệu mẫu biểu là KỲ BÁO CÁO, không phải Thông tư.**
 `B01-DN` là báo cáo năm, `B01a-DN` là giữa niên độ dạng đầy đủ (tức quý),
@@ -347,6 +355,52 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 
 > Mọi thay đổi guideline ghi vào đây kèm **ngày** và **lý do**, và ghi rõ
 > **những tài liệu nào phải gán nhãn lại**. Không sửa đè lên nội dung trên.
+
+### 25/08/2026 — Bộ chỉ tiêu chuyển sang kịch bản E, B03 vào phạm vi
+
+**Phải gán nhãn lại: không tài liệu nào.** `data/gold/` vẫn còn trống tại
+thời điểm sửa, nên Luật 3 được thoả mà không tốn công làm lại. **Đây là lần
+cuối cùng điều đó còn đúng** — ngay khi tài liệu đầu tiên được gán nhãn, mọi
+thay đổi bộ chỉ tiêu đều buộc phải quay lại cả tập.
+
+**(a) Bộ chỉ tiêu lên 27 với TT99 và 26 với TT200** (trước là 21 và 20).
+Thêm 6 chỉ tiêu của báo cáo lưu chuyển tiền tệ B03: ba dòng lưu chuyển (mã
+20, 30, 40), lưu chuyển thuần (50), tiền đầu kỳ (60), ảnh hưởng tỷ giá (61).
+
+**(b) Ô "Biểu mẫu" ở mục 2 đảo lại: B03 nay CÓ gán nhãn.** Quyết định
+23/08 loại B03 vì bộ chỉ tiêu khi đó chốt ở kịch bản D. Người chủ trì chốt
+ngày 24/08/2026 chuyển sang kịch bản E, với lý do học thuật và có số đo hậu
+thuẫn — E hơn D trên mọi trần định vị.
+
+**(c) Đo được sau khi thi công**, ghi lại vì nó là kết quả của H0 và phải
+báo cáo trung thực chứ không chỉ báo phần thuận lợi:
+
+| | Kịch bản D | Kịch bản E |
+|---|---:|---:|
+| Chỉ tiêu (TT200 / TT99) | 20 / 21 | 26 / 27 |
+| Đẳng thức | 7 | 9 |
+| `rank(A)` | 7 | 9 |
+| `dim null(A)` (TT200 / TT99) | 13 / 14 | 17 / 18 |
+| Định vị được (TT200) | 5 / 20 | 7 / 26 |
+| Cột toàn 0 | 0 | 0 |
+
+Hai chỉ tiêu mới định vị được là `tien_va_tuong_duong_tien` và `lctt_thuan`.
+Cái đầu là điểm đáng giá nhất của E: nó vốn đã có trong bộ chỉ tiêu nhưng
+nằm chung một phương với bốn thành phần tài sản ngắn hạn khác, nên không
+định vị được; đẳng thức liên kết chéo B03 gắn cho nó một đẳng thức THỨ HAI
+và tách nó ra. Đó là cơ chế riêng của E mà không nhóm nào khác có.
+
+**Nhưng phải nói cả phần không đẹp:** không gian null tăng từ 13 lên 17
+chiều, và tỷ lệ định vị được gần như đứng yên (25% lên 27%). Thêm 6 chỉ tiêu
+mà chỉ mua được 2 đẳng thức thì phần chênh lệch rơi hết vào không gian vô
+hình. E vẫn tốt hơn D vì trần định vị cao hơn, nhưng nó không sửa được vấn
+đề nền tảng mà H0 đã chỉ ra.
+
+**(d) Việc CHƯA làm, và nó chặn việc gán nhãn tài liệu đầu tiên:** đo lại
+trần người với 26 chỉ tiêu rải qua **ba** biểu mẫu. `ADDENDUM` mục 6 chốt
+giao thức 15 phút một tài liệu khi bộ chỉ tiêu còn nằm trên hai biểu mẫu.
+Ba biểu mẫu nhiều khả năng làm vỡ giao thức đó. Nếu vỡ thì phải sửa giao
+thức **trước** khi gán nhãn tài liệu đầu tiên, không phải sau.
 
 ### 23/08/2026 — Bộ chỉ tiêu, phạm vi biểu mẫu, và quy tắc ô trống
 

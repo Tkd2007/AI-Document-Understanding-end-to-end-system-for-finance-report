@@ -132,21 +132,25 @@ def _ma_tran_that(standard: Standard):
 
 
 @pytest.mark.parametrize("standard", list(Standard))
-def test_bay_dang_thuc_hien_tai_doc_lap_tuyen_tinh(standard):
+def test_moi_dang_thuc_deu_doc_lap_tuyen_tinh(standard):
     """
-    Hạng 7 nghĩa là bảy đẳng thức thật sự độc lập, không cái nào suy ra
-    được từ những cái kia. Không giả định điều này — nếu sau này ai thêm
-    một đẳng thức trùng lặp thì hạng đứng yên và test nói ra ngay.
+    Hạng bằng đúng số đẳng thức nghĩa là không cái nào suy ra được từ
+    những cái kia. Không giả định điều này — thêm một đẳng thức trùng lặp
+    thì hạng đứng yên trong khi số dòng tăng, và test nói ra ngay.
+
+    Con số 9 nằm ở assert chứ không nằm ở tên hàm, vì tên hàm mang con số
+    sẽ phải đổi mỗi lần bộ đẳng thức đổi — đã phải đổi một lần từ 7 lên 9
+    khi bộ chỉ tiêu chuyển từ kịch bản D sang E ngày 25/08/2026.
     """
     A, _ = _ma_tran_that(standard)
 
-    assert A.shape[0] == 7
-    assert rank(A) == 7
+    assert A.shape[0] == 9
+    assert rank(A) == 9
 
 
 @pytest.mark.parametrize(
     ("standard", "n_field", "chieu_null"),
-    [(Standard.TT200, 20, 13), (Standard.TT99, 21, 14)],
+    [(Standard.TT200, 26, 17), (Standard.TT99, 27, 18)],
 )
 def test_chieu_khong_gian_null_theo_tung_chuan(standard, n_field, chieu_null):
     """
@@ -160,14 +164,64 @@ def test_chieu_khong_gian_null_theo_tung_chuan(standard, n_field, chieu_null):
     chỉ tiêu mà quên thêm đẳng thức thì test chỉ ra được là hỏng ở vế nào.
 
     Lưu ý khi đọc kết quả: mở rộng bộ chỉ tiêu KHÔNG thu hẹp không gian null
-    theo chiều tuyệt đối — 11 chỉ tiêu cho 8 chiều, 21 chỉ tiêu cho 14. Cái
-    được cải thiện là số chỉ tiêu PHÁT HIỆN và ĐỊNH VỊ được, nên đừng đọc
-    dim null một mình như thước đo tiến bộ.
+    theo chiều tuyệt đối — 11 chỉ tiêu cho 8 chiều, 21 cho 14, 27 cho 18.
+    Cái được cải thiện là số chỉ tiêu PHÁT HIỆN và ĐỊNH VỊ được, nên đừng
+    đọc dim null một mình như thước đo tiến bộ.
+
+    Kịch bản E làm rõ điều đó hơn mọi bước trước: thêm 6 chỉ tiêu mà chỉ mua
+    được 2 đẳng thức, nên 4 chiều chênh lệch rơi thẳng vào không gian vô
+    hình. Đó là kết quả H0 phải báo cáo trung thực, không phải thứ đem giấu.
     """
     A, _ = _ma_tran_that(standard)
 
     assert len(fields_for(standard)) == n_field
     assert null_space(A).shape == (n_field, chieu_null)
+
+
+def _ma_tran_phu_boi_bo_so_that(standard: Standard):
+    """
+    Ma trận dựng trên đúng phần bộ số VNM đọc tay phủ được, kèm x_ref.
+
+    VÌ SAO PHẢI CẮT BỚT: `VNM_Q1_2026` được đọc tay từ báo cáo và chỉ phủ
+    B01 với B02. Kịch bản E thêm 6 chỉ tiêu của B03, mà bản PDF trong
+    `data/samples/` là ảnh scan nên không rút được số bằng máy. Điền số bịa
+    vào một bộ đối chiếu tự nhận là "đọc tay từ báo cáo" sẽ hỏng đúng thứ
+    làm bộ đối chiếu này có giá trị, nên thà kiểm ít hơn mà thật.
+
+    Hai test dưới đây kiểm trên phần phủ được, và test ngay trước chúng
+    chốt tường minh phần KHÔNG phủ được là phần nào — để khoảng trống này
+    hiện ra trong bộ test chứ không nằm im.
+    """
+    co_so = [ten for ten in fields_for(standard) if ten in VNM_Q1_2026]
+    dang_thuc = [
+        dt
+        for dt in identities_for(standard)
+        if all(ten in VNM_Q1_2026 for ten in [*dt[0], dt[1]])
+    ]
+    A, field_order = build_matrix(co_so, dang_thuc)
+    x_ref = np.array([VNM_Q1_2026[ten] for ten in field_order], dtype=float)
+    return A, field_order, x_ref
+
+
+def test_bo_so_that_chua_phu_duoc_B03_va_test_phai_noi_ra():
+    """
+    Khoảng trống của bộ đối chiếu phải TƯỜNG MINH, không nằm im.
+
+    Nếu sau này ai bổ sung 6 chỉ tiêu B03 vào `VNM_Q1_2026` — việc đó cần
+    người đọc tay từ báo cáo — thì test này đỏ và nhắc gỡ luôn phần cắt bớt
+    ở `_ma_tran_phu_boi_bo_so_that()`. Không có nó, phần cắt bớt sẽ nằm lại
+    vĩnh viễn và hai test dưới lặng lẽ kiểm ít hơn cái tên chúng hứa.
+    """
+    thieu = [ten for ten in fields_for(Standard.TT99) if ten not in VNM_Q1_2026]
+
+    assert thieu == [
+        "lctt_hdkd",
+        "lctt_dau_tu",
+        "lctt_tai_chinh",
+        "lctt_thuan",
+        "tien_dau_ky",
+        "anh_huong_ty_gia",
+    ]
 
 
 def test_bat_bien_scale_nam_trong_khong_gian_null():
@@ -179,8 +233,7 @@ def test_bat_bien_scale_nam_trong_khong_gian_null():
     Hàm scale_direction_in_null() là một ASSERT CHẠY ĐƯỢC: trả False nghĩa
     là ma trận dựng sai chứ không phải lý thuyết sai.
     """
-    A, field_order = _ma_tran_that(Standard.TT99)
-    x_ref = np.array([VNM_Q1_2026[ten] for ten in field_order], dtype=float)
+    A, _, x_ref = _ma_tran_phu_boi_bo_so_that(Standard.TT99)
 
     assert scale_direction_in_null(A, x_ref)
     assert scale_direction_in_null(A, 1e6 * x_ref)
@@ -191,8 +244,7 @@ def test_bo_so_that_thoa_moi_dang_thuc():
     Kiểm chứng chính bộ số VNM: nếu A @ x_ref khác 0 thì hoặc ma trận sai
     dấu, hoặc bộ số trong test sai — cả hai đều phải biết ngay.
     """
-    A, field_order = _ma_tran_that(Standard.TT99)
-    x_ref = np.array([VNM_Q1_2026[ten] for ten in field_order], dtype=float)
+    A, _, x_ref = _ma_tran_phu_boi_bo_so_that(Standard.TT99)
 
     np.testing.assert_allclose(A @ x_ref, 0, atol=1e-6)
 
@@ -222,14 +274,26 @@ def test_khong_con_field_nao_vo_hinh_voi_rang_buoc(standard):
 
 
 @pytest.mark.parametrize("standard", list(Standard))
-def test_nam_chi_tieu_dinh_vi_duoc_va_dung_nam_chi_tieu_do(standard):
+def test_dung_bay_chi_tieu_dinh_vi_duoc_va_dung_bay_chi_tieu_do(standard):
     """
-    Kết quả H0 với bộ chỉ tiêu chốt ở Mốc 1: 5 chỉ tiêu có cột riêng biệt,
-    tăng từ đúng 1 (`tong_tai_san`) của bộ 11 chỉ tiêu cũ.
+    Kết quả H0 với bộ chỉ tiêu kịch bản E: 7 chỉ tiêu có cột riêng biệt.
+    Đường đi: 1 (`tong_tai_san`) ở bộ 11 chỉ tiêu, 5 ở kịch bản D, 7 ở E.
 
-    Chốt cả DANH SÁCH chứ không chỉ số lượng, vì con số 5 có thể giữ nguyên
+    Chốt cả DANH SÁCH chứ không chỉ số lượng, vì con số có thể giữ nguyên
     trong khi thành phần đổi — và thành phần mới là thứ quyết định bảng kết
     quả H2 đọc ra sao.
+
+    HAI CHỈ TIÊU E MUA THÊM, và chúng khác hẳn nhau về ý nghĩa:
+
+      `lctt_thuan` là chỉ tiêu MỚI, nằm trong cả hai đẳng thức B03 nên tự
+      nó có cột riêng biệt. Đây là kiểu lợi thường gặp khi thêm chỉ tiêu.
+
+      `tien_va_tuong_duong_tien` là chỉ tiêu ĐÃ CÓ TỪ TRƯỚC, và đây mới là
+      điểm đáng giá của E. Trước đó nó lẫn trong lớp năm thành phần của mã
+      100 nên không định vị được; đẳng thức liên kết chéo B03 gắn cho nó
+      một đẳng thức THỨ HAI và tách nó ra khỏi lớp ấy. Không nhóm mở rộng
+      nào khác làm được điều đó — chúng chỉ thêm chỉ tiêu mới chứ không gỡ
+      được chỉ tiêu cũ ra khỏi lớp lẫn.
 
     Hai chuẩn cho cùng danh sách dù TT99 nhiều hơn một chỉ tiêu: Tài sản
     sinh học ngắn hạn rơi vào đúng lớp lẫn của các thành phần mã 100, nên nó
@@ -240,17 +304,19 @@ def test_nam_chi_tieu_dinh_vi_duoc_va_dung_nam_chi_tieu_do(standard):
 
     assert [ten for ten, duoc in dinh_vi.items() if duoc] == [
         "tai_san_ngan_han",
+        "tien_va_tuong_duong_tien",
         "tai_san_dai_han",
         "tong_tai_san",
         "tong_nguon_von",
         "loi_nhuan_truoc_thue",
+        "lctt_thuan",
     ]
 
 
 def test_van_khong_ton_tai_bo_field_nao_dinh_vi_duoc_hoan_toan():
     """
     Trả None là một KẾT QUẢ NGHIÊN CỨU hợp lệ, không phải lỗi, và nó SỐNG
-    SÓT qua việc mở rộng bộ chỉ tiêu: kể cả với 21 chỉ tiêu và 7 đẳng thức,
+    SÓT qua việc mở rộng bộ chỉ tiêu: kể cả với 27 chỉ tiêu và 9 đẳng thức,
     không tập con nào làm mọi lỗi một-trường đều định vị được.
 
     Đây là phát biểu H0 mà bài phải bảo vệ, và nó không dịu đi khi thêm chỉ
@@ -259,7 +325,7 @@ def test_van_khong_ton_tai_bo_field_nao_dinh_vi_duoc_hoan_toan():
     không bao giờ đủ, và trọng số dồn sang mỏ neo đơn vị tính với bước đọc
     lại — đúng như proposal mục 6.1 đã lường trước.
 
-    Khác bộ 11 chỉ tiêu ở một điểm về PHƯƠNG PHÁP, không về kết luận: 21 chỉ
+    Khác bộ 11 chỉ tiêu ở một điểm về PHƯƠNG PHÁP, không về kết luận: 27 chỉ
     tiêu là quá nhiều để vét cạn mọi tập con, nên hàm rơi về tìm kiếm tham
     lam và trả `chac_chan=False`. Cờ đó phải được đọc đúng — "không tìm
     thấy" chứ không phải "đã chứng minh không tồn tại".
@@ -267,7 +333,7 @@ def test_van_khong_ton_tai_bo_field_nao_dinh_vi_duoc_hoan_toan():
     bo, chac_chan = minimal_localizing_set(fields_for(Standard.TT99), identities_for(Standard.TT99))
 
     assert bo is None
-    assert not chac_chan, "21 field thì không vét cạn nổi, phải báo là kết quả tham lam"
+    assert not chac_chan, "27 field thì không vét cạn nổi, phải báo là kết quả tham lam"
 
 
 # --- minimal_localizing_set trên ví dụ có lời giải --------------------------
@@ -351,9 +417,9 @@ def test_bao_cao_neu_ro_cac_con_so_quan_trong(tmp_path):
     noi_dung = report(A, field_order, identities_for(Standard.TT99), out_path=duong_dan)
 
     assert duong_dan.read_text(encoding="utf-8") == noi_dung
-    assert "`rank(A)`: **7**" in noi_dung
-    assert "`dim null(A)`: **14**" in noi_dung
-    assert "**5 / 21**" in noi_dung
+    assert "`rank(A)`: **9**" in noi_dung
+    assert "`dim null(A)`: **18**" in noi_dung
+    assert "**7 / 27**" in noi_dung
     assert "tong_tai_san" in noi_dung
     assert "cột toàn 0" in noi_dung
 
@@ -372,4 +438,4 @@ def test_bao_cao_noi_ro_KHONG_CO_field_cot_toan_0_thay_vi_im_lang(tmp_path):
 
     noi_dung = report(A, field_order, identities_for(Standard.TT99))
 
-    assert "**cột toàn 0** (lỗi không PHÁT HIỆN được): **0 / 21** — không có" in noi_dung
+    assert "**cột toàn 0** (lỗi không PHÁT HIỆN được): **0 / 27** — không có" in noi_dung

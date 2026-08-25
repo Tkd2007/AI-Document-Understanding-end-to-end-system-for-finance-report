@@ -658,3 +658,71 @@ tránh bỏ 45–60 giờ gán nhãn cho một luận điểm đã chết. Tu ch
 quyền đó: một kết quả hoà ở tầng XBRL **không còn** cho phép huỷ việc gán
 nhãn. Đổi lại, nó ngăn việc huỷ nhầm vì một phép đo không kiểm được thứ nó
 định kiểm. Đánh đổi này được chấp nhận có ý thức.
+
+---
+
+### 25/08/2026 — Bộ chỉ tiêu chuyển từ kịch bản D sang kịch bản E
+
+**Sửa đổi.** Bộ chỉ tiêu chốt ở Mốc 1 chuyển từ **kịch bản D** (20 chỉ tiêu
+TT200 / 21 TT99, 7 đẳng thức) sang **kịch bản E** (26 / 27 chỉ tiêu, 9 đẳng
+thức). Sáu chỉ tiêu thêm vào đều thuộc báo cáo lưu chuyển tiền tệ B03: ba
+dòng lưu chuyển (mã 20, 30, 40), lưu chuyển thuần (50), tiền đầu kỳ (60),
+ảnh hưởng tỷ giá (61).
+
+Hai đẳng thức thêm vào, chép nguyên văn Công báo — TT200 Điều 114 và TT99
+phần B03 khai báo **giống hệt nhau**:
+
+    Mã số 50 = Mã số 20 + Mã số 30 + Mã số 40
+    Mã số 70 = Mã số 50 + Mã số 60 + Mã số 61
+
+**Lý do chọn E.** Quyết định của người chủ trì ngày 24/08/2026, với lý do
+học thuật: D vốn chỉ được chọn vì tính khả thi của việc gán nhãn chứ không
+phải vì đúng hơn, còn E hơn D trên mọi trần định vị đo được (Top-1 0,54 so
+với 0,50; Top-3 0,96 so với 0,90).
+
+**Cơ chế riêng của E, và là lý do nó khác mọi nhóm mở rộng khác.** Văn bản
+quy định mã 70 của B03 **bằng đúng** mã 110 của B01 kỳ đó, nên nó không cần
+một chỉ tiêu riêng — đẳng thức thứ hai gắn thẳng vào `tien_va_tuong_duong_tien`
+đã có sẵn. Đây là nhóm duy nhất mua được khả năng định vị cho một chỉ tiêu
+**đã nằm trong bộ**, thay vì chỉ thêm chỉ tiêu mới. Nó cũng là câu trả lời
+cho mục 6.1(d) của proposal: cột kỳ trước **có** ràng buộc thật nối vào, qua
+`tien_dau_ky` — thứ mà văn bản quy định lấy từ mã 110 cột "Số đầu kỳ".
+
+**Kết quả đo được sau khi thi công, báo cáo cả hai chiều.**
+
+| | Kịch bản D | Kịch bản E |
+|---|---:|---:|
+| Chỉ tiêu (TT200 / TT99) | 20 / 21 | 26 / 27 |
+| Đẳng thức | 7 | 9 |
+| `rank(A)` | 7 | 9 |
+| `dim null(A)` (TT200 / TT99) | 13 / 14 | **17 / 18** |
+| Định vị được lỗi một-trường (TT200) | 5 / 20 | **7 / 26** |
+| Chỉ tiêu có cột toàn 0 | 0 | 0 |
+
+Chiều thuận: hai chỉ tiêu mới định vị được là `tien_va_tuong_duong_tien` và
+`lctt_thuan`, và cái đầu đúng là cái mà cơ chế liên kết chéo nhắm tới.
+
+**Chiều nghịch, và nó phải nằm trong bài chứ không chỉ trong repo:** không
+gian null tăng từ 13 lên 17 chiều, còn **tỷ lệ** định vị được gần như đứng
+yên — 25% lên 27%. Thêm 6 chỉ tiêu mà chỉ mua được 2 đẳng thức thì 4 chiều
+chênh lệch rơi thẳng vào không gian vô hình. E tốt hơn D, nhưng nó không sửa
+được kết luận nền tảng của H0: phần lớn mẫu lỗi vẫn vô hình với ràng buộc
+đơn thuần, và đó vẫn là lý do phải đọc lại nguồn.
+
+**Phạm vi.** Tu chính này đổi bộ chỉ tiêu, tức đổi đơn vị quan sát của H2 và
+H3 và đổi mọi con số identifiability của H0. Nó KHÔNG đổi phát biểu của bốn
+giả thuyết, không đổi chỉ số chính, không đổi điều kiện phản chứng, và không
+đổi ngưỡng effect size 3 điểm phần trăm.
+
+**Thời điểm, và vì sao nó hợp lệ.** `data/gold/` còn **trống hoàn toàn** khi
+tu chính này được ghi, nên không tài liệu nào phải gán nhãn lại và không kết
+quả nào trên tầng gold tồn tại để tu chính này có thể được chọn cho vừa. Đây
+cũng là lần cuối cùng điều đó còn đúng: ngay khi tài liệu đầu tiên được gán
+nhãn, mọi thay đổi bộ chỉ tiêu đều buộc phải quay lại cả tập.
+
+**Việc chưa làm, và nó CHẶN việc gán nhãn tài liệu đầu tiên.** `ADDENDUM`
+mục 6 chốt giao thức trần người ở 15 phút một tài liệu, đo khi bộ chỉ tiêu
+còn nằm trên hai biểu mẫu. Với 26 chỉ tiêu rải qua **ba** biểu mẫu, giao
+thức đó nhiều khả năng vỡ. Phải bấm giờ thử trên 3–5 tài liệu trước; nếu vỡ
+thì sửa giao thức và ghi một tu chính nữa, **trước** khi gán nhãn tài liệu
+đầu tiên chứ không phải sau.

@@ -8,7 +8,7 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   chỉ trong một ngày, vì chính commit cập nhật nó lại thành commit mới nhất.
   Chạy `git log --oneline -1` và `git status -sb`. Quy ước: **push sau mỗi
   commit**, nên `research` khớp `origin/research` là trạng thái bình thường.
-- **Test:** **374 xanh / 0 đỏ** ở CẢ `USE_OCR_FIRST=true` lẫn `false`.
+- **Test:** **395 xanh / 0 đỏ** ở CẢ `USE_OCR_FIRST=true` lẫn `false`.
   `ruff check src tests` sạch.
 - **Bộ chỉ tiêu:** 21 với TT99, 20 với TT200; 7 đẳng thức. MỐC 1 đã đóng.
 - **`main`:** **KHÔNG BAO GIỜ MERGE** — chỉ thị của người dùng, 24/08/2026.
@@ -16,7 +16,7 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   `main` và trên pull request, nên **CI thực tế không bao giờ chạy** — mọi
   việc kiểm phải làm tại chỗ. Muốn CI có ích thì thêm `research` vào phần
   trigger của `.github/workflows/ci.yml`, KHÔNG phải merge.
-- **Cập nhật:** 24/08/2026
+- **Cập nhật:** 25/08/2026 — Mốc 3 đã chạy xong, xem mục 13c
 
 ---
 
@@ -30,6 +30,11 @@ chứ không phải chi tiết cài đặt.
 Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "Câu 4 chọn ...".
 
 **Đang chờ:** Câu 3 (hoãn được). Không câu nào đang chặn việc gì.
+
+**Mốc 3 đã chạy xong lúc 16:05 ngày 25/08/2026 — điều kiện dừng KHÔNG kích
+hoạt.** Xem mục 13c. Việc kế tiếp không còn bị chặn: gán nhãn `data/gold/`
+(hiện 0/100), và ba baseline còn thiếu (4, 5, 7). Trước khi trích con số Mốc
+3 vào bài, phải chạy phép đo nghi vấn giá-trị-bằng-0 nêu ở cuối mục 13c.
 **Đã trả lời 25/08/2026 — tất cả trong một ngày:** Câu 1 → (a) ba con số định
 vị; Câu 2 → (a) đo ma trận trước; Câu 4 → (a) cùng nguồn khác độ sâu; Câu 5 →
 nới trần 10/20; Câu 6 → ghi làm giới hạn; Câu 7 → (a) hoà thì hoãn phán
@@ -950,9 +955,13 @@ dùng đúng ma trận đó cho CẢ HAI phía, và ghi vào `PREREGISTRATION.md
 một tu chính TRƯỚC khi chạy lại. Ghi rõ trong bài rằng ma trận đến từ đo
 đạc chứ không phải chọn tay.
 
-#### Trạng thái Mốc 3
+#### Trạng thái Mốc 3 — ĐÃ CŨ, xem mục 13c
 
-**VẪN CHƯA ĐÓNG**, và lý do nay đã cụ thể hơn trước:
+> Bốn thứ chặn liệt kê dưới đây **đã gỡ hết** trong ngày 25/08/2026 và lượt
+> chạy lại cho kết quả khác hẳn. Giữ nguyên đoạn này vì nó ghi lý do của
+> từng thứ chặn, nhưng **đừng đọc nó như hiện trạng**.
+
+Hiện trạng lúc 24/08/2026, **VẪN CHƯA ĐÓNG**, lý do cụ thể:
 
 1. Ma trận nhầm lẫn chữ số chưa đo từ dữ liệu thật (chặn `digit_sub`).
 2. Cột kỳ so sánh rỗng nên `col_shift` bỏ 120/130 lượt.
@@ -969,6 +978,122 @@ Lệnh ở mục 15. Nó không gọi `diagnose()` nên chạy nhanh, dùng lạ
 lần đụng vào bộ sinh ứng viên hoặc bộ tiêm lỗi — và **phải chạy lại mỗi lần
 đó**, vì độ phủ chính là thứ quyết định bảng Mốc 3 đọc ra nghĩa gì.
 
+---
+
+### 13c. Lượt chạy Mốc 3 sau khi sửa hết bốn thứ chặn — 25/08/2026
+
+**Chạy 14:22–16:05, 103 phút**, 26 hồ sơ của 14 công ty, **520 lượt** (4 chế
+độ lỗi × 5 seed × 26 hồ sơ). Kết quả đầy đủ ở
+[data/output/moc3_15congty.md](data/output/moc3_15congty.md). Khác lượt chạy
+24/08 ở bốn điểm, mỗi điểm là một thứ chặn đã gỡ:
+
+1. Ma trận nhầm chữ số nay **đo được từ EasyOCR trên sáu font** (`90b271a`),
+   dùng chung cho bộ tiêm và bộ sinh nhưng **khác độ sâu** — bộ sinh giữ 6
+   cặp đầu, bộ tiêm lấy trọn phân phối. Độ phủ `digit_sub` 0,046 → 0,615.
+2. Cột kỳ so sánh nay chọn theo **độ phủ chỉ tiêu** thay vì theo ngày
+   (`f80a53d`), nên `col_shift` inject được đủ 130 lượt thay vì 10.
+3. Trần ứng viên nới 6/12 → **10/20** theo số đo (`68ce4d2`).
+4. Bảng tách theo chế độ lỗi thêm **trước** lượt chạy (`ea1ffb2`), vì việc
+   đếm nằm ở `chay()` chứ không ở `bao_cao()`.
+
+#### Bảng gộp — và vì sao nó không đọc được một mình
+
+| Chỉ số | Đề xuất | Baseline 9 | Ai thắng |
+|---|---:|---:|---|
+| Tỷ lệ lượt còn sai sau sửa (CHÍNH) | 0,719 | 0,646 | baseline 9 |
+| Tỷ lệ lỗi câm mức trường (phụ) | 0,00488 | 0,00597 | đề xuất |
+| **Tỷ lệ bịa mức trường (phụ)** | **0,00400** | **0,00609** | **đề xuất** |
+| Định vị đúng / tổng lượt (CHÍNH) | 0,227 | 0,288 | baseline 9 |
+| Tỷ lệ ra tay | 0,285 | 0,606 | — |
+| Định vị đúng TRÊN LƯỢT CÓ RA TAY | **0,797** | 0,476 | đề xuất |
+| VERIFIED / REPAIRED / ABSTAIN | 125 / 148 / 247 | 125 / 315 / 80 |  |
+
+#### Bảng tách theo chế độ lỗi — bảng quyết định
+
+| Chế độ lỗi | Kiểm được khả năng SỬA? | Còn sai — đề xuất | Còn sai — baseline 9 | Ra tay — đề xuất |
+|---|---|---:|---:|---:|
+| `sign` | có | **0,392** | 0,600 | 0,608 |
+| `digit_substitution` | có | **0,485** | 0,592 | 0,377 |
+| `row_shift` | KHÔNG — phủ 0,015 | 1,000 | 0,654 | 0,062 |
+| `col_shift` | KHÔNG — phủ 0,000 | 1,000 | 0,738 | 0,092 |
+
+#### Đọc kết quả — theo ba tu chính ghi trước khi có bất kỳ con số nào
+
+Đây là chỗ dễ bị cáo buộc đọc kết quả theo ý mình nhất, nên phải nói rõ thứ
+tự thời gian, và nói cho đúng chứ không nói cho đẹp. Lượt chạy bắt đầu
+**14:22:53** và chỉ sinh ra con số đầu tiên lúc **16:05** — `bao_cao()` in một
+lần ở cuối, không có kết quả trung gian nào ra màn hình.
+
+| Tu chính | Commit | Giờ | So với lúc chạy | So với lúc CÓ SỐ |
+|---|---|---|---|---|
+| Bảng tách theo chế độ lỗi | `ea1ffb2` | 14:18 | trước 5 phút | trước 107 phút |
+| Câu 7 — hoà thì hoãn phán quyết | `113e741` | 14:23 | **sau 7 giây** | trước 102 phút |
+| Câu 7 vào PREREGISTRATION | `525fb42` | 14:30 | **sau 7 phút** | trước 95 phút |
+
+Hai dòng cuối commit sau lúc bấm chạy, nên câu "ghi trước khi chạy" là SAI và
+không được viết vào bài. Câu đúng, và cũng là câu mang giá trị đăng ký trước
+thật: **cả ba đều được ghi trước khi tồn tại bất kỳ con số nào của lượt
+chạy** — sớm nhất là 95 phút. Quyết định Câu 7 do người dùng chốt trong tin
+nhắn trước khi lượt chạy được bấm; commit chỉ là lúc chép nó vào file.
+
+Kiểm lại bằng `git log --format='%h %ad %s' --date=format:'%d/%m %H:%M'` và
+`ls -l --time-style=full-iso data/output/moc3_15congty.md` (file tạo lúc
+14:22:53, kích thước 0 cho tới 16:05).
+
+- Tu chính *"Tầng XBRL chỉ kiểm được khả năng SỬA cho 2 trong 4 chế độ lỗi"*
+  nói bảng gộp là trung bình của hai nhóm khác bản chất nên không mang nghĩa,
+  và H3 cho `row_shift`/`col_shift` **phải chờ tập gold**.
+- Trên hai chế độ tầng này kiểm được, đề xuất thắng **+20,8 điểm phần trăm**
+  (`sign`) và **+10,7 điểm** (`digit_substitution`) — cả hai vượt xa ngưỡng
+  effect size 3 điểm đã chốt ở mục 1 của `PREREGISTRATION.md`.
+- Tu chính Câu 7 nói trên tầng XBRL: **thua** kích hoạt điều kiện dừng,
+  **hoà** hoãn phán quyết, **thắng** là bằng chứng mạnh.
+
+Ghép lại: trong phạm vi tầng XBRL kiểm được, **đề xuất THẮNG**, và điều kiện
+dừng Mốc 3 **không kích hoạt**. Hai chế độ lệch dòng/lệch cột chưa được kiểm
+chứ không phải đã thua — ở đó đề xuất ABSTAIN đúng như thiết kế (ra tay 0,062
+và 0,092) trong khi baseline 9 nặn giá trị donor.
+
+Chiều chống bịa cũng thắng: **0,00400 so với 0,00609**. Theo mục 1 của
+`PREREGISTRATION.md`, thắng chiều một mà thua chiều hai là kết quả tiêu cực —
+lượt này thắng cả hai chiều.
+
+#### NGHI VẤN PHẢI ĐO TRƯỚC KHI TRÍCH CON SỐ NÀY VÀO PAPER
+
+Baseline 9 sửa đúng **26–35% số lượt** `row_shift`/`col_shift`, trong khi ở
+hai chế độ đó giá trị thật đã bị ghi đè và biến mất khỏi bảng. Nó không có
+nguồn thông tin nào để lấy lại đúng giá trị ấy, nên tỷ lệ đó cần một lời giải
+thích.
+
+Giả thuyết đáng kiểm trước tiên: các lượt trúng **tập trung vào chỉ tiêu có
+giá trị bằng 0**. Tu chính 24/08/2026 quy định dòng vắng mặt trên biểu mẫu
+được ghi `0` chứ không phải `null`, nên một donor bằng 0 khớp đúng mà không
+cần biết gì về tài liệu. Nếu đúng vậy thì phần thắng của baseline 9 ở hai chế
+độ này là hiện vật của quy ước ghi số, không phải năng lực — và nó cũng làm
+lệch cả bảng gộp.
+
+Cách đo: tách `luot_con_sai` theo `gia_tri_that == 0` hay khác 0, cho cả hai
+phương pháp và cả bốn chế độ. Rẻ, không cần chạy lại `diagnose()`.
+
+#### Việc phải làm mà lượt chạy này lộ ra
+
+- **Kết quả không được lưu dạng JSON.** `chay()` trả dict rồi `bao_cao()` in
+  ngay ra stdout; không gì được ghi lại. Muốn in lại bảng theo cách khác phải
+  chạy lại 103 phút. Cần ghi `data/output/moc3_<ngày>.json` trong khối
+  `__main__` trước lượt chạy kế tiếp.
+- **`data/output/moc3_15congty.md` đã bị sửa tay** ở `db09dc8` đúng bằng thứ
+  `bao_cao()` nay sinh ra, vì không có bản JSON để in lại. Lượt chạy sau sẽ
+  ghi đè file này bằng bản sinh thật.
+
+#### Trạng thái Mốc 3 sau lượt chạy này
+
+**Điều kiện dừng KHÔNG kích hoạt.** Được phép đi tiếp sang C3, C4, D2–D4 và
+sang việc gán nhãn `data/gold/`.
+
+**Nhưng Mốc 3 chưa ĐÓNG**, và lý do nay chỉ còn đúng một: phán quyết cuối
+cùng của H3 nằm ở **tầng gold Việt Nam**, nơi có ảnh nên cả năm nguồn ứng
+viên đều chạy và cả bốn chế độ lỗi đều kiểm được khả năng sửa. Tầng XBRL đã
+cho tất cả những gì nó có thể cho.
 ---
 
 ## 14. Quy ước bắt buộc

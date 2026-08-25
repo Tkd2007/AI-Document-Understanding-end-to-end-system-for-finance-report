@@ -93,9 +93,21 @@ DEM_DO_DUOC: dict[tuple[str, str], int] = {
 
 # Số cặp mà BỘ SINH ỨNG VIÊN được mang. Xem phần "VÌ SAO N = 6" ở đầu file.
 #
-# Không import từ repair.candidates để tránh phụ thuộc vòng: candidates
-# import module này. Giá trị phải khớp MAX_MOI_NGUON, và
-# `tests/test_candidates.py` chốt việc khớp đó.
+# ĐÃ TÁCH KHỎI `MAX_MOI_NGUON`, ngày 25/08/2026. Con số 6 ban đầu lấy từ
+# `MAX_MOI_NGUON` như nó đứng lúc đó; cùng ngày `MAX_MOI_NGUON` được nâng
+# lên 10 sau khi đo thời gian giải, nhưng N Ở ĐÂY GIỮ NGUYÊN 6.
+#
+# Hai lý do, và lý do thứ hai mới là lý do thật:
+#
+# Một, ma trận đo được chỉ có 10 cặp. Để N = 10 nghĩa là bộ sinh mang TRỌN
+# ma trận, độ phủ lên 1,0, và khoảng hở giữa bộ tiêm với bộ sinh biến mất —
+# tức rơi đúng vào phương án (c) đã bị loại, nơi cơ chế ABSTAIN không còn
+# lượt nào để lộ ra.
+#
+# Hai, N được chốt TRƯỚC khi có bất kỳ kết quả Mốc 3 nào theo cấu hình mới.
+# Giữ nguyên nó chính là thứ bảo toàn giá trị của việc đăng ký trước; suy
+# lại N từ `MAX_MOI_NGUON` mới sau khi đã nhìn thấy bảng độ phủ là chọn
+# tham số theo kết quả, đúng thứ đăng ký trước sinh ra để ngăn.
 N_CAP_UNG_VIEN = 6
 
 CHU_SO = "0123456789"

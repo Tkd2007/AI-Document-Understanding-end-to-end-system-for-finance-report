@@ -56,14 +56,21 @@ BAC_SCALE = (-9, -6, -3, 3, 6, 9)
 
 # Trần số ứng viên mỗi trường.
 #
-# Spec đề xuất 10. Để 12 vì riêng nguồn `scale` đã đóng góp 6 ứng viên có
-# cấu trúc khác hẳn nhau, và cắt bớt chúng là cắt đúng chế độ lỗi mà ràng
+# Spec đề xuất 10. Từng để 12 vì riêng nguồn `scale` đã đóng góp 6 ứng viên
+# có cấu trúc khác hẳn nhau, và cắt bớt chúng là cắt đúng chế độ lỗi mà ràng
 # buộc kế toán CHỨNG MINH ĐƯỢC là không bao giờ phát hiện nổi — hệ ràng
 # buộc thuần nhất nên mọi bội vô hướng của nghiệm cũng là nghiệm.
 #
+# NÂNG LÊN 20 ngày 25/08/2026, dựa trên số đo chứ không phải cảm tính. Ở
+# trần 12, bộ sinh sinh trung vị 14 ứng viên nhầm chữ số cho mỗi chỉ tiêu
+# nhưng chỉ 6 sống sót, nên độ phủ `digit_substitution` rơi từ 0,831 xuống
+# 0,369 — đúng tỷ lệ 6/14 của phép chọn ngẫu nhiên. Không cách XẾP nào cứu
+# được (đã thử ba cách, xem HANDOFF mục 0 Câu 5), vì bộ tiêm chọn vị trí bị
+# hỏng ĐỀU XÁC SUẤT nên không tương quan với bất kỳ thứ tự nào bộ sinh biết.
+#
 # Trần vẫn phải có: bước chẩn đoán ở C2 là NP-hard, và số ứng viên mỗi
 # trường vào thẳng cơ số của không gian tìm kiếm.
-MAX_UNG_VIEN = 12
+MAX_UNG_VIEN = 20
 
 # Trần cho MỖI nguồn, áp trước khi xếp theo cost.
 #
@@ -71,7 +78,27 @@ MAX_UNG_VIEN = 12
 # một con số 14 chữ số sinh ra tới 28 biến thể nhầm chữ số, tất cả đều rẻ
 # hơn mọi ứng viên scale. Mà các nguồn bị chèn ra ngoài lại chính là các
 # nguồn bắt những chế độ lỗi mà nguồn đông kia không bắt được.
-MAX_MOI_NGUON = 6
+#
+# NÂNG TỪ 6 LÊN 10 ngày 25/08/2026. Đo trên 10 hồ sơ XBRL, 20 lượt mỗi mức,
+# trần thời gian 10 giây:
+#
+#   | trần   | ứng viên/chỉ tiêu | median | chạm trần giờ | REPAIRED | vượt trần |
+#   |--------|------------------:|-------:|--------------:|---------:|----------:|
+#   | 6 / 12 |              11,9 |   5 ms |          10 % |        3 |         5 |
+#   | 10 / 20|              18,6 |   6 ms |          20 % |        6 |         0 |
+#   | 14 / 28|              22,1 |   7 ms |          20 % |        6 |         0 |
+#
+# Ba điều rút ra. Một, chi phí nằm TRỌN ở phần đuôi — median gần như không
+# đổi, chỉ tỷ lệ chạm trần thời gian tăng. Hai, nới trần đổi 5 lượt
+# `vuot_tran_thay_doi` lấy 3 lượt REPAIRED và 2 lượt hết giờ, tức số lượt
+# sửa được TĂNG GẤP ĐÔI. Ba, mức 14/28 cho kết quả Y HỆT mức 10/20 nhưng
+# tốn thêm ứng viên, nên 10/20 lấy trọn phần lợi ở chi phí thấp hơn.
+#
+# Hệ quả phải theo dõi: lượt chạm trần thời gian trả ABSTAIN với mã
+# `het_gio`, tức một loại ABSTAIN THỨ BA bên cạnh `vo_nghiem` và
+# `vuot_tran_thay_doi`. Nó KHÔNG chứng minh gì về tài liệu — chỉ nói ta hết
+# giờ tìm — nên bảng kết quả phải đếm nó riêng, và `bao_cao()` đã làm vậy.
+MAX_MOI_NGUON = 10
 
 
 @dataclass(frozen=True)

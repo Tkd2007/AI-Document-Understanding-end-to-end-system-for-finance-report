@@ -4,10 +4,10 @@
 | Chế độ lỗi | Lượt | Phủ trước trần | Phủ sau trần | Bị trần cắt |
 |---|---:|---:|---:|---:|
 | `col_shift` | 130 | 0.000 | 0.000 | 0 |
-| `digit_substitution` | 130 | 0.831 | 0.369 | 60 |
+| `digit_substitution` | 130 | 0.831 | 0.615 | 28 |
 | `row_shift` | 130 | 0.015 | 0.015 | 0 |
 | `sign` | 130 | 1.000 | 1.000 | 0 |
-| **TỔNG** | 520 | 0.462 | 0.346 | 60 |
+| **TỔNG** | 520 | 0.462 | 0.408 | 28 |
 
 Nguồn nào sinh ra được giá trị thật (đếm trước trần, có thể trùng):
 

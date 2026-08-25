@@ -124,22 +124,26 @@ def test_nham_chu_so_tra_theo_CHIEU_NGUOC_khong_phai_chieu_xuoi():
     assert 40 not in _gia_tri(tu_nham_chu_so(49))
 
 
-def test_so_cap_ung_vien_khop_tran_moi_nguon():
+def test_so_cap_ung_vien_dung_yen_khi_tran_moi_nguon_thay_doi():
     """
-    N_CAP_UNG_VIEN phải bằng MAX_MOI_NGUON, và đó không phải trùng hợp.
+    N_CAP_UNG_VIEN phải ĐỨNG YÊN ở 6, kể cả khi MAX_MOI_NGUON đổi.
 
-    Con số 6 được chọn vì nó là trần số ứng viên mà nguồn `ocr_alt` được
-    đóng góp cho mỗi chỉ tiêu — hằng số có từ khi C1 ra đời, TRƯỚC mọi phép
-    đo ma trận. Chính vì thế độ phủ 0,933 là kết quả suy ra từ số đo chứ
-    không phải tham số ai đặt sau khi nhìn kết quả.
+    Hai con số này từng bằng nhau: N lấy từ MAX_MOI_NGUON như nó đứng ngày
+    25/08/2026. Cùng ngày MAX_MOI_NGUON được nâng lên 10 sau khi đo thời
+    gian giải, và N cố ý KHÔNG đi theo.
 
-    Để hai con số trôi khỏi nhau là làm mất lập luận đó, và đăng ký trước
-    mất theo.
+    Vì sao không được để nó đi theo: ma trận đo được chỉ có 10 cặp, nên
+    N = 10 nghĩa là bộ sinh mang TRỌN ma trận, độ phủ lên 1,0, khoảng hở
+    giữa bộ tiêm với bộ sinh biến mất, và cơ chế ABSTAIN không còn lượt nào
+    để lộ ra — tức rơi đúng vào phương án đã bị loại.
+
+    Và vì sao phải có test: lần sau ai đó chỉnh MAX_MOI_NGUON sẽ thấy hai
+    con số "đáng lẽ khớp nhau" rồi sửa cho khớp. Test này chặn đúng lúc đó.
     """
-    from nham_chu_so import N_CAP_UNG_VIEN
-    from repair.candidates import MAX_MOI_NGUON
+    from nham_chu_so import DEM_DO_DUOC, N_CAP_UNG_VIEN
 
-    assert N_CAP_UNG_VIEN == MAX_MOI_NGUON
+    assert N_CAP_UNG_VIEN == 6
+    assert N_CAP_UNG_VIEN < len(DEM_DO_DUOC)
 
 
 def test_o_lan_can_giu_lai_bbox_lam_bang_chung():

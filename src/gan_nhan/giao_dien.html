@@ -64,7 +64,12 @@
   ul.kiem li{margin-bottom:3px;display:flex;gap:6px;align-items:flex-start}
   ul.kiem input{width:auto;margin-top:3px}
   .tu-dong{color:var(--muc2)}
-  #thongbao{font-size:13px;margin-top:8px;white-space:pre-wrap}
+  #thongbao{font-size:13px;margin-top:8px}
+  #thongbao ul{margin:4px 0 0;padding-left:20px}
+  #thongbao.ok{color:var(--dat)}
+  #thongbao.loi{border-left:3px solid var(--loi);padding:8px 10px;
+                background:color-mix(in srgb,var(--loi) 10%,transparent)}
+  input.so.thieu{border-color:var(--loi);background:color-mix(in srgb,var(--loi) 14%,transparent)}
 </style>
 </head>
 <body>
@@ -132,6 +137,7 @@
 <script>
 const $ = id => document.getElementById(id);
 let soTrang = 0, trangHienTai = 0, phong = 2.0;
+let nhanTheoTen = {}, moTaKiemTheoMa = {};
 let soLanKiem = 0, daKiemLan1 = false, suaSauKhiKiem = false, mocGio = null;
 
 const fmtGio = g => String(Math.floor(g/60)).padStart(2,'0')+':'+String(g%60).padStart(2,'0');
@@ -171,6 +177,10 @@ async function napChiTieu() {
           <td class="o"><input class="so" data-ten="${c.ten}"
               data-am="${c.cho_phep_am}" placeholder="—"></td></tr>`).join('')}
     </tbody></table>`).join('');
+
+  nhanTheoTen = {};
+  d.nhom.forEach(n => n.chi_tieu.forEach(c => nhanTheoTen[c.ten] = `${n.bieu_mau} mã ${c.ma_so} — ${c.nhan}`));
+  moTaKiemTheoMa = Object.fromEntries(d.danh_muc_kiem.map(o => [o.ma, o.mo_ta]));
 
   $('danhmuc').innerHTML = d.danh_muc_kiem.map(o => o.tu_dong
     ? `<li class="tu-dong"><span>✓</span><span>${o.mo_ta} <i>(máy kiểm)</i></span></li>`
@@ -228,11 +238,44 @@ $('btluu').onclick = async () => {
   const r = await fetch('/api/luu', {method:'POST', headers:{'Content-Type':'application/json'},
                                      body: JSON.stringify(than)});
   const d = await r.json();
-  $('thongbao').textContent = r.ok
-    ? `Đã ghi ${d.da_ghi} — mất ${fmtGio(d.thoi_gian_giay)}`
-    : 'Chưa lưu được: ' + JSON.stringify(d.detail, null, 2);
-  if (r.ok) { mocGio = null; nap(); }
+  if (r.ok) {
+    $('thongbao').className = 'ok';
+    $('thongbao').textContent = `Đã ghi ${d.da_ghi} — mất ${fmtGio(d.thoi_gian_giay)}`;
+    mocGio = null; nap();
+  } else {
+    $('thongbao').className = 'loi';
+    $('thongbao').innerHTML = giaiThichLoi(d.detail);
+  }
 };
+
+function giaiThichLoi(chi_tiet) {
+  $('bang').querySelectorAll('input.so').forEach(el => el.classList.remove('thieu'));
+
+  if (typeof chi_tiet === 'string') return `Chưa lưu được — ${chi_tiet}`;
+
+  if (chi_tiet.loi === 'danh_muc_kiem_chua_du')
+    return '<b>Chưa lưu được — còn ô trong DANH MỤC KIỂM chưa tick:</b><ul>'
+      + chi_tiet.con_thieu.map(m => `<li>${moTaKiemTheoMa[m] || m}</li>`).join('') + '</ul>';
+
+  if (chi_tiet.loi === 'o_khong_doc_duoc') {
+    chi_tiet.o.forEach(ten => {
+      const el = $('bang').querySelector(`input[data-ten="${ten}"]`);
+      if (el) el.classList.add('thieu');
+    });
+    const el = $('bang').querySelector('input.thieu');
+    if (el) el.scrollIntoView({block:'center'});
+    return `<b>Chưa lưu được — còn ${chi_tiet.o.length} ô chưa gõ hoặc gõ không rõ</b>`
+      + ' <i>(đã tô đỏ bên trên)</i><ul>'
+      + chi_tiet.o.map(t => `<li>${nhanTheoTen[t] || t}</li>`).join('') + '</ul>'
+      + '<i>Ô trống hoặc dấu gạch trên báo cáo thì gõ <b>-</b>. '
+      + 'Có dòng nhưng mờ không đọc ra thì gõ <b>?</b>.</i>';
+  }
+
+  if (chi_tiet.loi === 'khong_doc_duoc_don_vi')
+    return '<b>Chưa lưu được — không đọc được dòng đơn vị tính.</b><br>' + chi_tiet.chi_dan;
+
+  return 'Chưa lưu được: ' + JSON.stringify(chi_tiet);
+}
 
 $('doc_id').onchange = async () => {
   if (!$('doc_id').value) return;

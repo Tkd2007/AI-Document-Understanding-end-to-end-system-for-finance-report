@@ -19,13 +19,16 @@ rồi mở http://127.0.0.1:8100
 """
 
 import os
+import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import HTMLResponse, Response
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eval.schema import GOLD_DIR, GroundTruthDoc
 from fields_config import (
@@ -47,6 +50,21 @@ THU_MUC_PDF = Path(os.environ.get("GAN_NHAN_PDF_DIR", "data/samples"))
 GIAO_DIEN = Path(__file__).parent / "giao_dien.html"
 
 app = FastAPI(title="ViFinKIE — công cụ gán nhãn tập gold")
+
+
+@app.exception_handler(StarletteHTTPException)
+async def _in_ly_do_tu_choi(request, exc):
+    """
+    In mọi lần từ chối ra terminal đang chạy máy chủ.
+
+    Người gán nhãn nhìn trình duyệt, còn khi có gì đó không hiểu thì người
+    sửa lỗi nhìn terminal — và trước khi có dòng này, terminal chỉ có
+    `400 Bad Request` trần trụi, không nói được thiếu gì. Mất hai vòng hỏi
+    đáp cho một ô bỏ trống là quá đắt khi phía trước còn 100 tài liệu.
+    """
+    if exc.status_code >= 400:
+        print(f"[TỪ CHỐI] {request.url.path} — {exc.detail}", file=sys.stderr)
+    return await http_exception_handler(request, exc)
 
 # Lúc mở tài liệu, theo doc_id. Dùng để đo thời gian gán nhãn thật, thứ mà
 # ADDENDUM mục 6 cần để biết giao thức 15 phút một tài liệu còn sống không
@@ -282,6 +300,18 @@ def luu(yeu_cau: YeuCauLuu) -> dict:
     Từ chối chứ không cảnh báo rồi vẫn ghi: danh mục kiểm mà bỏ qua được thì
     sau vài chục tài liệu sẽ luôn bị bỏ qua, và mục 8 thành trang trí.
     """
+    # Kiểm siêu dữ liệu TRƯỚC mọi thứ khác. GroundTruthDoc.__post_init__ cũng
+    # kiểm và ném ValueError, nhưng ValueError lọt ra khỏi handler thành lỗi
+    # 500 — người gán nhãn nhận một trang lỗi không nói được thiếu gì, đúng
+    # lúc họ chỉ quên điền một ô. Bắt ở đây để nó thành 400 gọi tên từng ô.
+    thieu_meta = [
+        ten
+        for ten in ("doc_id", "ticker", "period", "source_url", "downloaded_at", "annotator")
+        if not getattr(yeu_cau, ten).strip()
+    ]
+    if thieu_meta:
+        raise HTTPException(400, {"loi": "thieu_sieu_du_lieu", "con_thieu": thieu_meta})
+
     thieu_o = con_thieu_o_kiem(yeu_cau.danh_muc_kiem)
     if thieu_o:
         raise HTTPException(400, {"loi": "danh_muc_kiem_chua_du", "con_thieu": thieu_o})

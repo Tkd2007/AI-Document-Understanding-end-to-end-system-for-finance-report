@@ -202,3 +202,26 @@ def test_go_nham_don_vi_van_bi_tu_choi_chu_khong_lang_le_lay_he_so_1(client):
 
     assert r.status_code == 400
     assert r.json()["detail"]["loi"] == "khong_doc_duoc_don_vi"
+
+
+def test_thieu_sieu_du_lieu_thi_bao_400_goi_ten_tung_o_chu_khong_no_500(client):
+    """
+    `GroundTruthDoc.__post_init__` cũng kiểm và ném ValueError, nhưng
+    ValueError lọt ra khỏi handler thành lỗi 500 — người gán nhãn nhận một
+    trang lỗi không nói được thiếu gì, đúng lúc họ chỉ quên điền một ô.
+
+    Đây là lỗi đã làm mất hai vòng hỏi đáp ngay ở tài liệu đầu tiên, nên nó
+    phải có test chứ không chỉ được sửa.
+    """
+    r = client.post("/api/luu", json=_than(source_url="", downloaded_at="   "))
+
+    assert r.status_code == 400
+    assert r.json()["detail"]["loi"] == "thieu_sieu_du_lieu"
+    assert r.json()["detail"]["con_thieu"] == ["source_url", "downloaded_at"]
+
+
+def test_doc_id_rong_bi_bat_o_tang_400_chu_khong_de_schema_nem(client):
+    r = client.post("/api/luu", json=_than(doc_id=""))
+
+    assert r.status_code == 400
+    assert "doc_id" in r.json()["detail"]["con_thieu"]

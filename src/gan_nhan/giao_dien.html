@@ -253,6 +253,10 @@ function giaiThichLoi(chi_tiet) {
 
   if (typeof chi_tiet === 'string') return `Chưa lưu được — ${chi_tiet}`;
 
+  if (chi_tiet.loi === 'thieu_sieu_du_lieu')
+    return '<b>Chưa lưu được — còn ô SIÊU DỮ LIỆU chưa điền:</b><ul>'
+      + chi_tiet.con_thieu.map(t => `<li>${t}</li>`).join('') + '</ul>';
+
   if (chi_tiet.loi === 'danh_muc_kiem_chua_du')
     return '<b>Chưa lưu được — còn ô trong DANH MỤC KIỂM chưa tick:</b><ul>'
       + chi_tiet.con_thieu.map(m => `<li>${moTaKiemTheoMa[m] || m}</li>`).join('') + '</ul>';

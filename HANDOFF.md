@@ -8,8 +8,8 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   chỉ trong một ngày, vì chính commit cập nhật nó lại thành commit mới nhất.
   Chạy `git log --oneline -1` và `git status -sb`. Quy ước: **push sau mỗi
   commit**, nên `research` khớp `origin/research` là trạng thái bình thường.
-- **Test:** **402 xanh / 0 đỏ** ở CẢ `USE_OCR_FIRST=true` lẫn `false`.
-  `ruff check src tests` sạch.
+- **Test:** **461 xanh / 0 đỏ**, chạy hết khoảng 32 giây.
+  `ruff check src tests chay_gan_nhan.py` sạch.
 - **Bộ chỉ tiêu:** **27 với TT99, 26 với TT200; 9 đẳng thức** — kịch bản E,
   thi công 25/08/2026 (`f1c2738`). MỐC 1 đã đóng.
 - **`main`:** **KHÔNG BAO GIỜ MERGE** — chỉ thị của người dùng, 24/08/2026.
@@ -17,7 +17,11 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   `main` và trên pull request, nên **CI thực tế không bao giờ chạy** — mọi
   việc kiểm phải làm tại chỗ. Muốn CI có ích thì thêm `research` vào phần
   trigger của `.github/workflows/ci.yml`, KHÔNG phải merge.
-- **Cập nhật:** 25/08/2026 — Mốc 3 đã chạy xong, xem mục 13c
+- **Tập gold:** **1 / khoảng 100** tài liệu. Việc gán nhãn ĐÃ BẮT ĐẦU, bằng
+  công cụ trong `src/gan_nhan/` — xem mục 19.
+- **Cập nhật:** 25/08/2026 (lần 2) — Mốc 3 đã chạy xong (mục 13c); công cụ
+  gán nhãn đã dựng và tài liệu gold đầu tiên đã có (mục 19); giao thức đo
+  trần người đã bỏ con số 15 phút cố định (mục 19.3)
 
 ---
 
@@ -34,7 +38,7 @@ Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "
 
 **Mốc 3 đã chạy xong lúc 16:05 ngày 25/08/2026 — điều kiện dừng KHÔNG kích
 hoạt.** Xem mục 13c. Việc kế tiếp không còn bị chặn: gán nhãn `data/gold/`
-(hiện 0/100), và ba baseline còn thiếu (4, 5, 7).
+(hiện **1/100**, đã bắt đầu — mục 19), và ba baseline còn thiếu (4, 5, 7).
 
 **Câu 8 — MỚI, đang chờ.** Phép đo `do_nghich_dao_mot_loi.py` cho thấy tầng
 XBRL tiêm đúng một lỗi mỗi lượt, mà lỗi đơn định vị được lại là ca bộ giải
@@ -42,6 +46,16 @@ liên tục nghịch đảo trọn vẹn — tức thiết kế đang chọn ca 
 baseline 9. Có tiêm **nhiều hơn một lỗi mỗi lượt** ở lượt chạy tới không? Đây
 là thay đổi thiết kế thí nghiệm nên phải vào mục Sửa đổi của
 `PREREGISTRATION.md` TRƯỚC khi chạy. Chi tiết và số đo ở mục 13c.
+**Câu 9 — MỚI, đang chờ, KHÔNG chặn việc gì nhưng có hạn chót.** Giao thức
+đo trần người vừa bỏ con số "15 phút một tài liệu" và thay bằng công thức
+`0,6 × trung vị thoi_gian_giay của 10 tài liệu gold đầu tiên`, sàn 5 phút
+(lý do ở mục 19.3, tu chính đã ghi vào `PREREGISTRATION.md` và
+`ANNOTATION-GUIDELINE.md` mục 6). **Hệ số 0,6 do phiên Claude đề xuất, không
+phải người dùng chọn.** Nó phải được người dùng xác nhận hoặc đổi **trước
+khi có đủ 10 tài liệu gold** — sau thời điểm đó, đổi hệ số là chọn tham số
+sau khi đã nhìn thấy dữ liệu, và tu chính mất hiệu lực bảo vệ. Đổi thì ghi
+thêm một tu chính nữa.
+
 **Đã trả lời 25/08/2026 — tất cả trong một ngày:** Câu 1 → (a) ba con số định
 vị; Câu 2 → (a) đo ma trận trước; Câu 4 → (a) cùng nguồn khác độ sâu; Câu 5 →
 nới trần 10/20; Câu 6 → ghi làm giới hạn; Câu 7 → (a) hoà thì hoãn phán
@@ -76,8 +90,19 @@ Trong repo, đọc theo thứ tự:
 4. [src/repair/diagnose.py](src/repair/diagnose.py) — docstring đầu module
    và các hằng số đầu file. Đây là chỗ tập trung nhiều quyết định thiết kế
    nhất, mỗi cái đều có lý do viết kèm.
-5. [ANNOTATION-GUIDELINE.md](ANNOTATION-GUIDELINE.md) — chỉ cần khi bắt đầu
-   gán nhãn tập gold.
+5. [ANNOTATION-GUIDELINE.md](ANNOTATION-GUIDELINE.md) — cần ngay, vì việc
+   gán nhãn đã bắt đầu (mục 19).
+
+**Một tài liệu nằm NGOÀI repo, dễ quên vì không file nào trỏ tới:** "Sổ tay
+phương pháp ViFinKIE" — artifact riêng của người dùng ở
+`https://claude.ai/code/artifact/8d3cef49-a6b0-40d6-8533-7d42f340d347`. Nó
+giải thích phương pháp nghiên cứu của từng giả thuyết H0–H3, thuật toán, cơ
+sở thống kê, thuật ngữ tiếng Anh kèm nghĩa, cầu nối sang lý thuyết mã, và
+bảng kết quả Mốc 3 kèm trần định vị. Bản HTML nguồn nằm trong thư mục
+scratchpad của phiên đã tạo nó, tức **không còn** — phiên sau muốn sửa thì
+đọc lại nội dung bằng công cụ Artifact với URL trên, rồi xuất bản đè lên
+đúng URL đó. Sổ tay hiện CHƯA có phần công cụ gán nhãn và giao thức trần
+người mới ở mục 19.
 
 ---
 
@@ -1275,20 +1300,35 @@ lệ chứ không phải vì chưa chạy.
    **Nếu Mốc 3 không qua:** dừng, báo cáo, lùi bài về tầng dataset +
    identifiability. Kịch bản E và 100 tài liệu khi đó phải xét lại từ đầu.
 
-### ĐỪNG gán nhãn trước khi biết kết quả MỐC 3
+### ~~ĐỪNG gán nhãn trước khi biết kết quả MỐC 3~~ — RÀO NÀY ĐÃ MỞ
 
-Guideline đã sẵn sàng và bộ chỉ tiêu đã chốt, nên việc gán nhãn **kỹ thuật
-mà nói** bắt đầu được ngay. Đừng bắt đầu.
+> **25/08/2026: Mốc 3 đã chạy, điều kiện dừng không kích hoạt, và việc gán
+> nhãn đã bắt đầu** (mục 19). Giữ lại lập luận dưới đây làm hồ sơ lý do, và
+> vì phần ước lượng chi phí của nó nay đối chiếu được với số đo thật.
 
-Gán nhãn 60 tài liệu tốn khoảng **45–60 giờ công người**: tìm và tải tài
-liệu đủ tiêu chí (15–20 giờ), gán nhãn 60 × 21 chỉ tiêu (20–25 giờ), gán
-nhãn đôi 20 tài liệu và phân xử (8–10 giờ), đo trần người (3 giờ). Toàn bộ
-khoản đó phục vụ một luận điểm mà **MỐC 3 có thể bác bỏ**, và MỐC 3 chỉ tốn
-1–2 ngày cộng vài phút chạy `fetch.py`.
+Lập luận nguyên văn khi rào còn đóng: gán nhãn 60 tài liệu tốn khoảng **45–60
+giờ công người** — tìm và tải tài liệu đủ tiêu chí (15–20 giờ), gán nhãn 60 ×
+21 chỉ tiêu (20–25 giờ), gán nhãn đôi 20 tài liệu và phân xử (8–10 giờ), đo
+trần người (3 giờ) — và toàn bộ khoản đó phục vụ một luận điểm mà **MỐC 3 có
+thể bác bỏ**, trong khi MỐC 3 chỉ tốn 1–2 ngày. Thứ tự đúng là MỐC 3 trước.
 
-Thứ tự đúng: MỐC 3 trước, gán nhãn sau. Nếu baseline 9 hoà thì phạm vi bài
-lùi về dataset + identifiability, và lúc đó quy mô tập gold cần bao nhiêu là
-một câu hỏi khác hẳn.
+**Đối chiếu với số đo thật, và ngân sách NHẸ HƠN dự trù.** Người chủ trì gán
+nhãn tài liệu đầu tiên hết **khoảng 10 phút** cho công đoạn điền (27 chỉ tiêu,
+ba biểu mẫu — nhiều hơn hẳn con số 21 chỉ tiêu / hai biểu mẫu mà dự trù cũ
+dùng). Suy ra cho quy mô hiện tại:
+
+| Khoản | Dự trù cũ (60 tài liệu, 21 chỉ tiêu) | Ước theo số đo (100 tài liệu, 27 chỉ tiêu) |
+|---|---:|---:|
+| Điền nhãn | 20–25 giờ | **~17 giờ** |
+| Gán nhãn đôi + phân xử | 8–10 giờ | ~3,5–6 giờ (20 hoặc 33 tài liệu) |
+| Đo trần người | 3 giờ | ~1–2 giờ (10 tài liệu, đồng hồ ngắn hơn) |
+| Tìm và tải tài liệu | 15–20 giờ | **chưa đo, và nay là khoản LỚN NHẤT** |
+
+Hai điều phải đọc kèm. Thứ nhất, 10 phút là **ước lượng bằng cảm giác**, không
+phải đồng hồ: `thoi_gian_giay` của tài liệu đầu tiên đang bằng 0. Thứ hai,
+khoản chi phối ngân sách đã đổi chỗ — công đoạn điền rẻ hơn tưởng, nên **việc
+tìm và tải 100 tài liệu đủ tiêu chí nay là khoản đắt nhất và là khoản duy
+nhất chưa có số nào**. Nguồn tài liệu vẫn chưa chốt; xem mục 19.4.
 
 ### Ba việc song song, không cái nào chặn cái nào
 
@@ -1348,11 +1388,15 @@ tăng 13 → 17 chiều, còn TỶ LỆ định vị được gần như đứng
 Thêm 6 chỉ tiêu mà chỉ mua 2 đẳng thức thì 4 chiều chênh lệch rơi thẳng vào
 không gian vô hình. E tốt hơn D nhưng không sửa được kết luận nền của H0.
 
-**CÒN LẠI, và nó CHẶN tài liệu gán nhãn đầu tiên — việc của NGƯỜI DÙNG:**
-bấm giờ thử 3–5 tài liệu với 26 chỉ tiêu rải qua **ba** biểu mẫu. `ADDENDUM`
-mục 6 chốt giao thức 15 phút một tài liệu, đo khi bộ chỉ tiêu còn nằm trên
-hai biểu mẫu. Nếu ba biểu mẫu làm vỡ giao thức thì phải sửa giao thức và ghi
-một tu chính nữa **trước** tài liệu đầu tiên, không phải sau.
+**~~CÒN LẠI, và nó CHẶN tài liệu gán nhãn đầu tiên~~ — ĐÃ GIẢI QUYẾT
+25/08/2026, nhưng KHÔNG theo thứ tự đã cam kết.** Việc phải làm là bấm giờ
+thử với 27 chỉ tiêu rải qua ba biểu mẫu, trước tài liệu đầu tiên. Thực tế
+chạy ngược: tài liệu đầu tiên được gán nhãn trước, rồi chính nó cung cấp số
+liệu. Kết quả ngược với dự đoán — giao thức 15 phút không vỡ mà **chùng** —
+và con số 15 phút đã bị bỏ. Đầy đủ ở mục 19.3; tu chính đã ghi vào
+`PREREGISTRATION.md` và `ANNOTATION-GUIDELINE.md`. Thiệt hại thực bằng 0 vì
+số tài liệu đã gán nhãn dưới giao thức trần người vẫn là 0, nhưng thứ tự thì
+đã khác cam kết và điều đó được ghi lại chứ không bỏ qua.
 
 **Một khoảng trống mới sinh ra, đã chốt bằng test:** bộ số đối chiếu
 `VNM_Q1_2026` trong `tests/test_constraints.py` do người đọc tay và chỉ phủ
@@ -1499,6 +1543,122 @@ trích dẫn phải thêm, không phải lý do đổi hướng. Nhưng nó cho 
 
 Luật dừng của proposal vẫn giữ: kiểm lại arXiv **một lần duy nhất** ngay
 trước khi nộp, không tra liên tục.
+
+---
+
+## 19. Tầng gold đã khởi động — công cụ, tài liệu đầu tiên, hai phát hiện
+
+Viết 25/08/2026. Đây là mục mô tả hiện trạng của tầng gold; trước mục này,
+mọi tài liệu trong repo đều giả định `data/gold/` còn trống.
+
+### 19.1 Công cụ gán nhãn `src/gan_nhan/`
+
+Gán nhãn tay 100 tài liệu × 27 chỉ tiêu bằng cách gõ JSON thẳng là việc vừa
+chậm vừa không kiểm chứng được, nên có một công cụ web chạy tại chỗ.
+
+```
+python chay_gan_nhan.py          # rồi mở http://127.0.0.1:8100
+```
+
+**Dùng launcher, ĐỪNG gọi thẳng `uvicorn`.** Gọi thẳng cần đặt biến môi
+trường `GAN_NHAN_PDF_DIR`, mà cú pháp `VAR=x lệnh` chạy trên bash và **lỗi cú
+pháp trên PowerShell** — shell chính của máy này. Đã mất thời gian vì đúng
+việc đó một lần. Launcher còn đặt biến TRƯỚC khi uvicorn nạp app (nên nó
+truyền chuỗi `"gan_nhan.app:app"` chứ không truyền đối tượng app), và kiểm
+thư mục PDF tồn tại và không rỗng trước khi mở cổng.
+
+| File | Việc |
+|---|---|
+| `src/gan_nhan/app.py` | FastAPI: phục vụ ảnh trang, danh sách chỉ tiêu, kiểm đẳng thức, ghi và đọc lại file gold |
+| `src/gan_nhan/giao_dien.html` | Hai khung: PDF bên trái (PageUp/PageDown, +/− phóng to), bảng chỉ tiêu bên phải |
+| `src/gan_nhan/trang.py` | Kết xuất trang PDF bằng **pypdfium2** — KHÔNG dùng pdf2image, máy này không có `pdftoppm` |
+| `src/gan_nhan/so_viet.py` | Đọc số kiểu Việt: `1.234.567`, `(1.234)` là số âm, `-`/`–`/`—` là rỗng |
+| `src/gan_nhan/kiem.py` | Chạy 9 đẳng thức trên chính số vừa gõ, cộng danh mục kiểm của guideline |
+
+**Luật 1 (người gán nhãn mù với đầu ra pipeline) được chốt bằng test, không
+bằng lời hứa.** `tests/test_gan_nhan_mu_voi_pipeline.py` phân tích AST của cả
+gói và bắt đỏ nếu bất kỳ module nào import `router`, `extract_vlm`,
+`extract_baseline`, `ocr_baseline`, `layout_detection`, `repair`, hay `api`.
+Có một test riêng cho `giao_dien.html`. Test loại trừ docstring khỏi phần mã
+thực thi, nếu không thì chính những comment giải thích lệnh cấm sẽ tự làm đỏ.
+
+**Ghi đè được và có dấu vết.** Nút "Mở lại bản đã lưu" nạp lại toàn bộ ô từ
+file gold đã có (giá trị chia ngược về đơn vị trên báo cáo để khớp cái mắt
+đang nhìn), và mỗi lần ghi tăng `so_lan_ghi`. Phát hiện đọc nhầm một chữ số
+thì phải sửa được mà không phải gõ lại 27 ô; nhưng một bản đã sửa ba lần và
+một bản viết một lần rồi thôi là hai thứ khác nhau khi phân tích chất lượng
+gán nhãn, nên lần ghi phải đếm được. Đồng hồ **cố ý chạy lại từ đầu** khi mở
+lại chứ không cộng dồn: `thoi_gian_giay` đo tốc độ trên một tài liệu MỚI, trộn
+một lần sửa một ô vào sẽ làm hỏng chính phép đo trần người.
+
+### 19.2 Tài liệu gold đầu tiên
+
+`data/gold/VNM_2026Q1_TT99.json` — Vinamilk, quý 1 năm 2026, chuẩn TT99, 27
+chỉ tiêu, đơn vị VND (`unit_multiplier: 1`), cả **9 đẳng thức cân**.
+
+**Một chỗ cần người dùng xác nhận:** file này **không có khoá `so_lan_ghi`**
+và `thoi_gian_giay` bằng 0. Công cụ luôn ghi cả hai, nên dấu vết đó nói file
+được sửa bằng tay trong trình soạn thảo chứ không qua công cụ, hoặc được ghi
+bởi bản máy chủ cũ hơn. Không sai về nội dung — số liệu đã kiểm — nhưng nguồn
+gốc thì chưa rõ, và tài liệu đầu tiên là tài liệu đáng biết rõ nguồn gốc
+nhất. Nếu quả là sửa tay thì ghi một dòng vào `notes` của file.
+
+**Hệ quả cho phép đo:** tài liệu này KHÔNG đóng góp số nào cho nhịp gán nhãn,
+vì `thoi_gian_giay` bằng 0. Trung vị nói ở mục 19.3 phải lấy từ 10 tài liệu
+có đồng hồ chạy thật.
+
+### 19.3 Hai thứ rút ra, cả hai ngược với dự đoán đã ghi
+
+**(a) Giao thức trần người 15 phút không vỡ — nó chùng.** `ADDENDUM` mục 6,
+`PREREGISTRATION.md` và mục 17.1 của chính file này đều dự đoán rằng 27 chỉ
+tiêu rải qua ba biểu mẫu sẽ làm **vỡ** đồng hồ 15 phút. Số thật đi ngược:
+công đoạn điền hết khoảng **10 phút**. Đó không phải tin tốt. Con số 15 phút
+tồn tại để tạo **áp lực thời gian**, tức để bản dùng đo trần khác với bản gold
+đã phân xử kỹ. Nếu nhịp làm kỹ đã là 10 phút thì 15 phút là dư: hai bản thành
+cùng một người làm cùng một việc, trần người ra gần 100%, và con số đó không
+diễn giải nổi kết quả hệ thống — mất đúng công dụng mà câu đầu tiên của
+`ADDENDUM` mục 6 nêu.
+
+Giao thức mới: đồng hồ đặt ở **0,6 × trung vị `thoi_gian_giay` của 10 tài liệu
+gold đầu tiên**, làm tròn tới phút, **sàn 5 phút**. Chốt công thức chứ không
+chốt một con số, vì ước lượng 10 phút là cảm giác chứ không phải đồng hồ. Thứ
+duy nhất thật sự cần đăng ký trước là **hệ số 0,6** — nó phải được chọn trước
+khi nhìn thấy kết quả trần người. Xem Câu 9 ở mục 0: hệ số đó do phiên Claude
+đề xuất và người dùng chưa xác nhận.
+
+**(b) Bước kiểm đẳng thức bắt được lỗi mà mắt người vừa bỏ qua — ngay ở tài
+liệu đầu tiên.** Thuế thu nhập hoãn lại (mã 52) bị đọc `1` thành `0` ở hàng
+chục nghìn, lệch đúng 10.000 đồng trên một con số 48 tỷ. Đẳng thức
+`LNST + thuế hiện hành + thuế hoãn lại = LNTT` báo ĐẠT vì sai số tương đối
+4·10⁻⁹ nằm dưới `IDENTITY_TOLERANCE_RATIO` (10⁻⁷); người dùng đọc lại báo cáo
+mới ra. **Không chỉnh ngưỡng dung sai** — dữ liệu mới có một công ty, và
+chỉnh hằng số biên theo một quan sát là cách chắc chắn nhất để chốt nhầm.
+
+Điều đáng ghi lại: **1↔0 KHÔNG có trong ma trận nhầm chữ số đo được từ
+EasyOCR** — cặp phổ biến nhất của máy là 9→0 (23 lần) rồi 5→3 (13 lần). Nếu
+mô hình lỗi của người thật sự khác mô hình lỗi của máy thì đó là một quan sát
+dùng được trong bài, và nó cũng chạm tới thiết kế bộ tiêm lỗi. Nhưng **N = 1
+chưa kết luận gì**; việc đúng là đếm dần từng lỗi người bắt gặp khi gán nhãn,
+chứ không viết kết luận bây giờ.
+
+### 19.4 Việc còn lại của tầng gold, theo thứ tự chặn nhau
+
+1. **Nguồn của 99 tài liệu còn lại — CHẶN mọi thứ khác, và là việc của người
+   dùng.** Không có nguồn thì không có gì để gán nhãn. Theo bảng ngân sách ở
+   mục 16, đây nay là khoản đắt nhất của cả tầng gold và là khoản duy nhất
+   chưa có số ước lượng nào. Phiên Claude viết được script tải khi người dùng
+   chỉ nguồn.
+2. **Chạy đồng hồ thật trên 10 tài liệu đầu.** Không cần chờ đủ 100 — cứ gán
+   nhãn tới đâu đồng hồ chạy tới đó. Đủ 10 thì tính trung vị và chốt số phút
+   cho giao thức trần người.
+3. **Chốt 20 hay 33 tài liệu gán nhãn đôi.** `ADDENDUM` mục 5 viết "một phần
+   ba tập gold", chốt khi tập là 60 nên ra 20. Tập nay khoảng 100 nên cách
+   diễn đạt đó tự nó thành 33. Phải chọn một, và ghi tu chính.
+4. **Người gán nhãn thứ hai — chưa quyết.** Phương án dự phòng ở `ADDENDUM`
+   mục 5 là chính người đó gán lại sau **ít nhất hai tuần**. Nếu dùng phương
+   án này thì lượt gán lại phải bắt đầu SỚM, vì hai tuần là thời gian chờ
+   nằm trên đường găng chứ không phải thời gian làm.
+5. **Đo trần người**, 10 tài liệu, sau khi có số phút ở bước 2.
 
 ---
 

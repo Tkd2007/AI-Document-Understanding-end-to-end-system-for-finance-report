@@ -17,6 +17,8 @@ gian sửa không chứa số bịa.
 import math
 from dataclasses import dataclass, field
 
+from nham_chu_so import N_CAP_UNG_VIEN, ung_vien_cho_chu_so
+
 # Xác suất tiên nghiệm của từng chế độ lỗi, dùng để tính cost.
 #
 # CHƯA HIỆU CHỈNH TRÊN DỮ LIỆU THẬT. Bốn con số này hiện dựa trên mô tả
@@ -32,12 +34,22 @@ XAC_SUAT_TIEN_NGHIEM = {
     "vlm_vote": 0.05,       # model đã từng đọc ra giá trị này ở một mẫu khác
 }
 
-# Cặp chữ số OCR hay đọc nhầm lẫn nhau.
+# Cặp chữ số OCR hay đọc nhầm nay ĐO ĐƯỢC, không còn liệt kê tay.
 #
-# Chỉ liệt kê các cặp có hình dạng thật sự gần nhau. Thêm cặp bừa làm không
-# gian ứng viên phình lên mà không tăng khả năng bắt lỗi, và không gian
-# phình thì bước chẩn đoán ở C2 chậm theo.
-CAP_CHU_SO_NHAM = (("0", "8"), ("1", "7"), ("3", "8"), ("5", "6"))
+# Bảng cũ là bốn cặp `(0,8) (1,7) (3,8) (5,6)` chọn theo hình dạng nhìn bằng
+# mắt. Đối chiếu với số đo ở `src/nham_chu_so.py` thì ba trong bốn cặp đó
+# gần như không xuất hiện, còn cặp áp đảo thật — `9→0`, chiếm 38% mọi quan
+# sát — KHÔNG nằm trong bảng cũ. Nghĩa là nguồn `ocr_alt` trước đây đi tìm
+# sai chế độ lỗi.
+#
+# Chiều tra là chiều NGƯỢC của ma trận: hàm này chỉ thấy chữ số ĐÃ ĐỌC RA và
+# phải đoán ngược lại giá trị thật. Xem docstring `nham_chu_so` — đảo nhầm
+# chiều ở đây là lỗi câm hoàn hảo, ứng viên vẫn sinh đủ số lượng nhưng không
+# bao giờ trúng.
+#
+# Trần `N_CAP_UNG_VIEN` là phía BỊ GIỚI HẠN ĐỘ SÂU của phương án (a): bộ
+# tiêm lỗi lấy toàn bộ phân phối, còn phía này chỉ lấy các cặp đầu bảng, và
+# khoảng hở giữa hai bên là thứ giữ cho cơ chế ABSTAIN còn kiểm chứng được.
 
 # Luỹ thừa 10 cho ứng viên sai đơn vị: nghìn, triệu, tỷ theo cả hai chiều.
 BAC_SCALE = (-9, -6, -3, 3, 6, 9)
@@ -129,10 +141,16 @@ def tu_dau(gia_tri) -> list[Candidate]:
     ]
 
 
-def tu_nham_chu_so(gia_tri) -> list[Candidate]:
+def tu_nham_chu_so(gia_tri, n_cap: int | None = None) -> list[Candidate]:
     """
-    Ứng viên nhầm chữ số: thay từng chữ số bằng chữ số hay bị đọc nhầm
-    thành nó.
+    Ứng viên nhầm chữ số: mỗi chữ số ĐÃ ĐỌC RA được thay bằng các chữ số
+    THẬT có thể đã sinh ra nó, theo ma trận nhầm đã đo.
+
+    Chiều tra là chiều NGƯỢC. Con số đang cầm trong tay là con số OCR đã
+    đọc ra, nên câu hỏi đúng là "chữ số thật nào bị đọc thành chữ số này",
+    không phải "chữ số này bị đọc thành gì". Hai câu đó cho hai tập khác
+    hẳn nhau vì ma trận nhầm KHÔNG đối xứng: `9→0` quan sát được 23 lần
+    còn `0→9` không lần nào.
 
     Chỉ thay MỘT chữ số mỗi ứng viên. Hai chữ số cùng sai trong một con số
     là chuyện hiếm hơn hẳn, và cho phép nó sẽ làm không gian ứng viên phình
@@ -141,13 +159,11 @@ def tu_nham_chu_so(gia_tri) -> list[Candidate]:
     """
     am = gia_tri < 0
     chu_so = str(abs(int(gia_tri)))
+    n_cap = N_CAP_UNG_VIEN if n_cap is None else n_cap
 
     ung_vien = []
     for vi_tri, ky_tu in enumerate(chu_so):
-        for a, b in CAP_CHU_SO_NHAM:
-            thay = b if ky_tu == a else (a if ky_tu == b else None)
-            if thay is None:
-                continue
+        for thay in ung_vien_cho_chu_so(ky_tu, n=n_cap):
             if vi_tri == 0 and thay == "0" and len(chu_so) > 1:
                 continue   # số không bắt đầu bằng 0
 
@@ -158,7 +174,7 @@ def tu_nham_chu_so(gia_tri) -> list[Candidate]:
                     value=-moi if am else moi,
                     source="ocr_alt",
                     cost=_cost("ocr_alt"),
-                    evidence={"vi_tri": vi_tri, "tu": ky_tu, "thanh": thay},
+                    evidence={"vi_tri": vi_tri, "doc_ra": ky_tu, "that_co_the": thay},
                 )
             )
     return ung_vien

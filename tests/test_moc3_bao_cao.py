@@ -22,9 +22,12 @@ from collections import Counter
 from eval.moc3 import bao_cao
 
 
-def _ben(dinh_vi_dung: int, ra_tay: int, verified: int, abstain: int) -> dict:
+def _ben(
+    dinh_vi_dung: int, ra_tay: int, verified: int, abstain: int, luot_con_sai: int = 300
+) -> dict:
     """Một phương pháp trong bảng tổng, chỉ điền các khoá bao_cao() đọc tới."""
     return {
+        "luot_con_sai": luot_con_sai,
         "verdict": Counter({"VERIFIED": verified, "REPAIRED": ra_tay, "ABSTAIN": abstain}),
         "ly_do": Counter({"vuot_tran_thay_doi": abstain}),
         "dinh_vi_dung": dinh_vi_dung,
@@ -119,3 +122,34 @@ def test_khong_chia_cho_khong_khi_mot_ben_khong_bao_gio_ra_tay():
     ket = bao_cao(_ket_qua(cam_tit, BASELINE9))
 
     assert "—" in ket
+
+
+def test_chi_so_H3_chinh_do_o_MUC_LUOT_khong_phai_muc_truong():
+    """
+    Dòng chính của H3 phải là tỷ lệ lượt, và hai dòng mức trường phải in đủ
+    chữ số để đọc được hiệu số.
+
+    Lý do là số học chứ không phải trình bày: hồ sơ XBRL có trung vị 158 chỉ
+    tiêu mà mỗi lượt chỉ tiêm MỘT lỗi, nên tỷ lệ lỗi câm mức trường có trần
+    tuyệt đối khoảng 0,0061 — toàn bộ dải hẹp hơn năm lần ngưỡng effect size
+    3 điểm phần trăm đã chốt ở PREREGISTRATION mục 1. Giữ nó làm chỉ số
+    chính thì mọi so sánh trên tầng này tự động bị tuyên là không khác biệt,
+    và điều kiện phản chứng của H3 tự kích hoạt bất kể phương pháp tốt đến
+    đâu.
+
+    Ba chữ số thập phân trên một dải 0,0061 chỉ cho khoảng sáu giá trị phân
+    biệt được, nên giữ hai dòng phụ mà in ba chữ số là giữ một thứ không đọc
+    được.
+    """
+    de_xuat = _ben(85, 122, 106, 172, luot_con_sai=316)
+    baseline9 = _ben(118, 234, 106, 60, luot_con_sai=280)
+    ket = bao_cao(_ket_qua(de_xuat, baseline9))
+
+    # 316/400 và 280/400 ở mức lượt. Tránh con số rơi đúng mép làm tròn
+    # (315/400 = 0,7875) vì test khi đó gãy vì dấu phẩy động chứ không
+    # phải vì hành vi sai.
+    assert "0.790" in ket and "0.700" in ket
+    assert "CHÍNH" in ket
+
+    # Hai dòng mức trường in sáu chữ số: 5/1000 và 5/1000.
+    assert "0.005000" in ket

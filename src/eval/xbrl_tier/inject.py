@@ -12,14 +12,33 @@ thật. Taxonomy dưới đây phải RÚT RA TỪ LỖI QUAN SÁT ĐƯỢC ở 
 Nam rồi mới chốt tỷ lệ, chứ không bịa từ trực giác. Trước khi có phân loại
 lỗi thật, mọi tỷ lệ ở đây là giả định.
 
-MỘT CÁI BẪY PHƯƠNG PHÁP LUẬN, VÀ LÝ DO BẢNG CHỮ SỐ Ở ĐÂY KHÁC BẢNG Ở
-`repair.candidates`: nếu bộ sinh lỗi và bộ sinh ứng viên sửa dùng CHUNG một
-bảng nhầm lẫn chữ số thì mọi lỗi inject đều nằm sẵn trong tập ứng viên theo
-đúng cấu trúc, và phương pháp đề xuất thắng vì thí nghiệm được dựng cho nó
-thắng. Đó là loại lỗi reviewer giết bài ngay. Nên bảng ở đây RỘNG HƠN hẳn:
-thay một chữ số bằng bất kỳ chữ số nào khác. Phần lỗi rơi ra ngoài tập ứng
-viên là phần phương pháp PHẢI chịu thua, và tỷ lệ đó tự nó là một con số
-đáng báo cáo.
+MỘT CÁI BẪY PHƯƠNG PHÁP LUẬN, VÀ CÁCH NÓ ĐƯỢC GIẢI — sửa 25/08/2026.
+
+Bản trước dùng bảng chữ số RỘNG HƠN hẳn bảng ở `repair.candidates` — thay
+một chữ số bằng bất kỳ chữ số nào khác — với lập luận: dùng chung bảng thì
+mọi lỗi inject nằm sẵn trong tập ứng viên và phương pháp đề xuất thắng vì
+thí nghiệm được dựng cho nó thắng.
+
+Lập luận đó đúng KHI CẢ HAI BẢNG ĐỀU LÀ PHỎNG ĐOÁN, và lúc viết nó thì đúng
+là vậy. Nhưng nó có một cái giá không ai tính: hai bảng phỏng đoán lệch nhau
+làm xác suất trùng rơi xuống xấp xỉ (7/10)×(1/9) ≈ 0,078, đo được 0,092.
+Nghĩa là con số `digit_substitution` của Mốc 3 đo **độ trùng của hai bảng
+phỏng đoán**, không đo phương pháp — vô dụng theo một kiểu khác.
+
+Phép đo hoá giải đúng vấn đề đó. `src/nham_chu_so.py` giữ ma trận nhầm chữ
+số ĐÃ ĐO, và cả hai phía đọc từ đó, nhưng KHÁC ĐỘ SÂU:
+
+  Phía này (bộ tiêm)      lấy mẫu theo TOÀN BỘ phân phối, kể cả phần đuôi.
+  `repair.candidates`     chỉ mang `N_CAP_UNG_VIEN` cặp đầu bảng.
+
+Khoảng hở giữa hai bên là thứ giữ nguyên tinh thần cảnh báo cũ: vẫn còn
+phần lỗi rơi ra ngoài tập ứng viên, phương pháp vẫn PHẢI chịu thua ở đó, và
+tỷ lệ đó nay là một đại lượng SUY RA từ số đo (khối lượng tích luỹ của N cặp
+đầu) thay vì là hệ quả ngẫu nhiên của việc hai người đoán khác nhau.
+
+ĐỪNG "thống nhất" hai bảng lại thành một tập hữu hạn giống hệt nhau. Làm vậy
+thì độ phủ lên 1,0, cơ chế ABSTAIN không còn lượt nào để lộ ra, và ABSTAIN
+chính là lập luận chống bịa của cả bài.
 """
 
 import random
@@ -27,6 +46,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 from eval.xbrl_tier.table import FinancialTable
+from nham_chu_so import lay_mau_doc_nham
 
 # Luỹ thừa 10 dùng cho lỗi sai đơn vị: nghìn và triệu, cả hai chiều.
 #
@@ -37,6 +57,14 @@ from eval.xbrl_tier.table import FinancialTable
 BAC_SCALE = (-6, -3, 3, 6)
 
 CHU_SO = "0123456789"
+
+# Số lần thử lấy mẫu theo phân phối trước khi lùi về chọn đều.
+#
+# Cần trần vì hai ca cấm — trùng chính chữ số cũ, và số 0 ở đầu — có thể
+# chiếm gần hết khối lượng xác suất của một chữ số cụ thể: `9` đo được
+# nhầm thành `0` 23 lần trên 24, nên ở vị trí đầu thì gần như mọi lần lấy
+# mẫu đều rơi vào ca cấm. Lặp tới khi ra khác là treo.
+_SO_LAN_THU = 8
 
 
 class ErrorType(str, Enum):
@@ -79,7 +107,23 @@ def _co_gia_tri(table: FinancialTable, ky: str) -> list[str]:
 
 def _doi_mot_chu_so(gia_tri: float, rng: random.Random) -> tuple[float, dict]:
     """
-    Đổi một chữ số của phần nguyên sang một chữ số khác bất kỳ.
+    Đổi một chữ số của phần nguyên, lấy mẫu theo ma trận nhầm ĐÃ ĐO.
+
+    Chiều tra là chiều XUÔI: ở đây ta biết chữ số THẬT và cần sinh ra một
+    cách đọc sai hợp lý. Đó là chiều ngược với `repair.candidates`, vốn chỉ
+    thấy chữ số đã đọc ra — xem docstring `nham_chu_so`.
+
+    Lấy mẫu theo TOÀN BỘ phân phối kể cả phần đuôi. Chính phần đuôi tạo ra
+    các lượt mà tập ứng viên đóng không chứa cách đọc nào hợp lệ, tức các
+    lượt buộc phương pháp phải bỏ phiếu trắng — và nếu không còn lượt nào
+    như thế thì cơ chế ABSTAIN không kiểm chứng được nữa.
+
+    `nguon_nham` ghi tường minh mẫu này lấy theo số đo hay lùi về đều xác
+    suất. Phải ghi vì hai ca cần đọc khác nhau khi phân tích: lỗi theo số đo
+    là lỗi mô phỏng thực tế và phương pháp có cơ hội sửa đúng; lỗi khi lùi
+    về đều xác suất là lỗi của một chữ số mà phép đo chưa từng thấy hỏng, và
+    nó gần như chắc chắn nằm ngoài tập ứng viên. Gộp lại thì bảng kết quả
+    không tách nổi "phương pháp thua" khỏi "phép đo chưa phủ tới".
 
     Giữ dấu và giữ độ dài: OCR đọc nhầm chữ số chứ không làm mất chữ số, và
     một lỗi làm đổi số chữ số sẽ bị mọi biên độ lớn bắt được ngay — tức là
@@ -89,6 +133,10 @@ def _doi_mot_chu_so(gia_tri: float, rng: random.Random) -> tuple[float, dict]:
     biểu diễn thập phân: 1000 sẽ thành 0 và mất luôn ba chữ số. Đó vừa là
     lỗi mất độ dài mà đoạn trên vừa loại, vừa tệ hơn thế — một giá trị bị
     hỏng thành 0 sẽ bị nhầm với ô trống ở mọi bước phía sau.
+
+    Lấy mẫu lại khi rơi vào ca cấm, tối đa `_SO_LAN_THU` lần rồi mới lùi về
+    chọn đều. Không lặp vô hạn: chữ số đầu là `9` thì mẫu đo được gần như
+    luôn ra `0`, và một vòng lặp chờ nó ra khác sẽ treo.
     """
     dau = -1 if gia_tri < 0 else 1
     chuoi = str(int(abs(gia_tri)))
@@ -96,10 +144,24 @@ def _doi_mot_chu_so(gia_tri: float, rng: random.Random) -> tuple[float, dict]:
     vi_tri = rng.randrange(len(chuoi))
     cu = chuoi[vi_tri]
     cam = {cu, "0"} if vi_tri == 0 and len(chuoi) > 1 else {cu}
-    moi = rng.choice([c for c in CHU_SO if c not in cam])
+
+    moi, nguon = None, "deu_xac_suat"
+    for _ in range(_SO_LAN_THU):
+        ung_vien, nguon_thu = lay_mau_doc_nham(cu, rng)
+        if ung_vien not in cam:
+            moi, nguon = ung_vien, nguon_thu
+            break
+
+    if moi is None:
+        moi = rng.choice([c for c in CHU_SO if c not in cam])
 
     hong = chuoi[:vi_tri] + moi + chuoi[vi_tri + 1 :]
-    return dau * float(int(hong)), {"vi_tri": vi_tri, "chu_so_cu": cu, "chu_so_moi": moi}
+    return dau * float(int(hong)), {
+        "vi_tri": vi_tri,
+        "chu_so_cu": cu,
+        "chu_so_moi": moi,
+        "nguon_nham": nguon,
+    }
 
 
 def _sinh_gia_tri_hong(

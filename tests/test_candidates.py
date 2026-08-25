@@ -80,9 +80,14 @@ def test_nham_chu_so_chi_thay_MOT_chu_so():
     """
     ung_vien = tu_nham_chu_so(18)
 
-    # Chữ số 1 khớp cặp 1<->7 cho 78. Chữ số 8 khớp CẢ HAI cặp có nó:
-    # 0<->8 cho 10, và 3<->8 cho 13.
-    assert _gia_tri(ung_vien) == {78, 10, 13}
+    # Suy từ sáu cặp đầu của ma trận đã đo, tra theo CHIỀU NGƯỢC:
+    #   đọc ra "1" → thật có thể là "7"  (cặp 7→1)  → 78
+    #   đọc ra "8" → thật có thể là "0"  (cặp 0→8)  → 10
+    # Con số cụ thể ở đây neo vào ma trận đã đóng băng trong
+    # src/nham_chu_so.py. Đo lại ma trận thì test này đỏ, và đỏ là ĐÚNG:
+    # đổi ma trận là đổi hành vi của phương pháp, phải có người xem lại chứ
+    # không được trôi qua im lặng.
+    assert _gia_tri(ung_vien) == {78, 10}
 
 
 def test_nham_chu_so_khong_sinh_so_bat_dau_bang_0():
@@ -94,7 +99,47 @@ def test_nham_chu_so_khong_sinh_so_bat_dau_bang_0():
 def test_nham_chu_so_giu_dau_am():
     ung_vien = tu_nham_chu_so(-18)
 
-    assert _gia_tri(ung_vien) == {-78, -10, -13}
+    assert _gia_tri(ung_vien) == {-78, -10}
+
+
+def test_nham_chu_so_tra_theo_CHIEU_NGUOC_khong_phai_chieu_xuoi():
+    """
+    Ma trận nhầm KHÔNG đối xứng, nên tra nhầm chiều cho tập khác hẳn.
+
+    Cặp áp đảo là `9→0`: chữ số thật 9 bị OCR đọc thành 0, quan sát 23 lần,
+    trong khi `0→9` không lần nào. Hàm này chỉ thấy con số ĐÃ ĐỌC RA, nên:
+
+      đọc ra "0"  →  phải đề xuất "9"      (chiều đúng)
+      đọc ra "9"  →  KHÔNG được đề xuất "0" (chiều sai)
+
+    Nếu ai đó tra xuôi ở đây thì mọi thứ vẫn chạy, ứng viên vẫn sinh đủ số
+    lượng, độ phủ vẫn ra một con số trông hợp lý — chỉ có điều bộ sinh đi
+    tìm sai chữ số và không bao giờ trúng. Test này là thứ duy nhất bắt
+    được chuyện đó.
+    """
+    # 40 đọc ra "0" ở vị trí cuối → thật có thể là 49 (9 bị đọc thành 0).
+    assert 49 in _gia_tri(tu_nham_chu_so(40))
+
+    # 49 đọc ra "9" → KHÔNG được đề xuất 40, vì không ai đọc 0 thành 9.
+    assert 40 not in _gia_tri(tu_nham_chu_so(49))
+
+
+def test_so_cap_ung_vien_khop_tran_moi_nguon():
+    """
+    N_CAP_UNG_VIEN phải bằng MAX_MOI_NGUON, và đó không phải trùng hợp.
+
+    Con số 6 được chọn vì nó là trần số ứng viên mà nguồn `ocr_alt` được
+    đóng góp cho mỗi chỉ tiêu — hằng số có từ khi C1 ra đời, TRƯỚC mọi phép
+    đo ma trận. Chính vì thế độ phủ 0,933 là kết quả suy ra từ số đo chứ
+    không phải tham số ai đặt sau khi nhìn kết quả.
+
+    Để hai con số trôi khỏi nhau là làm mất lập luận đó, và đăng ký trước
+    mất theo.
+    """
+    from nham_chu_so import N_CAP_UNG_VIEN
+    from repair.candidates import MAX_MOI_NGUON
+
+    assert N_CAP_UNG_VIEN == MAX_MOI_NGUON
 
 
 def test_o_lan_can_giu_lai_bbox_lam_bang_chung():

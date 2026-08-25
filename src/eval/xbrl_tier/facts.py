@@ -94,6 +94,49 @@ def cac_ky_cua_ho_so(companyfacts: dict, accn: str, unit: str = "USD") -> list[s
     return sorted(ngay, reverse=True)
 
 
+
+def cac_ky_phu_rong_nhat(
+    companyfacts: dict,
+    accn: str,
+    concepts: list[str],
+    n: int = 2,
+    unit: str = "USD",
+) -> list[str]:
+    """
+    `n` kỳ có NHIỀU CHỈ TIÊU CÓ GIÁ TRỊ NHẤT, trả về mới nhất trước.
+
+    VÌ SAO KHÔNG LẤY THẲNG `n` NGÀY GẦN NHẤT, và đây là lỗi đã quan sát
+    được chứ không phải phòng xa: một hồ sơ 10-K chứa đủ loại ngày kết thúc
+    kỳ, không chỉ ngày lập bảng cân đối — ngày trang bìa, ngày sự kiện sau
+    niên độ, ngày của vài fact lẻ. Trên hồ sơ `0000012927-25-000015`, sắp
+    theo ngày giảm dần cho `2024-12-31` với 204/311 chỉ tiêu có giá trị,
+    rồi tới `2024-10-31` với **0/311**. Lấy hai ngày đầu là lấy một cột
+    rỗng làm kỳ so sánh.
+
+    Hậu quả không phải một cột trống vô hại: chế độ lỗi lệch cột lấy giá
+    trị từ cột kỳ so sánh, nên cột rỗng làm nó KHÔNG INJECT ĐƯỢC. Lượt chạy
+    Mốc 3 ngày 24/08/2026 bỏ 120/130 lượt `col_shift` đúng vì lý do này,
+    tức chỉ ba trong bốn chế độ lỗi thật sự chạy.
+
+    Sắp lại theo ngày giảm dần sau khi đã chọn, để giữ quy ước "kỳ gần nhất
+    đứng trước" của `cot_chinh()`. Hoà độ phủ thì kỳ mới hơn thắng.
+    """
+    fact_theo_concept = {c: _cac_fact(companyfacts, c, unit) for c in concepts}
+
+    # Tính độ phủ MỘT LẦN cho mỗi kỳ: _chon_fact() quét cả danh sách fact
+    # nên gọi nó lại trong khoá sắp là quét lại toàn bộ hồ sơ nhiều lần.
+    do_phu = {
+        ky: sum(1 for c in concepts if _chon_fact(fact_theo_concept[c], accn, ky))
+        for ky in cac_ky_cua_ho_so(companyfacts, accn, unit)
+    }
+
+    # Ngày ở dạng ISO nên so chuỗi cũng là so thời gian: sắp giảm dần theo
+    # (độ phủ, ngày) cho ra độ phủ cao trước, hoà thì kỳ mới hơn trước.
+    xep = sorted(do_phu, key=lambda ky: (do_phu[ky], ky), reverse=True)
+
+    return sorted(xep[:n], reverse=True)
+
+
 def build_table(
     companyfacts: dict,
     concepts: list[str],
@@ -110,12 +153,18 @@ def build_table(
     những chỉ tiêu mà đẳng thức nói tới — thêm chỉ tiêu ngoài hệ ràng buộc
     chỉ làm bảng dài ra mà không thêm thông tin cho H1 và H2.
 
-    `periods` để None thì lấy `n_periods` kỳ gần nhất của chính hồ sơ đó.
+    `periods` để None thì lấy `n_periods` kỳ có ĐỘ PHỦ RỘNG NHẤT trên chính
+    `concepts` — không phải `n_periods` ngày gần nhất. Lý do ở docstring
+    `cac_ky_phu_rong_nhat()`: hồ sơ 10-K có nhiều ngày kết thúc kỳ không
+    phải ngày lập bảng cân đối, và lấy theo ngày sẽ chọn trúng một cột rỗng.
+
     Cột kỳ so sánh không phải trang trí: nó vừa là nguồn của chế độ lỗi lệch
     cột vừa là ràng buộc gần như miễn phí, đúng câu hỏi (d) ở mục 6.1
     proposal.
     """
-    cac_ky = periods or cac_ky_cua_ho_so(companyfacts, accn, unit)[:n_periods]
+    cac_ky = periods or cac_ky_phu_rong_nhat(
+        companyfacts, accn, list(concepts), n_periods, unit
+    )
 
     gia_tri: dict[str, dict[str, float | None]] = {}
     nhan: dict[str, str] = {}

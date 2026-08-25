@@ -41,7 +41,7 @@ if __name__ == "__main__":
     _thu_muc_script = str(Path(__file__).resolve().parent)
     sys.path[:] = [p for p in sys.path if Path(p).resolve() != Path(_thu_muc_script)]
 
-from eval.metrics import fabrication_rate, silent_error_rate  # noqa: E402
+from eval.metrics import fabrication_rate, khop_so, silent_error_rate  # noqa: E402
 from eval.xbrl_tier.facts import build_table  # noqa: E402
 from eval.xbrl_tier.inject import ErrorType, inject  # noqa: E402
 from eval.xbrl_tier.linkbase import (  # noqa: E402
@@ -243,7 +243,23 @@ def _ung_vien_cho_bang(bang, gia_tri: dict, ky: str) -> dict:
     }
 
 
-def _do_mot_luot(gia_tri_hong, gia_tri_that, ung_vien, A, thu_tu, donor):
+def _con_sai(sau_sua, gia_tri_that, truong_hong) -> bool:
+    """
+    Chỉ tiêu BỊ TIÊM LỖI có còn sai sau khi sửa không.
+
+    Đây là hạt của chỉ số chính mới cho H3 trên tầng XBRL — xem tu chính
+    25/08/2026 của PREREGISTRATION.md. Nó hỏi ở MỨC LƯỢT, không phải mức
+    trường, và lý do là số học: hồ sơ XBRL có trung vị 158 chỉ tiêu mà mỗi
+    lượt chỉ tiêm một lỗi, nên tỷ lệ lỗi câm mức trường có trần tuyệt đối
+    0,0061 — hẹp hơn năm lần ngưỡng effect size 3 điểm phần trăm đã chốt ở
+    mục 1. Ở mức lượt thì dải trở lại [0, 1] và ngưỡng ấy có nghĩa.
+    """
+    return any(
+        not khop_so(sau_sua.get(ten), gia_tri_that.get(ten)) for ten in truong_hong
+    )
+
+
+def _do_mot_luot(gia_tri_hong, gia_tri_that, ung_vien, A, thu_tu, donor, truong_hong):
     """Chạy cả hai phương pháp trên CÙNG một bộ số, cùng ngân sách."""
     ket = {}
     for ten, ham, kwargs in (
@@ -259,6 +275,7 @@ def _do_mot_luot(gia_tri_hong, gia_tri_that, ung_vien, A, thu_tu, donor):
             "sua_dung_truong": set(kq.changed_fields) if kq.changed_fields else set(),
             "cau": silent_error_rate(sau_sua, gia_tri_that),
             "bia": fabrication_rate(sau_sua, gia_tri_that, A, thu_tu),
+            "luot_con_sai": _con_sai(sau_sua, gia_tri_that, truong_hong),
         }
     return ket
 
@@ -280,6 +297,9 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
             # hẳn nhau, nên một con số duy nhất so chúng là so hai thứ không
             # cùng đơn vị — xem tu chính 25/08/2026 của PREREGISTRATION.md.
             "ra_tay": 0,
+            # Số lượt mà chỉ tiêu bị tiêm lỗi VẪN CÒN SAI sau khi sửa.
+            # Tử số của chỉ số chính mới cho H3 trên tầng này.
+            "luot_con_sai": 0,
             "cau_sai": 0,
             "cau_mau": 0,
             "bia_sai": 0,
@@ -321,7 +341,9 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
                 truong_hong = {e.concept for e in ground_truth}
                 ung_vien = _ung_vien_cho_bang(hong, gia_tri_hong, ky)
 
-                ket = _do_mot_luot(gia_tri_hong, gia_tri_that, ung_vien, A, thu_tu, donor)
+                ket = _do_mot_luot(
+                    gia_tri_hong, gia_tri_that, ung_vien, A, thu_tu, donor, truong_hong
+                )
                 n_luot += 1
 
                 for p, r in ket.items():
@@ -331,6 +353,8 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
                         t["ly_do"][r["ma_ly_do"]] += 1
                     if r["n_changed"] > 0:
                         t["ra_tay"] += 1
+                    if r["luot_con_sai"]:
+                        t["luot_con_sai"] += 1
                     if r["sua_dung_truong"] == truong_hong:
                         t["dinh_vi_dung"] += 1
                     t["cau_sai"] += r["cau"]["sai"]
@@ -375,19 +399,37 @@ def bao_cao(kq: dict) -> str:
         "|---|---:|---:|---|",
     ]
 
-    for nhan, khoa_sai, khoa_mau, thap_hon_tot in (
-        ("Tỷ lệ lỗi câm sau sửa", "cau_sai", "cau_mau", True),
-        ("Tỷ lệ bịa (thoả ràng buộc mà sai)", "bia_sai", "bia_mau", True),
+    def _so_sanh(nhan, vd, vb, chu_so=3):
+        """Một dòng bảng, ai thấp hơn thì thắng. Hoà thì nói HOÀ."""
+        if abs(vd - vb) < 1e-9:
+            ai = "**HOÀ**"
+        else:
+            ai = "đề xuất" if vd < vb else "**baseline 9**"
+        return f"| {nhan} | {vd:.{chu_so}f} | {vb:.{chu_so}f} | {ai} |"
+
+    # CHỈ SỐ CHÍNH của H3 trên tầng này — tu chính 25/08/2026.
+    dong.append(
+        _so_sanh(
+            "**Tỷ lệ lượt còn sai sau sửa (CHÍNH)**",
+            d["luot_con_sai"] / n,
+            b["luot_con_sai"] / n,
+        )
+    )
+
+    # In SÁU chữ số cho hai dòng mức trường, không phải ba.
+    #
+    # Dải của chúng trên tầng XBRL chỉ rộng khoảng 0,0061 vì mẫu số là toàn
+    # bộ chỉ tiêu của hồ sơ (trung vị 158) trong khi mỗi lượt chỉ tiêm một
+    # lỗi. Ba chữ số trên một dải như thế cho khoảng sáu giá trị phân biệt
+    # được, nên "0,005 so với 0,006" có thể là chênh 0 lượt cũng có thể là
+    # chênh 65 lượt — tức giữ lại hai dòng này mà in ba chữ số là vô nghĩa.
+    for nhan, khoa_sai, khoa_mau in (
+        ("Tỷ lệ lỗi câm mức trường (phụ)", "cau_sai", "cau_mau"),
+        ("Tỷ lệ bịa mức trường (phụ)", "bia_sai", "bia_mau"),
     ):
         vd = d[khoa_sai] / d[khoa_mau] if d[khoa_mau] else 0.0
         vb = b[khoa_sai] / b[khoa_mau] if b[khoa_mau] else 0.0
-        if abs(vd - vb) < 1e-9:
-            ai = "**HOÀ**"
-        elif (vd < vb) == thap_hon_tot:
-            ai = "đề xuất"
-        else:
-            ai = "**baseline 9**"
-        dong.append(f"| {nhan} | {vd:.3f} | {vb:.3f} | {ai} |")
+        dong.append(_so_sanh(nhan, vd, vb, chu_so=6))
 
     dong += [
         f"| **Định vị đúng trường bị lỗi (CHÍNH)** | {ty_le(d['dinh_vi_dung'], n)} "
@@ -447,6 +489,16 @@ def bao_cao(kq: dict) -> str:
         "  ở đó là kết quả của H0, không phải của phương pháp.",
         "- **Không được báo cáo dòng 'khi ra tay' một mình.** Thiếu tỷ lệ ra tay",
         "  đi kèm thì một hệ im lặng 399/400 lượt và trúng 1 lượt đạt 1.000.",
+        "",
+        "**Vì sao chỉ số H3 đo ở MỨC LƯỢT trên tầng này** (tu chính 25/08/2026):",
+        "",
+        "Hồ sơ XBRL có trung vị 158 chỉ tiêu và mỗi lượt chỉ tiêm MỘT lỗi, nên",
+        "tỷ lệ lỗi câm mức trường có trần tuyệt đối khoảng 0,0061 — toàn bộ dải",
+        "của nó hẹp hơn năm lần ngưỡng effect size 3 điểm phần trăm mà mục 1 đã",
+        "chốt. Giữ nó làm chỉ số chính thì mọi so sánh trên tầng này đều tự động",
+        "bị tuyên là không khác biệt đáng kể, và điều kiện phản chứng của H3 tự",
+        "kích hoạt bất kể phương pháp tốt đến đâu. Ở mức lượt thì dải trở lại",
+        "[0, 1] và ngưỡng ấy có nghĩa. Tầng gold Việt Nam vẫn giữ mức trường.",
         "",
     ]
 

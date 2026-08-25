@@ -22,7 +22,11 @@ import pytest
 
 from constraints import build_matrix
 from eval.xbrl_tier import fetch
-from eval.xbrl_tier.facts import build_table, cac_ky_cua_ho_so
+from eval.xbrl_tier.facts import (
+    build_table,
+    cac_ky_cua_ho_so,
+    cac_ky_phu_rong_nhat,
+)
 from eval.xbrl_tier.inject import ErrorType, inject, inject_scale_toan_cuc
 from eval.xbrl_tier.linkbase import (
     CalcEquation,
@@ -622,3 +626,84 @@ def test_dry_run_khong_tao_thu_muc_va_khong_cham_mang(monkeypatch, tmp_path):
     dich = tmp_path / "chua_ton_tai"
     assert fetch.tai_ho_so("0000320193", n=3, out_dir=str(dich), dry_run=True) == []
     assert not dich.exists()
+
+# Hồ sơ có một NGÀY LẺ nằm GIỮA hai kỳ lập bảng cân đối, đúng hình dạng
+# của hồ sơ thật: trên `0000012927-25-000015`, sắp theo ngày giảm dần cho
+# 2024-12-31, rồi 2024-10-31 và 2024-10-30 và 2024-06-30, mãi mới tới
+# 2023-12-31. Ngày lẻ phải nằm giữa thì nó mới CHIẾM ĐƯỢC ô thứ hai — đặt
+# nó mới hơn cả hai thì nó chiếm ô thứ nhất và tái hiện một lỗi khác.
+KY_LE = "2025-06-30"
+
+COMPANYFACTS_CO_NGAY_LE = {
+    "cik": 1,
+    "entityName": "Le",
+    "facts": {
+        "us-gaap": {
+            "Assets": {
+                "label": "Total assets",
+                "units": {
+                    "USD": [
+                        {"end": KY_MOI, "val": 1000, "accn": "GOC", "form": "10-K"},
+                        {"end": KY_TRUOC, "val": 900, "accn": "GOC", "form": "10-K"},
+                    ]
+                },
+            },
+            "Liabilities": {
+                "label": "Liabilities",
+                "units": {
+                    "USD": [
+                        {"end": KY_MOI, "val": 400, "accn": "GOC", "form": "10-K"},
+                        {"end": KY_TRUOC, "val": 350, "accn": "GOC", "form": "10-K"},
+                    ]
+                },
+            },
+            "SubsequentThing": {
+                "label": "Chuyện lẻ sau niên độ",
+                "units": {
+                    "USD": [
+                        {"end": KY_LE, "val": 7, "accn": "GOC", "form": "10-K"},
+                    ]
+                },
+            },
+        }
+    },
+}
+
+
+def test_chon_ky_theo_DO_PHU_chu_khong_theo_ngay_gan_nhat():
+    """
+    Cột kỳ so sánh phải là kỳ CÓ SỐ, không phải ngày mới thứ nhì.
+
+    Đây là lỗi đã quan sát được chứ không phải phòng xa. Hồ sơ 10-K chứa đủ
+    loại ngày kết thúc kỳ, không chỉ ngày lập bảng cân đối. Trên hồ sơ
+    `0000012927-25-000015`, sắp theo ngày giảm dần cho 2024-12-31 với
+    204/311 chỉ tiêu có giá trị rồi tới 2024-10-31 với **0/311**.
+
+    Hậu quả không phải một cột trống vô hại: chế độ lỗi lệch cột lấy giá trị
+    từ cột kỳ so sánh, nên cột rỗng làm nó KHÔNG inject được. Lượt chạy Mốc
+    3 ngày 24/08/2026 bỏ 120/130 lượt `col_shift` đúng vì lý do này.
+    """
+    concepts = ["Assets", "Liabilities"]
+
+    # Sắp thuần theo ngày thì ngày lẻ chiếm mất ô thứ hai, tức chiếm đúng
+    # chỗ của cột kỳ so sánh.
+    assert cac_ky_cua_ho_so(COMPANYFACTS_CO_NGAY_LE, "GOC")[:2] == [KY_MOI, KY_LE]
+
+    # Sắp theo độ phủ thì ngày lẻ bị loại, và hai kỳ thật được giữ đúng thứ
+    # tự mới-trước-cũ-sau.
+    assert cac_ky_phu_rong_nhat(
+        COMPANYFACTS_CO_NGAY_LE, "GOC", concepts, n=2
+    ) == [KY_MOI, KY_TRUOC]
+
+
+def test_bang_dung_mac_dinh_co_cot_ky_so_sanh_khong_rong():
+    """
+    Kiểm ở mức `build_table` chứ không chỉ ở hàm chọn kỳ: đường mặc định là
+    đường mà runner Mốc 3 thật sự đi, và một hàm chọn kỳ đúng mà không được
+    nối vào thì cột vẫn rỗng như cũ.
+    """
+    bang = build_table(COMPANYFACTS_CO_NGAY_LE, ["Assets", "Liabilities"], accn="GOC")
+
+    assert bang.periods == [KY_MOI, KY_TRUOC]
+    ky_so_sanh = bang.periods[1]
+    assert all(bang.get(c, ky_so_sanh) is not None for c in bang.concepts)

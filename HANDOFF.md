@@ -8,7 +8,7 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   chỉ trong một ngày, vì chính commit cập nhật nó lại thành commit mới nhất.
   Chạy `git log --oneline -1` và `git status -sb`. Quy ước: **push sau mỗi
   commit**, nên `research` khớp `origin/research` là trạng thái bình thường.
-- **Test:** **395 xanh / 0 đỏ** ở CẢ `USE_OCR_FIRST=true` lẫn `false`.
+- **Test:** **401 xanh / 0 đỏ** ở CẢ `USE_OCR_FIRST=true` lẫn `false`.
   `ruff check src tests` sạch.
 - **Bộ chỉ tiêu:** 21 với TT99, 20 với TT200; 7 đẳng thức. MỐC 1 đã đóng.
 - **`main`:** **KHÔNG BAO GIỜ MERGE** — chỉ thị của người dùng, 24/08/2026.
@@ -33,8 +33,14 @@ Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "
 
 **Mốc 3 đã chạy xong lúc 16:05 ngày 25/08/2026 — điều kiện dừng KHÔNG kích
 hoạt.** Xem mục 13c. Việc kế tiếp không còn bị chặn: gán nhãn `data/gold/`
-(hiện 0/100), và ba baseline còn thiếu (4, 5, 7). Trước khi trích con số Mốc
-3 vào bài, phải chạy phép đo nghi vấn giá-trị-bằng-0 nêu ở cuối mục 13c.
+(hiện 0/100), và ba baseline còn thiếu (4, 5, 7).
+
+**Câu 8 — MỚI, đang chờ.** Phép đo `do_nghich_dao_mot_loi.py` cho thấy tầng
+XBRL tiêm đúng một lỗi mỗi lượt, mà lỗi đơn định vị được lại là ca bộ giải
+liên tục nghịch đảo trọn vẹn — tức thiết kế đang chọn ca thuận lợi nhất cho
+baseline 9. Có tiêm **nhiều hơn một lỗi mỗi lượt** ở lượt chạy tới không? Đây
+là thay đổi thiết kế thí nghiệm nên phải vào mục Sửa đổi của
+`PREREGISTRATION.md` TRƯỚC khi chạy. Chi tiết và số đo ở mục 13c.
 **Đã trả lời 25/08/2026 — tất cả trong một ngày:** Câu 1 → (a) ba con số định
 vị; Câu 2 → (a) đo ma trận trước; Câu 4 → (a) cùng nguồn khác độ sâu; Câu 5 →
 nới trần 10/20; Câu 6 → ghi làm giới hạn; Câu 7 → (a) hoà thì hoãn phán
@@ -1058,22 +1064,67 @@ Chiều chống bịa cũng thắng: **0,00400 so với 0,00609**. Theo mục 1 
 `PREREGISTRATION.md`, thắng chiều một mà thua chiều hai là kết quả tiêu cực —
 lượt này thắng cả hai chiều.
 
-#### NGHI VẤN PHẢI ĐO TRƯỚC KHI TRÍCH CON SỐ NÀY VÀO PAPER
+#### ĐÃ ĐO XONG NGHI VẤN — và câu trả lời đổi cách đọc cả bảng
 
-Baseline 9 sửa đúng **26–35% số lượt** `row_shift`/`col_shift`, trong khi ở
-hai chế độ đó giá trị thật đã bị ghi đè và biến mất khỏi bảng. Nó không có
-nguồn thông tin nào để lấy lại đúng giá trị ấy, nên tỷ lệ đó cần một lời giải
-thích.
+Nghi vấn ban đầu: baseline 9 sửa đúng **26–35% số lượt** `row_shift`/
+`col_shift` trong khi ở hai chế độ đó giá trị thật đã bị ghi đè và biến mất
+khỏi bảng, nên nó không có nguồn nào để lấy lại đúng con số ấy.
 
-Giả thuyết đáng kiểm trước tiên: các lượt trúng **tập trung vào chỉ tiêu có
-giá trị bằng 0**. Tu chính 24/08/2026 quy định dòng vắng mặt trên biểu mẫu
-được ghi `0` chứ không phải `null`, nên một donor bằng 0 khớp đúng mà không
-cần biết gì về tài liệu. Nếu đúng vậy thì phần thắng của baseline 9 ở hai chế
-độ này là hiện vật của quy ước ghi số, không phải năng lực — và nó cũng làm
-lệch cả bảng gộp.
+**Giả thuyết đầu — đã bị bác bằng số đo.** Nghi là các lượt trúng rơi vào chỉ
+tiêu có giá trị thật bằng 0, vì tu chính 24/08 ghi dòng vắng mặt là `0` nên
+trung vị donor bằng 0 sẽ khớp mà không cần biết gì. Đo được **0 trên 520
+lượt** có giá trị thật bằng 0, và donor khớp giá trị thật **0 trên 520 lượt**.
+Sai hoàn toàn. Bộ đếm giữ lại trong bảng để lần sau không ai kiểm lại.
 
-Cách đo: tách `luot_con_sai` theo `gia_tri_that == 0` hay khác 0, cho cả hai
-phương pháp và cả bốn chế độ. Rẻ, không cần chạy lại `diagnose()`.
+**Lời giải thích đúng, và nó quan trọng hơn nhiều.** Baseline 9 không điền
+thẳng giá trị donor: nó chọn bộ giá trị gần donor nhất **mà vẫn thoả ràng
+buộc**, tức giải một bài tối ưu liên tục. Khi đúng một trường sai và trường
+đó được thả ra một mình thì `r = δᵢ·aᵢ`, nên nghiệm duy nhất là `δ = −δᵢ`,
+bất kể donor ở đâu. **Baseline 9 không bịa — nó NGHỊCH ĐẢO**, và với lỗi đơn
+định vị được thì phép nghịch đảo trả lại đúng giá trị thật tới từng chữ số.
+
+Dấu vết nằm sẵn trong bảng: tỷ lệ sửa đúng của baseline 9 gần trùng tỷ lệ
+định vị đúng ở ba trong bốn chế độ — lệch 1–2 lượt trên 130. Nó sửa đúng KHI
+VÀ CHỈ KHI nó định vị đúng.
+
+Phép đo mới ([src/eval/do_nghich_dao_mot_loi.py](src/eval/do_nghich_dao_mot_loi.py),
+kết quả ở [data/output/moc3_nghich_dao_mot_loi.md](data/output/moc3_nghich_dao_mot_loi.md))
+xác nhận cơ chế bằng đại số và cho ra một con số dùng được cho cả bài:
+
+| Trạng thái | Tỷ lệ | Nghĩa |
+|---|---:|---|
+| Ràng buộc **chốt đúng** giá trị | 0,608 | **Trần trên của mọi bộ giải liên tục** khi không đọc lại tài liệu |
+| Không chốt | 0,146 | Khoảng hở mà việc đọc lại nguồn tồn tại để lấp |
+| Cột bằng 0 | 0,246 | Không ràng buộc nào bảo vệ — kết quả của **H0** |
+
+Con số 0,246 khớp với 125/520 = 0,240 lượt VERIFIED trong bảng Mốc 3, tức hai
+phép đo độc lập cho cùng một câu trả lời.
+
+#### Chuẩn hoá theo trần — bảng Mốc 3 đọc ra nghĩa khác hẳn bảng thô
+
+| Chế độ lỗi | Trần | Đề xuất | % trần | Baseline 9 | % trần |
+|---|---:|---:|---:|---:|---:|
+| `sign` | 0,608 | **0,608** | **100,0%** | 0,400 | 65,8% |
+| `digit_substitution` | 0,608 | 0,515 | 84,7% | 0,408 | 67,1% |
+| `row_shift` | 0,608 | 0,000 | 0,0% | 0,346 | 56,9% |
+| `col_shift` | 0,585 | 0,000 | 0,0% | 0,262 | 44,8% |
+
+Ở `sign`, phương pháp đề xuất **giải đúng MỌI lượt mà thông tin tồn tại** và
+im lặng ở phần còn lại. Không thể hơn được nữa. Đây là cách trình bày kết quả
+nên dùng trong bài: chuẩn hoá theo trần identifiability biến H0 từ một mục
+độc lập thành công cụ làm cho H2 và H3 đọc được.
+
+#### HỆ QUẢ CHO THIẾT KẾ THÍ NGHIỆM — phần phải nhớ nhất
+
+Tầng XBRL tiêm **đúng một lỗi mỗi lượt**, mà lỗi đơn định vị được lại chính
+là ca phép nghịch đảo liên tục giải trọn vẹn. **Thiết kế hiện tại đang chọn
+đúng ca thuận lợi nhất cho baseline 9.**
+
+Khoảng hở mà "đọc lại nguồn" lấp là ca ràng buộc KHÔNG chốt được giá trị:
+nhiều lỗi đồng thời, cột bằng 0, cột tỷ lệ với nhau, và lỗi nằm trong
+`null(A)`. Đây là số đo chứ không phải lời bào chữa, và nó nói **lượt chạy
+tới phải tiêm nhiều hơn một lỗi mỗi lượt**. Đó là thay đổi thiết kế, nên phải
+ghi vào mục Sửa đổi của `PREREGISTRATION.md` TRƯỚC khi chạy.
 
 #### Việc phải làm mà lượt chạy này lộ ra
 

@@ -14,6 +14,16 @@ pillow==12.2.0
 pdf2image==1.17.0          # cần Poppler cài sẵn ở máy, xem POPPLER_PATH trong README
 numpy==2.5.1
 
+# Dựng ảnh trang PDF cho công cụ gán nhãn (src/gan_nhan/trang.py).
+#
+# Vì sao KHÔNG dùng pdf2image vốn đã có ở dòng trên: pdf2image gọi nhị phân
+# Poppler ở ngoài, và máy dùng để gán nhãn có thể không có nó — kiểm ngày
+# 25/08/2026 trên máy người dùng thì `pdftotext` có mà `pdftoppm` KHÔNG. Nên
+# pdf2image sẽ nổ lúc chạy chứ không phải lúc cài, tức hỏng vào đúng lúc
+# người gán nhãn mở tài liệu đầu tiên. pypdfium2 là wheel thuần, không phụ
+# thuộc nhị phân ngoài, nên cài xong là chạy.
+pypdfium2==5.12.1
+
 # --- Giải bài định vị lỗi ---
 #
 # scipy vốn đã có trong image từ trước theo chuỗi easyocr → scikit-image →

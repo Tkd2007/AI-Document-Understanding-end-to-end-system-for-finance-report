@@ -51,6 +51,27 @@ class GroundTruthDoc:
     adjudicated: bool = False        # đã qua phân xử bất đồng chưa
     notes: str = ""
 
+    # Ba trường dưới ghi lại CÁCH tài liệu này được gán nhãn, không phải nội
+    # dung của nó. Chúng có giá trị mặc định nên mọi file gold ghi trước khi
+    # thêm chúng vẫn đọc lại được.
+    #
+    # thoi_gian_giay phục vụ một phép đo đã cam kết: ADDENDUM mục 6 chốt giao
+    # thức trần người ở 15 phút một tài liệu, đo khi bộ chỉ tiêu còn nằm trên
+    # hai biểu mẫu. Kịch bản E trải nó qua ba biểu mẫu, nên giao thức ấy phải
+    # được đo lại chứ không giả định. Ghi thời gian ngay lúc gán nhãn là cách
+    # rẻ nhất để có số liệu đó mà không phải tổ chức một buổi đo riêng.
+    #
+    # Hai trường còn lại là dấu vết kiểm toán cho một rủi ro thật: công cụ
+    # gán nhãn cho phép kiểm đẳng thức trên chính số người vừa gõ, và người
+    # có thể sửa một chữ số cho cân thay vì đọc lại. Guideline mục 8 cấm việc
+    # đó, nhưng lời cấm không tự kiểm chứng được. Ghi lại số lần kiểm và việc
+    # có sửa sau khi kiểm hay không làm rủi ro thành ĐO ĐƯỢC: về sau tách
+    # được nhóm "cân ngay từ đầu" khỏi nhóm "cân sau khi sửa", và nếu hai
+    # nhóm cho kết quả khác nhau thì biết ngay thay vì ngờ ngợ.
+    thoi_gian_giay: int = 0
+    so_lan_kiem_dang_thuc: int = 0
+    sua_gia_tri_sau_khi_kiem: bool = False
+
     def __post_init__(self):
         thieu = [
             ten

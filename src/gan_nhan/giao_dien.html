@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gán nhãn tập gold — ViFinKIE</title>
+<style>
+  :root{
+    --nen:#f3f4f6; --the:#fff; --muc:#15181e; --muc2:#4b5563; --vien:#d7dae0;
+    --nhan:#0b6e77; --canh:#8a5a12; --loi:#8d3b3b; --dat:#2b6b45;
+    --mono:"Consolas","IBM Plex Mono",ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --nen:#0f1216; --the:#171b22; --muc:#e5e9ef; --muc2:#a5adbb; --vien:#2a303a;
+      --nhan:#4fbec4; --canh:#d3a257; --loi:#db8686; --dat:#6fbf8e;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--nen);color:var(--muc);
+       font:15px/1.5 system-ui,"Segoe UI",sans-serif}
+  header{display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+         padding:10px 16px;background:var(--the);border-bottom:1px solid var(--vien);
+         position:sticky;top:0;z-index:5}
+  header h1{font-size:15px;margin:0;font-weight:600;white-space:nowrap}
+  .gio{font-family:var(--mono);font-size:14px;color:var(--muc2)}
+  .tien-do{font-size:13px;color:var(--muc2)}
+  main{display:grid;grid-template-columns:minmax(320px,1fr) minmax(380px,520px);
+       gap:12px;padding:12px;align-items:start}
+  @media (max-width:900px){main{grid-template-columns:1fr}}
+  .the{background:var(--the);border:1px solid var(--vien);border-radius:4px;padding:12px}
+  .anh-vung{position:sticky;top:56px;max-height:calc(100vh - 70px);overflow:auto}
+  .anh-vung img{width:100%;display:block;border:1px solid var(--vien)}
+  .dieu-khien{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+  button{font:inherit;padding:5px 10px;border:1px solid var(--vien);border-radius:3px;
+         background:var(--the);color:var(--muc);cursor:pointer}
+  button:hover{border-color:var(--nhan)}
+  button.chinh{background:var(--nhan);color:#fff;border-color:var(--nhan);font-weight:600}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  input,select,textarea{font:inherit;padding:5px 7px;border:1px solid var(--vien);
+        border-radius:3px;background:var(--the);color:var(--muc);width:100%}
+  input.so{font-family:var(--mono);text-align:right}
+  input.so.am{color:var(--loi)}
+  label{font-size:13px;color:var(--muc2)}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muc2);
+     margin:16px 0 6px}
+  h2:first-child{margin-top:0}
+  table{width:100%;border-collapse:collapse}
+  td{padding:2px 4px;vertical-align:middle;border-bottom:1px solid var(--vien)}
+  td.ma{font-family:var(--mono);font-size:12px;color:var(--muc2);width:44px}
+  td.nhan-ct{font-size:13px}
+  td.o{width:170px}
+  .luoi{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .luoi label{display:block}
+  .kq{margin-top:10px;font-size:13px}
+  .kq div{padding:4px 6px;border-left:3px solid var(--vien);margin-bottom:4px}
+  .kq .lech{border-left-color:var(--loi);background:color-mix(in srgb,var(--loi) 10%,transparent)}
+  .kq .dat{border-left-color:var(--dat)}
+  .kq .thieu_thanh_phan{border-left-color:var(--canh)}
+  .kq .so{font-family:var(--mono)}
+  .canh-bao{border-left:3px solid var(--canh);padding:8px 10px;margin:10px 0;font-size:13px;
+            background:color-mix(in srgb,var(--canh) 10%,transparent)}
+  ul.kiem{list-style:none;padding:0;margin:6px 0 0;font-size:13px}
+  ul.kiem li{margin-bottom:3px;display:flex;gap:6px;align-items:flex-start}
+  ul.kiem input{width:auto;margin-top:3px}
+  .tu-dong{color:var(--muc2)}
+  #thongbao{font-size:13px;margin-top:8px;white-space:pre-wrap}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Gán nhãn tập gold</h1>
+  <select id="file" style="width:auto;min-width:220px"></select>
+  <span class="tien-do" id="tiendo"></span>
+  <span class="gio" id="gio">00:00</span>
+</header>
+
+<main>
+  <section class="the anh-vung">
+    <div class="dieu-khien">
+      <button id="lui">◀</button>
+      <input id="trang" type="number" min="1" value="1" style="width:70px;text-align:center">
+      <span id="tongtrang" class="tien-do"></span>
+      <button id="toi">▶</button>
+      <button id="nho">−</button><button id="to">+</button>
+    </div>
+    <img id="anh" alt="Trang tài liệu">
+  </section>
+
+  <section class="the">
+    <h2>Siêu dữ liệu</h2>
+    <div class="luoi">
+      <label>doc_id<input id="doc_id" placeholder="VNM_2026Q1_TT99"></label>
+      <label>Chuẩn
+        <select id="chuan"><option value="TT99">TT99</option><option value="TT200">TT200</option></select>
+      </label>
+      <label>Mã CK<input id="ticker" placeholder="VNM"></label>
+      <label>Kỳ<input id="period" placeholder="2026Q1"></label>
+      <label>Người gán nhãn<input id="annotator" placeholder="tên"></label>
+      <label>downloaded_at<input id="downloaded_at" placeholder="2026-08-25"></label>
+      <label style="grid-column:1/-1">source_url<input id="source_url" placeholder="https://..."></label>
+      <label style="grid-column:1/-1">unit_declared — chép <b>nguyên văn</b>
+        <input id="unit_declared" placeholder="Đơn vị tính: VND">
+      </label>
+    </div>
+    <div class="tien-do" id="heso" style="margin-top:4px"></div>
+
+    <div class="canh-bao">
+      Mã số <b>70</b> của B03 không phải chỉ tiêu riêng — nó bằng đúng mã 110 trên B01,
+      tức ô <i>Tiền và các khoản tương đương tiền</i>. Nếu hai chỗ ra số khác nhau thì
+      dừng lại và ghi vào notes, đừng tự chọn một trong hai.
+    </div>
+
+    <div id="bang"></div>
+
+    <h2>Ghi chú</h2>
+    <textarea id="notes" rows="3" placeholder="Dòng vắng mặt, số lệch, bản scan mờ..."></textarea>
+
+    <h2>Danh mục kiểm — guideline mục 8</h2>
+    <ul class="kiem" id="danhmuc"></ul>
+
+    <div class="dieu-khien" style="margin-top:12px">
+      <button id="btkiem">Kiểm đẳng thức</button>
+      <button id="btluu" class="chinh">Lưu file gold</button>
+    </div>
+    <div class="kq" id="kq"></div>
+    <div id="thongbao"></div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+let soTrang = 0, trangHienTai = 0, phong = 2.0;
+let soLanKiem = 0, daKiemLan1 = false, suaSauKhiKiem = false, mocGio = null;
+
+const fmtGio = g => String(Math.floor(g/60)).padStart(2,'0')+':'+String(g%60).padStart(2,'0');
+setInterval(() => { if (mocGio) $('gio').textContent = fmtGio(Math.floor((Date.now()-mocGio)/1000)); }, 1000);
+
+async function nap() {
+  const d = await (await fetch('/api/tai-lieu')).json();
+  $('file').innerHTML = d.tai_lieu.map(t =>
+    `<option value="${t.ten_file}" data-trang="${t.so_trang}">${t.ten_file}</option>`).join('');
+  $('tiendo').textContent = `${d.so_da_xong} tài liệu đã có file gold · nguồn: ${d.thu_muc}`;
+  doiFile();
+}
+
+function doiFile() {
+  const o = $('file').selectedOptions[0];
+  if (!o) return;
+  soTrang = +o.dataset.trang;
+  $('trang').max = soTrang;
+  $('tongtrang').textContent = `/ ${soTrang}`;
+  veTrang(0);
+}
+
+function veTrang(i) {
+  if (i < 0 || i >= soTrang) return;
+  trangHienTai = i;
+  $('trang').value = i + 1;
+  $('anh').src = `/api/trang/${encodeURIComponent($('file').value)}/${i}?phong=${phong}`;
+}
+
+async function napChiTieu() {
+  const d = await (await fetch('/api/chi-tieu?chuan=' + $('chuan').value)).json();
+  $('bang').innerHTML = d.nhom.map(n => `
+    <h2>${n.bieu_mau}</h2>
+    <table><tbody>${n.chi_tieu.map(c => `
+      <tr><td class="ma">${c.ma_so}</td>
+          <td class="nhan-ct">${c.nhan}</td>
+          <td class="o"><input class="so" data-ten="${c.ten}"
+              data-am="${c.cho_phep_am}" placeholder="—"></td></tr>`).join('')}
+    </tbody></table>`).join('');
+
+  $('danhmuc').innerHTML = d.danh_muc_kiem.map(o => o.tu_dong
+    ? `<li class="tu-dong"><span>✓</span><span>${o.mo_ta} <i>(máy kiểm)</i></span></li>`
+    : `<li><input type="checkbox" data-ma="${o.ma}"><span>${o.mo_ta}</span></li>`).join('');
+
+  $('bang').querySelectorAll('input.so').forEach(el => {
+    el.addEventListener('input', () => {
+      const v = el.value.trim();
+      el.classList.toggle('am', v.startsWith('(') || v.startsWith('-'));
+      if (daKiemLan1) suaSauKhiKiem = true;
+    });
+  });
+}
+
+const layGiaTri = () => {
+  const v = {};
+  $('bang').querySelectorAll('input.so').forEach(el => v[el.dataset.ten] = el.value);
+  return v;
+};
+
+function veKetQua(d) {
+  $('heso').textContent = d.he_so_don_vi === null
+    ? 'Không đọc được đơn vị tính — xem guideline mục 3.1'
+    : `Hệ số đơn vị: ×${d.he_so_don_vi.toLocaleString('vi-VN')}`;
+  const chua = d.o_khong_ro.length
+    ? `<div class="thieu_thanh_phan">Chưa gõ hoặc gõ không rõ: <b>${d.o_khong_ro.length}</b> ô</div>` : '';
+  $('kq').innerHTML = chua + d.dang_thuc.map(r => {
+    if (r.trang_thai === 'dat') return `<div class="dat">✓ ${r.mo_ta}</div>`;
+    if (r.trang_thai === 'thieu_thanh_phan')
+      return `<div class="thieu_thanh_phan">◦ ${r.mo_ta}<br>chưa chạy được — thiếu: ${r.thieu.join(', ')}</div>`;
+    return `<div class="lech">✗ ${r.mo_ta}<br>lệch <span class="so">${r.lech.toLocaleString('vi-VN')}</span>
+            — <b>đọc lại các dòng này trên báo cáo</b>, đừng sửa cho cân</div>`;
+  }).join('');
+}
+
+$('btkiem').onclick = async () => {
+  const r = await fetch('/api/kiem', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({standard:$('chuan').value, values:layGiaTri(),
+                          unit_declared:$('unit_declared').value})});
+  veKetQua(await r.json());
+  soLanKiem++; daKiemLan1 = true;
+};
+
+$('btluu').onclick = async () => {
+  const kiem = {};
+  $('danhmuc').querySelectorAll('input[type=checkbox]').forEach(c => kiem[c.dataset.ma] = c.checked);
+  const than = {
+    doc_id:$('doc_id').value, ticker:$('ticker').value, period:$('period').value,
+    standard:$('chuan').value, unit_declared:$('unit_declared').value,
+    values:layGiaTri(), source_url:$('source_url').value,
+    downloaded_at:$('downloaded_at').value, annotator:$('annotator').value,
+    notes:$('notes').value, danh_muc_kiem:kiem,
+    so_lan_kiem:soLanKiem, sua_sau_khi_kiem:suaSauKhiKiem,
+  };
+  const r = await fetch('/api/luu', {method:'POST', headers:{'Content-Type':'application/json'},
+                                     body: JSON.stringify(than)});
+  const d = await r.json();
+  $('thongbao').textContent = r.ok
+    ? `Đã ghi ${d.da_ghi} — mất ${fmtGio(d.thoi_gian_giay)}`
+    : 'Chưa lưu được: ' + JSON.stringify(d.detail, null, 2);
+  if (r.ok) { mocGio = null; nap(); }
+};
+
+$('doc_id').onchange = async () => {
+  if (!$('doc_id').value) return;
+  await fetch('/api/mo/' + encodeURIComponent($('doc_id').value), {method:'POST'});
+  mocGio = Date.now(); soLanKiem = 0; daKiemLan1 = false; suaSauKhiKiem = false;
+};
+$('file').onchange = doiFile;
+$('chuan').onchange = napChiTieu;
+$('lui').onclick = () => veTrang(trangHienTai - 1);
+$('toi').onclick = () => veTrang(trangHienTai + 1);
+$('trang').onchange = () => veTrang(+$('trang').value - 1);
+$('to').onclick = () => { phong = Math.min(phong + 0.5, 5); veTrang(trangHienTai); };
+$('nho').onclick = () => { phong = Math.max(phong - 0.5, 0.5); veTrang(trangHienTai); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'PageDown') veTrang(trangHienTai + 1);
+  if (e.key === 'PageUp') veTrang(trangHienTai - 1);
+});
+
+napChiTieu().then(nap);
+</script>
+</body>
+</html>

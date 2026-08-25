@@ -1201,6 +1201,10 @@ python -m pytest -q
 # Sinh lại báo cáo identifiability cho cả hai chuẩn
 PYTHONIOENCODING=utf-8 python src/constraints.py
 
+# CÔNG CỤ GÁN NHÃN tập gold — máy chủ cục bộ, rồi mở http://127.0.0.1:8100
+# GAN_NHAN_PDF_DIR trỏ tới thư mục chứa PDF cần gán nhãn, mặc định data/samples
+GAN_NHAN_PDF_DIR=data/samples PYTHONPATH=src python -m uvicorn gan_nhan.app:app --port 8100
+
 # Đo xem đẳng thức nào đáng mua (Mốc 1)
 PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/constraints_scenarios.py
 

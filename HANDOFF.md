@@ -29,9 +29,11 @@ chứ không phải chi tiết cài đặt.
 
 Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "Câu 4 chọn ...".
 
-**Đang chờ:** Câu 4 (chặn việc bắt đầu Câu 2) và Câu 3 (hoãn được).
-**Đã trả lời 25/08/2026:** Câu 1 → (a), Câu 2 → (a). Giữ lại nguyên văn ở
-dưới vì cả hai kèm ràng buộc phải nhớ khi đọc bảng kết quả về sau.
+**Đang chờ:** Câu 5 (chặn việc chạy lại Mốc 3), Câu 6 (không chặn, nhưng
+phải quyết cách ghi vào bài), Câu 3 (hoãn được).
+**Đã trả lời 25/08/2026:** Câu 1 → (a), Câu 2 → (a), Câu 4 → (a), và chỉ số
+chính của H3 trên tầng XBRL chuyển sang mức LƯỢT. Giữ lại nguyên văn ở dưới
+vì mỗi câu kèm ràng buộc phải nhớ khi đọc bảng kết quả về sau.
 
 ### Câu 1 — ĐÃ TRẢ LỜI 25/08/2026: phương án (a), báo cáo ba con số
 
@@ -51,10 +53,17 @@ ra tay" không bao giờ được trình bày một mình.
 để chỉ tốn một lượt chạy 90 phút. **Chưa bắt đầu** — và xem Câu 4 dưới đây
 trước khi bắt đầu, vì nó quyết định ma trận đo được dùng ở đâu.
 
-### Câu 4 — Ma trận nhầm lẫn đo được có dùng cho CẢ bộ tiêm lỗi không?
+### Câu 4 — ĐÃ TRẢ LỜI 25/08/2026: phương án (a), cùng nguồn khác độ sâu
 
-Đây là mâu thuẫn giữa hai chỗ trong chính file này, phát hiện 25/08/2026 khi
-bắt tay vào Câu 2. Phải chốt trước khi viết dòng code nào cho Câu 2.
+Người dùng chốt **(a)**. Đã thi công: `src/nham_chu_so.py` giữ ma trận đo
+được và commit **trước** lượt chạy (`90b271a`), hai phía nối vào theo hai
+chiều ngược nhau (`f80a53d`), tu chính đã vào mục Sửa đổi của
+`PREREGISTRATION.md`.
+
+**Phải nhớ:** khoảng hở giữa hai phía là thứ giữ cho cơ chế ABSTAIN còn kiểm
+chứng được. Đừng "thống nhất" hai bảng thành một tập hữu hạn giống hệt nhau.
+
+Nguyên văn ba hướng, giữ lại làm hồ sơ:
 
 - **Mục 6(b)** nói dứt khoát: `inject.py` KHÔNG dùng chung bảng nhầm chữ số
   với `repair.candidates`, vì dùng chung thì mọi lỗi tiêm vào đều nằm sẵn
@@ -82,6 +91,51 @@ Số đã có sẵn để bắt đầu: mục 9 ghi cặp quan sát được ở
 `9→0` (23 lần), `6→0` (8), `9→8` (1), trong khi `repair.candidates` đang
 dùng bốn cặp `(0,8) (1,7) (3,8) (5,6)` — **cặp áp đảo `9→0` không nằm trong
 đó**.
+
+### Câu 5 — Trần ứng viên đang cắt mất đáp án; có cho `cost` theo xác suất đo được không?
+
+**Chặn việc chạy lại Mốc 3.** Phát hiện 25/08/2026 khi đo lại độ phủ sau khi
+nối hai bộ bảng vào ma trận.
+
+Độ phủ `digit_substitution` nay **0,831 TRƯỚC trần** — đúng như phương án (a)
+dự tính. Nhưng **sau trần chỉ còn 0,369**, với 60/130 lượt bị trần cắt mất
+đáp án. Nguyên nhân nằm ở chỗ `tu_nham_chu_so()` gán **cùng một `cost`** cho
+mọi ứng viên nhầm chữ số, nên khi `MAX_MOI_NGUON = 6` cắt bớt thì nó cắt
+theo **vị trí chữ số trong con số**, không theo mức hợp lý. Một con số 12 chữ
+số sinh ra hàng chục ứng viên và sáu cái sống sót là sáu cái ở đầu chuỗi.
+
+- **(a)** Cho `cost` của `ocr_alt` theo xác suất đo được của từng cặp:
+  `cost = −log(P(nguồn) × P(cặp | nguồn))`. Đây đúng cơ chế
+  `XAC_SUAT_TIEN_NGHIEM` đang dùng, chỉ thêm một tầng. Sáu ứng viên sống sót
+  khi đó là sáu cái khả dĩ nhất, và độ phủ sau trần sẽ tiến gần 0,831.
+  **Nhưng nó đụng vào hàm mục tiêu của MILP** — đúng chỗ mục 12 cảnh báo.
+- **(b)** Nới `MAX_MOI_NGUON` cho riêng `ocr_alt`. Không đụng hàm mục tiêu,
+  nhưng số ứng viên vào thẳng cơ số không gian tìm kiếm của bước chẩn đoán
+  NP-hard.
+- **(c)** Để nguyên, báo cáo 0,369 và nêu trần là một giới hạn của phương
+  pháp. Trung thực nhưng vứt đi phần lớn thứ vừa mua được bằng phép đo.
+
+Mục 9 đã ghi rằng "việc hiệu chỉnh `candidates` theo số đo là hợp lệ", nên
+(a) nằm trong phạm vi đã cho phép. Vẫn hỏi vì nó đổi hàm mục tiêu.
+
+### Câu 6 — `row_shift` và `col_shift` KHÔNG sửa được ở tầng XBRL, về nguyên tắc
+
+Không phải câu hỏi chọn hướng, mà là một sự thật cần người chủ trì biết và
+quyết xem ghi nó vào bài thế nào.
+
+Độ phủ đo được: `row_shift` 0,015 và `col_shift` **0,000** trên 130 lượt mỗi
+loại. Không phải lỗi cài đặt. Cả hai chế độ lỗi này **ghi đè** ô đích bằng
+giá trị của một ô khác, nên giá trị thật **biến mất khỏi bảng**. Pipeline
+thật đọc lại ảnh thì lấy lại được; tầng XBRL không có ảnh nên không nguồn ứng
+viên nào sinh lại nổi.
+
+Hệ quả: tầng XBRL chỉ kiểm được **khả năng SỬA** cho `sign` và
+`digit_substitution`. Với `row_shift` và `col_shift` nó vẫn kiểm được **phát
+hiện và định vị**, nhưng không kiểm được sửa. Phải nêu tường minh trong phần
+giới hạn, và nó làm tăng trọng số của tập gold Việt Nam — nơi có ảnh.
+
+*(Lưu ý: việc chọn kỳ đã sửa nên `col_shift` nay **inject được đủ 130 lượt**
+thay vì 10. Con số 0,000 là độ phủ ứng viên, không phải số lượt bỏ.)*
 
 ### Câu 3 — Nhận diện chuẩn thật bằng cách nào? *(KHÔNG chặn Mốc 3, hoãn được)*
 

@@ -280,12 +280,34 @@ def _do_mot_luot(gia_tri_hong, gia_tri_that, ung_vien, A, thu_tu, donor, truong_
     return ket
 
 
-def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
-    """Chạy toàn bộ Mốc 3 và trả về số liệu thô để in bảng."""
-    ho_so = nap_ho_so(thu_muc)
+def _cong_mot_luot(t: dict, r: dict, truong_hong: set) -> None:
+    """Cộng kết quả một lượt vào một bộ đếm, tại chỗ."""
+    t["verdict"][r["verdict"]] += 1
+    if r["ma_ly_do"]:
+        t["ly_do"][r["ma_ly_do"]] += 1
+    if r["n_changed"] > 0:
+        t["ra_tay"] += 1
+    if r["luot_con_sai"]:
+        t["luot_con_sai"] += 1
+    if r["sua_dung_truong"] == truong_hong:
+        t["dinh_vi_dung"] += 1
+    t["cau_sai"] += r["cau"]["sai"]
+    t["cau_mau"] += r["cau"]["co_gia_tri"]
+    if r["bia"]["thoa_rang_buoc"]:
+        t["thoa_rang_buoc"] += 1
+        t["bia_sai"] += r["bia"]["bia"]
+        t["bia_mau"] += r["bia"]["co_gia_tri"]
 
-    tong: dict = {
-        p: {
+
+def _khung_dem() -> dict:
+    """
+    Bộ đếm rỗng cho MỘT phương pháp.
+
+    Tách thành hàm vì nay cần một bộ cho bảng tổng và một bộ cho MỖI chế độ
+    lỗi. Sao chép tay hai chỗ là cách chắc chắn để hai bảng lệch nhau sau
+    lần sửa thứ ba.
+    """
+    return {
             "verdict": Counter(),
             "ly_do": Counter(),
             "dinh_vi_dung": 0,
@@ -304,10 +326,31 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
             "cau_mau": 0,
             "bia_sai": 0,
             "bia_mau": 0,
-            "thoa_rang_buoc": 0,
-        }
-        for p in ("de_xuat", "baseline9")
+        "thoa_rang_buoc": 0,
     }
+
+
+def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
+    """Chạy toàn bộ Mốc 3 và trả về số liệu thô để in bảng."""
+    ho_so = nap_ho_so(thu_muc)
+
+    tong: dict = {p: _khung_dem() for p in ("de_xuat", "baseline9")}
+
+    # Đếm RIÊNG cho từng chế độ lỗi, không chỉ gộp.
+    #
+    # Bắt buộc kể từ khi đo được rằng tầng XBRL chỉ kiểm được khả năng SỬA
+    # cho `sign` và `digit_substitution`: `row_shift` và `col_shift` ghi đè ô
+    # đích nên giá trị thật biến mất khỏi bảng, và độ phủ ứng viên của chúng
+    # là 0,015 và 0,000. Gộp bốn chế độ vào một con số là trộn hai chế độ
+    # sửa được với hai chế độ KHÔNG THỂ sửa được ở tầng này, và bảng gộp khi
+    # đó không đọc ra nghĩa gì — xem tu chính 25/08/2026 của
+    # PREREGISTRATION.md.
+    theo_che_do: dict = {
+        che_do.value: {p: _khung_dem() for p in ("de_xuat", "baseline9")}
+        for che_do in CHE_DO_LOI
+    }
+    n_luot_theo_che_do: Counter = Counter()
+
     n_luot = 0
     bo_qua: Counter = Counter()
 
@@ -345,28 +388,17 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
                     gia_tri_hong, gia_tri_that, ung_vien, A, thu_tu, donor, truong_hong
                 )
                 n_luot += 1
+                n_luot_theo_che_do[che_do.value] += 1
 
                 for p, r in ket.items():
-                    t = tong[p]
-                    t["verdict"][r["verdict"]] += 1
-                    if r["ma_ly_do"]:
-                        t["ly_do"][r["ma_ly_do"]] += 1
-                    if r["n_changed"] > 0:
-                        t["ra_tay"] += 1
-                    if r["luot_con_sai"]:
-                        t["luot_con_sai"] += 1
-                    if r["sua_dung_truong"] == truong_hong:
-                        t["dinh_vi_dung"] += 1
-                    t["cau_sai"] += r["cau"]["sai"]
-                    t["cau_mau"] += r["cau"]["co_gia_tri"]
-                    if r["bia"]["thoa_rang_buoc"]:
-                        t["thoa_rang_buoc"] += 1
-                        t["bia_sai"] += r["bia"]["bia"]
-                        t["bia_mau"] += r["bia"]["co_gia_tri"]
+                    for t in (tong[p], theo_che_do[che_do.value][p]):
+                        _cong_mot_luot(t, r, truong_hong)
 
     return {
         "tong": tong,
         "n_luot": n_luot,
+        "theo_che_do": theo_che_do,
+        "n_luot_theo_che_do": n_luot_theo_che_do,
         "bo_qua": bo_qua,
         "n_ho_so": len(ho_so),
         "n_cong_ty": len(cik_da_gap),
@@ -501,6 +533,37 @@ def bao_cao(kq: dict) -> str:
         "[0, 1] và ngưỡng ấy có nghĩa. Tầng gold Việt Nam vẫn giữ mức trường.",
         "",
     ]
+
+    theo_che_do = kq.get("theo_che_do") or {}
+    n_theo = kq.get("n_luot_theo_che_do") or {}
+    if theo_che_do:
+        dong += [
+            "## Tách theo chế độ lỗi",
+            "",
+            "**Bảng gộp ở trên KHÔNG đọc được nếu thiếu bảng này.** Tầng XBRL chỉ",
+            "kiểm được khả năng SỬA cho `sign` và `digit_substitution`;",
+            "`row_shift` và `col_shift` ghi đè ô đích nên giá trị thật biến mất",
+            "khỏi bảng, và không nguồn ứng viên nào sinh lại nổi khi không có ảnh",
+            "để đọc lại. Độ phủ ứng viên đo được của chúng là 0,015 và 0,000.",
+            "Gộp bốn chế độ vào một con số là trộn hai chế độ sửa được với hai",
+            "chế độ KHÔNG THỂ sửa được ở tầng này.",
+            "",
+            "| Chế độ lỗi | Lượt | Còn sai — đề xuất | Còn sai — baseline 9 "
+            "| Định vị — đề xuất | Định vị — baseline 9 | Ra tay — đề xuất "
+            "| Ra tay — baseline 9 |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+        for ten in sorted(theo_che_do):
+            m = theo_che_do[ten]
+            nl = n_theo.get(ten, 0)
+            md, mb = m["de_xuat"], m["baseline9"]
+            dong.append(
+                f"| `{ten}` | {nl} "
+                f"| {ty_le(md['luot_con_sai'], nl)} | {ty_le(mb['luot_con_sai'], nl)} "
+                f"| {ty_le(md['dinh_vi_dung'], nl)} | {ty_le(mb['dinh_vi_dung'], nl)} "
+                f"| {ty_le(md['ra_tay'], nl)} | {ty_le(mb['ra_tay'], nl)} |"
+            )
+        dong.append("")
 
     if kq["bo_qua"]:
         dong += ["", "Bỏ qua (ghi tường minh, không giấu):", ""]

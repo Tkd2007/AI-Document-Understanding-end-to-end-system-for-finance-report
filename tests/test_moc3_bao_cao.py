@@ -153,3 +153,54 @@ def test_chi_so_H3_chinh_do_o_MUC_LUOT_khong_phai_muc_truong():
 
     # Hai dòng mức trường in sáu chữ số: 5/1000 và 5/1000.
     assert "0.005000" in ket
+
+def test_bang_tach_theo_che_do_loi_co_mat_va_tinh_dung():
+    """
+    Bảng gộp một mình là bảng đọc ra kết luận sai.
+
+    Tầng XBRL chỉ kiểm được khả năng SỬA cho `sign` và `digit_substitution`.
+    `row_shift` và `col_shift` GHI ĐÈ ô đích bằng giá trị ô khác nên giá trị
+    thật biến mất khỏi bảng, và không nguồn ứng viên nào sinh lại nổi khi
+    không có ảnh để đọc lại — độ phủ đo được là 0,015 và 0,000. Gộp bốn chế
+    độ vào một con số là trộn hai chế độ sửa được với hai chế độ KHÔNG THỂ
+    sửa được, và trung bình của hai nhóm ấy không mang nghĩa gì.
+    """
+    theo_che_do = {
+        "sign": {
+            "de_xuat": _ben(120, 130, 0, 0, luot_con_sai=10),
+            "baseline9": _ben(60, 130, 0, 0, luot_con_sai=70),
+        },
+        "row_shift": {
+            "de_xuat": _ben(0, 0, 0, 130, luot_con_sai=130),
+            "baseline9": _ben(20, 130, 0, 0, luot_con_sai=110),
+        },
+    }
+    kq = _ket_qua(DE_XUAT, BASELINE9)
+    kq["theo_che_do"] = theo_che_do
+    kq["n_luot_theo_che_do"] = {"sign": 130, "row_shift": 130}
+
+    ket = bao_cao(kq)
+
+    assert "Tách theo chế độ lỗi" in ket
+    assert "`sign`" in ket and "`row_shift`" in ket
+
+    # sign: còn sai 10/130 = 0.077 với đề xuất, 70/130 = 0.538 với baseline.
+    assert "0.077" in ket and "0.538" in ket
+
+    # row_shift: đề xuất KHÔNG ra tay lượt nào — 0/130 — vì tập ứng viên đóng
+    # không chứa cách đọc nào, đúng hành vi nó được thiết kế để có.
+    assert "0.000" in ket
+
+
+def test_bang_theo_che_do_vang_mat_thi_khong_no():
+    """
+    Kết quả cũ chưa có khoá `theo_che_do` vẫn phải in ra được.
+
+    Không phải chiều lòng dữ liệu cũ: `bao_cao()` được gọi lại trên số liệu
+    đã lưu để in lại bảng mà không phải chạy lại 90 phút, nên nó phải chịu
+    được số liệu sinh trước khi thêm khoá này.
+    """
+    ket = bao_cao(_ket_qua(DE_XUAT, BASELINE9))
+
+    assert "Tách theo chế độ lỗi" not in ket
+    assert "MỐC 3" in ket

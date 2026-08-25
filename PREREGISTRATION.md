@@ -104,6 +104,10 @@ chỉnh liên tục.
 
 **Chỉ số chính, chốt trước:** Top-1 và Top-3 accuracy.
 
+> *Bổ sung, không sửa đè:* cách CHẤM hai chỉ số này khi một phương pháp từ
+> chối trả lời đã được chốt ở **tu chính 25/08/2026** cuối file — ba con số,
+> và chỉ số quyết định là con số chia cho tổng số lượt.
+
 **Đơn vị quan sát — điểm dễ tự lừa nhất, chốt trước để khỏi cãi sau:**
 N của H2 là **số TRƯỜNG BỊ LỖI**, không phải tổng số trường. Với 60 tài
 liệu và khoảng 25 trường mỗi tài liệu thì tổng là khoảng 1500, nhưng nếu tỷ
@@ -278,6 +282,9 @@ giống nhau đến mức nếu một trang vào train và một trang vào test
 - [ ] Kiểm định ghép cặp cho mọi so sánh giữa phương pháp
 - [ ] Hiệu số kèm CI, không chỉ p-value
 - [ ] Nêu rõ tầng dữ liệu: XBRL, gold Việt Nam, hay distant
+- [ ] **Bảng localization: đủ ba con số** — chia cho tổng số lượt (chỉ số
+  CHÍNH), tỷ lệ ra tay, và định vị trên lượt có ra tay. Con số thứ ba
+  **không bao giờ đứng một mình**. Xem tu chính 25/08/2026
 
 ---
 
@@ -432,3 +439,47 @@ tiêu một trong ba giá trị `co_gia_tri` / `vang_mat` / `khong_doc_duoc`, v�
 `meta["line_probe"]` ghi lượt chạy đó có bật oracle hay không. Bảng kết quả
 phải đọc trạng thái từ khoá này chứ không suy ra từ con số: một số `0` có thể
 là doanh nghiệp khai bằng 0, cũng có thể là dòng vắng mặt.
+
+### 25/08/2026 — Chỉ số định vị báo cáo ba con số, và nêu tên con số quyết định
+
+**Sửa đổi.** Mọi bảng localization báo cáo **ba** con số thay vì một, và nói
+rõ con số nào là chỉ số chính:
+
+| Con số | Mẫu số | Vai trò |
+|---|---|---|
+| Định vị đúng / **tổng số lượt** | mọi lượt | **CHÍNH** — dùng cho mọi quyết định dừng |
+| Tỷ lệ ra tay (coverage) | mọi lượt | phụ, bắt buộc đi kèm con số dưới |
+| Định vị đúng / **số lượt có ra tay** | lượt có sửa ≥ 1 trường | phụ |
+| Định vị đúng / **số lượt lỗi có sinh residual** | lượt không VERIFIED | phụ, tách phần thuộc về H0 |
+
+**Lý do.** Phương pháp đề xuất chỉ sửa khi tập ứng viên đóng chứa một cách
+đọc hợp lệ, nên nó bỏ phiếu trắng thường xuyên; baseline 9 giải quy hoạch
+tuyến tính nên nặn được số thực bất kỳ và gần như không bao giờ từ chối. Trên
+lượt chạy 26 hồ sơ ngày 24/08/2026, đề xuất ra tay 122 lần và trúng khoảng
+70%, baseline 9 ra tay 234 lần và trúng khoảng 50% — nhưng bảng chia cho tổng
+số lượt cho ra 0,212 so với 0,295, tức nó xếp hạng theo **mức sẵn sàng đoán**
+chứ không theo độ đúng. Một con số duy nhất không so được hai hệ chạy ở hai
+mức coverage khác nhau; đó là lý do nhánh selective prediction luôn báo cáo
+cặp (coverage, selective risk) thay vì một điểm.
+
+**Vì sao chỉ số CHÍNH vẫn là con số chia cho tổng, dù nó bất lợi.** Nó là con
+số khắc nghiệt hơn với chính mình. Chọn nó làm chỉ số quyết định thì cáo buộc
+"chọn chỉ số dễ sau khi thấy kết quả" tự rụng, và hai con số phụ vẫn còn đó
+để giải thích cơ chế. Trường hợp bảng có lợi cho baseline 9 ở chỉ số chính,
+điều đó **phải được báo cáo là bất lợi cho phương pháp đề xuất**.
+
+**Ràng buộc kèm theo, không được bỏ.** Con số "định vị khi ra tay" **không
+bao giờ được trình bày một mình**. Thiếu tỷ lệ ra tay đứng cạnh thì nó bị hack
+bằng cách im lặng: một hệ trả lời đúng một lượt rồi từ chối mọi lượt còn lại
+đạt 1,000. `tests/test_moc3_bao_cao.py` chốt ràng buộc này bằng đúng ca đó.
+
+**Con số thứ tư có mặt vì một lý do khác hẳn.** Lượt VERIFIED là lượt lỗi
+tiêm vào nằm trong `null(A)` nên không sinh residual — không phương pháp
+dựa-trên-ràng-buộc nào định vị nổi, và cả hai bên cùng mất điểm. Trên lượt
+chạy 24/08 đó là 106/400, tức hơn một phần tư mẫu số. Phần khoảng cách nằm ở
+đấy là kết quả của **H0**, không phải của phương pháp, và trộn nó vào chỉ số
+H2 làm cả hai chỉ số khó đọc.
+
+**Phạm vi.** Tu chính này đổi cách BÁO CÁO, không đổi phát biểu H2 cũng không
+đổi điều kiện phản chứng ở mục 3. Nó được ghi **trước** lượt chạy Mốc 3 tiếp
+theo, và lượt chạy ngày 24/08/2026 phải được đọc lại theo cách chấm này.

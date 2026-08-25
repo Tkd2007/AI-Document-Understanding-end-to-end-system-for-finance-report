@@ -272,6 +272,14 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
             "verdict": Counter(),
             "ly_do": Counter(),
             "dinh_vi_dung": 0,
+            # Số lượt phương pháp CÓ RA TAY, tức có sửa ít nhất một chỉ tiêu.
+            #
+            # Đếm riêng vì không có nó thì chỉ số định vị trộn hai đại lượng
+            # khác bản chất vào một con số: độ đúng KHI trả lời, và mức sẵn
+            # sàng trả lời. Hai phương pháp đang chạy ở hai mức sẵn sàng khác
+            # hẳn nhau, nên một con số duy nhất so chúng là so hai thứ không
+            # cùng đơn vị — xem tu chính 25/08/2026 của PREREGISTRATION.md.
+            "ra_tay": 0,
             "cau_sai": 0,
             "cau_mau": 0,
             "bia_sai": 0,
@@ -321,6 +329,8 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
                     t["verdict"][r["verdict"]] += 1
                     if r["ma_ly_do"]:
                         t["ly_do"][r["ma_ly_do"]] += 1
+                    if r["n_changed"] > 0:
+                        t["ra_tay"] += 1
                     if r["sua_dung_truong"] == truong_hong:
                         t["dinh_vi_dung"] += 1
                     t["cau_sai"] += r["cau"]["sai"]
@@ -380,9 +390,20 @@ def bao_cao(kq: dict) -> str:
         dong.append(f"| {nhan} | {vd:.3f} | {vb:.3f} | {ai} |")
 
     dong += [
-        f"| Định vị đúng trường bị lỗi | {ty_le(d['dinh_vi_dung'], n)} "
+        f"| **Định vị đúng trường bị lỗi (CHÍNH)** | {ty_le(d['dinh_vi_dung'], n)} "
         f"| {ty_le(b['dinh_vi_dung'], n)} | {_ai_thang(d, b, 'dinh_vi_dung')} |",
         f"| Số lượt kết quả thoả ràng buộc | {d['thoa_rang_buoc']} | {b['thoa_rang_buoc']} | — |",
+        "",
+        "Định vị tách theo mức sẵn sàng trả lời — chỉ số PHỤ, xem ghi chú dưới bảng:",
+        "",
+        "| Chỉ số | Đề xuất | Baseline 9 |",
+        "|---|---:|---:|",
+        f"| Tỷ lệ ra tay (coverage) | {ty_le(d['ra_tay'], n)} | {ty_le(b['ra_tay'], n)} |",
+        f"| Định vị đúng TRÊN LƯỢT CÓ RA TAY | {ty_le(d['dinh_vi_dung'], d['ra_tay'])} "
+        f"| {ty_le(b['dinh_vi_dung'], b['ra_tay'])} |",
+        f"| Định vị đúng trên lượt lỗi CÓ SINH RESIDUAL "
+        f"| {ty_le(d['dinh_vi_dung'], n - d['verdict']['VERIFIED'])} "
+        f"| {ty_le(b['dinh_vi_dung'], n - b['verdict']['VERIFIED'])} |",
         "",
         "Phân bố verdict:",
         "",
@@ -407,11 +428,25 @@ def bao_cao(kq: dict) -> str:
         ">    vẫn là doanh nghiệp Mỹ nộp theo US-GAAP, chưa có báo cáo Việt Nam nào.",
         "> 2. **Cột kỳ so sánh rỗng**, nên COL_SHIFT không inject được và nguồn",
         ">    ứng viên chéo kỳ không đóng góp gì. Chỉ 3 trong 4 chế độ lỗi chạy.",
-        "> 3. **Chỉ số định vị phạt việc ABSTAIN.** Baseline 9 không bao giờ từ",
-        ">    chối trả lời nên luôn có cơ hội định vị đúng, còn phương pháp đề",
-        ">    xuất từ chối khi tập ứng viên đóng không chứa cách đọc nào hợp lệ —",
-        ">    mà đó chính là hành vi nó được thiết kế để có. Đếm ABSTAIN là",
-        ">    'định vị trượt' tức đo mức sẵn sàng đoán, không đo độ đúng.",
+        "> 3. **Toàn bộ dữ liệu là bảng XBRL, không có ảnh.** Nguồn ứng viên",
+        ">    `o_lan_can` và `phieu_vlm` vì thế không đóng góp được gì, tức",
+        ">    phương pháp đang bị đo trong điều kiện tháo mất một phần cơ chế.",
+        "",
+        "**Đọc ba chỉ số định vị thế nào** (tu chính PREREGISTRATION 25/08/2026):",
+        "",
+        "- Chỉ số **CHÍNH** là dòng chia cho TỔNG số lượt. Nó phạt việc từ chối",
+        "  trả lời, và đó là chủ ý: chọn chỉ số khắc nghiệt hơn với chính mình",
+        "  làm chỉ số quyết định thì cáo buộc 'chọn chỉ số dễ' tự rụng.",
+        "- Hai dòng phụ tồn tại vì một con số duy nhất **không so được** hai hệ",
+        "  chạy ở hai mức sẵn sàng trả lời khác nhau. Cặp (tỷ lệ ra tay, định vị",
+        "  khi ra tay) chính là hai toạ độ của một điểm trên đường cong",
+        "  risk–coverage mà proposal mục 6.4 đã cam kết báo cáo.",
+        "- Dòng thứ ba bỏ các lượt VERIFIED khỏi mẫu số. Lượt VERIFIED là lượt",
+        "  lỗi tiêm vào nằm trong `null(A)` nên KHÔNG sinh residual — không",
+        "  phương pháp dựa-trên-ràng-buộc nào định vị nổi. Phần khoảng cách nằm",
+        "  ở đó là kết quả của H0, không phải của phương pháp.",
+        "- **Không được báo cáo dòng 'khi ra tay' một mình.** Thiếu tỷ lệ ra tay",
+        "  đi kèm thì một hệ im lặng 399/400 lượt và trúng 1 lượt đạt 1.000.",
         "",
     ]
 

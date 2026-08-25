@@ -29,9 +29,10 @@ chứ không phải chi tiết cài đặt.
 
 Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "Câu 4 chọn ...".
 
-**Đang chờ:** Câu 5 (chặn việc chạy lại Mốc 3 — phương án (a) đã thử và bị
-số đo bác, nay là câu hỏi về TRẦN), Câu 3 (hoãn được).
-**Đã trả lời 25/08/2026:** Câu 1 → (a), Câu 2 → (a), Câu 4 → (a), Câu 6 →
+**Đang chờ:** Câu 7 (cách đọc điều kiện dừng — HỎI TRƯỚC khi lượt chạy bắt
+đầu, xem cảnh báo trong mục đó), Câu 3 (hoãn được).
+**Đã trả lời 25/08/2026:** Câu 1 → (a), Câu 2 → (a), Câu 4 → (a), Câu 5 →
+nới trần 10/20, Câu 6 →
 ghi làm giới hạn, và chỉ số chính của H3 trên tầng XBRL chuyển sang mức LƯỢT. Giữ lại nguyên văn ở dưới
 vì mỗi câu kèm ràng buộc phải nhớ khi đọc bảng kết quả về sau.
 
@@ -92,53 +93,62 @@ Số đã có sẵn để bắt đầu: mục 9 ghi cặp quan sát được ở
 dùng bốn cặp `(0,8) (1,7) (3,8) (5,6)` — **cặp áp đảo `9→0` không nằm trong
 đó**.
 
-### Câu 5 — ĐÃ THỬ (a), ĐO RA KHÔNG DÙNG ĐƯỢC. Câu hỏi thật nay là trần.
+### Câu 5 — ĐÃ ĐÓNG 25/08/2026: nới trần lên 10/20, có số đo
 
-Người dùng chốt **(a)** ngày 25/08/2026 — cho `cost` của `ocr_alt` theo xác
-suất đo được của từng cặp. Đã thi công, đã đo, và **kết quả bác chính phương
-án đó**. Ghi đầy đủ ở đây để không ai thử lại.
+Người dùng chốt **nới trần**. Đã đo trước khi nới (10 hồ sơ, 20 lượt mỗi
+mức, trần thời gian 10 giây):
 
-**Thử lần 1 — nhân trọng số vào `cost`, chuẩn hoá theo tổng.** Độ phủ sau
-trần tụt từ 0,369 xuống **0,046**. Nguyên nhân là tương tác với một trần
-KHÁC: `ocr_alt` là nguồn RẺ NHẤT trong bảng cost (1,050 so với
-`neighbor_cell` 1,204, `sign` 1,609, `scale` 2,303), nên mọi trọng số nhỏ
-hơn 1 đẩy nó lên trên `scale`, và bước cắt chung `MAX_UNG_VIEN = 12` — vốn
-xếp mọi nguồn theo cost — loại sạch ứng viên nhầm chữ số: riêng
-`neighbor_cell`, `sign` và `scale` đã chiếm 13 chỗ trên trần 12.
+| Trần | Ứng viên/chỉ tiêu | Median | Chạm trần giờ | REPAIRED | Vượt trần |
+|---|---:|---:|---:|---:|---:|
+| 6 / 12 | 11,9 | 5 ms | 10 % | 3 | 5 |
+| **10 / 20** | **18,6** | **6 ms** | **20 %** | **6** | **0** |
+| 14 / 28 | 22,1 | 7 ms | 20 % | 6 | 0 |
 
-**Thử lần 2 — chuẩn hoá theo cặp khả dĩ nhất**, để cặp hay gặp nhất giữ
-nguyên cost gốc của nguồn. Vẫn **0,046**: với hầu hết con số thì không cặp
-nào là cặp khả dĩ nhất, nên mọi ứng viên vẫn đắt hơn `scale`.
+Chọn **10/20**: mức 14/28 cho kết quả y hệt nhưng tốn thêm ứng viên. Độ phủ
+`digit_substitution` đi từ 0,369 lên **0,615**.
 
-**Thử lần 3 — bỏ trọng số khỏi `cost`, chỉ XẾP bên trong nguồn theo tần suất
-đo được.** `generate()` khi đó trả lại đủ 6 ứng viên `ocr_alt`, nhưng độ phủ
-**vẫn 0,046** — tệ hơn hẳn cách xếp cũ. Lý do đáng nhớ: cặp áp đảo là `9→0`,
-tức "đọc ra 0 thì thật có thể là 9", mà con số tài chính có RẤT NHIỀU chữ số
-0. Xếp theo tần suất dồn cả sáu chỗ vào các vị trí chứa `0`, trong khi bộ
-tiêm chọn vị trí **đều xác suất** trên mọi chữ số.
+**Hai thứ phải nhớ.** Một, chi phí nằm trọn ở phần đuôi — median gần như
+không đổi, chỉ tỷ lệ chạm trần thời gian tăng, và lượt chạm trần trả ABSTAIN
+với mã `het_gio`, tức **loại ABSTAIN thứ ba**. Nó không chứng minh gì về tài
+liệu, chỉ nói ta hết giờ tìm, nên đừng gộp nó với `vo_nghiem`.
 
-**Phép đo giải thích tất cả, và nó bác luôn tiền đề của Câu 5.** Bộ sinh
-sinh **trung vị 14 ứng viên** nhầm chữ số cho mỗi chỉ tiêu, còn
-`MAX_MOI_NGUON` chỉ giữ **6**. Tỷ lệ sống sót của phép chọn ngẫu nhiên là
-6/14 = **0,429**, và tỷ lệ đo được là **0,44** (0,369 trên 0,831). Nghĩa là
-cách xếp cũ ĐÃ chạy ở đúng mức của phép chọn ngẫu nhiên — và **không cách
-xếp nào vượt được**, vì vị trí bị hỏng do bộ tiêm chọn đều xác suất nên
-không tương quan với bất kỳ thứ tự nào bộ sinh biết.
+Hai, `N_CAP_UNG_VIEN` **đã tách khỏi** `MAX_MOI_NGUON` và giữ nguyên 6. Ma
+trận chỉ có 10 cặp nên để N đi theo lên 10 là bộ sinh mang trọn ma trận, độ
+phủ lên 1,0, và cơ chế ABSTAIN hết lượt để lộ ra — rơi đúng phương án (c) đã
+loại. Có test chặn.
 
-Tiền đề "trần cắt theo vị trí chữ số thay vì theo mức hợp lý" vì thế chỉ
-đúng một nửa: trần cắt lỗ **vì nó nhỏ hơn số ứng viên**, không phải vì nó
-xếp sai. Toàn bộ thay đổi đã hoàn nguyên; repo trở lại trạng thái `f80a53d`.
+Ba cách XẾP ứng viên đều đã thử và đều thất bại (chi tiết ở commit
+`af61231`); nguyên nhân là trần **nhỏ hơn số ứng viên**, không phải xếp sai.
 
-**Câu hỏi thật, cần người quyết:**
+### Câu 7 — Hoà ở tầng XBRL có kích hoạt điều kiện phản chứng của H3 không?
 
-- **(b)** Nới trần. Muốn phủ ~0,83 thì `MAX_MOI_NGUON` phải lên khoảng 14 và
-  `MAX_UNG_VIEN` lên tương ứng. Số ứng viên mỗi chỉ tiêu đi THẲNG vào cơ số
-  không gian tìm kiếm của bước chẩn đoán NP-hard — mục 12 đo được mỗi nấc
-  `max_changes` đắt lên chừng 20 lần, còn chiều này thì chưa ai đo. **Phải
-  đo thời gian giải trước khi chốt.**
-- **(c)** Để nguyên, báo cáo 0,369 và nêu trần là một giới hạn tường minh
-  của phương pháp: "hệ chỉ xét tối đa 6 cách đọc thay thế mỗi chỉ tiêu".
-  Trung thực, không tốn gì, nhưng ghìm trần trên của mọi kết quả `digit_sub`.
+**CHƯA TRẢ LỜI, và đã hỏi TRƯỚC khi lượt chạy Mốc 3 bắt đầu — ghi lại thời
+điểm đó ở đây chính là mục đích của mục này.** Lượt chạy khởi động ngày
+25/08/2026 ngay sau commit `68ce4d2`, và ở thời điểm ghi dòng này chưa ai —
+kể cả phiên Claude đang làm — nhìn thấy một con số kết quả nào.
+
+Bối cảnh: trên tầng XBRL, nguồn `o_lan_can` đóng góp **3/520 lượt** và
+`vlm_vote` đóng góp **0** vì không có phiếu VLM. Tức tầng này đo phương pháp
+đề xuất với **cơ chế trung tâm của nó gần như bị tháo ra** — đọc lại nguồn
+chính là thứ H3 muốn chứng minh, mà ở đây gần như không có nguồn để đọc lại.
+
+Từ đó có một bất đối xứng mà `PREREGISTRATION.md` mục 3 không tính đến:
+
+- Đề xuất **thắng** baseline 9 dù bị tháo cơ chế chính → bằng chứng mạnh.
+- **Hoà** → KHÔNG phải bằng chứng rằng "đọc lại nguồn vô giá trị". Nó chỉ
+  nói: khi không có gì để đọc lại thì đọc lại không giúp gì.
+
+Mục 3 hiện ghi hoà → dừng, lùi bài về dataset + identifiability. Áp thẳng
+câu đó lên tầng này thì điều kiện dừng có thể kích hoạt **vì lý do sai**, và
+kéo theo quyết định bỏ hay không bỏ 45–60 giờ gán nhãn.
+
+Hai hướng: **(a)** hoà ở tầng XBRL chỉ hoãn phán quyết sang tập gold, chỉ
+`thua` mới kích hoạt điều kiện phản chứng; **(b)** giữ nguyên mục 3, hoà là
+hoà, và chấp nhận rằng tầng này có thể bác H3 dù đã tháo cơ chế.
+
+**Cảnh báo cho phiên sau:** nếu câu này được trả lời SAU khi bảng kết quả đã
+đọc, phải ghi rõ điều đó trong bài. Trả lời sau khi thấy số là chọn luật
+theo kết quả, và reviewer sẽ soi đúng vào đấy.
 
 ### Câu 6 — ĐÃ CHỐT 25/08/2026: ghi làm giới hạn của tầng XBRL
 

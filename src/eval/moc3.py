@@ -28,6 +28,7 @@ Chạy:
     PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/moc3.py
 """
 
+import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -62,6 +63,31 @@ CHE_DO_LOI = [ErrorType.DIGIT_SUB, ErrorType.ROW_SHIFT, ErrorType.COL_SHIFT, Err
 # Nhiều seed vì bảng kết quả phải chịu được phương sai của bước inject —
 # ADDENDUM mục 5 liệt kê đây là một trong bốn nguồn phương sai.
 CAC_SEED = [0, 1, 2, 3, 4]
+
+# Khoá `cik` nằm ngay đầu file companyfacts của SEC, nên đọc 512 byte đầu là
+# đủ. Đọc từ DỮ LIỆU chứ không suy từ tên file: tên file là quy ước của
+# fetch.py và đổi được, còn khoá này là thứ SEC trả về.
+_MAU_CIK = re.compile(rb'"cik"\s*:\s*"?(\d+)')
+
+
+def cac_cik_co_facts(thu_muc: Path = THU_MUC_XBRL) -> set[str]:
+    """
+    CIK có file companyfacts, KỂ CẢ công ty không hồ sơ nào chạy được.
+
+    Tồn tại để bảng kết quả nói được "14 công ty" là 14 trên bao nhiêu. Lượt
+    chạy 25/08/2026 tải facts của 15 công ty nhưng chỉ 14 công ty có
+    calculation linkbase khớp, nên Microsoft rơi khỏi lượt chạy mà không dòng
+    nào trong báo cáo nhắc tới — người đọc phải tự đếm file trong thư mục mới
+    phát hiện ra. Số công ty bị rơi là trạng thái phải ghi tường minh, không
+    để suy ra từ hiệu của hai con số ở hai chỗ khác nhau.
+    """
+    cik = set()
+    for f in sorted(thu_muc.glob("*_facts.json")):
+        with f.open("rb") as fh:
+            khop = _MAU_CIK.search(fh.read(512))
+        if khop:
+            cik.add(str(int(khop.group(1))))
+    return cik
 
 
 def nap_ho_so(thu_muc: Path = THU_MUC_XBRL) -> list[tuple[str, list, dict, str]]:
@@ -394,6 +420,10 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
                     for t in (tong[p], theo_che_do[che_do.value][p]):
                         _cong_mot_luot(t, r, truong_hong)
 
+    thieu_ho_so = cac_cik_co_facts(thu_muc) - cik_da_gap
+    if thieu_ho_so:
+        bo_qua["cong_ty_co_facts_nhung_khong_ho_so_nao_chay_duoc"] = len(thieu_ho_so)
+
     return {
         "tong": tong,
         "n_luot": n_luot,
@@ -419,6 +449,14 @@ def bao_cao(kq: dict) -> str:
         return "KHÔNG CÓ LƯỢT NÀO CHẠY ĐƯỢC — xem mục bỏ qua.\n"
 
     d, b = t["de_xuat"], t["baseline9"]
+
+    # Danh sách chế độ KHÔNG inject được lấy từ số đếm của chính lượt chạy,
+    # không viết tay. Bản trước viết tay "chỉ 3 trong 4 chế độ chạy" từ thời
+    # cột kỳ so sánh còn rỗng; sau khi cột đó được chọn theo độ phủ thì
+    # col_shift inject được 130 lượt mà câu cảnh báo vẫn in nguyên, tức báo
+    # cáo tự khai một hạn chế nó không còn có.
+    n_theo = kq.get("n_luot_theo_che_do") or {}
+    khong_chay = [c.value for c in CHE_DO_LOI if not n_theo.get(c.value)]
 
     def ty_le(x, y):
         return f"{x / y:.3f}" if y else "—"
@@ -500,8 +538,17 @@ def bao_cao(kq: dict) -> str:
         "> 1. **Chỉ tổng thể donor là hợp lệ, phần còn lại thì chưa.** Donor nay",
         ">    lấy từ các công ty KHÁC nên phần này đã đúng; nhưng toàn bộ dữ liệu",
         ">    vẫn là doanh nghiệp Mỹ nộp theo US-GAAP, chưa có báo cáo Việt Nam nào.",
-        "> 2. **Cột kỳ so sánh rỗng**, nên COL_SHIFT không inject được và nguồn",
-        ">    ứng viên chéo kỳ không đóng góp gì. Chỉ 3 trong 4 chế độ lỗi chạy.",
+        (
+            f"> 2. **Chỉ {len(CHE_DO_LOI) - len(khong_chay)} trong {len(CHE_DO_LOI)} "
+            f"chế độ lỗi inject được** — thiếu "
+            + ", ".join(f"`{c}`" for c in khong_chay)
+            + ". Nguyên nhân đã gặp là cột kỳ so sánh rỗng."
+            if khong_chay
+            else f"> 2. **Cả {len(CHE_DO_LOI)} chế độ lỗi đều inject được.** Cột kỳ so "
+            "sánh nay chọn theo độ phủ chỉ tiêu nên không còn rỗng; trước đó "
+            "`col_shift` không inject nổi một lượt nào. Inject được KHÔNG có "
+            "nghĩa là sửa được — xem bảng tách chế độ."
+        ),
         "> 3. **Toàn bộ dữ liệu là bảng XBRL, không có ảnh.** Nguồn ứng viên",
         ">    `o_lan_can` và `phieu_vlm` vì thế không đóng góp được gì, tức",
         ">    phương pháp đang bị đo trong điều kiện tháo mất một phần cơ chế.",
@@ -535,7 +582,6 @@ def bao_cao(kq: dict) -> str:
     ]
 
     theo_che_do = kq.get("theo_che_do") or {}
-    n_theo = kq.get("n_luot_theo_che_do") or {}
     if theo_che_do:
         dong += [
             "## Tách theo chế độ lỗi",

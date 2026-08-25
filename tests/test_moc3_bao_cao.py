@@ -19,7 +19,7 @@ Bộ số dùng trong file này lấy đúng hình dạng của lượt chạy 2
 
 from collections import Counter
 
-from eval.moc3 import bao_cao
+from eval.moc3 import bao_cao, cac_cik_co_facts
 
 
 def _ben(
@@ -204,3 +204,76 @@ def test_bang_theo_che_do_vang_mat_thi_khong_no():
 
     assert "Tách theo chế độ lỗi" not in ket
     assert "MỐC 3" in ket
+
+
+def test_cau_canh_bao_che_do_loi_lay_tu_so_dem_chu_khong_viet_tay():
+    """
+    Câu tự khai hạn chế phải nói đúng lượt chạy đang in, không nói lượt cũ.
+
+    Bản trước viết tay "chỉ 3 trong 4 chế độ lỗi chạy" từ thời cột kỳ so sánh
+    còn rỗng nên `col_shift` không inject nổi lượt nào. Sau khi cột đó được
+    chọn theo độ phủ chỉ tiêu thì `col_shift` inject được 130 lượt, nhưng câu
+    cảnh báo vẫn in nguyên — tức báo cáo tự khai một hạn chế nó không còn có,
+    và người đọc bảng sẽ bỏ qua hai cột số hợp lệ vì tưởng chúng rỗng.
+
+    Đây là loại lỗi không có gì nổ: bảng vẫn đúng, chỉ phần chữ nói dối.
+    """
+    du_bon = _ket_qua(DE_XUAT, BASELINE9)
+    du_bon["n_luot_theo_che_do"] = {
+        "digit_substitution": 130,
+        "row_shift": 130,
+        "col_shift": 130,
+        "sign": 130,
+    }
+
+    ket = bao_cao(du_bon)
+
+    assert "Cả 4 chế độ lỗi đều inject được" in ket
+    assert "không inject được" not in ket
+
+    thieu_mot = _ket_qua(DE_XUAT, BASELINE9)
+    thieu_mot["n_luot_theo_che_do"] = {
+        "digit_substitution": 130,
+        "row_shift": 130,
+        "sign": 130,
+    }
+
+    ket = bao_cao(thieu_mot)
+
+    assert "Chỉ 3 trong 4 chế độ lỗi inject được" in ket
+    assert "`col_shift`" in ket
+
+
+def test_cong_ty_roi_khoi_luot_chay_duoc_dem_tuong_minh(tmp_path):
+    """
+    Công ty tải facts về nhưng không hồ sơ nào chạy được phải được ĐẾM.
+
+    Lượt chạy 25/08/2026 tải facts của 15 công ty và báo cáo in "14 công ty".
+    Không dòng nào nói công ty thứ 15 đi đâu — Microsoft có companyfacts nhưng
+    không có calculation linkbase nào khớp, nên nó rơi lặng lẽ. Người đọc chỉ
+    phát hiện được bằng cách đếm file trong `data/xbrl/`, tức phải suy trạng
+    thái từ sự vắng mặt thay vì đọc nó.
+    """
+    (tmp_path / "CIK0000000042_facts.json").write_bytes(
+        b'{"cik":42,"entityName":"Co A","facts":{}}'
+    )
+    (tmp_path / "CIK0000000777_facts.json").write_bytes(
+        b'{"cik":777,"entityName":"Co B","facts":{}}'
+    )
+
+    assert cac_cik_co_facts(tmp_path) == {"42", "777"}
+
+
+def test_doc_cik_tu_du_lieu_chu_khong_tu_ten_file(tmp_path):
+    """
+    Tên file là quy ước của fetch.py; khoá `cik` là thứ SEC trả về.
+
+    Ghép theo tên file thì đổi quy ước đặt tên một lần là số công ty trong
+    báo cáo sai mà không có gì nổ, nên test cố tình đặt tên file lệch hẳn giá
+    trị thật.
+    """
+    (tmp_path / "ten_file_lung_tung_facts.json").write_bytes(
+        b'{"cik":1234567,"entityName":"Co C","facts":{}}'
+    )
+
+    assert cac_cik_co_facts(tmp_path) == {"1234567"}

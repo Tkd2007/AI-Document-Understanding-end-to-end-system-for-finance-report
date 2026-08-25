@@ -1,0 +1,90 @@
+MỐC 3 — 14 công ty, 26 hồ sơ, 520 lượt chạy (4 chế độ lỗi × 5 seed)
+
+| Chỉ số | Đề xuất | Baseline 9 | Ai thắng |
+|---|---:|---:|---|
+| **Tỷ lệ lượt còn sai sau sửa (CHÍNH)** | 0.719 | 0.646 | **baseline 9** |
+| Tỷ lệ lỗi câm mức trường (phụ) | 0.004884 | 0.005970 | đề xuất |
+| Tỷ lệ bịa mức trường (phụ) | 0.004000 | 0.006088 | đề xuất |
+| **Định vị đúng trường bị lỗi (CHÍNH)** | 0.227 | 0.288 | **baseline 9** |
+| Số lượt kết quả thoả ràng buộc | 273 | 440 | — |
+
+Định vị tách theo mức sẵn sàng trả lời — chỉ số PHỤ, xem ghi chú dưới bảng:
+
+| Chỉ số | Đề xuất | Baseline 9 |
+|---|---:|---:|
+| Tỷ lệ ra tay (coverage) | 0.285 | 0.606 |
+| Định vị đúng TRÊN LƯỢT CÓ RA TAY | 0.797 | 0.476 |
+| Định vị đúng trên lượt lỗi CÓ SINH RESIDUAL | 0.299 | 0.380 |
+
+Phân bố verdict:
+
+| Verdict | Đề xuất | Baseline 9 |
+|---|---:|---:|
+| VERIFIED | 125 | 125 |
+| REPAIRED | 148 | 315 |
+| ABSTAIN | 247 | 80 |
+
+Lý do ABSTAIN — `vo_nghiem` là ca DUY NHẤT chứng minh được
+
+| Lý do | Đề xuất | Baseline 9 |
+|---|---:|---:|
+| `het_gio` | 85 | 0 |
+| `vuot_tran_thay_doi` | 162 | 80 |
+
+> **KẾT QUẢ NÀY CHƯA KẾT LUẬN ĐƯỢC MỐC 3.** Ba hạn chế đã biết, đều làm
+> lợi cho baseline 9 hoặc làm hẹp phạm vi đo:
+>
+> 1. **Chỉ tổng thể donor là hợp lệ, phần còn lại thì chưa.** Donor nay
+>    lấy từ các công ty KHÁC nên phần này đã đúng; nhưng toàn bộ dữ liệu
+>    vẫn là doanh nghiệp Mỹ nộp theo US-GAAP, chưa có báo cáo Việt Nam nào.
+> 2. **Cả 4 chế độ lỗi đều inject được.** Cột kỳ so sánh nay chọn theo độ phủ chỉ tiêu nên không còn rỗng; trước đó `col_shift` không inject nổi một lượt nào. Inject được KHÔNG có nghĩa là sửa được — xem bảng tách chế độ.
+> 3. **Toàn bộ dữ liệu là bảng XBRL, không có ảnh.** Nguồn ứng viên
+>    `o_lan_can` và `phieu_vlm` vì thế không đóng góp được gì, tức
+>    phương pháp đang bị đo trong điều kiện tháo mất một phần cơ chế.
+
+**Đọc ba chỉ số định vị thế nào** (tu chính PREREGISTRATION 25/08/2026):
+
+- Chỉ số **CHÍNH** là dòng chia cho TỔNG số lượt. Nó phạt việc từ chối
+  trả lời, và đó là chủ ý: chọn chỉ số khắc nghiệt hơn với chính mình
+  làm chỉ số quyết định thì cáo buộc 'chọn chỉ số dễ' tự rụng.
+- Hai dòng phụ tồn tại vì một con số duy nhất **không so được** hai hệ
+  chạy ở hai mức sẵn sàng trả lời khác nhau. Cặp (tỷ lệ ra tay, định vị
+  khi ra tay) chính là hai toạ độ của một điểm trên đường cong
+  risk–coverage mà proposal mục 6.4 đã cam kết báo cáo.
+- Dòng thứ ba bỏ các lượt VERIFIED khỏi mẫu số. Lượt VERIFIED là lượt
+  lỗi tiêm vào nằm trong `null(A)` nên KHÔNG sinh residual — không
+  phương pháp dựa-trên-ràng-buộc nào định vị nổi. Phần khoảng cách nằm
+  ở đó là kết quả của H0, không phải của phương pháp.
+- **Không được báo cáo dòng 'khi ra tay' một mình.** Thiếu tỷ lệ ra tay
+  đi kèm thì một hệ im lặng 399/400 lượt và trúng 1 lượt đạt 1.000.
+
+**Vì sao chỉ số H3 đo ở MỨC LƯỢT trên tầng này** (tu chính 25/08/2026):
+
+Hồ sơ XBRL có trung vị 158 chỉ tiêu và mỗi lượt chỉ tiêm MỘT lỗi, nên
+tỷ lệ lỗi câm mức trường có trần tuyệt đối khoảng 0,0061 — toàn bộ dải
+của nó hẹp hơn năm lần ngưỡng effect size 3 điểm phần trăm mà mục 1 đã
+chốt. Giữ nó làm chỉ số chính thì mọi so sánh trên tầng này đều tự động
+bị tuyên là không khác biệt đáng kể, và điều kiện phản chứng của H3 tự
+kích hoạt bất kể phương pháp tốt đến đâu. Ở mức lượt thì dải trở lại
+[0, 1] và ngưỡng ấy có nghĩa. Tầng gold Việt Nam vẫn giữ mức trường.
+
+## Tách theo chế độ lỗi
+
+**Bảng gộp ở trên KHÔNG đọc được nếu thiếu bảng này.** Tầng XBRL chỉ
+kiểm được khả năng SỬA cho `sign` và `digit_substitution`;
+`row_shift` và `col_shift` ghi đè ô đích nên giá trị thật biến mất
+khỏi bảng, và không nguồn ứng viên nào sinh lại nổi khi không có ảnh
+để đọc lại. Độ phủ ứng viên đo được của chúng là 0,015 và 0,000.
+Gộp bốn chế độ vào một con số là trộn hai chế độ sửa được với hai
+chế độ KHÔNG THỂ sửa được ở tầng này.
+
+| Chế độ lỗi | Lượt | Còn sai — đề xuất | Còn sai — baseline 9 | Định vị — đề xuất | Định vị — baseline 9 | Ra tay — đề xuất | Ra tay — baseline 9 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `col_shift` | 130 | 1.000 | 0.738 | 0.000 | 0.254 | 0.092 | 0.623 |
+| `digit_substitution` | 130 | 0.485 | 0.592 | 0.300 | 0.185 | 0.377 | 0.508 |
+| `row_shift` | 130 | 1.000 | 0.654 | 0.000 | 0.331 | 0.062 | 0.646 |
+| `sign` | 130 | 0.392 | 0.600 | 0.608 | 0.385 | 0.608 | 0.646 |
+
+Bỏ qua (ghi tường minh, không giấu):
+
+- `cong_ty_co_facts_nhung_khong_ho_so_nao_chay_duoc`: 1

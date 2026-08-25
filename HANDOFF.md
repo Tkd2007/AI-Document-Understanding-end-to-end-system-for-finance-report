@@ -24,42 +24,64 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
 
 Mục này là nơi DUY NHẤT liệt kê những thứ đang chờ quyết định. Phiên Claude
 mới đọc mục này trước tiên; nếu người dùng chưa trả lời thì hỏi lại đúng
-những câu dưới đây chứ đừng tự chọn, vì cả hai câu đều đổi kết luận khoa
-học chứ không phải chi tiết cài đặt.
+những câu dưới đây chứ đừng tự chọn, vì mỗi câu đều đổi kết luận khoa học
+chứ không phải chi tiết cài đặt.
 
-Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "Câu 1 chọn ...,
-Câu 2 chọn ...".
+Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "Câu 4 chọn ...".
 
-### Câu 1 — Chấm chỉ số định vị thế nào khi một phương pháp TỪ CHỐI trả lời?
+**Đang chờ:** Câu 4 (chặn việc bắt đầu Câu 2) và Câu 3 (hoãn được).
+**Đã trả lời 25/08/2026:** Câu 1 → (a), Câu 2 → (a). Giữ lại nguyên văn ở
+dưới vì cả hai kèm ràng buộc phải nhớ khi đọc bảng kết quả về sau.
 
-Bối cảnh đầy đủ ở mục 13b. Tóm tắt: baseline 9 giải LP nên nặn được số thực
-bất kỳ và KHÔNG BAO GIỜ bỏ phiếu trắng — nó đoán 234 lần, trúng ~50%.
-Phương pháp đề xuất chỉ sửa khi tập ứng viên đóng chứa cách đọc hợp lệ — nó
-ra tay 122 lần, trúng ~70%. Cách chấm hiện tại chia cho TỔNG số lượt, nên
-mỗi lần từ chối bị tính là một lần định vị trượt, và bảng kết quả thành
-0.212 so với 0.295 — tức đang đo **mức sẵn sàng đoán** chứ không đo độ đúng.
+### Câu 1 — ĐÃ TRẢ LỜI 25/08/2026: phương án (a), báo cáo ba con số
 
-- **(a)** Báo cáo cả hai, kèm tỷ lệ ra tay — *đề nghị của phiên trước.*
-  Trung thực nhất và khớp cách selective prediction thường báo cáo, nhưng
-  làm bảng kết quả rộng thêm một cột.
-- **(b)** Giữ nguyên cách chia cho tổng số lượt. Đơn giản, nhưng phải viết
-  thẳng trong bài rằng chỉ số này phạt việc từ chối, kẻo reviewer tưởng
-  phương pháp đề xuất yếu hơn thật.
-- **(c)** Chỉ chấm trên các lượt có ra tay. **KHÔNG NÊN** — nó thưởng cho
-  việc im lặng nhiều, và một phương pháp chỉ trả lời đúng một lần rồi im
-  sẽ đạt 100%.
+Người dùng chốt **(a)**. Đã thi công: `bao_cao()` trong
+[src/eval/moc3.py](src/eval/moc3.py) in ba con số định vị, tu chính đã vào
+mục Sửa đổi của `PREREGISTRATION.md` và vào danh mục kiểm mục 9 của file
+đó, test ở [tests/test_moc3_bao_cao.py](tests/test_moc3_bao_cao.py).
 
-Trả lời xong thì sửa `bao_cao()` trong [src/eval/moc3.py](src/eval/moc3.py)
-và ghi tu chính vào `PREREGISTRATION.md`.
+Điều **phải nhớ khi đọc bảng Mốc 3 lần sau**: chỉ số quyết định vẫn là con
+số chia cho TỔNG số lượt, tức con số bất lợi cho phương pháp đề xuất. Hai
+con số phụ để giải thích cơ chế, không để thay thế. Và con số "định vị khi
+ra tay" không bao giờ được trình bày một mình.
 
-### Câu 2 — Làm việc nào trước?
+### Câu 2 — ĐÃ TRẢ LỜI 25/08/2026: làm (a) trước
 
-- **(a)** Đo ma trận nhầm lẫn chữ số từ dữ liệu thật (mục 13b). Đây là thứ
-  chặn cứng việc đóng Mốc 3, và nó là việc kỹ thuật thuần tuý.
-- **(b)** Chốt Câu 1 trước rồi mới chạy lại, để chỉ chạy một lượt.
+Đo ma trận nhầm lẫn chữ số từ dữ liệu thật trước, rồi mới chạy lại Mốc 3,
+để chỉ tốn một lượt chạy 90 phút. **Chưa bắt đầu** — và xem Câu 4 dưới đây
+trước khi bắt đầu, vì nó quyết định ma trận đo được dùng ở đâu.
 
-Lượt chạy Mốc 3 mất khoảng 90 phút nên thứ tự này có giá thật, không phải
-câu hỏi hình thức.
+### Câu 4 — Ma trận nhầm lẫn đo được có dùng cho CẢ bộ tiêm lỗi không?
+
+Đây là mâu thuẫn giữa hai chỗ trong chính file này, phát hiện 25/08/2026 khi
+bắt tay vào Câu 2. Phải chốt trước khi viết dòng code nào cho Câu 2.
+
+- **Mục 6(b)** nói dứt khoát: `inject.py` KHÔNG dùng chung bảng nhầm chữ số
+  với `repair.candidates`, vì dùng chung thì mọi lỗi tiêm vào đều nằm sẵn
+  trong tập ứng viên và phương pháp đề xuất thắng do thí nghiệm được dựng
+  cho nó thắng. *"Đừng thống nhất hai bảng này lại."*
+- **Mục 13b** nói ngược lại: cách hợp lệ duy nhất là đo ma trận từ dữ liệu
+  thật rồi **dùng đúng ma trận đó cho CẢ HAI phía**, ghi tu chính trước khi
+  chạy lại.
+
+Hai câu này không thể cùng thi hành. Ba hướng:
+
+- **(a)** Cả hai phía cùng dùng ma trận đo được, nhưng bộ tiêm lấy mẫu theo
+  **toàn bộ phân phối** còn bộ sinh ứng viên chỉ lấy **N cặp đầu bảng** (đằng
+  nào cũng bị `MAX_UNG_VIEN` chặn). Độ phủ khi đó bằng khối lượng xác suất
+  của N cặp đầu — một con số **đo được**, không phải chọn tay, và không bằng
+  1.0. Giữ được tinh thần của cả hai mục.
+- **(b)** Giữ nguyên mục 6(b): bộ tiêm đổi sang chữ số bất kỳ, chỉ hiệu chỉnh
+  `repair.candidates` theo số đo. Độ phủ `digit_sub` sẽ vẫn thấp và chỉ số
+  vẫn không mang thông tin về phương pháp — tức Mốc 3 vẫn không đóng được ở
+  chế độ lỗi này.
+- **(c)** Theo mục 13b: dùng chung hoàn toàn. Độ phủ lên gần 1.0 và phương
+  pháp đề xuất gần như chắc chắn thắng — đúng cạm bẫy mà mục 13b tự cảnh báo.
+
+Số đã có sẵn để bắt đầu: mục 9 ghi cặp quan sát được ở độ phân giải thấp là
+`9→0` (23 lần), `6→0` (8), `9→8` (1), trong khi `repair.candidates` đang
+dùng bốn cặp `(0,8) (1,7) (3,8) (5,6)` — **cặp áp đảo `9→0` không nằm trong
+đó**.
 
 ### Câu 3 — Nhận diện chuẩn thật bằng cách nào? *(KHÔNG chặn Mốc 3, hoãn được)*
 

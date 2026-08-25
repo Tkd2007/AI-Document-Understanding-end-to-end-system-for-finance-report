@@ -8,9 +8,10 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   chỉ trong một ngày, vì chính commit cập nhật nó lại thành commit mới nhất.
   Chạy `git log --oneline -1` và `git status -sb`. Quy ước: **push sau mỗi
   commit**, nên `research` khớp `origin/research` là trạng thái bình thường.
-- **Test:** **401 xanh / 0 đỏ** ở CẢ `USE_OCR_FIRST=true` lẫn `false`.
+- **Test:** **402 xanh / 0 đỏ** ở CẢ `USE_OCR_FIRST=true` lẫn `false`.
   `ruff check src tests` sạch.
-- **Bộ chỉ tiêu:** 21 với TT99, 20 với TT200; 7 đẳng thức. MỐC 1 đã đóng.
+- **Bộ chỉ tiêu:** **27 với TT99, 26 với TT200; 9 đẳng thức** — kịch bản E,
+  thi công 25/08/2026 (`f1c2738`). MỐC 1 đã đóng.
 - **`main`:** **KHÔNG BAO GIỜ MERGE** — chỉ thị của người dùng, 24/08/2026.
   `research` đi trước 56 commit và cứ để vậy. Hệ quả: CI hiện chỉ chạy trên
   `main` và trên pull request, nên **CI thực tế không bao giờ chạy** — mọi
@@ -1312,7 +1313,51 @@ cũng phải sửa danh sách cài trong `.github/workflows/ci.yml`.
 Mục này giữ những việc đã có quyết định nhưng cố ý hoãn lại. Đọc mục này
 trước khi bắt đầu bất kỳ việc gì ở mục 16, kẻo làm theo con số cũ.
 
-### 17.1 Đổi bộ chỉ tiêu từ kịch bản D sang **kịch bản E** — CHƯA LÀM
+### 17.1 Đổi bộ chỉ tiêu từ kịch bản D sang **kịch bản E** — ĐÃ LÀM 25/08/2026
+
+> **Thi công xong ở `f1c2738`.** Sáu bước dưới đây đã làm hết trừ bước 4 —
+> đo lại trần người — vì chỉ người sẽ gán nhãn mới đo được. Giữ nguyên phần
+> mô tả bên dưới làm hồ sơ lý do; hiện trạng và số đo ở ngay dưới đây.
+
+**Đo được sau khi thi công:**
+
+| | Kịch bản D | Kịch bản E |
+|---|---:|---:|
+| Chỉ tiêu (TT200 / TT99) | 20 / 21 | 26 / 27 |
+| Đẳng thức | 7 | 9 |
+| `rank(A)` | 7 | 9 |
+| `dim null(A)` (TT200 / TT99) | 13 / 14 | 17 / 18 |
+| Định vị được lỗi một-trường (TT200) | 5 / 20 | 7 / 26 |
+| Chỉ tiêu có cột toàn 0 | 0 | 0 |
+
+Hai chỉ tiêu mới định vị được: `lctt_thuan` và **`tien_va_tuong_duong_tien`**.
+Cái thứ hai là điểm đáng giá riêng của E — nó ĐÃ nằm trong bộ từ trước
+nhưng lẫn trong lớp năm thành phần của mã 100, và đẳng thức liên kết chéo
+B03 gắn cho nó một đẳng thức THỨ HAI để tách ra. Không nhóm mở rộng nào
+khác gỡ được một chỉ tiêu CŨ ra khỏi lớp lẫn.
+
+**Phần không đẹp, phải báo cáo vì nó là kết quả của H0:** không gian null
+tăng 13 → 17 chiều, còn TỶ LỆ định vị được gần như đứng yên (25% → 27%).
+Thêm 6 chỉ tiêu mà chỉ mua 2 đẳng thức thì 4 chiều chênh lệch rơi thẳng vào
+không gian vô hình. E tốt hơn D nhưng không sửa được kết luận nền của H0.
+
+**CÒN LẠI, và nó CHẶN tài liệu gán nhãn đầu tiên — việc của NGƯỜI DÙNG:**
+bấm giờ thử 3–5 tài liệu với 26 chỉ tiêu rải qua **ba** biểu mẫu. `ADDENDUM`
+mục 6 chốt giao thức 15 phút một tài liệu, đo khi bộ chỉ tiêu còn nằm trên
+hai biểu mẫu. Nếu ba biểu mẫu làm vỡ giao thức thì phải sửa giao thức và ghi
+một tu chính nữa **trước** tài liệu đầu tiên, không phải sau.
+
+**Một khoảng trống mới sinh ra, đã chốt bằng test:** bộ số đối chiếu
+`VNM_Q1_2026` trong `tests/test_constraints.py` do người đọc tay và chỉ phủ
+B01 với B02. Bản PDF trong `data/samples/` là ảnh scan nên không rút số B03
+bằng máy được. Hai test dùng bộ số này nay chạy trên phần phủ được, và
+`test_bo_so_that_chua_phu_duoc_B03_va_test_phai_noi_ra` chốt tường minh sáu
+chỉ tiêu còn thiếu — bổ sung số vào bộ đối chiếu thì test đó đỏ và nhắc gỡ
+phần cắt bớt. Việc bổ sung cần người đọc tay từ báo cáo.
+
+---
+
+**Hồ sơ lý do, viết trước khi thi công:**
 
 Người dùng chốt ngày 24/08/2026: dùng **E**, vì E đúng hơn về học thuật. Số
 đo hậu thuẫn: E hơn D trên mọi trần (Top-1 0,54 so 0,50; Top-3 0,96 so 0,90),

@@ -567,3 +567,32 @@ nó lại vô nghĩa.
 **Phạm vi.** Tu chính này đổi ĐƠN VỊ QUAN SÁT của chỉ số chính trên một tầng
 dữ liệu, không đổi phát biểu H3 và không đổi ngưỡng effect size 3 điểm phần
 trăm. Nó được ghi **trước** lượt chạy Mốc 3 tiếp theo.
+
+### 25/08/2026 — Tầng XBRL chỉ kiểm được khả năng SỬA cho 2 trong 4 chế độ lỗi
+
+**Sửa đổi.** Ghi tường minh một giới hạn của tầng XBRL mà bản gốc không nêu:
+tầng này kiểm được **phát hiện** và **định vị** cho cả bốn chế độ lỗi, nhưng
+chỉ kiểm được **khả năng SỬA** cho `sign` và `digit_substitution`.
+
+**Lý do — cấu trúc, không phải cài đặt.** `row_shift` và `col_shift` **ghi
+đè** ô đích bằng giá trị của một ô khác, nên giá trị thật **biến mất khỏi
+bảng**. Pipeline thật đọc lại ảnh vùng provenance thì lấy lại được; tầng
+XBRL không có ảnh nên không nguồn ứng viên nào sinh lại nổi. Độ phủ ứng viên
+đo được ngày 25/08/2026 trên 130 lượt mỗi chế độ: `row_shift` **0,015**,
+`col_shift` **0,000**, so với `sign` 1,000 và `digit_substitution` 0,831.
+
+Con số `col_shift` = 0,000 **không phải** do thiếu dữ liệu: việc chọn kỳ đã
+sửa cùng ngày nên cả 130 lượt đều inject được, thay vì 10 lượt như lượt chạy
+24/08/2026.
+
+**Hệ quả cho cách đọc kết quả, và đây là phần quan trọng.** Phân vai "tầng
+XBRL lo power, tầng gold Việt Nam lo validity" ở `ADDENDUM` mục 4 **hẹp hơn
+đã viết**: với hai chế độ lỗi thuộc về BỐ CỤC TRANG — đúng hai chế độ mà
+proposal mục 3.1 nêu là không tồn tại trong dữ liệu khảo sát và vì thế là
+phần mới của đóng góp — tầng XBRL không cho power về khả năng sửa, chỉ tầng
+gold Việt Nam cho. Trọng số của tập gold vì thế **tăng**, và mọi kết luận về
+H3 cho `row_shift`/`col_shift` phải chờ tập gold.
+
+**Không được lấp bằng cách sửa bộ tiêm.** Cho `inject` giữ lại giá trị gốc ở
+đâu đó để bộ sinh ứng viên tìm thấy là dựng một tầng dữ liệu có ảnh giả, và
+kết quả thu được sẽ không nói gì về pipeline thật.

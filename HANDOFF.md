@@ -29,10 +29,10 @@ chứ không phải chi tiết cài đặt.
 
 Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "Câu 4 chọn ...".
 
-**Đang chờ:** Câu 5 (chặn việc chạy lại Mốc 3), Câu 6 (không chặn, nhưng
-phải quyết cách ghi vào bài), Câu 3 (hoãn được).
-**Đã trả lời 25/08/2026:** Câu 1 → (a), Câu 2 → (a), Câu 4 → (a), và chỉ số
-chính của H3 trên tầng XBRL chuyển sang mức LƯỢT. Giữ lại nguyên văn ở dưới
+**Đang chờ:** Câu 5 (chặn việc chạy lại Mốc 3 — phương án (a) đã thử và bị
+số đo bác, nay là câu hỏi về TRẦN), Câu 3 (hoãn được).
+**Đã trả lời 25/08/2026:** Câu 1 → (a), Câu 2 → (a), Câu 4 → (a), Câu 6 →
+ghi làm giới hạn, và chỉ số chính của H3 trên tầng XBRL chuyển sang mức LƯỢT. Giữ lại nguyên văn ở dưới
 vì mỗi câu kèm ràng buộc phải nhớ khi đọc bảng kết quả về sau.
 
 ### Câu 1 — ĐÃ TRẢ LỜI 25/08/2026: phương án (a), báo cáo ba con số
@@ -92,36 +92,58 @@ Số đã có sẵn để bắt đầu: mục 9 ghi cặp quan sát được ở
 dùng bốn cặp `(0,8) (1,7) (3,8) (5,6)` — **cặp áp đảo `9→0` không nằm trong
 đó**.
 
-### Câu 5 — Trần ứng viên đang cắt mất đáp án; có cho `cost` theo xác suất đo được không?
+### Câu 5 — ĐÃ THỬ (a), ĐO RA KHÔNG DÙNG ĐƯỢC. Câu hỏi thật nay là trần.
 
-**Chặn việc chạy lại Mốc 3.** Phát hiện 25/08/2026 khi đo lại độ phủ sau khi
-nối hai bộ bảng vào ma trận.
+Người dùng chốt **(a)** ngày 25/08/2026 — cho `cost` của `ocr_alt` theo xác
+suất đo được của từng cặp. Đã thi công, đã đo, và **kết quả bác chính phương
+án đó**. Ghi đầy đủ ở đây để không ai thử lại.
 
-Độ phủ `digit_substitution` nay **0,831 TRƯỚC trần** — đúng như phương án (a)
-dự tính. Nhưng **sau trần chỉ còn 0,369**, với 60/130 lượt bị trần cắt mất
-đáp án. Nguyên nhân nằm ở chỗ `tu_nham_chu_so()` gán **cùng một `cost`** cho
-mọi ứng viên nhầm chữ số, nên khi `MAX_MOI_NGUON = 6` cắt bớt thì nó cắt
-theo **vị trí chữ số trong con số**, không theo mức hợp lý. Một con số 12 chữ
-số sinh ra hàng chục ứng viên và sáu cái sống sót là sáu cái ở đầu chuỗi.
+**Thử lần 1 — nhân trọng số vào `cost`, chuẩn hoá theo tổng.** Độ phủ sau
+trần tụt từ 0,369 xuống **0,046**. Nguyên nhân là tương tác với một trần
+KHÁC: `ocr_alt` là nguồn RẺ NHẤT trong bảng cost (1,050 so với
+`neighbor_cell` 1,204, `sign` 1,609, `scale` 2,303), nên mọi trọng số nhỏ
+hơn 1 đẩy nó lên trên `scale`, và bước cắt chung `MAX_UNG_VIEN = 12` — vốn
+xếp mọi nguồn theo cost — loại sạch ứng viên nhầm chữ số: riêng
+`neighbor_cell`, `sign` và `scale` đã chiếm 13 chỗ trên trần 12.
 
-- **(a)** Cho `cost` của `ocr_alt` theo xác suất đo được của từng cặp:
-  `cost = −log(P(nguồn) × P(cặp | nguồn))`. Đây đúng cơ chế
-  `XAC_SUAT_TIEN_NGHIEM` đang dùng, chỉ thêm một tầng. Sáu ứng viên sống sót
-  khi đó là sáu cái khả dĩ nhất, và độ phủ sau trần sẽ tiến gần 0,831.
-  **Nhưng nó đụng vào hàm mục tiêu của MILP** — đúng chỗ mục 12 cảnh báo.
-- **(b)** Nới `MAX_MOI_NGUON` cho riêng `ocr_alt`. Không đụng hàm mục tiêu,
-  nhưng số ứng viên vào thẳng cơ số không gian tìm kiếm của bước chẩn đoán
-  NP-hard.
-- **(c)** Để nguyên, báo cáo 0,369 và nêu trần là một giới hạn của phương
-  pháp. Trung thực nhưng vứt đi phần lớn thứ vừa mua được bằng phép đo.
+**Thử lần 2 — chuẩn hoá theo cặp khả dĩ nhất**, để cặp hay gặp nhất giữ
+nguyên cost gốc của nguồn. Vẫn **0,046**: với hầu hết con số thì không cặp
+nào là cặp khả dĩ nhất, nên mọi ứng viên vẫn đắt hơn `scale`.
 
-Mục 9 đã ghi rằng "việc hiệu chỉnh `candidates` theo số đo là hợp lệ", nên
-(a) nằm trong phạm vi đã cho phép. Vẫn hỏi vì nó đổi hàm mục tiêu.
+**Thử lần 3 — bỏ trọng số khỏi `cost`, chỉ XẾP bên trong nguồn theo tần suất
+đo được.** `generate()` khi đó trả lại đủ 6 ứng viên `ocr_alt`, nhưng độ phủ
+**vẫn 0,046** — tệ hơn hẳn cách xếp cũ. Lý do đáng nhớ: cặp áp đảo là `9→0`,
+tức "đọc ra 0 thì thật có thể là 9", mà con số tài chính có RẤT NHIỀU chữ số
+0. Xếp theo tần suất dồn cả sáu chỗ vào các vị trí chứa `0`, trong khi bộ
+tiêm chọn vị trí **đều xác suất** trên mọi chữ số.
 
-### Câu 6 — `row_shift` và `col_shift` KHÔNG sửa được ở tầng XBRL, về nguyên tắc
+**Phép đo giải thích tất cả, và nó bác luôn tiền đề của Câu 5.** Bộ sinh
+sinh **trung vị 14 ứng viên** nhầm chữ số cho mỗi chỉ tiêu, còn
+`MAX_MOI_NGUON` chỉ giữ **6**. Tỷ lệ sống sót của phép chọn ngẫu nhiên là
+6/14 = **0,429**, và tỷ lệ đo được là **0,44** (0,369 trên 0,831). Nghĩa là
+cách xếp cũ ĐÃ chạy ở đúng mức của phép chọn ngẫu nhiên — và **không cách
+xếp nào vượt được**, vì vị trí bị hỏng do bộ tiêm chọn đều xác suất nên
+không tương quan với bất kỳ thứ tự nào bộ sinh biết.
 
-Không phải câu hỏi chọn hướng, mà là một sự thật cần người chủ trì biết và
-quyết xem ghi nó vào bài thế nào.
+Tiền đề "trần cắt theo vị trí chữ số thay vì theo mức hợp lý" vì thế chỉ
+đúng một nửa: trần cắt lỗ **vì nó nhỏ hơn số ứng viên**, không phải vì nó
+xếp sai. Toàn bộ thay đổi đã hoàn nguyên; repo trở lại trạng thái `f80a53d`.
+
+**Câu hỏi thật, cần người quyết:**
+
+- **(b)** Nới trần. Muốn phủ ~0,83 thì `MAX_MOI_NGUON` phải lên khoảng 14 và
+  `MAX_UNG_VIEN` lên tương ứng. Số ứng viên mỗi chỉ tiêu đi THẲNG vào cơ số
+  không gian tìm kiếm của bước chẩn đoán NP-hard — mục 12 đo được mỗi nấc
+  `max_changes` đắt lên chừng 20 lần, còn chiều này thì chưa ai đo. **Phải
+  đo thời gian giải trước khi chốt.**
+- **(c)** Để nguyên, báo cáo 0,369 và nêu trần là một giới hạn tường minh
+  của phương pháp: "hệ chỉ xét tối đa 6 cách đọc thay thế mỗi chỉ tiêu".
+  Trung thực, không tốn gì, nhưng ghìm trần trên của mọi kết quả `digit_sub`.
+
+### Câu 6 — ĐÃ CHỐT 25/08/2026: ghi làm giới hạn của tầng XBRL
+
+Người dùng đã xác nhận. Đã ghi thành tu chính trong `PREREGISTRATION.md`.
+Giữ nguyên văn ở đây vì con số phải đi kèm khi viết phần giới hạn của bài.
 
 Độ phủ đo được: `row_shift` 0,015 và `col_shift` **0,000** trên 130 lượt mỗi
 loại. Không phải lỗi cài đặt. Cả hai chế độ lỗi này **ghi đè** ô đích bằng

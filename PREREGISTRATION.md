@@ -181,6 +181,12 @@ Với mỗi giả thuyết, ghi rõ **kết quả nào sẽ khiến nó sai**, v
 Dòng cuối là dòng quan trọng nhất. Nếu baseline 9 hoà thì "đọc lại nguồn"
 không có giá trị và **phải nói ra**.
 
+> *Bổ sung, không sửa đè:* trên **tầng XBRL**, dòng H3 nay đọc thành ba
+> trạng thái chứ không phải hai — hoà HOÃN phán quyết sang tầng gold thay vì
+> kích hoạt phản chứng. Lý do đo được, và tu chính được chốt trước khi có kết
+> quả: xem **tu chính 25/08/2026** cuối file. Trên tầng gold Việt Nam thì
+> bảng này giữ nguyên.
+
 Viết điều này vào proposal là điểm cộng, không phải điểm trừ: nó chứng minh
 tác giả biết mình đang kiểm chứng cái gì.
 
@@ -204,6 +210,11 @@ power** và quyết quy mô tầng XBRL. Con số này không đoán được t�
 đề xuất thì dừng, báo cáo, và lùi paper về tầng dataset + identifiability.
 **Không chạy tiếp vòng lặp đọc lại và toàn bộ ablation trước khi biết kết
 quả này** — chạy tiếp chỉ để tích luỹ số liệu cho một luận điểm đã sai.
+
+> *Bổ sung, không sửa đè:* điều kiện dừng này áp ở **tầng gold Việt Nam**.
+> Ở tầng XBRL, chỉ kết quả **thua** mới kích hoạt nó; hoà thì hoãn phán
+> quyết. Xem tu chính 25/08/2026 cuối file — lý do là tầng XBRL không có ảnh
+> nên hai trong năm nguồn ứng viên không chạy được ở đó.
 
 ---
 
@@ -596,3 +607,54 @@ H3 cho `row_shift`/`col_shift` phải chờ tập gold.
 **Không được lấp bằng cách sửa bộ tiêm.** Cho `inject` giữ lại giá trị gốc ở
 đâu đó để bộ sinh ứng viên tìm thấy là dựng một tầng dữ liệu có ảnh giả, và
 kết quả thu được sẽ không nói gì về pipeline thật.
+
+### 25/08/2026 — Hoà ở tầng XBRL HOÃN phán quyết H3, không kích hoạt phản chứng
+
+**Chốt khi CHƯA AI nhìn thấy một con số kết quả nào.** Lượt chạy Mốc 3 theo
+cấu hình mới khởi động sau commit `68ce4d2`; câu hỏi được đặt và ghi vào repo
+ở commit `113e741`, trước khi lượt chạy cho ra bảng. Thứ tự đó là điều kiện
+để tu chính này còn giá trị, và nó kiểm chứng được bằng dấu thời gian git.
+
+**Sửa đổi.** Bảng điều kiện phản chứng ở mục 3 quy định H3 sai khi *"baseline
+9 ngang bằng phương pháp đề xuất"*. Trên **tầng XBRL**, điều kiện đó nay đọc
+thành ba trạng thái thay vì hai:
+
+| Kết quả trên tầng XBRL | Kết luận |
+|---|---|
+| Đề xuất **thắng** baseline 9 | Bằng chứng ủng hộ H3, và là bằng chứng MẠNH — xem lý do dưới |
+| **Hoà** | **HOÃN phán quyết sang tầng gold Việt Nam.** Không kích hoạt điều kiện phản chứng |
+| Đề xuất **thua** | Kích hoạt điều kiện phản chứng. Dừng, báo cáo, lùi bài |
+
+Trên **tầng gold Việt Nam, mục 3 giữ nguyên**: hoà là hoà, và hoà kích hoạt
+điều kiện phản chứng.
+
+**Lý do — đo được, không phải lập luận.** Tầng XBRL đo phương pháp đề xuất
+với cơ chế trung tâm của nó gần như bị tháo ra. Đo ngày 25/08/2026 trên 520
+lượt: nguồn ứng viên `o_lan_can` sinh ra được giá trị thật **3 lần**, nguồn
+`vlm_vote` **0 lần** vì tầng này không có phiếu VLM. Cả hai đều cần thứ mà
+tầng này không có — **ảnh của trang giấy**.
+
+Mà "đọc lại nguồn" chính là mệnh đề của H3. Nên trên tầng này, phương pháp đề
+xuất đang chạy gần như chỉ với hai nguồn không cần ảnh (`nham_chu_so` và
+`dau`), tức nó bị đo trong điều kiện đã bỏ đi đúng cái đang cần chứng minh.
+
+Từ đó ra bất đối xứng:
+
+- **Thắng** ở điều kiện đó là bằng chứng mạnh hơn bình thường, vì phương pháp
+  thắng dù bị tháo cơ chế chính.
+- **Hoà** không nói gì về H3. Nó nói: khi không có gì để đọc lại thì việc đọc
+  lại không giúp gì — một mệnh đề hiển nhiên, không phải một phép bác bỏ.
+- **Thua** vẫn là tín hiệu xấu thật, vì nó nghĩa là ngay cả ở hai nguồn không
+  cần ảnh, việc neo ứng viên vào tài liệu cũng thua việc điền từ donor.
+
+**Điều này KHÔNG nới lỏng H3, và đây là chỗ phải giữ.** Phán quyết được hoãn
+sang tầng gold chứ không được bỏ. Tầng gold có ảnh, nên ở đó cả năm nguồn ứng
+viên đều chạy và `o_lan_can` — nguồn mà `candidates.py` tự mô tả là "giá trị
+nhất" — mới thực sự được kiểm. Nếu hoà ở tầng gold thì H3 sai, đúng như mục 3
+đã viết.
+
+**Hệ quả về nguồn lực, phải nói ra vì nó tốn tiền thật.** Mốc 3 sinh ra để
+tránh bỏ 45–60 giờ gán nhãn cho một luận điểm đã chết. Tu chính này thu hẹp
+quyền đó: một kết quả hoà ở tầng XBRL **không còn** cho phép huỷ việc gán
+nhãn. Đổi lại, nó ngăn việc huỷ nhầm vì một phép đo không kiểm được thứ nó
+định kiểm. Đánh đổi này được chấp nhận có ý thức.

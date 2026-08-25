@@ -483,3 +483,87 @@ H2 làm cả hai chỉ số khó đọc.
 **Phạm vi.** Tu chính này đổi cách BÁO CÁO, không đổi phát biểu H2 cũng không
 đổi điều kiện phản chứng ở mục 3. Nó được ghi **trước** lượt chạy Mốc 3 tiếp
 theo, và lượt chạy ngày 24/08/2026 phải được đọc lại theo cách chấm này.
+
+### 25/08/2026 — Ma trận nhầm chữ số đo được, dùng chung hai phía khác độ sâu
+
+**Bối cảnh.** Bộ tiêm lỗi và bộ sinh ứng viên cầm hai bảng chữ số khác nhau,
+cả hai đều là phỏng đoán: `inject.py` đổi một chữ số sang chữ số bất kỳ,
+`repair/candidates.py` chỉ bốn cặp `(0,8) (1,7) (3,8) (5,6)`. Xác suất trùng
+xấp xỉ (7/10)×(1/9) ≈ 0,078, đo được 0,092 trên lượt chạy 24/08/2026. Con số
+`digit_substitution` của Mốc 3 vì thế là **độ trùng của hai bảng phỏng đoán**,
+không mang thông tin gì về phương pháp.
+
+**Sửa đổi.** Cả hai phía đọc từ một nguồn duy nhất là `src/nham_chu_so.py`,
+nhưng **khác độ sâu**:
+
+| Phía | Dùng gì | Chiều tra |
+|---|---|---|
+| `inject.py` | TOÀN BỘ phân phối, kể cả phần đuôi | xuôi, `thật → đọc thành` |
+| `repair/candidates.py` | `N_CAP_UNG_VIEN = 6` cặp đầu bảng | ngược, `đọc thành → thật` |
+
+**Khoảng hở giữa hai bên là thứ phải giữ, và đây là lý do.** Nếu hai phía
+dùng cùng một bảng hữu hạn thì mọi lỗi tiêm vào đều sửa được, độ phủ lên
+1,0, và thí nghiệm mất khả năng làm lộ cơ chế ABSTAIN — mà ABSTAIN chính là
+lập luận chống bịa, đóng góp cấu trúc của cả bài. Một thí nghiệm không tạo
+ra nổi tình huống nó tuyên bố xử lý được thì nó không kiểm chứng điều đó.
+`tests/test_nham_chu_so.py::test_bo_sinh_ung_vien_KHONG_phu_het_ma_tran` chốt
+ràng buộc này.
+
+**N = 6 KHÔNG phải con số chọn sau khi thấy kết quả.** Nó lấy đúng
+`MAX_MOI_NGUON` của `repair/candidates.py`, hằng số đã nằm trong repo từ khi
+C1 ra đời, trước mọi phép đo ở đây. Hệ quả: **độ phủ là KẾT QUẢ, không phải
+tham số** — với ma trận đã đóng băng, khối lượng tích luỹ của 6 cặp đầu bằng
+**0,933**, và con số đó phải được báo cáo cùng bảng Mốc 3 chứ không giấu
+trong phụ lục.
+
+**Ma trận được commit TRƯỚC lượt chạy**, chép tay thành hằng số trong
+`src/nham_chu_so.py` chứ không nạp từ file lúc chạy: một hằng số nằm trong
+git diff chứng minh được thứ tự thời gian, còn một lời gọi đọc file thì
+không, vì file đổi được sau mà không để lại vết trong lịch sử mã.
+
+**Giới hạn phải nêu trong bài.** Lượt đo đầu chỉ dùng MỘT font và cho kết quả
+thoái hoá — ba cặp, khối lượng chạm 1,000 ngay ở N = 3 — vì phân phối nhầm
+chữ số phụ thuộc **typeface** chứ không phụ thuộc engine. Sáu font cho mười
+cặp và đủ phần đuôi, nhưng các cặp đuôi chỉ đếm được một lần nên ước lượng ở
+đó rất yếu. Ma trận đo trên ảnh render tổng hợp, không phải scan tiếng Việt
+thật, nên tầng XBRL **lạc quan hơn** tài liệu Việt Nam thật ở chế độ lỗi này,
+và con số phải đo lại trên tập gold khi có.
+
+### 25/08/2026 — Chỉ số chính của H3 trên tầng XBRL tính ở mức LƯỢT
+
+**Sửa đổi.** Trên tầng XBRL, chỉ số chính của H3 là **tỷ lệ lượt mà chỉ tiêu
+bị tiêm lỗi vẫn còn sai sau khi sửa**, không phải tỷ lệ lỗi câm mức trường.
+Tỷ lệ mức trường vẫn được báo cáo làm chỉ số phụ để so được với tầng gold.
+Trên **tầng gold Việt Nam, chỉ số chính không đổi** — vẫn là tỷ lệ lỗi câm
+mức trường như mục 1 đã chốt.
+
+**Lý do — số học, không phải sở thích trình bày.** Hồ sơ XBRL có trung vị
+**158 chỉ tiêu** (119–212 trên 26 hồ sơ đã tải), và mỗi lượt tiêm **đúng một
+lỗi**. Qua 400 lượt, mẫu số của tỷ lệ lỗi câm mức trường là khoảng **65.200**
+trong khi tử số nhiều nhất là **400**. Nghĩa là:
+
+> Trần tuyệt đối của tỷ lệ lỗi câm trên tầng XBRL là **0,0061** — toàn bộ
+> dải của chỉ số chỉ rộng **0,61 điểm phần trăm**.
+
+Mục 1 lại chốt trước rằng *"hiệu số dưới 3 điểm phần trăm sẽ được trình bày
+là không có khác biệt đáng kể về mặt thực tiễn, bất kể p-value"*. **Ba điểm
+phần trăm lớn gấp gần năm lần toàn bộ dải của chỉ số.** Nên trên tầng XBRL,
+mọi so sánh — dù phương pháp tốt đến đâu — đều tự động bị tuyên là không có
+khác biệt đáng kể, và điều kiện phản chứng của H3 ở mục 3 **tự kích hoạt bất
+kể kết quả**. Mốc 3 khi đó không thể đóng theo hướng đậu, chỉ có thể đóng
+theo hướng trượt.
+
+Ngưỡng 3 điểm phần trăm không sai; nó được viết cho tài liệu Việt Nam khoảng
+25 chỉ tiêu, nơi một lỗi chiếm 4% số trường. Trên bảng XBRL 158 chỉ tiêu cùng
+một lỗi chỉ chiếm 0,6%. **Ngưỡng không chuyển được giữa hai tầng**, và điều
+đó không lộ ra vì hai tầng dùng chung một câu đăng ký trước.
+
+**Kèm theo — số chữ số thập phân.** Báo cáo ba chữ số thập phân trên một chỉ
+số có dải 0,0061 chỉ cho khoảng sáu giá trị phân biệt được: "0,005 so với
+0,006" có thể là chênh 0 lượt, cũng có thể là chênh 65 lượt trên 400. Chỉ số
+phụ mức trường phải in đủ chữ số để đọc được hiệu số, nếu không thì việc giữ
+nó lại vô nghĩa.
+
+**Phạm vi.** Tu chính này đổi ĐƠN VỊ QUAN SÁT của chỉ số chính trên một tầng
+dữ liệu, không đổi phát biểu H3 và không đổi ngưỡng effect size 3 điểm phần
+trăm. Nó được ghi **trước** lượt chạy Mốc 3 tiếp theo.

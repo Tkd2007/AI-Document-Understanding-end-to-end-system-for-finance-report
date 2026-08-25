@@ -255,6 +255,52 @@ def bo_chi_tieu(chuan: str) -> dict:
     }
 
 
+@app.get("/api/gold/{doc_id}")
+def doc_lai_ban_ghi(doc_id: str) -> dict:
+    """
+    Nạp lại một file gold đã ghi để SỬA, thay vì phải gõ lại cả 27 ô.
+
+    Vì sao cần: bản đầu của công cụ chỉ ghi được chứ không mở lại được, nên
+    phát hiện đọc nhầm MỘT chữ số nghĩa là gõ lại toàn bộ tài liệu. Với 100
+    tài liệu và cam kết gán nhãn đôi 20 tài liệu, tình huống này chắc chắn
+    lặp lại hàng chục lần. Lộ ra ngay ở tài liệu đầu tiên: một chỗ đọc nhầm
+    `1` thành `0` làm đẳng thức thuế lệch 10.000 đồng.
+
+    Giá trị trả về ĐỔI NGƯỢC về thang của báo cáo (chia lại hệ số đơn vị), vì
+    ô nhập nhận đúng con số như in trên giấy. Trả nguyên giá trị đã quy về
+    đồng sẽ khiến lần lưu sau nhân hệ số thêm một lần nữa.
+
+    Đây KHÔNG phải đầu ra pipeline — nó là chính ghi chép của người gán nhãn,
+    nên không đụng Luật 1.
+    """
+    duong_dan = GOLD_DIR / f"{Path(doc_id).name}.json"
+    if not duong_dan.is_file():
+        raise HTTPException(404, f"Chưa có file gold cho {doc_id}")
+
+    ban_ghi = GroundTruthDoc.load(duong_dan)
+    he_so = ban_ghi.unit_multiplier or 1
+
+    return {
+        "doc_id": ban_ghi.doc_id,
+        "ticker": ban_ghi.ticker,
+        "period": ban_ghi.period,
+        "standard": ban_ghi.standard,
+        "unit_declared": ban_ghi.unit_declared,
+        "source_url": ban_ghi.source_url,
+        "downloaded_at": ban_ghi.downloaded_at,
+        "annotator": ban_ghi.annotator,
+        "notes": ban_ghi.notes,
+        "so_lan_ghi": ban_ghi.so_lan_ghi,
+        # Chia lại hệ số. Giá trị lưu là số nguyên đồng và hệ số là luỹ thừa
+        # của 10, nên phép chia này khôi phục đúng con số trên giấy; dùng
+        # Fraction-free integer division khi chia hết để khỏi ra đuôi .0.
+        "values": {
+            ten: None if x is None else (x // he_so if x % he_so == 0 else x / he_so)
+            for ten, x in ban_ghi.values.items()
+        },
+    }
+
+
 @app.post("/api/mo/{doc_id}")
 def bat_dau_bam_gio(doc_id: str) -> dict:
     """Bấm giờ từ lúc mở tài liệu. Mở lại cùng một doc_id thì KHÔNG đặt lại."""
@@ -323,6 +369,12 @@ def luu(yeu_cau: YeuCauLuu) -> dict:
     if khong_ro:
         raise HTTPException(400, {"loi": "o_khong_doc_duoc", "o": khong_ro})
 
+    # Ghi đè bản đã có thì ĐẾM, không im lặng. Một bản ghi sửa ba lần và một
+    # bản viết một lần rồi thôi là hai thứ khác nhau khi phân tích chất lượng
+    # gán nhãn, mà nếu không đếm thì chúng trông y hệt nhau trên đĩa.
+    da_co = GOLD_DIR / f"{Path(yeu_cau.doc_id).name}.json"
+    so_lan_ghi = GroundTruthDoc.load(da_co).so_lan_ghi + 1 if da_co.is_file() else 1
+
     moc = _bat_dau.get(yeu_cau.doc_id)
     ban_ghi = GroundTruthDoc(
         doc_id=yeu_cau.doc_id,
@@ -340,8 +392,13 @@ def luu(yeu_cau: YeuCauLuu) -> dict:
         thoi_gian_giay=int(time.monotonic() - moc) if moc else 0,
         so_lan_kiem_dang_thuc=yeu_cau.so_lan_kiem,
         sua_gia_tri_sau_khi_kiem=yeu_cau.sua_sau_khi_kiem,
+        so_lan_ghi=so_lan_ghi,
     )
     duong_dan = ban_ghi.save()
     _bat_dau.pop(yeu_cau.doc_id, None)
 
-    return {"da_ghi": str(duong_dan), "thoi_gian_giay": ban_ghi.thoi_gian_giay}
+    return {
+        "da_ghi": str(duong_dan),
+        "thoi_gian_giay": ban_ghi.thoi_gian_giay,
+        "so_lan_ghi": so_lan_ghi,
+    }

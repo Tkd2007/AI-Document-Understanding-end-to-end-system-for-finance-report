@@ -127,6 +127,7 @@
 
     <div class="dieu-khien" style="margin-top:12px">
       <button id="btkiem">Kiểm đẳng thức</button>
+      <button id="btmolai">Mở lại bản đã lưu</button>
       <button id="btluu" class="chinh">Lưu file gold</button>
     </div>
     <div class="kq" id="kq"></div>
@@ -240,7 +241,9 @@ $('btluu').onclick = async () => {
   const d = await r.json();
   if (r.ok) {
     $('thongbao').className = 'ok';
-    $('thongbao').textContent = `Đã ghi ${d.da_ghi} — mất ${fmtGio(d.thoi_gian_giay)}`;
+    $('thongbao').textContent = d.so_lan_ghi > 1
+      ? `Đã ghi đè ${d.da_ghi} — lần ghi thứ ${d.so_lan_ghi}`
+      : `Đã ghi ${d.da_ghi} — mất ${fmtGio(d.thoi_gian_giay)}`;
     mocGio = null; nap();
   } else {
     $('thongbao').className = 'loi';
@@ -284,6 +287,42 @@ function giaiThichLoi(chi_tiet) {
 
   return 'Chưa lưu được: ' + JSON.stringify(chi_tiet);
 }
+
+$('btmolai').onclick = async () => {
+  const id = $('doc_id').value.trim();
+  if (!id) { $('thongbao').className='loi'; $('thongbao').textContent='Điền doc_id trước đã.'; return; }
+
+  const r = await fetch('/api/gold/' + encodeURIComponent(id));
+  if (!r.ok) {
+    $('thongbao').className = 'loi';
+    $('thongbao').textContent = `Chưa có file gold nào cho ${id}.`;
+    return;
+  }
+  const d = await r.json();
+
+  // Chuẩn phải đặt và nạp lại bảng TRƯỚC khi điền, vì bộ chỉ tiêu của hai
+  // chuẩn khác nhau — điền trước rồi đổi chuẩn sẽ xoá sạch những gì vừa điền.
+  $('chuan').value = d.standard;
+  await napChiTieu();
+
+  ['ticker','period','unit_declared','source_url','downloaded_at','annotator','notes']
+    .forEach(k => { if ($(k)) $(k).value = d[k] ?? ''; });
+  $('bang').querySelectorAll('input.so').forEach(el => {
+    const x = d.values[el.dataset.ten];
+    el.value = x === null || x === undefined ? '' : String(x);
+    el.classList.toggle('am', typeof x === 'number' && x < 0);
+  });
+
+  // Bắt đầu lại bộ đếm cho lần sửa này. Cố ý KHÔNG cộng dồn thời gian của
+  // lần ghi trước: con số đó dùng để đo tốc độ gán nhãn một tài liệu mới,
+  // còn một lần sửa một ô là việc khác hẳn và trộn vào sẽ làm hỏng phép đo.
+  await fetch('/api/mo/' + encodeURIComponent(id), {method:'POST'});
+  mocGio = Date.now(); soLanKiem = 0; daKiemLan1 = false; suaSauKhiKiem = false;
+
+  $('thongbao').className = 'ok';
+  $('thongbao').textContent =
+    `Đã nạp lại ${id} (đây là bản ghi lần ${d.so_lan_ghi}). Sửa xong bấm Lưu để ghi đè.`;
+};
 
 $('doc_id').onchange = async () => {
   if (!$('doc_id').value) return;

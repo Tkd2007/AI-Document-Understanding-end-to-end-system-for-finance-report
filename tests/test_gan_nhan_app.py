@@ -225,3 +225,43 @@ def test_doc_id_rong_bi_bat_o_tang_400_chu_khong_de_schema_nem(client):
 
     assert r.status_code == 400
     assert "doc_id" in r.json()["detail"]["con_thieu"]
+
+
+def test_mo_lai_ban_da_luu_tra_ve_gia_tri_theo_THANG_CUA_BAO_CAO(client):
+    """
+    Giá trị lưu ở ĐỒNG, còn ô nhập nhận con số như in trên giấy. Trả nguyên
+    giá trị đã quy đổi sẽ khiến lần lưu sau nhân hệ số thêm một lần nữa —
+    lệch một triệu lần mà file vẫn trông hợp lệ.
+    """
+    gia_tri = dict.fromkeys(fields_for(Standard.TT99), "0")
+    gia_tri["tong_tai_san"] = "29.403"
+    client.post("/api/luu", json=_than(unit_declared="Đơn vị tính: triệu đồng", values=gia_tri))
+
+    d = client.get("/api/gold/TEST_2026Q1_TT99").json()
+
+    assert d["values"]["tong_tai_san"] == 29403
+    assert d["unit_declared"] == "Đơn vị tính: triệu đồng"
+    assert d["so_lan_ghi"] == 1
+
+
+def test_mo_lai_ban_chua_co_thi_bao_404_chu_khong_tra_khung_rong(client):
+    """
+    Trả một khung rỗng ở đây sẽ xoá sạch những gì người vừa gõ mà không cảnh
+    báo — mất công của họ vì một cú bấm nhầm.
+    """
+    assert client.get("/api/gold/KHONG_CO_2026Q1_TT99").status_code == 404
+
+
+def test_ghi_de_thi_dem_so_lan_ghi_chu_khong_im_lang(client, tmp_path):
+    """
+    Sửa một file gold đã có là chuyện bình thường — phát hiện đọc nhầm một
+    chữ số thì phải sửa được. Nhưng một bản ghi đã sửa ba lần và một bản viết
+    một lần rồi thôi là hai thứ khác nhau khi phân tích chất lượng gán nhãn,
+    và nếu không đếm thì chúng trông y hệt nhau trên đĩa.
+    """
+    client.post("/api/luu", json=_than())
+    r = client.post("/api/luu", json=_than(notes="sửa lại mã 52, đọc nhầm 1 thành 0"))
+
+    assert r.json()["so_lan_ghi"] == 2
+    ghi = json.loads((tmp_path / "gold" / "TEST_2026Q1_TT99.json").read_text(encoding="utf-8"))
+    assert ghi["so_lan_ghi"] == 2

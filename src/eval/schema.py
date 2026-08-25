@@ -51,7 +51,7 @@ class GroundTruthDoc:
     adjudicated: bool = False        # đã qua phân xử bất đồng chưa
     notes: str = ""
 
-    # Ba trường dưới ghi lại CÁCH tài liệu này được gán nhãn, không phải nội
+    # Bốn trường dưới ghi lại CÁCH tài liệu này được gán nhãn, không phải nội
     # dung của nó. Chúng có giá trị mặc định nên mọi file gold ghi trước khi
     # thêm chúng vẫn đọc lại được.
     #
@@ -68,6 +68,13 @@ class GroundTruthDoc:
     # có sửa sau khi kiểm hay không làm rủi ro thành ĐO ĐƯỢC: về sau tách
     # được nhóm "cân ngay từ đầu" khỏi nhóm "cân sau khi sửa", và nếu hai
     # nhóm cho kết quả khác nhau thì biết ngay thay vì ngờ ngợ.
+    #
+    # Ghi đè một file gold đã có là chuyện BÌNH THƯỜNG — phát hiện đọc nhầm
+    # một chữ số thì phải sửa được. Nhưng nó phải để lại dấu vết: một bản ghi
+    # đã sửa ba lần và một bản ghi viết một lần rồi không đụng tới nữa là hai
+    # thứ khác nhau khi phân tích chất lượng gán nhãn, và không có khoá này
+    # thì chúng trông y hệt nhau.
+    so_lan_ghi: int = 1
     thoi_gian_giay: int = 0
     so_lan_kiem_dang_thuc: int = 0
     sua_gia_tri_sau_khi_kiem: bool = False

@@ -818,7 +818,11 @@ quả, đừng để suy ra từ sự vắng mặt của khoá khác.
 
 ---
 
-## 13. MỐC 3 — ĐÃ CHẠY ĐẦY ĐỦ, VẪN CHƯA KẾT LUẬN ĐƯỢC
+## 13. MỐC 3 — ĐIỀU KIỆN DỪNG KHÔNG KÍCH HOẠT, MỐC CHƯA ĐÓNG
+
+> **Trạng thái mới nhất nằm ở mục 13c**, sau lượt chạy 25/08/2026. Hai mục
+> 13 và 13b bên dưới là hồ sơ của hai lượt chạy TRƯỚC đó và giữ nguyên vì
+> chúng ghi lý do của từng thứ chặn — **đừng đọc chúng như hiện trạng**.
 
 **Cập nhật 24/08/2026.** Đã tải 3 hồ sơ 10-K của Apple từ EDGAR (`fetch.py`
 chạy được từ shell trên máy người dùng — cảnh báo "container không ra được

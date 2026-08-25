@@ -33,6 +33,21 @@ data/output/*
 # ket luan duoc — phai neo vao mot commit cu the de doi chieu lai.
 !data/output/moc3_*.md
 
+# Ngoai le: ma tran nham chu so. Do bang EasyOCR tren bang TONG HOP sinh
+# bang bang_tong_hop(), khong dung mot bao cao tai chinh that nao. Phai vao
+# git vi ca bo tiem loi lan bo sinh ung vien deu duoc hieu chinh tu no, va
+# dang ky truoc doi ma tran phai co dau thoi gian TRUOC luot chay Moc 3 —
+# khong neo vao mot commit cu the thi khong chung minh duoc thu tu do.
+!data/output/ma_tran_nham_chu_so_*.md
+!data/output/ma_tran_nham_chu_so_*.json
+
+# Ngoai le: phep do tieu de co lot vao vung bang da cat khong. Do tren bao
+# cao VNM that, nhung thu ghi ra chi la DONG TIEU DE va TOA DO khung — kho
+# co mot con so tai chinh nao trong do. Phai vao git vi no la cau tra loi
+# cho Cau 3 muc 0, va cau tra loi day quyet dinh huong thi cong nhan dien
+# chuan mau bieu.
+!data/output/tieu_de_trong_vung_cat.md
+
 # Van ban quy pham phap luat tai ve. Ban than van ban KHONG co ban quyen
 # (Luat So huu tri tue dieu 15), nhung file PDF cong bao nang vai chuc MB va
 # lay lai duoc bat cu luc nao tu congbao.chinhphu.vn, nen khong dua vao git.

@@ -96,10 +96,44 @@ Vướng mắc chặn: dấu hiệu duy nhất là TÊN BÁO CÁO ở tiêu đ�
 trang chỉ để nhận diện, (2) nới `PADDING` riêng cho bước nhận diện, (3) nhận
 diện bằng bộ MÃ SỐ thay vì bằng tên.
 
-**Việc phải làm TRƯỚC khi chọn**, và nó là việc kỹ thuật chứ không cần người
-dùng: in text OCR vài trang đầu báo cáo VNM ra xem tiêu đề có lọt vào vùng
-cắt không. Suy luận "tiêu đề nằm ngoài" mới là suy từ cấu trúc code, chưa đo
-trên tài liệu thật. Đo xong rồi hỏi thì câu hỏi mới có nghĩa.
+#### ĐÃ ĐO — 25/08/2026, nên câu hỏi nay có nghĩa
+
+Script [src/eval/do_tieu_de_trong_vung_cat.py](src/eval/do_tieu_de_trong_vung_cat.py),
+kết quả `data/output/tieu_de_trong_vung_cat.md`. 12 trang đầu báo cáo VNM,
+OCR cả trang lấy toạ độ từng dòng rồi kiểm bao hàm, và OCR riêng từng vùng
+đã cắt để biết pipeline thật sự nhìn thấy gì.
+
+**Tiền đề ĐÚNG.** Trên các trang có bảng thật, tên báo cáo lọt vào vùng cắt
+**0/2 lần**. Trang 8 là ca sát nhất: tiêu đề ở `(259, 254, 1222, 332)`, vùng
+cắt bắt đầu từ `y = 359` — **hụt 27 pixel**.
+
+**Nhưng có ba thứ phép đo lộ ra mà bản khảo sát cũ không thấy:**
+
+1. **`detect_standard()` vẫn kết luận được từ vùng cắt, 2/2 trang có bảng —
+   nhờ SỐ HIỆU thông tư chứ không nhờ tên.** Chuỗi khớp là `'99/2025'` liền
+   mạch, không phải khớp oan qua xuống dòng. Lý do có thật: mẫu biểu in dòng
+   "Ban hành theo Thông tư số 99/2025/TT-BTC" ở ngay đầu bảng, tức NẰM TRONG
+   vùng bảng. Nếu tính chất này đúng với mọi mẫu biểu thì hướng rẻ nhất
+   không nằm trong ba hướng cũ — nó là **dùng chính dấu hiệu số hiệu đang có
+   sẵn**, chỉ cần đưa text vùng cắt tới `chon_chuan()`.
+2. **10/12 trang đầu YOLO KHÔNG tìm thấy bảng nào**, pipeline fail-open lấy
+   nguyên trang. Con số này đáng để mắt vì lý do khác hẳn câu hỏi đang hỏi:
+   nếu nó đúng cả ở các trang mang biểu mẫu chính thì phần lớn tài liệu đang
+   được xử ở chế độ nguyên trang, và mọi lập luận về vùng cắt — kể cả
+   provenance của B3 — mỏng hơn tưởng.
+3. **Hướng (2) nới `PADDING` nay có số cụ thể để bác:** 27 pixel là khoảng
+   hụt của đúng một trang trên đúng một tài liệu. Nới theo con số đó là khớp
+   tham số vào một quan sát, và nới đủ rộng để an toàn thì kéo theo văn bản
+   phía trên mọi bảng khác.
+
+**Giới hạn phải nhớ:** một tài liệu, một công ty, một chuẩn. Đủ để loại một
+hướng, chưa đủ để chốt một hướng. Và dấu hiệu số hiệu chỉ có trên báo cáo
+còn nhắc văn bản ban hành — chưa biết tỷ lệ đó là bao nhiêu.
+
+**Câu hỏi cho người dùng nay là:** chọn hướng (1) OCR cả trang chỉ để nhận
+diện, hướng (3) nhận diện bằng bộ mã số, hay hướng (4) mới — dùng dấu hiệu
+số hiệu vốn đã nằm sẵn trong vùng cắt, chấp nhận rằng nó vắng mặt ở tài liệu
+không nhắc văn bản ban hành và khi đó trả `None` như thiết kế.
 
 ### Đã quyết rồi, KHÔNG cần hỏi lại
 

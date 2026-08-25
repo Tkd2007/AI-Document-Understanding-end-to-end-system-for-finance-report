@@ -726,3 +726,49 @@ còn nằm trên hai biểu mẫu. Với 26 chỉ tiêu rải qua **ba** biểu 
 thức đó nhiều khả năng vỡ. Phải bấm giờ thử trên 3–5 tài liệu trước; nếu vỡ
 thì sửa giao thức và ghi một tu chính nữa, **trước** khi gán nhãn tài liệu
 đầu tiên chứ không phải sau.
+
+### 25/08/2026 (muộn hơn) — Giao thức trần người bỏ con số 15 phút cố định
+
+**Tu chính.** Giao thức đo trần người (`ADDENDUM` mục 6, thi hành ở
+`ANNOTATION-GUIDELINE.md` mục 6) bỏ con số "15 phút một tài liệu". Số phút
+đặt đồng hồ nay là **0,6 × trung vị `thoi_gian_giay` của 10 tài liệu gold đầu
+tiên**, làm tròn tới phút, sàn 5 phút.
+
+**Lý do, và nó ngược hẳn với điều tu chính ngay trên đây dự đoán.** Tu chính
+kịch bản E ở trên viết rằng 26 chỉ tiêu rải qua ba biểu mẫu "nhiều khả năng
+vỡ" giao thức 15 phút. Tài liệu gold đầu tiên (`VNM_2026Q1_TT99`, 27 chỉ
+tiêu, ba biểu mẫu) cho số ngược lại: người chủ trì ước lượng công đoạn điền
+hết **khoảng 10 phút**.
+
+Điều đó không cứu giao thức, nó phá giao thức theo chiều khác. Con số 15 phút
+tồn tại để **tạo áp lực thời gian**, tức để bản gán nhãn dùng đo trần khác
+với bản gold đã phân xử kỹ. Nếu nhịp làm kỹ là 10 phút thì 15 phút là dư 5
+phút: hai bản sẽ do cùng một người làm cùng một cách, trần người ra gần 100%,
+và con số đó không diễn giải được kết quả hệ thống — tức mất đúng công dụng
+mà `ADDENDUM` mục 6 nêu ở câu đầu tiên của nó.
+
+**Vì sao chốt công thức chứ không chốt một con số.** Chốt thẳng "6 phút" từ
+một ước lượng bằng cảm giác trên một tài liệu là chuyện không bảo vệ được:
+`thoi_gian_giay` của tài liệu đó đang bằng 0, nên chưa có số đo nào tồn tại.
+Ràng buộc thật sự cần đăng ký trước chỉ là **hệ số 0,6** — nó phải được chọn
+trước khi nhìn thấy kết quả trần người, còn trung vị thì cứ để dữ liệu quyết.
+Hệ số 0,6 không phải một hằng số dẫn xuất từ đâu cả; nó được ghi ở đây đúng
+để không bị chọn lại về sau cho vừa kết quả. **Nó đang chờ người chủ trì xác
+nhận hoặc đổi** — xem `HANDOFF.md` mục 0, Câu 9. Hạn chót của việc đổi là
+thời điểm có đủ 10 tài liệu gold; sau đó, đổi hệ số là chọn tham số sau khi
+đã thấy dữ liệu, và tu chính này mất hiệu lực bảo vệ.
+
+**Phạm vi: không tài liệu nào phải gán nhãn lại.** Tu chính chạm giao thức
+của 10 tài liệu đo trần người, mà số tài liệu đã gán nhãn dưới giao thức đó
+là **0**. `VNM_2026Q1_TT99` gán nhãn kỹ, không dưới đồng hồ. Không chỉ số
+nào của H0–H3 đổi; trần người là số dùng để **diễn giải** kết quả chứ không
+nằm trong phát biểu giả thuyết nào.
+
+**Một thứ tự cam kết đã bị vượt.** Tu chính ngay trên đây tuyên bố việc đo
+lại trần người "CHẶN việc gán nhãn tài liệu đầu tiên" và phải làm trước.
+Thực tế chạy ngược: tài liệu đầu tiên được gán nhãn trước, và chính nó là
+nguồn số liệu duy nhất để sửa giao thức. Ghi lại ở đây vì preregistration
+mất giá trị nếu chỉ ghi những lần làm đúng thứ tự. Thiệt hại đo được bằng 0
+theo đoạn Phạm vi ở trên, nhưng cam kết thì đã không được giữ nguyên văn, và
+người đọc đối chiếu hai tu chính này sẽ thấy điều đó mà không cần ai giải
+thích.

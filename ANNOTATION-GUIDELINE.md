@@ -293,10 +293,38 @@ hay còn xa?
 
 **Quy trình:**
 
-1. Gán nhãn 10 tài liệu dưới **áp lực thời gian thực tế** — đặt đồng hồ **15
-   phút một tài liệu**, hết giờ thì dừng, không làm tỉ mỉ vô hạn.
+1. Gán nhãn 10 tài liệu dưới **áp lực thời gian thực tế** — đặt đồng hồ, hết
+   giờ thì dừng, không làm tỉ mỉ vô hạn. Số phút đặt đồng hồ **suy ra từ nhịp
+   gán nhãn kỹ đo được**, không phải một con số chọn sẵn; cách tính ở khung
+   ngay dưới.
 2. So với bản gold **đã phân xử kỹ** (chính là 20 tài liệu ở mục 5).
 3. Báo cáo độ chính xác mức trường **và** mức tài liệu.
+
+**Đặt đồng hồ bao nhiêu phút, và vì sao không còn là 15.** Con số cũ là 15
+phút, chốt khi bộ chỉ tiêu còn nằm trên hai biểu mẫu. Kịch bản E trải bộ chỉ
+tiêu qua ba biểu mẫu nên con số phải xem lại — và khi xem lại thì nó hỏng
+theo chiều **ngược** với dự đoán. Người chủ trì gán nhãn tài liệu đầu tiên
+(`VNM_2026Q1_TT99`, 27 chỉ tiêu, ba biểu mẫu) ước lượng hết **khoảng 10
+phút** cho công đoạn điền. Nếu làm KỸ đã hết 10 phút thì đồng hồ 15 phút
+không tạo áp lực nào: bản "có áp lực" và bản "làm kỹ" thành cùng một người
+làm cùng một việc, trần người ra gần 100%, và phép đo không nói lên gì. Giao
+thức không vỡ — nó **chùng**, mà chùng thì vô dụng y như vỡ.
+
+Cho nên số phút phải nhỏ hơn hẳn nhịp làm kỹ, và phải suy ra từ số đo:
+
+- Trường `thoi_gian_giay` trong mỗi file gold ghi thời gian thật của lượt gán
+  nhãn kỹ. Lấy **trung vị của 10 tài liệu gold đầu tiên** làm nhịp kỹ `M`.
+- Đặt đồng hồ ở **0,6 × M**, làm tròn tới phút, **sàn 5 phút**.
+- Hệ số 0,6 không phải hằng số tự nhiên. Giá trị của nó nằm ở chỗ được **chốt
+  trước khi đo**, đúng để không bị chọn lại sau khi đã nhìn thấy kết quả trần
+  người. Nó **đang chờ người chủ trì xác nhận hoặc đổi** (`HANDOFF.md` mục 0,
+  Câu 9); hạn chót là lúc có đủ 10 tài liệu gold, sau đó đổi hệ số tức là
+  chọn tham số sau khi đã thấy dữ liệu.
+
+Với ước lượng 10 phút hiện có thì đồng hồ sẽ rơi vào khoảng 6 phút. **Đừng
+dùng con số đó làm số chốt:** 10 phút là ước lượng của người chứ không phải
+đồng hồ, và `thoi_gian_giay` của tài liệu gold duy nhất đang có vẫn bằng 0,
+nên tới lúc này chưa có một số đo nào cả.
 
 **Cách đọc kết quả:**
 
@@ -308,8 +336,8 @@ hay còn xa?
 Trường hợp thứ hai là kết quả có giá trị hơn, và nó chỉ nhìn thấy được nếu
 đã đo.
 
-Ghi lại **thời gian thật** từng tài liệu, không chỉ ghi có kịp 15 phút hay
-không. Tham chiếu để đối chiếu: tài liệu kinh tế học lịch sử cho biết người
+Ghi lại **thời gian thật** từng tài liệu, không chỉ ghi có kịp giờ hay
+không — chính chuỗi số đó là thứ chốt con số đặt đồng hồ ở trên. Tham chiếu để đối chiếu: tài liệu kinh tế học lịch sử cho biết người
 kiểm tay tốn khoảng 20 phút một trang, còn OCR thương mại kèm sửa tay đưa
 xuống khoảng 8 phút.
 
@@ -355,6 +383,32 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 
 > Mọi thay đổi guideline ghi vào đây kèm **ngày** và **lý do**, và ghi rõ
 > **những tài liệu nào phải gán nhãn lại**. Không sửa đè lên nội dung trên.
+
+### 25/08/2026 (muộn hơn) — Giao thức đo trần người bỏ con số 15 phút cố định
+
+**Phải gán nhãn lại: không tài liệu nào.** Sửa đổi này chỉ chạm mục 6, tức
+giao thức của **10 tài liệu đo trần người**, và số tài liệu đã gán nhãn dưới
+giao thức đó hiện là **0**. Tài liệu gold duy nhất đang có
+(`VNM_2026Q1_TT99`) gán nhãn KỸ chứ không dưới đồng hồ, nên nó nằm ngoài
+phạm vi ảnh hưởng.
+
+**Sửa đổi.** Mục 6 bỏ con số "15 phút một tài liệu". Thay bằng công thức
+`0,6 × trung vị thoi_gian_giay của 10 tài liệu gold đầu tiên`, sàn 5 phút.
+
+**Lý do — có số đo, và nó ngược với dự đoán.** Cả `ADDENDUM` mục 6 lẫn bản
+ghi Sửa đổi phía dưới đều dự đoán rằng 27 chỉ tiêu rải qua ba biểu mẫu sẽ
+làm **vỡ** giao thức 15 phút. Tài liệu đầu tiên cho thấy ngược lại: công
+đoạn điền hết khoảng 10 phút, tức 15 phút là dư chứ không thiếu. Một đồng hồ
+rộng hơn nhịp làm kỹ thì không đo được gì, vì trần người sẽ trùng với chính
+bản gold dùng để so.
+
+**Một thứ tự cam kết đã bị vượt, ghi lại chứ không lặng lẽ bỏ qua.** Bản ghi
+Sửa đổi 25/08 mục (d) ngay dưới đây viết rằng việc đo lại trần người "chặn
+việc gán nhãn tài liệu đầu tiên" và phải làm TRƯỚC. Thực tế đã chạy ngược:
+tài liệu đầu tiên gán nhãn trước, và chính nó cung cấp số liệu để sửa giao
+thức. Thiệt hại thực bằng 0 vì hai lý do đã nêu ở đoạn đầu, nhưng thứ tự thì
+đã khác cam kết, và người đọc preregistration sẽ thấy — nên nó phải nằm ở
+đây chứ không nằm trong trí nhớ ai.
 
 ### 25/08/2026 — Bộ chỉ tiêu chuyển sang kịch bản E, B03 vào phạm vi
 

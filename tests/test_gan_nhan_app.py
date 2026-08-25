@@ -158,3 +158,47 @@ def test_kiem_khong_tra_ve_gia_tri_de_nghi_qua_HTTP(client):
     assert set(d) == {"he_so_don_vi", "o_khong_ro", "dang_thuc"}
     for r in d["dang_thuc"]:
         assert set(r) == {"mo_ta", "trang_thai", "lech", "thieu"}
+
+
+def test_de_trong_don_vi_kem_ghi_chu_la_HOP_LE(client, tmp_path):
+    """
+    Guideline mục 3.1 quy định ĐÚNG lối này khi báo cáo không khai báo đơn vị:
+    để trống `unit_declared`, hệ số bằng 1, và ghi lý do vào notes.
+
+    Bản đầu của máy chủ từ chối ca này — tức chặn đúng lối thoát mà guideline
+    chỉ ra, và người gán nhãn không còn cách nào ghi được một báo cáo thiếu
+    dòng đơn vị. Lỗi lộ ra ở tài liệu đầu tiên.
+    """
+    r = client.post(
+        "/api/luu",
+        json=_than(unit_declared="", notes="Báo cáo không có dòng khai báo đơn vị tính."),
+    )
+
+    assert r.status_code == 200
+    ghi = json.loads((tmp_path / "gold" / "TEST_2026Q1_TT99.json").read_text(encoding="utf-8"))
+    assert ghi["unit_multiplier"] == 1
+    assert ghi["unit_declared"] == ""
+
+
+def test_de_trong_don_vi_ma_khong_ghi_chu_thi_bi_tu_choi(client):
+    """
+    Ghi chú là chỗ DUY NHẤT phân biệt "báo cáo không có dòng đó" với "người
+    gán nhãn quên chép". Thiếu nó thì hai ca cho ra file gold giống hệt nhau,
+    và về sau không ai tách lại được.
+    """
+    r = client.post("/api/luu", json=_than(unit_declared="", notes=""))
+
+    assert r.status_code == 400
+    assert r.json()["detail"]["loi"] == "de_trong_don_vi_ma_khong_ghi_chu"
+
+
+def test_go_nham_don_vi_van_bi_tu_choi_chu_khong_lang_le_lay_he_so_1(client):
+    """
+    Người đã gõ một cái gì đó, nên im lặng lấy hệ số 1 là biến một dòng gõ
+    sai thành tuyên bố "báo cáo ghi bằng đồng" — lệch tới một triệu lần mà
+    không dấu hiệu nào trong file gold.
+    """
+    r = client.post("/api/luu", json=_than(unit_declared="đơn vị bịa", notes="có ghi chú"))
+
+    assert r.status_code == 400
+    assert r.json()["detail"]["loi"] == "khong_doc_duoc_don_vi"

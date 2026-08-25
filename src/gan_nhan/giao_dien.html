@@ -271,6 +271,10 @@ function giaiThichLoi(chi_tiet) {
       + 'Có dòng nhưng mờ không đọc ra thì gõ <b>?</b>.</i>';
   }
 
+  if (chi_tiet.loi === 'de_trong_don_vi_ma_khong_ghi_chu')
+    return '<b>Chưa lưu được — để trống đơn vị tính thì phải ghi lý do vào Ghi chú.</b><br>'
+      + chi_tiet.chi_dan;
+
   if (chi_tiet.loi === 'khong_doc_duoc_don_vi')
     return '<b>Chưa lưu được — không đọc được dòng đơn vị tính.</b><br>' + chi_tiet.chi_dan;
 

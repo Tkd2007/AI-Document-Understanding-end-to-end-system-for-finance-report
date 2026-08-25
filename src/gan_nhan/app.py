@@ -109,6 +109,52 @@ def _doc_bo_gia_tri(thoi: dict, chuan: Standard, he_so: int) -> tuple[dict, list
     return gia_tri, khong_ro
 
 
+def _he_so_don_vi_hop_le(unit_declared: str, notes: str) -> int:
+    """
+    Hệ số đơn vị, phân biệt BA ca mà guideline mục 3.1 nói tới.
+
+      để trống      -> báo cáo KHÔNG khai báo đơn vị. Guideline quy định ghi
+                       hệ số 1 và nêu lý do vào notes. Đây là ca HỢP LỆ, và
+                       bản đầu của máy chủ đã từ chối nhầm nó — tức chặn đúng
+                       lối thoát mà guideline chỉ ra.
+      có chữ, đọc được  -> dùng hệ số đọc ra.
+      có chữ, không đọc được -> từ chối. Ở đây người đã gõ một cái gì đó, nên
+                       im lặng lấy hệ số 1 là biến một dòng gõ sai thành một
+                       tuyên bố "báo cáo ghi bằng đồng", lệch tới 10⁶ lần mà
+                       không dấu hiệu nào.
+
+    Bắt buộc có `notes` cho ca để trống, vì đó là chỗ DUY NHẤT phân biệt
+    "báo cáo không khai báo đơn vị" với "người gán nhãn quên chép dòng đó".
+    Hai thứ này cho ra file gold giống hệt nhau nếu không có ghi chú.
+    """
+    if not unit_declared.strip():
+        if not notes.strip():
+            raise HTTPException(
+                400,
+                {
+                    "loi": "de_trong_don_vi_ma_khong_ghi_chu",
+                    "chi_dan": "Guideline mục 3.1: báo cáo không khai báo đơn vị thì để "
+                    "trống unit_declared VÀ ghi lý do vào notes. Ghi chú là chỗ duy nhất "
+                    "phân biệt 'báo cáo không có dòng đó' với 'quên chép'.",
+                },
+            )
+        return 1
+
+    he_so, _ = parse_unit(unit_declared)
+    if he_so is None:
+        raise HTTPException(
+            400,
+            {
+                "loi": "khong_doc_duoc_don_vi",
+                "chi_dan": "Chuỗi này không nhận ra được. Chép lại NGUYÊN VĂN dòng trên "
+                "báo cáo, ví dụ 'Đơn vị tính: VND' hoặc 'Đơn vị tính: triệu đồng'. Nếu "
+                "báo cáo thật sự không có dòng nào thì để TRỐNG ô này và ghi lý do vào "
+                "notes — guideline mục 3.1 cấm suy hệ số từ độ lớn con số.",
+            },
+        )
+    return he_so
+
+
 @app.get("/", response_class=HTMLResponse)
 def giao_dien() -> str:
     return GIAO_DIEN.read_text(encoding="utf-8")
@@ -241,16 +287,7 @@ def luu(yeu_cau: YeuCauLuu) -> dict:
         raise HTTPException(400, {"loi": "danh_muc_kiem_chua_du", "con_thieu": thieu_o})
 
     ch = _chuan(yeu_cau.standard)
-    he_so, _ = parse_unit(yeu_cau.unit_declared)
-    if he_so is None:
-        raise HTTPException(
-            400,
-            {
-                "loi": "khong_doc_duoc_don_vi",
-                "chi_dan": "Guideline mục 3.1: không tìm thấy dòng khai báo thì để trống "
-                "unit_declared và ghi lý do vào notes. ĐỪNG suy hệ số từ độ lớn con số.",
-            },
-        )
+    he_so = _he_so_don_vi_hop_le(yeu_cau.unit_declared, yeu_cau.notes)
 
     gia_tri, khong_ro = _doc_bo_gia_tri(yeu_cau.values, ch, he_so)
     if khong_ro:

@@ -237,16 +237,32 @@ TT200 thì chỉ tiêu này không có trên biểu mẫu — bỏ trống, đ�
 
 | Dấu hiệu | Kết luận |
 |---|---|
-| Tiêu đề `Báo cáo tình hình tài chính` | TT99 |
-| Tiêu đề `Bảng cân đối kế toán` | TT200 |
-| Ký hiệu mẫu `B 01a - DN` | TT99 |
 | Có trích dẫn `99/2025/TT-BTC` | TT99 |
 | Có trích dẫn `200/2014/TT-BTC` | TT200 |
+| Tiêu đề `Báo cáo tình hình tài chính` | TT99 |
+| Tiêu đề `Bảng cân đối kế toán` | TT200 |
+
+Hai dòng số hiệu thông tư đặt trước vì chúng **chắc chắn hơn**: chúng là
+trích dẫn văn bản, không phải cách gọi tên mà doanh nghiệp có thể giữ theo
+thói quen cũ. Chúng chỉ in ở dòng "Ban hành theo…" đầu biểu mẫu, nên khi có
+thì dùng, không có thì mới xét tới tiêu đề.
+
+**KHÔNG có dấu hiệu nào nằm ở hậu tố `a`/`b` của ký hiệu mẫu biểu.** Hậu tố
+đó là KỲ BÁO CÁO — mục 2 đã nêu, và cả hai Thông tư đều dùng đủ ba ký hiệu
+`B01-DN`, `B01a-DN`, `B01b-DN`. Thấy `B01a-DN` thì chỉ kết luận được rằng
+đây là báo cáo giữa niên độ dạng đầy đủ, tuyệt đối không kết luận gì về
+Thông tư. Xem tu chính 26/08/2026 ở mục Sửa đổi.
 
 **Không đủ dấu hiệu, hoặc thấy dấu hiệu của cả hai:** ghi `standard` là
 `"UNKNOWN"` và mô tả trong `notes`. **Đừng đoán.** Nhận diện sai chuẩn là
 một chế độ lỗi riêng cần đo được, và một nhãn đoán bừa sẽ được tính thành
 lỗi của model.
+
+Lưu ý cái bẫy ngược lại: "thấy dấu hiệu của cả hai" nghĩa là hai dấu hiệu
+TRONG BẢNG TRÊN chỏi nhau, chứ không phải một dấu hiệu trong bảng chỏi với
+một suy đoán của người đọc. Ký hiệu mẫu không còn là dấu hiệu, nên
+`B01a-DN` kèm tiêu đề *Bảng cân đối kế toán* là một tài liệu TT200 có đúng
+một dấu hiệu — không phải một ca mâu thuẫn.
 
 ---
 
@@ -448,7 +464,8 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 ## 8. Danh mục kiểm trước khi coi một tài liệu là xong
 
 - [ ] Chưa từng mở đầu ra pipeline của tài liệu này (Luật 1)
-- [ ] Đã xác định chuẩn mẫu biểu, hoặc ghi `UNKNOWN` kèm lý do
+- [ ] Đã xác định chuẩn mẫu biểu, hoặc ghi `UNKNOWN` kèm lý do — theo
+      bảng dấu hiệu ở mục 3.7, và **không** theo hậu tố `a`/`b`
 - [ ] `unit_declared` chép **nguyên văn**; `unit_multiplier` khớp
 - [ ] Mọi giá trị đã quy đổi về **đồng**
 - [ ] Số âm ghi bằng dấu trừ, không phải ngoặc; ba dòng khấu trừ
@@ -468,6 +485,37 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 
 > Mọi thay đổi guideline ghi vào đây kèm **ngày** và **lý do**, và ghi rõ
 > **những tài liệu nào phải gán nhãn lại**. Không sửa đè lên nội dung trên.
+
+### 26/08/2026 (muộn nhất) — Ký hiệu mẫu thôi là dấu hiệu nhận diện chuẩn
+
+**Chỗ sửa:** mục 3.7 bỏ dòng `Ký hiệu mẫu B 01a - DN → TT99` khỏi bảng dấu
+hiệu, xếp hai dòng số hiệu thông tư lên trước, và thêm một luật phủ định nói
+thẳng rằng hậu tố `a`/`b` không kết luận được gì về Thông tư. Danh mục kiểm ở
+mục 8 nhắc lại luật phủ định đó.
+
+**Lý do — file này tự mâu thuẫn với chính nó.** Mục 2 viết in đậm rằng hậu tố
+`a`/`b` là KỲ BÁO CÁO và cả hai Thông tư đều dùng đủ ba ký hiệu; mục 3.7 lại
+xếp `B 01a - DN` là dấu hiệu của TT99. Hai chỗ không thể cùng đúng. Mục 2 là
+chỗ đúng: nó dẫn nguyên văn Công báo, và `src/fields_config.py` đã sửa
+`FORM_MARKERS` theo hướng đó từ `023321c` sau khi bản cũ trượt mọi trang
+`B01a-DN`. Tức code đã đi trước guideline, và guideline là bản còn sai.
+
+**Cái giá nếu không sửa, đo được:** `SBT_2025Q2_TT200` và `HNG_2025H1_TT200`
+đều mang ký hiệu `B01a-DN/HN` kèm tiêu đề *Bảng cân đối kế toán hợp nhất*.
+Theo bảng cũ đó là "thấy dấu hiệu của cả hai", nên cả hai phải ghi `UNKNOWN`
+dù chúng rõ ràng là TT200 — hai tài liệu bị `UNKNOWN` một cách máy móc, và
+tỷ lệ 5 TT99 / 5 TT200 của danh mục gold đầu tiên vỡ.
+
+**Không tài liệu nào phải gán nhãn lại.** Cả hai file đã ghi `standard` là
+`TT200`, đúng bằng kết luận mà bảng mới cho ra.
+
+**Thứ tự cam kết đã bị vượt, ghi lại vì đó là điều kiện để sổ này có giá
+trị.** Luật 3 nói guideline viết trước, không sửa giữa chừng; đúng trình tự
+thì tu chính này phải có TRƯỚC khi hai tài liệu ấy được gán nhãn. Thực tế
+ngược lại: hai tài liệu được gán nhãn `TT200` trước, và chính việc gán nhãn
+chúng mới làm lộ ra mâu thuẫn. Thiệt hại bằng 0 vì nhãn không đổi, nhưng
+một cuốn sổ chỉ ghi những lần làm đúng trình tự thì không chứng minh được
+gì về những lần còn lại.
 
 ### 26/08/2026 (muộn hơn) — Ba dòng khấu trừ ghi dương, không theo dấu ngoặc
 

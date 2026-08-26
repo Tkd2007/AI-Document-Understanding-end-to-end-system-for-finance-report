@@ -151,10 +151,13 @@ PROMPT_RULES = [
 
 # Tên tiếng Việt của mẫu biểu, tra theo ký hiệu ĐÃ BỎ hậu tố "a".
 #
-# TT200 ký hiệu mẫu là B01/B02/B03, TT99 là B01a/B02a/B03a, nhưng vẫn là
-# cùng ba loại báo cáo nên không cần hai bảng tên. Riêng B01 để cả hai tên
-# vì TT99 đổi "Bảng cân đối kế toán" thành "Báo cáo tình hình tài chính" —
-# nêu cả hai giúp model nhận ra trang dù báo cáo theo chuẩn nào.
+# Hậu tố "a"/"b" là KỲ BÁO CÁO chứ không phải Thông tư: cả TT200 lẫn TT99
+# đều dùng đủ ba ký hiệu B01-DN, B01a-DN, B01b-DN — xem chú thích ở
+# FORM_MARKERS trong fields_config.py, nơi bản cũ tin nhầm điều ngược lại và
+# trượt mọi trang B01a-DN. Bỏ hậu tố đi thì chỉ còn ba loại báo cáo, nên một
+# bảng tên là đủ. Riêng B01 để cả hai tên vì TT99 đổi "Bảng cân đối kế toán"
+# thành "Báo cáo tình hình tài chính" — nêu cả hai giúp model nhận ra trang
+# dù báo cáo theo chuẩn nào.
 FORM_NAMES = {
     "B01": "Báo cáo tình hình tài chính (bảng cân đối kế toán)",
     "B02": "Báo cáo kết quả hoạt động kinh doanh",

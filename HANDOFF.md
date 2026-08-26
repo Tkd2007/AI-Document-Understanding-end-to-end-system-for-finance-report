@@ -61,9 +61,7 @@ chứ không phải chi tiết cài đặt.
 
 Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "Câu 4 chọn ...".
 
-**Đang chờ:** Câu 3 (hoãn được), Câu 8 (chỉ chặn lượt chạy Mốc 3 kế tiếp),
-**Câu 10 và Câu 11 (MỚI, 26/08/2026 — Câu 11 CHẶN việc gán nhãn hai trong
-mười tài liệu vừa tải)**.
+**Đang chờ:** Câu 3 (hoãn được), Câu 8 (chỉ chặn lượt chạy Mốc 3 kế tiếp).
 
 **Mốc 3 đã chạy xong lúc 16:05 ngày 25/08/2026 — điều kiện dừng KHÔNG kích
 hoạt.** Xem mục 13c. Việc kế tiếp không còn bị chặn: gán nhãn `data/gold/`
@@ -84,15 +82,14 @@ nhóm đó thành **độ phân giải bản quét** (dải đo được: ~100 d
 kèm trang lệch) hay giữ nguyên chữ và chỉ diễn giải lại? Số đo và lập luận ở
 mục 19.6(a). Đổi thì phải ghi tu chính.
 
-**Câu 11 — MỚI, ĐANG CHẶN hai tài liệu.** `ANNOTATION-GUIDELINE.md` **mục 3.7
-mâu thuẫn với mục 2 của chính nó**: mục 3.7 xếp ký hiệu `B 01a - DN` là dấu
-hiệu TT99, còn mục 2 viết in đậm rằng hậu tố `a`/`b` là KỲ BÁO CÁO chứ không
-phải Thông tư và cả hai Thông tư đều dùng đủ ba ký hiệu. Hai tài liệu vừa tải
-(`SBT_2025Q2_TT200`, `HNG_2025H1_TT200`) rơi đúng vào chỗ mâu thuẫn: ký hiệu
-`B01a-DN/HN` nhưng tiêu đề *Bảng cân đối kế toán*, nên theo mục 3.7 phải ghi
-`UNKNOWN` dù chúng rõ ràng là TT200. Bỏ dòng ký hiệu mẫu khỏi bảng mục 3.7,
-hay sửa nó thành một dấu hiệu khác? Chi tiết ở mục 19.6(b). Đây là sửa quy
-tắc nên phải vào mục Sửa đổi của guideline, không sửa đè.
+**Câu 11 — ĐÃ TRẢ LỜI 26/08/2026: bỏ ký hiệu mẫu khỏi bảng dấu hiệu.** Mục
+3.7 của `ANNOTATION-GUIDELINE.md` từng xếp `B 01a - DN` là dấu hiệu TT99,
+mâu thuẫn với mục 2 của chính nó. Nay bảng chỉ còn số hiệu thông tư (đặt
+trước, vì chắc chắn hơn) và tiêu đề báo cáo, kèm một luật phủ định nói thẳng
+rằng hậu tố `a`/`b` không kết luận được gì về Thông tư. `SBT_2025Q2_TT200` và
+`HNG_2025H1_TT200` giữ nguyên nhãn `TT200`, không phải gán nhãn lại. Tu chính
+ở mục Sửa đổi của guideline; **thứ tự cam kết bị vượt đã ghi lại tại đó**, vì
+hai tài liệu ấy được gán nhãn trước khi quy tắc được sửa.
 
 **Câu 9 — ĐÃ TRẢ LỜI 26/08/2026: giữ hệ số 0,6.** Số phút đặt đồng hồ đo
 trần người là `0,6 × trung vị thoi_gian_giay của 10 tài liệu gold đầu tiên`,
@@ -1629,8 +1626,13 @@ cân đối kế toán hợp nhất* — theo mục 3.7 thì đó là "thấy d�
 hai", tức phải ghi `UNKNOWN`, dù nó rõ ràng là TT200. `HNG_2025H1` cũng vậy
 (`B01a-DN/HN`, *Bảng cân đối kế toán hợp nhất giữa niên độ*). Nếu không sửa,
 hai tài liệu này bị gán `UNKNOWN` một cách máy móc và tỷ lệ TT99/TT200 vỡ.
-Xem Câu 11 ở mục 0. **Đây là sửa quy tắc nên phải vào mục Sửa đổi của
-`ANNOTATION-GUIDELINE.md`, không sửa đè.**
+**ĐÃ SỬA 26/08/2026** — tu chính ở mục Sửa đổi của
+`ANNOTATION-GUIDELINE.md`: bảng mục 3.7 bỏ hẳn dòng ký hiệu mẫu, hai dòng số
+hiệu thông tư lên trước vì chắc chắn hơn, và thêm luật phủ định cấm suy ra
+Thông tư từ hậu tố. Cả hai file gold giữ nhãn `TT200`, không gán nhãn lại.
+Cùng lượt sửa luôn một chú thích trong `src/extract_vlm.py` vẫn chép lại quy
+tắc sai ấy — `FORM_MARKERS` trong `src/fields_config.py` thì đã đúng từ
+`023321c`, tức code đã đi trước tài liệu ở chỗ này.
 
 #### Một mã đáng thêm vào tập Stress về sau
 

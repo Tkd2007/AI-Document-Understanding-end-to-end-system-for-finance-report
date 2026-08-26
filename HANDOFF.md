@@ -77,6 +77,15 @@ liên tục nghịch đảo trọn vẹn — tức thiết kế đang chọn ca 
 baseline 9. Có tiêm **nhiều hơn một lỗi mỗi lượt** ở lượt chạy tới không? Đây
 là thay đổi thiết kế thí nghiệm nên phải vào mục Sửa đổi của
 `PREREGISTRATION.md` TRƯỚC khi chạy. Chi tiết và số đo ở mục 13c.
+
+**Câu 3 — NỘI DUNG CÂU ĐÃ MẤT KHỎI TÀI LIỆU.** Câu này được liệt kê là đang
+chờ nhưng nguyên văn của nó không còn ở bất kỳ file nào trong repo — chỉ còn
+lại cái tên. Nó từng nằm trong phần "giữ lại nguyên văn từng câu" ở cuối mục
+này, và phần đó đã bị xoá trong một lần nén tài liệu. Vì không thể tự đoán
+lại một câu hỏi đổi kết luận khoa học, việc đúng là **hỏi lại người chủ trì
+xem Câu 3 là gì**, hoặc coi như nó không tồn tại và đánh số mới cho câu kế
+tiếp. Nó được đánh dấu "hoãn được" nên chưa chặn việc gì.
+
 **Câu 10 — ĐÃ TRẢ LỜI 26/08/2026: đổi tiêu chí sang độ phân giải bản quét,
 ghi làm biến LIÊN TỤC chứ không chia nhóm theo ngưỡng.** Nhóm Stress thứ ba ở
 `ANNOTATION-GUIDELINE.md` mục 7 nhận ra bằng `do_phan_giai_dpi` trong
@@ -110,8 +119,10 @@ nới trần 10/20; Câu 6 → ghi làm giới hạn; Câu 7 → (a) hoà thì h
 quyết. Cộng thêm một quyết định không đánh số: chỉ số chính của H3 trên tầng
 XBRL chuyển sang mức LƯỢT.
 
-Giữ lại nguyên văn từng câu ở dưới vì mỗi câu kèm một ràng buộc phải nhớ khi
-đọc bảng kết quả về sau.
+Nguyên văn của các câu đã trả lời KHÔNG còn được giữ ở đây — phần đó đã bị
+xoá trong một lần nén tài liệu, và đó cũng là lý do Câu 3 nay chỉ còn cái
+tên. Ràng buộc kèm theo từng câu đã trả lời thì vẫn còn, nhưng nằm ở mục Sửa
+đổi của `PREREGISTRATION.md` chứ không ở đây; tra theo ngày trả lời.
 
 ---
 

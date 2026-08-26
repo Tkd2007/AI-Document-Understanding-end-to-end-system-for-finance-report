@@ -108,7 +108,44 @@ class KetQuaMotDau:
     ly_do: str
 
 
-def kiem_dau_khau_tru(values: dict) -> list[KetQuaMotDau]:
+def _dao_dau_lam_can(values: dict, ten: str, identities) -> bool | None:
+    """
+    Đảo dấu MỘT trường có biến một đẳng thức đang lệch thành cân không.
+
+    Trả None khi không đẳng thức nào chứa trường này chạy được — thiếu thành
+    phần thì không kết luận được gì, và nói "không sao" lúc đó là kết luận.
+
+    Đây là tiêu chí thay cho phép so mã 50 với mã 60 mà bản đầu dùng. Bản đầu
+    xét dấu từng chỉ tiêu thuế bằng dấu của TỔNG số thuế, nên nó báo oan ca
+    hoàn toàn hợp lệ: thuế hiện hành là chi phí lớn còn thuế hoãn lại là một
+    khoản hoàn nhập âm. `MWG_2025Q1_TT200` đúng là ca đó — mã 52 bằng
+    -10.894.797.039 mà đẳng thức B02 vẫn cân chính xác đến từng đồng.
+
+    Tiêu chí mới không có chỗ cho ca ấy: nếu bộ số đã cân thì không có gì để
+    báo. Nó cũng chính là chữ ký "lệch đúng gấp đôi" mà guideline mục 3.3 mô
+    tả, viết dưới dạng kiểm được thay vì dạng lời khuyên.
+    """
+    chay_duoc = False
+
+    for cac_thanh_phan, tong, _ in identities:
+        can_co = [*cac_thanh_phan, tong]
+        if ten not in can_co or any(values.get(t) is None for t in can_co):
+            continue
+
+        chay_duoc = True
+        thang = max(abs(values[tong]), 1.0)
+        if abs(sum(values[t] for t in cac_thanh_phan) - values[tong]) / thang <= DUNG_SAI:
+            continue
+
+        thu = dict(values)
+        thu[ten] = -thu[ten]
+        if abs(sum(thu[t] for t in cac_thanh_phan) - thu[tong]) / thang <= DUNG_SAI:
+            return True
+
+    return False if chay_duoc else None
+
+
+def kiem_dau_khau_tru(values: dict, standard: Standard) -> list[KetQuaMotDau]:
     """
     Kiểm dấu ba chỉ tiêu khấu trừ, theo guideline mục 3.3.
 
@@ -119,19 +156,16 @@ def kiem_dau_khau_tru(values: dict) -> list[KetQuaMotDau]:
     tuyệt đối không được sửa mà phải ghi `notes`. Đoán nhầm ca là cách nhanh
     nhất để một tài liệu sạch bị chữa hỏng.
 
-    Giá vốn hàng bán luôn dương: `FIELD_RULES` đã đặt `allow_negative` là
-    False cho nó, và văn bản đưa mã 11 vào công thức `Mã 20 = Mã 10 - Mã 11`
-    như một số dương.
+    Hai chỉ tiêu thuế xét theo `_dao_dau_lam_can`, KHÔNG theo dấu của tổng số
+    thuế: mã 51 và mã 52 có dấu độc lập với nhau, nên một khoản hoàn nhập
+    thuế hoãn lại ghi âm là hợp lệ ngay cả khi tổng số thuế là chi phí.
 
-    Hai chỉ tiêu thuế thì dấu âm HỢP LỆ trong đúng một trường hợp — thuế là
-    thu nhập chứ không phải chi phí, tức lợi nhuận sau thuế lớn hơn lợi nhuận
-    trước thuế. Nên dấu của chúng quyết định bằng mã 50 và mã 60, không bằng
-    dấu ngoặc trên trang. Thiếu một trong hai mã đó thì trả
-    `chua_quyet_dinh_duoc` chứ không trả `dat`: coi một phép kiểm không chạy
-    được là một phép kiểm đã qua là cách âm thầm cấp giấy thông hành cho
-    đúng chỗ đang nghi ngờ.
+    Giá vốn hàng bán thì xét thẳng theo dấu, không cần đẳng thức:
+    `FIELD_RULES` đặt `allow_negative` là False cho nó, tức âm là sai bất kể
+    các chỉ tiêu quanh nó có cân hay không.
     """
     ket = []
+    identities = identities_for(standard)
 
     gia_von = values.get(GIA_VON)
     if gia_von is None:
@@ -148,38 +182,36 @@ def kiem_dau_khau_tru(values: dict) -> list[KetQuaMotDau]:
     else:
         ket.append(KetQuaMotDau(GIA_VON, DAU_DAT, ""))
 
-    truoc_thue = values.get("loi_nhuan_truoc_thue")
-    sau_thue = values.get("loi_nhuan_sau_thue")
-    thue_la_thu_nhap = (
-        None if truoc_thue is None or sau_thue is None else sau_thue > truoc_thue
-    )
-
     for ten in TRUONG_THUE:
         gia_tri = values.get(ten)
         if gia_tri is None:
             ket.append(KetQuaMotDau(ten, CHUA_GO, "chưa gõ hoặc đọc không ra"))
-        elif gia_tri >= 0:
+            continue
+        if gia_tri >= 0:
             ket.append(KetQuaMotDau(ten, DAU_DAT, ""))
-        elif thue_la_thu_nhap is None:
+            continue
+
+        theo_dang_thuc = _dao_dau_lam_can(values, ten, identities)
+        if theo_dang_thuc is None:
             ket.append(
                 KetQuaMotDau(
                     ten,
                     CHUA_QUYET_DINH_DUOC,
-                    "ghi âm, nhưng thiếu mã 50 hoặc mã 60 nên chưa biết thuế "
-                    "làm tăng hay giảm lợi nhuận",
+                    "ghi âm, nhưng đẳng thức chứa nó chưa chạy được vì thiếu "
+                    "thành phần, nên chưa kết luận được gì về dấu",
                 )
             )
-        elif thue_la_thu_nhap:
-            ket.append(KetQuaMotDau(ten, DAU_DAT, ""))
-        else:
+        elif theo_dang_thuc:
             ket.append(
                 KetQuaMotDau(
                     ten,
                     NGHI_SAI_DAU,
-                    "ghi âm trong khi thuế làm giảm lợi nhuận (mã 60 < mã 50) "
-                    "— guideline mục 3.3 bắt ghi dương",
+                    "ghi âm, và đảo dấu riêng trường này làm đẳng thức đang "
+                    "lệch trở nên cân — guideline mục 3.3",
                 )
             )
+        else:
+            ket.append(KetQuaMotDau(ten, DAU_DAT, ""))
 
     return ket
 

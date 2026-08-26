@@ -155,69 +155,77 @@ def test_danh_muc_kiem_bat_nguoi_tick_dung_nhung_o_may_khong_biet():
     assert con_thieu_o_kiem(dict.fromkeys(O_NGUOI_PHAI_TICK, True)) == []
 
 
-def _dau(values: dict) -> dict:
+def _dau(values: dict, chuan: Standard = Standard.TT200) -> dict:
     """Kết quả kiểm dấu, tra theo tên trường cho dễ đọc."""
-    return {r.truong: r.trang_thai for r in kiem_dau_khau_tru(values)}
+    return {r.truong: r.trang_thai for r in kiem_dau_khau_tru(values, chuan)}
 
 
 def test_gia_von_am_bi_bao_la_nghi_sai_dau():
     """
     Guideline mục 3.3 bắt mã 11 ghi dương dù báo cáo in trong ngoặc đơn, vì
-    văn bản đưa nó vào công thức `Mã 20 = Mã 10 - Mã 11` như một số dương.
+    văn bản đưa nó vào công thức `Mã 20 = Mã 10 - Mã 11`. `FIELD_RULES` đặt
+    `allow_negative` False cho nó, nên âm là sai bất kể đẳng thức có cân hay
+    không — không cần và không được chờ đẳng thức xác nhận.
     """
-    dat = _dau({"gia_von_hang_ban": 100, "loi_nhuan_truoc_thue": 90, "loi_nhuan_sau_thue": 80})
-    assert dat["gia_von_hang_ban"] == DAU_DAT
-
-    am = _dau({"gia_von_hang_ban": -100, "loi_nhuan_truoc_thue": 90, "loi_nhuan_sau_thue": 80})
-    assert am["gia_von_hang_ban"] == NGHI_SAI_DAU
+    v = {ten: 0 for ten in fields_for(Standard.TT200)}
+    assert _dau({**v, "gia_von_hang_ban": 100})["gia_von_hang_ban"] == DAU_DAT
+    assert _dau({**v, "gia_von_hang_ban": -100})["gia_von_hang_ban"] == NGHI_SAI_DAU
 
 
-def test_thue_am_hop_le_khi_thue_la_THU_NHAP_chu_khong_phai_chi_phi():
+def test_thue_hoan_lai_am_HOP_LE_khi_dang_thuc_da_can():
     """
-    Đây là chỗ không được kiểm bằng dấu ngoặc trên trang giấy. Thông tư dành
-    dấu âm ở mã 51 và 52 cho ca thuế phát sinh bên Nợ, tức lợi nhuận sau thuế
-    LỚN HƠN lợi nhuận trước thuế. Bắt oan ca đó sẽ đẩy người gán nhãn đi sửa
-    một giá trị vốn đúng.
+    Hồi quy trên ca dương tính giả đã xảy ra thật, chép từ `MWG_2025Q1_TT200`.
+
+    Bản đầu của phép kiểm này xét dấu từng chỉ tiêu thuế bằng dấu của TỔNG số
+    thuế — tức so mã 60 với mã 50 — nên nó báo oan mã 52 ở đây. Mã 51 là chi
+    phí thuế lớn, mã 52 là khoản hoàn nhập âm, tổng lại vẫn làm giảm lợi
+    nhuận, và đẳng thức B02 cân chính xác đến từng đồng.
+
+    Báo oan ở đây tốn hơn bỏ sót: giao diện nói "sửa DẤU, đây không phải lỗi
+    của báo cáo", nên một cảnh báo sai sẽ đẩy người gán nhãn đi hỏng một giá
+    trị vốn đúng.
     """
-    thu_nhap = _dau(
+    v = {ten: 0 for ten in fields_for(Standard.TT200)}
+    v.update(
         {
-            "gia_von_hang_ban": 100,
-            "thue_tndn_hien_hanh": -20,
-            "thue_tndn_hoan_lai": 0,
-            "loi_nhuan_truoc_thue": 80,
-            "loi_nhuan_sau_thue": 100,
+            "loi_nhuan_truoc_thue": 1_934_661_387_220,
+            "thue_tndn_hien_hanh": 397_722_415_583,
+            "thue_tndn_hoan_lai": -10_894_797_039,
+            "loi_nhuan_sau_thue": 1_547_833_768_676,
         }
     )
-    assert thu_nhap["thue_tndn_hien_hanh"] == DAU_DAT
 
-    chi_phi = _dau(
-        {
-            "gia_von_hang_ban": 100,
-            "thue_tndn_hien_hanh": -20,
-            "thue_tndn_hoan_lai": 0,
-            "loi_nhuan_truoc_thue": 100,
-            "loi_nhuan_sau_thue": 80,
-        }
+    # Chỉ đẳng thức thuế mới nói được gì ở đây; các đẳng thức khác lệch vì bộ
+    # số dựng tay này để trống phần còn lại của B01 và B02.
+    dang_thuc_thue = next(
+        r for r in kiem_dang_thuc(v, Standard.TT200) if "thuế hiện hành" in r.mo_ta
     )
-    assert chi_phi["thue_tndn_hien_hanh"] == NGHI_SAI_DAU
+    assert dang_thuc_thue.trang_thai == DAT
+    assert _dau(v)["thue_tndn_hoan_lai"] == DAU_DAT
 
 
-def test_thieu_ma_50_hoac_60_thi_bao_CHUA_QUYET_DINH_DUOC_chu_khong_bao_dat():
+def test_thieu_thanh_phan_thi_bao_CHUA_QUYET_DINH_DUOC_chu_khong_bao_dat():
     """
     Cùng lý do mà đẳng thức thiếu thành phần được báo riêng: coi một phép
     kiểm không chạy được là một phép kiểm đã qua là cách âm thầm cấp giấy
     thông hành cho đúng chỗ đang nghi ngờ.
     """
-    dat = _dau(
+    v = {ten: 0 for ten in fields_for(Standard.TT200)}
+    v.update(
         {
-            "gia_von_hang_ban": 100,
+            "gia_von_hang_ban": None,
             "thue_tndn_hien_hanh": -20,
             "loi_nhuan_truoc_thue": None,
             "loi_nhuan_sau_thue": 80,
         }
     )
+
+    dat = _dau(v)
     assert dat["thue_tndn_hien_hanh"] == CHUA_QUYET_DINH_DUOC
-    assert dat["thue_tndn_hoan_lai"] == CHUA_GO
+    assert dat["thue_tndn_hoan_lai"] == DAU_DAT
+    # Ô chưa gõ là trạng thái RIÊNG, không gộp vào ca nghi sai dấu: không có
+    # số thì không có dấu để mà sai.
+    assert dat["gia_von_hang_ban"] == CHUA_GO
 
 
 def test_bo_so_DGC_that_da_tung_lot_qua_muoi_mot_lan_kiem_dang_thuc():

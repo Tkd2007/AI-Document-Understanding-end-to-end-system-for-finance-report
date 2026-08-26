@@ -439,7 +439,7 @@ def kiem(yeu_cau: YeuCauKiem) -> dict:
         ],
         "dau_khau_tru": [
             {"truong": r.truong, "trang_thai": r.trang_thai, "ly_do": r.ly_do}
-            for r in kiem_dau_khau_tru(gia_tri)
+            for r in kiem_dau_khau_tru(gia_tri, ch)
         ],
     }
 

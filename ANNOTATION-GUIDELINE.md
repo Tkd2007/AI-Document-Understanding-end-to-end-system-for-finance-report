@@ -18,7 +18,7 @@
 1. **Ba luật bắt buộc** — mù với đầu ra pipeline, gán nhãn xong mới chạy
    pipeline, guideline viết trước không sửa giữa chừng
 2. Phạm vi — doanh nghiệp, loại báo cáo, biểu mẫu, cột
-3. **Quy tắc đọc số** — phần dễ bất đồng nhất, đọc kỹ 3.1, 3.4, 3.6, 3.7
+3. **Quy tắc đọc số** — phần dễ bất đồng nhất, đọc kỹ 3.1, 3.3, 3.4, 3.6, 3.7
 4. Định dạng file
 5. Đo đồng thuận giữa hai người
 6. **Trần người** — cách tính số phút đặt đồng hồ
@@ -115,12 +115,44 @@ Báo cáo in `29.403` ở đơn vị "triệu đồng" thì ghi `29403000000`.
 *Vì sao:* hai tài liệu khác đơn vị mà lưu ở đơn vị gốc thì không so được với
 nhau, và mọi phép đo accuracy trên nhiều công ty mất nghĩa.
 
-### 3.3 Số âm
+### 3.3 Số âm, và ba dòng khấu trừ luôn ghi dương
 
 Báo cáo tài chính in số âm **trong ngoặc đơn**: `(1.234.567)`. Ghi giá trị âm:
-`-1234567`.
+`-1234567`. Một số báo cáo dùng dấu trừ. Cả hai đều là số âm, ghi như nhau.
 
-Một số báo cáo dùng dấu trừ. Cả hai đều là số âm, ghi như nhau.
+**Ngoại lệ — ba chỉ tiêu khấu trừ dưới đây ghi số DƯƠNG dù in trong ngoặc:**
+
+| Chỉ tiêu | Mã | Quy tắc |
+|---|---|---|
+| Giá vốn hàng bán | 11 | **Luôn dương.** Giá vốn âm là dấu hiệu đọc sai, không phải số liệu |
+| Chi phí thuế TNDN hiện hành | 51 | Dương khi thuế làm **giảm** lợi nhuận (mã 60 < mã 50) |
+| Chi phí thuế TNDN hoãn lại | 52 | Dương khi thuế làm **giảm** lợi nhuận (mã 60 < mã 50) |
+
+*Vì sao cần ngoại lệ:* trên cùng một trang B02, dấu ngoặc mang **hai nghĩa
+khác nhau**, và quy tắc "ngoặc là âm" gộp chúng làm một.
+
+- Mã 40 `(83.660.312)` — lợi nhuận khác **thật sự âm**. Dấu ở đây là số liệu.
+- Mã 11 `(107.515.846.476)` — giá vốn **không âm**. Dấu ở đây là cách trình
+  bày "dòng này bị trừ đi", vì văn bản viết `Mã 20 = Mã 10 − Mã 11`, tức mã
+  11 vào công thức như một số dương.
+
+Ghi mã 11 thành số âm làm đẳng thức `giá vốn + lãi gộp = doanh thu thuần`
+lệch đúng **gấp đôi** giá vốn, và người gán nhãn sẽ đi tìm một lỗi không tồn
+tại trên báo cáo.
+
+*Vì sao mã 51 và 52 phải quyết định dấu bằng mã 50 và 60, không bằng dấu
+ngoặc:* Thông tư dành riêng dấu âm ở hai chỉ tiêu này cho một nghĩa hẹp.
+TT200 Điều 113 mục 3.16–3.17 (TT99 mục 3.17–3.18) nói số liệu "được ghi vào
+chỉ tiêu này bằng số âm dưới hình thức ghi trong ngoặc đơn" **khi phát sinh
+bên Nợ**, tức khi thuế là *thu nhập* chứ không phải chi phí. Nhưng nhiều
+doanh nghiệp in ngoặc cho cả khoản thuế là chi phí bình thường, theo nghĩa
+trình bày. Chép nguyên dấu ngoặc sẽ trộn hai trạng thái thật sự khác nhau
+vào cùng một giá trị âm; quyết định bằng mã 50 và 60 thì tách được, và cả
+hai ô đó đều đã in sẵn trên trang nên không phải suy đoán gì.
+
+Mọi chỉ tiêu **không có** trong bảng trên giữ nguyên dấu như in — kể cả lợi
+nhuận gộp, lợi nhuận khác, vốn chủ sở hữu và bốn dòng lưu chuyển tiền, vì ở
+những chỗ đó dấu âm là số liệu thật.
 
 ### 3.4 Ô trống, dấu gạch, và số không
 
@@ -419,7 +451,8 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 - [ ] Đã xác định chuẩn mẫu biểu, hoặc ghi `UNKNOWN` kèm lý do
 - [ ] `unit_declared` chép **nguyên văn**; `unit_multiplier` khớp
 - [ ] Mọi giá trị đã quy đổi về **đồng**
-- [ ] Số âm ghi bằng dấu trừ, không phải ngoặc
+- [ ] Số âm ghi bằng dấu trừ, không phải ngoặc; ba dòng khấu trừ
+      (mã 11, 51, 52) ghi **dương** — mục 3.3
 - [ ] Ô trống, dấu gạch, và dòng vắng mặt đều ghi `0`; `null` **chỉ** dùng
       khi có dòng mà đọc không ra (mục 3.4)
 - [ ] Đã đối chiếu **mã số**, không chỉ tên chỉ tiêu
@@ -435,6 +468,52 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 
 > Mọi thay đổi guideline ghi vào đây kèm **ngày** và **lý do**, và ghi rõ
 > **những tài liệu nào phải gán nhãn lại**. Không sửa đè lên nội dung trên.
+
+### 26/08/2026 (muộn hơn) — Ba dòng khấu trừ ghi dương, không theo dấu ngoặc
+
+**Thay đổi ở mục 3.3 và danh mục kiểm mục 8. Một tài liệu phải sửa:
+`DGC_2025Q2_TT200`.**
+
+**Bản trước nói "in trong ngoặc đơn ⇒ ghi giá trị âm", không trừ trường hợp
+nào.** Quy tắc đó đúng với dòng mà dấu âm là số liệu, và sai với dòng mà dấu
+ngoặc chỉ là cách trình bày một khoản bị trừ. Bản BCTC quý II/2025 của DGC in
+cả hai loại trên cùng một trang: mã 40 `(83.660.312)` là lợi nhuận khác thật
+sự âm, còn mã 11 `(107.515.846.476)` là giá vốn — một số dương mà văn bản đưa
+vào công thức dưới dạng `Mã 20 = Mã 10 − Mã 11`.
+
+**Hậu quả đã quan sát được, và nó không phải giả thuyết.** `DGC_2025Q2_TT200`
+được gán nhãn đúng theo mục 3.3 bản cũ nên mã 11 và mã 51 ghi âm. Hai đẳng
+thức B02 vì thế lệch, và file có `so_lan_kiem_dang_thuc = 11` — người gán
+nhãn đã kiểm mười một lần mà không tìm ra, vì không có lỗi nào để tìm. Chín
+trên chín chữ số của biểu B02 chép đúng nguyên trang giấy.
+
+Mức lệch của cả hai đẳng thức đúng bằng **gấp đôi** trường bị đảo dấu
+(`215.031.692.952 = 2 × 107.515.846.476` và `47.108.746.070 = 2 ×
+23.554.373.035`). Đó là chữ ký số học của lỗi dấu, không phải của lỗi đọc —
+đáng nhớ vì nó tách ngay ca này khỏi ca báo cáo tự mâu thuẫn.
+
+**Vì sao chọn quy ước trị tuyệt đối thay vì viết lại đẳng thức theo số có
+dấu.** Phương án viết lại đẳng thức (`10 + 11 = 20`, `50 + 51 + 52 = 60`) giữ
+được nguyên tắc "chép, đừng diễn giải", nhưng nó phá một thứ không lấy lại
+được: Thông tư dùng dấu âm ở mã 51 và 52 để mã hoá riêng trạng thái *thu nhập
+thuế*. Nếu dấu âm cũng dùng cho chi phí in trong ngoặc thì hai trạng thái
+khác nhau về bản chất trở thành cùng một giá trị, và không ai tách lại được.
+Quy ước trị tuyệt đối giữ dấu âm cho đúng một nghĩa. Nó cũng khớp số học của
+chính văn bản, khớp `allow_negative` trong `src/fields_config.py`, và khớp
+hai tài liệu gold còn lại — `BMP_2026Q1_TT99` và `VNM_2026Q1_TT99` vốn đã ghi
+mã 11 và 51 dương và cân sạch mọi đẳng thức.
+
+Giá phải trả, nói thẳng: quy ước này đòi người gán nhãn nhận ra dòng nào là
+dòng khấu trừ, tức thêm một chút ngữ nghĩa vào việc vốn thuần tuý là chép.
+Danh sách đó hữu hạn — đúng ba mã trong bộ 26/27 chỉ tiêu — nên mục 3.3 liệt
+kê hết, và công cụ gán nhãn nay tự kiểm dấu ba trường đó
+(`kiem_dau_khau_tru`) thay vì để quy tắc nằm im trong tài liệu.
+
+**Việc đã làm với `DGC_2025Q2_TT200`:** đảo dấu `gia_von_hang_ban` và
+`thue_tndn_hien_hanh` sang dương, `so_lan_ghi` tăng lên 2, và
+`sua_gia_tri_sau_khi_kiem` đặt `true` — vì xét thuần tuý theo dấu vết kiểm
+toán thì tài liệu này cân sau khi sửa giá trị, chứ không cân ngay từ đầu.
+Không chữ số nào bị đổi. Hai tài liệu gold còn lại không phải gán nhãn lại.
 
 ### 26/08/2026 — Hệ số 0,6 được xác nhận; đồng hồ do người tự bấm
 

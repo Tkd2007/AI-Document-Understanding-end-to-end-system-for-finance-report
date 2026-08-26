@@ -45,7 +45,7 @@ mục 16 (bước kế tiếp), mục 15 (lệnh hay dùng).
 | **16** | **Bước kế tiếp** | chọn việc |
 | 17 | Đã quyết nhưng chưa thi công | tránh làm lại việc đã quyết |
 | 18 | Nơi nộp — ICDAR 2027, hạn 28/02/2027 | lập lịch |
-| **19** | **Tầng gold**: công cụ, đồng hồ, 10 tài liệu đầu | việc đang làm |
+| **19** | **Tầng gold**: công cụ, đồng hồ, nguồn, 10 tài liệu đầu | việc đang làm |
 | A | Hồ sơ đối chiếu Thông tư (Mốc 1) | tra mã số, đẳng thức, cạm bẫy văn bản |
 | B | Sổ thi công phương án C, **bước D chưa làm** | làm tiếp nhận diện chuẩn |
 
@@ -1319,7 +1319,7 @@ trước khi nộp, không tra liên tục.
 
 ---
 
-## 19. Tầng gold đã khởi động — công cụ, tài liệu đầu tiên, hai phát hiện
+## 19. Tầng gold — công cụ, đồng hồ, nguồn tài liệu, 10 tài liệu đầu
 
 Viết 25/08/2026. Đây là mục mô tả hiện trạng của tầng gold; trước mục này,
 mọi tài liệu trong repo đều giả định `data/gold/` còn trống.
@@ -1366,6 +1366,32 @@ một bản viết một lần rồi thôi là hai thứ khác nhau khi phân t�
 gán nhãn, nên lần ghi phải đếm được. Đồng hồ **cố ý chạy lại từ đầu** khi mở
 lại chứ không cộng dồn: `thoi_gian_giay` đo tốc độ trên một tài liệu MỚI, trộn
 một lần sửa một ô vào sẽ làm hỏng chính phép đo trần người.
+
+#### Trình tự một tài liệu
+
+Guideline giữ các QUY TẮC; đây là thao tác, và nó chưa nằm ở đâu khác.
+
+1. Chọn file, gõ `doc_id` — **đúng bằng tên file bỏ đuôi** (`HPG_2026Q2_TT99`).
+   Tên file trong `data/bctc/` cố ý đặt khớp `doc_id` để khỏi phải nghĩ.
+2. Bấm **▶ Bắt đầu bấm giờ**. Nghỉ giữa chừng thì ⏸ Tạm dừng.
+3. Xác định chuẩn **bằng mắt** theo guideline mục 3.7. Đừng suy từ năm báo
+   cáo — xem cảnh báo về MSN ở cuối mục 19.6.
+4. Chép `unit_declared` **nguyên văn**. Guideline mục 3.1 cấm suy hệ số từ độ
+   lớn con số.
+5. Điền, bấm **Kiểm đẳng thức**. Lệch thì **đọc lại báo cáo**, đừng sửa cho
+   cân; công cụ cố ý không bao giờ gợi ý giá trị.
+6. Tick danh mục kiểm, bấm Lưu.
+
+**Thứ tự nên làm trong 10 tài liệu đầu.** Bắt đầu bằng `BMP` hoặc `DGC` — bản
+in sạch, đơn vị VND, có lãi. Để `HNG` (lỗ, `Ngàn VND`, các dòng đổi tên thành
+"Lỗ") lại sau khi đã quen tay. `SBT` và `HNG` đang vướng Câu 11 nên để cuối.
+
+> **Không có đường tắt, và đó là chuyện tốt.** Cả 10 tài liệu đều là ảnh quét
+> không lớp text (mục 19.6a), nên không `pdftotext` được, không copy-paste
+> được. Ai định "tách nội dung ra khỏi PDF" cho nhanh thì hoặc phải chạy OCR —
+> **vi phạm Luật 1** — hoặc phải đọc bằng mắt. Việc không có đường tắt khiến
+> vi phạm khó xảy ra do vô ý, và vi phạm Luật 1 là loại **không để lại dấu
+> vết**: file gold nhiễm trông y hệt file sạch.
 
 ### 19.2 Tài liệu gold đầu tiên
 

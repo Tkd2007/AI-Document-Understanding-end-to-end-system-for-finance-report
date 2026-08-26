@@ -1,8 +1,9 @@
 # AI Document Understanding System — Financial Reports
 ![CI](https://github.com/Tkd2007/AI-Document-Understanding-end-to-end-system-for-finance-report/actions/workflows/ci.yml/badge.svg)
 
-End-to-end pipeline for extracting **11 structured financial line items**
-(balance sheet + income statement) from Vietnamese financial report PDFs.
+End-to-end pipeline for extracting **27 structured financial line items**
+(balance sheet, income statement, cash flow) from Vietnamese financial report
+PDFs — 27 dưới chuẩn TT99, 26 dưới TT200.
 Final project for the "MasterClass AI Document Understanding" course.
 
 Repo hiện có **hai lớp**, và README này mô tả lớp thứ nhất:
@@ -15,6 +16,18 @@ Repo hiện có **hai lớp**, và README này mô tả lớp thứ nhất:
    giả thuyết và kế hoạch phân tích đã đăng ký trước ở
    [PREREGISTRATION.md](PREREGISTRATION.md); trạng thái thi công và các
    quyết định thiết kế ở [HANDOFF.md](HANDOFF.md).
+
+## Mục lục
+
+[Architecture](#architecture) · [Project structure](#project-structure) ·
+[Setup](#setup) · [Usage](#usage) · [Target fields](#target-fields) ·
+[Status](#status) · [Vài thứ chỉ lộ ra khi chạy thật](#vài-thứ-chỉ-lộ-ra-khi-chạy-thật)
+
+Muốn chạy nhanh nhất: `docker build -t doc-ai . && docker run --rm -p 8000:8000
+--env-file .env.docker doc-ai`, rồi mở `http://127.0.0.1:8000/docs`. Chi tiết
+và các bẫy ở phần [Setup](#setup).
+
+---
 
 ## Architecture
 
@@ -78,7 +91,8 @@ cho tới khi đo được trên nhiều báo cáo khác, vì đây mới là **
 regex vốn nhạy với cách OCR cắt chữ ở từng bản in.
 
 > **Mọi con số 11/11 ở trên đo dưới bộ chỉ tiêu CŨ (11 chỉ tiêu).** Mốc 1 ngày
-> 23/08/2026 đã mở bộ chỉ tiêu lên 21 với TT99 và 20 với TT200, và **chưa đo lại**.
+> 23/08/2026 và kịch bản E ngày 25/08 đã mở bộ chỉ tiêu lên 27 với TT99 và 26
+> với TT200, và **chưa đo lại**.
 > Mười chỉ tiêu mới đều là dòng chi tiết nằm sâu hơn trong bảng, nên đừng suy ra
 > rằng tỷ lệ sẽ giữ nguyên — nhất là với nhánh regex, vốn nhạy với cách OCR cắt
 > chữ. Đo lại là một phần của pilot ở MỐC 2.
@@ -520,8 +534,8 @@ Defined in `src/fields_config.py` — the single source of truth used by both
 the OCR and VLM branches, so adding a new field only requires editing this
 one file.
 
-**Bộ chỉ tiêu: 21 với TT99, 20 với TT200.** Chênh một chỉ tiêu vì Tài sản
-sinh học ngắn hạn chỉ tồn tại ở TT99.
+**Bộ chỉ tiêu: 27 với TT99, 26 với TT200** (kịch bản E, chốt 25/08/2026).
+Chênh một chỉ tiêu vì Tài sản sinh học ngắn hạn chỉ tồn tại ở TT99.
 
 **BA MÃ ĐỔI NGHĨA GIỮA HAI CHUẨN** — đây là nguồn lỗi câm, vì tra nhầm bảng mã
 không làm gì nổ, nó chỉ lặng lẽ trả về một con số hợp lệ của chỉ tiêu khác:
@@ -530,114 +544,16 @@ mã **270** (Tổng cộng tài sản ở TT200, Tài sản dài hạn khác ở
 (dự phòng giảm giá hàng tồn kho). Vì vậy `standard` là tham số **bắt buộc** của
 `extract_field_by_code()` và của `validate_result()`.
 
-**B01 — Bảng cân đối kế toán (TT200) / Báo cáo tình hình tài chính (TT99)**
+**Danh sách đầy đủ nằm trong `FIELD_MAP` và `FIELD_LINE_CODES` của
+`src/fields_config.py`.** Cố ý không chép bảng đó vào đây: chép ra là tạo bản
+thứ hai của một sự thật, và bản trong README sẽ cũ đi mà không test nào bắt
+được — đúng chuyện đã xảy ra, README này từng ghi 11 rồi 21 chỉ tiêu sau khi
+code đã đổi.
 
-| Key | Chỉ tiêu | Mã TT200 | Mã TT99 | Bắt buộc |
-|---|---|---|---|---|
-| `tai_san_ngan_han` | Tài sản ngắn hạn | 100 | 100 | |
-| `tien_va_tuong_duong_tien` | Tiền và các khoản tương đương tiền | 110 | 110 | |
-| `dau_tu_tc_ngan_han` | Đầu tư tài chính ngắn hạn | 120 | 120 | |
-| `phai_thu_ngan_han` | Các khoản phải thu ngắn hạn | 130 | 130 | |
-| `hang_ton_kho` | Hàng tồn kho | 140 | 140 | |
-| `tai_san_sinh_hoc_ngan_han` | Tài sản sinh học ngắn hạn | — | 150 | |
-| `tsnh_khac` | Tài sản ngắn hạn khác | 150 | **160** | |
-| `tai_san_dai_han` | Tài sản dài hạn | 200 | 200 | |
-| `tong_tai_san` | Tổng tài sản | 270 | **280** | ✅ |
-| `no_phai_tra` | Nợ phải trả | 300 | 300 | |
-| `von_chu_so_huu` | Vốn chủ sở hữu | 400 | 400 | |
-| `tong_nguon_von` | Tổng cộng nguồn vốn | 440 | 440 | |
+Ba biểu mẫu được dùng: **B01** bảng cân đối kế toán (TT200) / báo cáo tình
+hình tài chính (TT99), **B02** kết quả kinh doanh, **B03** lưu chuyển tiền tệ.
+Chín đẳng thức kế toán nối chúng lại, khai báo ở `FIELD_IDENTITIES`.
 
-**B02 — Báo cáo kết quả hoạt động kinh doanh** (mã số giống nhau ở hai chuẩn)
-
-| Key | Chỉ tiêu | Mã số | Bắt buộc |
-|---|---|---|---|
-| `doanh_thu_thuan` | Doanh thu thuần | 10 | ✅ |
-| `gia_von_hang_ban` | Giá vốn hàng bán | 11 | |
-| `loi_nhuan_gop` | Lợi nhuận gộp | 20 | |
-| `ln_thuan_hdkd` | Lợi nhuận thuần từ hoạt động kinh doanh | 30 | |
-| `ln_khac` | Lợi nhuận khác | 40 | |
-| `loi_nhuan_truoc_thue` | Lợi nhuận trước thuế | 50 | |
-| `thue_tndn_hien_hanh` | Chi phí thuế TNDN hiện hành | 51 | |
-| `thue_tndn_hoan_lai` | Chi phí thuế TNDN hoãn lại | 52 | |
-| `loi_nhuan_sau_thue` | Lợi nhuận sau thuế | 60 | ✅ |
-
-Danh sách `required` cố ý **ngắn**: càng nhiều chỉ tiêu bắt buộc thì càng dễ
-phải fallback sang VLM chỉ vì một dòng doanh nghiệp không có. Mười chỉ tiêu
-thêm ở Mốc 1 đều là dòng chi tiết, và nhiều cái vắng mặt hợp lệ trên báo cáo
-thật — Thông tư 99 mục 1.2.3 cho phép miễn trình bày chỉ tiêu không có số liệu.
-
-### Các bảng cấu hình trong `fields_config.py`
-
-| Bảng | Dùng cho | Vai trò |
-|---|---|---|
-| `FIELD_MAP` | cả hai nhánh | danh sách field chuẩn + tên tiếng Việt |
-| `FIELD_RULES` | validation | `allow_negative`, `required` cho từng field |
-| `FIELD_RELATIONS` | validation | bất đẳng thức (Hàng tồn kho ≤ Tài sản ngắn hạn…) |
-| `FIELD_IDENTITIES` | validation | đẳng thức kế toán (TSNH + TSDH = Tổng TS…) |
-| `FIELD_RATIO_BOUNDS` | validation | biên tỷ trọng, bắt lỗi lệch bậc độ lớn |
-| `FIELD_ALIASES` | nhánh regex | các cách gọi của cùng chỉ tiêu, xếp cụ thể → chung |
-| `FIELD_EXCLUDE` | nhánh regex | cụm từ loại trừ, theo vị trí `before` / `between` |
-| `FIELD_LINE_CODES` | regex + prompt VLM | mã số dòng theo mẫu biểu |
-| `FORM_MARKERS` | nhánh regex | nhận diện trang thuộc mẫu B01a / B02a / B03a |
-
-Nhánh VLM không cần `FIELD_ALIASES` / `FIELD_EXCLUDE` / `FORM_MARKERS` vì model
-tự hiểu ngữ nghĩa của dòng.
-
-### Vì sao regex phải khó tính đến vậy
-
-**1. Cột Mã số và Thuyết minh chen giữa nhãn và giá trị:**
-
-```
-Doanh thu thuần về bán và cung cấp dịch vụ    10    VI.1    13.217.639.635.987
-                                          (mã số) (t.minh)      (giá trị)
-```
-
-Nên regex "lấy số ngay sau nhãn" sẽ bắt được `10` chứ không phải giá trị.
-Cách xử lý: chỉ chấp nhận con số **có dấu phân cách nghìn** — giá trị tiền
-tệ luôn có, còn mã số và số thuyết minh thì không.
-
-**2. Tên chỉ tiêu KHÔNG duy nhất trong tài liệu.** Một alias ngắn có thể nằm gọn
-ở *đầu* nhãn khác ("Lợi nhuận sau thuế" trong "…chưa phân phối") hoặc ở *đuôi*
-("Hàng tồn kho" trong "Dự phòng giảm giá hàng tồn kho" — mã 142, một khoản âm nhỏ
-hơn giá trị thật khoảng 1000 lần). Vì vậy `FIELD_EXCLUDE` soi **cả hai chiều**:
-
-```python
-"loi_nhuan_sau_thue": {"between": ["chưa phân", ...]},   # từ khoá đứng SAU nhãn
-"hang_ton_kho":       {"before":  ["giảm giá", ...]},    # từ khoá đứng TRƯỚC nhãn
-```
-
-**3. OCR làm hỏng chữ tiếng Việt có dấu.** Khi không alias nào khớp, hệ thống dò
-tiếp theo **mã số dòng** (`FIELD_LINE_CODES`): trên báo cáo VNM, EasyOCR đọc
-`TỔNG TÀI SẢN` thành `TỖNG TÀISẢN` nên alias thất bại, còn mã `280` thì đọc đúng
-tuyệt đối. Mã số chỉ duy nhất **trong một mẫu biểu**, nên chỉ được dùng khi trang
-khớp `FORM_MARKERS` của đúng mẫu đó.
-
-### Ngữ nghĩa đầu ra: số `0` không phải lúc nào cũng là "doanh nghiệp khai 0"
-
-Kể từ khi có bước dò dòng, `data` trả về **có thể chứa `0` cho một chỉ tiêu mà
-báo cáo không in dòng nào cả**. Đó là kết luận có căn cứ, không phải phỏng
-đoán: Thông tư 99 mục 1.2.3 bảo đảm "các chỉ tiêu không có số liệu được miễn
-trình bày", tức văn bản pháp quy khẳng định phần vắng mặt không đóng góp vào
-tổng. Chính báo cáo VNM in công thức rút gọn của nó — `100 = 110+120+130+140+160`,
-bỏ hẳn mã 150.
-
-Vì vậy `meta["trang_thai_chi_tieu"]` ghi lý do cho **từng** chỉ tiêu, tập đóng
-ba giá trị:
-
-| Trạng thái | Giá trị trong `data` | Nghĩa |
-|---|---|---|
-| `co_gia_tri` | số đọc được | Bình thường |
-| `vang_mat` | `0` | Biểu mẫu KHÔNG có dòng đó — probe đã xác nhận |
-| `khong_doc_duoc` | `null` | Có dòng mà không đọc ra, hoặc probe không kết luận được |
-
-**Đừng suy ra trạng thái từ chính con số.** Một số `0` có thể là doanh nghiệp
-khai bằng 0 (`co_gia_tri`) hoặc là dòng vắng mặt (`vang_mat`), và hai chuyện đó
-khác hẳn nhau khi phân tích.
-
-`meta["line_probe"]` cho biết probe có chạy trong lượt đó không — lượt có probe
-và lượt không có cho ra dữ liệu khác nhau về chất nên không so thẳng được.
-
----
 
 ## Status
 
@@ -646,7 +562,7 @@ và lượt không có cho ra dữ liệu khác nhau về chất nên không so 
 - **OCR Pipeline** (EasyOCR + regex): working nhưng **tắt mặc định**
   (`USE_OCR_FIRST=false`). Trên OCR text của báo cáo VNM Q1/2026, kết hợp alias +
   mã số dòng trích đúng **11/11 chỉ tiêu** *dưới bộ chỉ tiêu cũ*, nhưng vẫn chậm
-  hơn nhiều so với chạy thẳng VLM — xem phần lý do ở trên. Bộ 21 chỉ tiêu sau Mốc 1
+  hơn nhiều so với chạy thẳng VLM — xem phần lý do ở trên. Bộ 27 chỉ tiêu sau kịch bản E
   chưa đo lại.
 - **VLM Pipeline** (Gemma 4 31B via OpenRouter): working, verified accurate
   on the same 54-page report — 11/11 field *dưới bộ chỉ tiêu cũ*, dừng sớm ở

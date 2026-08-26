@@ -301,6 +301,25 @@ giống nhau đến mức nếu một trang vào train và một trang vào test
 
 ## Sửa đổi
 
+**Mười ba tu chính, không cái nào được rút gọn hay viết đè.** Đó là điều kiện
+để việc đăng ký trước còn giá trị: một bản ghi sửa được sau khi thấy kết quả
+thì không chứng minh được gì. Mục lục dưới đây thêm ngày 26/08/2026 để tìm
+nhanh, và nó là thứ DUY NHẤT được thêm vào phần này ngoài các tu chính.
+
+| Ngày | Tu chính | Chạm tới |
+|---|---|---|
+| 22/08 | Trần số trường được sửa ở 2; tách hai loại ABSTAIN | H2, H3 |
+| 23/08 | Bộ chỉ tiêu lên 21; không gán nhãn cột kỳ so sánh | H0, chi phí gán nhãn |
+| 24/08 | Dòng vắng mặt ghi `0`, không phải `null` | H1, guideline 3.4 |
+| 25/08 | Chỉ số định vị báo cáo **ba** con số, nêu tên con số quyết định | H2 |
+| 25/08 | Ma trận nhầm chữ số đo được, dùng chung hai phía khác độ sâu | H3, bộ tiêm lỗi |
+| 25/08 | Chỉ số chính của H3 ở tầng XBRL tính ở mức **lượt** | H3 |
+| 25/08 | Tầng XBRL chỉ kiểm được khả năng SỬA cho 2 trong 4 chế độ lỗi | giới hạn H3 |
+| 25/08 | Hoà ở tầng XBRL **hoãn** phán quyết H3, không kích hoạt phản chứng | điều kiện dừng |
+| 25/08 | Bộ chỉ tiêu chuyển sang **kịch bản E** (27/26 chỉ tiêu, 9 đẳng thức) | H0, H2, H3 |
+| 25/08 | Giao thức trần người bỏ con số 15 phút cố định | diễn giải kết quả |
+| 26/08 | Hệ số 0,6 được chốt; `thoi_gian_giay` đổi định nghĩa | diễn giải kết quả |
+
 Mọi sửa đổi ghi vào đây kèm ngày và lý do, không sửa đè lên trên.
 
 ### 22/08/2026 — Chốt trần số trường được sửa ở 2, và tách hai loại ABSTAIN

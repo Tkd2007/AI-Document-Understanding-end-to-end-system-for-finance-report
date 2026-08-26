@@ -13,6 +13,24 @@
 
 ---
 
+## Mục lục
+
+1. **Ba luật bắt buộc** — mù với đầu ra pipeline, gán nhãn xong mới chạy
+   pipeline, guideline viết trước không sửa giữa chừng
+2. Phạm vi — doanh nghiệp, loại báo cáo, biểu mẫu, cột
+3. **Quy tắc đọc số** — phần dễ bất đồng nhất, đọc kỹ 3.1, 3.4, 3.6, 3.7
+4. Định dạng file
+5. Đo đồng thuận giữa hai người
+6. **Trần người** — cách tính số phút đặt đồng hồ
+7. Thành phần tập gold — bốn nhóm Stress
+8. **Danh mục kiểm** trước khi coi một tài liệu là xong
+9. Sửa đổi — mọi thay đổi quy tắc, kèm ngày và lý do
+
+Tài liệu đã chọn và URL nguồn: `data/nguon_gold.json`, tải bằng
+`python src/tai_bctc.py`.
+
+---
+
 ## 1. Ba luật bắt buộc
 
 Ba luật này quyết định tập gold có dùng được hay không. Vi phạm bất kỳ luật

@@ -29,14 +29,22 @@ Kết quả ghi ra `data/output/tap_gold_<chế độ>.json` TRƯỚC khi in b�
 bài học của lượt chạy Mốc 3 ngày 25/08: `bao_cao()` in thẳng ra stdout không
 lưu gì, nên muốn in lại bảng theo cách khác phải chạy lại 103 phút.
 
-CẢNH BÁO VỀ LUẬT 1 — đọc trước khi mở file JSON kia. Guideline mục 1 buộc
-người gán nhãn phải MÙ với đầu ra pipeline. Tập gold hiện có 11 tài liệu và
-phương án đo đồng thuận dự phòng là chính người ấy gán nhãn lại sau ít nhất
-hai tuần. Nếu người sẽ gán nhãn lại đọc giá trị pipeline đoán cho từng ô của
+CẢNH BÁO VỀ LUẬT 1, và một cái bẫy đã bắt được. Guideline mục 1 buộc người
+gán nhãn phải MÙ với đầu ra pipeline. Tập gold hiện có 11 tài liệu và phương
+án đo đồng thuận dự phòng là chính người ấy gán nhãn lại sau ít nhất hai
+tuần. Nếu người sẽ gán nhãn lại đọc giá trị pipeline đoán cho từng ô của
 những tài liệu này, lượt gán nhãn lại bị neo và phép đo đồng thuận mất giá
-trị. Bảng in ra màn hình cố ý chỉ có số GỘP theo tài liệu, không có giá trị
-từng ô; file JSON thì có, và nó tồn tại cho lượt phân tích về sau chứ không
-phải để người gán nhãn đọc.
+trị.
+
+Bảng của script này cố ý chỉ có số GỘP theo tài liệu — nhưng chừng đó KHÔNG
+đủ, và bản đầu đã hụt đúng chỗ đó. `route_document` tự in ra **stdout** một
+bản kết xuất giá trị TỪNG Ô cho từng trang, nên `> file.txt` gom cả chúng lẫn
+bảng sạch vào cùng một file: lượt chạy đầu tiên có 79 khối "Page N" như thế
+nằm ngay phía trên bảng. Vì thế script nay CHẶN stdout của pipeline lại và đổ
+vào `data/output/tap_gold_<chế độ>_pipeline.log`; chỉ bảng gộp mới ra stdout.
+
+Hai file có giá trị từng ô là `..._pipeline.log` và file JSON kết quả. Cả hai
+tồn tại cho lượt phân tích về sau, KHÔNG phải để người gán nhãn đọc.
 
 Chạy:
     PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/chay_tap_gold.py
@@ -45,6 +53,7 @@ Chạy:
 """
 
 import argparse
+import contextlib
 import json
 import sys
 import traceback
@@ -93,9 +102,14 @@ def cham_mot_tai_lieu(gold: dict, du_doan: dict) -> dict:
     }
 
 
-def chay_mot_tai_lieu(gold: dict, pdf: Path, chuan_tu_gold: bool) -> dict:
+def chay_mot_tai_lieu(gold: dict, pdf: Path, chuan_tu_gold: bool, nhat_ky) -> dict:
     chuan = Standard(gold["standard"]) if chuan_tu_gold else None
-    ket_qua = route_document(str(pdf), save=False, standard=chuan)
+
+    # Chặn stdout của pipeline: nó in giá trị từng ô cho từng trang, và để
+    # chúng lẫn vào stdout là làm hỏng đúng thứ mà bảng gộp cố giữ. Xem cảnh
+    # báo về Luật 1 ở đầu file.
+    with contextlib.redirect_stdout(nhat_ky):
+        ket_qua = route_document(str(pdf), save=False, standard=chuan)
     du_doan = ket_qua.values()
 
     diem = cham_mot_tai_lieu(gold, du_doan)
@@ -198,6 +212,11 @@ def main() -> int:
     hong: list[tuple[str, str]] = []
     thieu_pdf: list[str] = []
 
+    che_do = "chuan_tu_gold" if tham_so.chuan_tu_gold else "dau_cuoi"
+    THU_MUC_RA.mkdir(parents=True, exist_ok=True)
+    duong_dan_nhat_ky = THU_MUC_RA / f"tap_gold_{che_do}_pipeline.log"
+    nhat_ky = duong_dan_nhat_ky.open("w", encoding="utf-8")
+
     for i, duong_dan_gold in enumerate(cac_gold, 1):
         gold = doc_gold(duong_dan_gold)
         pdf = tham_so.thu_muc_pdf / f"{gold['doc_id']}.pdf"
@@ -207,12 +226,14 @@ def main() -> int:
 
         print(f"[{i:2d}/{len(cac_gold)}] {gold['doc_id']} …", file=sys.stderr, flush=True)
         try:
-            cac_diem.append(chay_mot_tai_lieu(gold, pdf, tham_so.chuan_tu_gold))
+            cac_diem.append(chay_mot_tai_lieu(gold, pdf, tham_so.chuan_tu_gold, nhat_ky))
         except Exception as loi:  # noqa: BLE001
             # Bắt rộng có chủ đích: một tài liệu nổ không được phép giết cả
             # lượt chạy vốn tốn tiền gọi API cho những tài liệu đã xong.
             hong.append((gold["doc_id"], f"{type(loi).__name__}: {loi}"))
             traceback.print_exc(file=sys.stderr)
+
+    nhat_ky.close()
 
     if not cac_diem:
         print("Không tài liệu nào chạy được.", file=sys.stderr)
@@ -221,11 +242,9 @@ def main() -> int:
         return 1
 
     tong_hop = gop(cac_diem)
-    che_do = "chuan_tu_gold" if tham_so.chuan_tu_gold else "dau_cuoi"
 
     # Ghi TRƯỚC khi in: lượt chạy này tốn tiền gọi API, nên một lỗi định
     # dạng ở hàm in không được phép làm mất kết quả.
-    THU_MUC_RA.mkdir(parents=True, exist_ok=True)
     duong_dan_ra = THU_MUC_RA / f"tap_gold_{che_do}.json"
     duong_dan_ra.write_text(
         json.dumps(
@@ -247,7 +266,11 @@ def main() -> int:
     in_bang(cac_diem, tong_hop, hong)
     if thieu_pdf:
         print(f"\nChưa tải PDF, đã bỏ qua: {', '.join(thieu_pdf)}")
-    print(f"\nKết quả đầy đủ: {duong_dan_ra}")
+    print(
+        f"\nKết quả đầy đủ: {duong_dan_ra}\n"
+        f"Kết xuất thô của pipeline (CÓ giá trị từng ô — xem cảnh báo Luật 1 "
+        f"ở đầu file này): {duong_dan_nhat_ky}"
+    )
 
     return 0
 

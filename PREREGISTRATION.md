@@ -301,7 +301,7 @@ giống nhau đến mức nếu một trang vào train và một trang vào test
 
 ## Sửa đổi
 
-**Mười ba tu chính, không cái nào được rút gọn hay viết đè.** Đó là điều kiện
+**Mười bốn tu chính, không cái nào được rút gọn hay viết đè.** Đó là điều kiện
 để việc đăng ký trước còn giá trị: một bản ghi sửa được sau khi thấy kết quả
 thì không chứng minh được gì. Mục lục dưới đây thêm ngày 26/08/2026 để tìm
 nhanh, và nó là thứ DUY NHẤT được thêm vào phần này ngoài các tu chính.
@@ -319,6 +319,7 @@ nhanh, và nó là thứ DUY NHẤT được thêm vào phần này ngoài các 
 | 25/08 | Bộ chỉ tiêu chuyển sang **kịch bản E** (27/26 chỉ tiêu, 9 đẳng thức) | H0, H2, H3 |
 | 25/08 | Giao thức trần người bỏ con số 15 phút cố định | diễn giải kết quả |
 | 26/08 | Hệ số 0,6 được chốt; `thoi_gian_giay` đổi định nghĩa | diễn giải kết quả |
+| 26/08 | Độ phân giải bản quét thành hiệp biến ghi trước, phân tích thứ cấp | H1, H2, giới hạn |
 
 Mọi sửa đổi ghi vào đây kèm ngày và lý do, không sửa đè lên trên.
 
@@ -851,3 +852,42 @@ không có số liệu nào phải bỏ đi. Không chỉ số nào của H0–H
 chính 25/08 — nơi tài liệu đầu tiên chạy trước tu chính đáng lẽ phải chặn nó —
 tu chính này được ghi **trước** khi bất kỳ tài liệu nào được gán nhãn dưới
 giao thức bấm giờ mới.
+
+---
+
+### 26/08/2026 (muộn nhất) — Độ phân giải bản quét là hiệp biến, ghi trước khi có kết quả
+
+**Cam kết thêm, không cam kết nào bị rút.** Kể từ đây mỗi tài liệu gold mang
+một số đo độ phân giải bản quét, ghi ở khoá `do_phan_giai_dpi` trong
+`data/nguon_gold.json` và sinh bằng `python src/do_do_phan_giai.py`.
+
+**Vì sao phải đăng ký trước, dù bản này chưa từng nhắc tới độ phân giải.**
+`ANNOTATION-GUIDELINE.md` mục 7 vừa đổi nhóm Stress thứ ba sang trục độ phân
+giải, nên từ nay tập gold có một biến giải thích mà trước đó không có. Một
+biến như thế rất dễ trở thành thứ được lôi ra sau khi bảng kết quả đã xong,
+để giải thích một chênh lệch không mong đợi — và lúc đó không ai phân biệt
+được nó với việc đi tìm hậu nghiệm. Ghi trước là cách duy nhất giữ nó dùng
+được.
+
+**Nó dùng vào việc gì, và không dùng vào việc gì.**
+
+- **Được dùng** cho một phân tích THỨ CẤP, khai báo là thứ cấp trong bài: hồi
+  quy hoặc tương quan giữa độ phân giải và tỷ lệ lỗi mức trường, để trả lời
+  câu "kết quả có phụ thuộc chất lượng ảnh không".
+- **Được dùng** để chọn tài liệu vào nhóm Stress, theo thứ hạng trong tập
+  gold chứ không theo ngưỡng tuyệt đối.
+- **KHÔNG được dùng** để loại tài liệu khỏi phân tích chính, dù số đo thấp
+  đến đâu. Loại theo một biến đo được sau khi đã thấy kết quả là cắt mẫu.
+- **KHÔNG đổi** chỉ số chính hay điều kiện phản chứng của bất kỳ giả thuyết
+  nào. H1, H2, H3 giữ nguyên định nghĩa.
+
+**Không có ngưỡng nào được chốt ở đây**, cố ý. Số đo trên mười tài liệu đầu
+là 89,9–295,8 dpi, nhưng **sáu trong mười rơi đúng 200,0 dpi** — phân bố dồn
+cục chứ không trải đều. Chốt một ngưỡng trên phân bố như thế là chọn tham số
+trên mẫu mỏng. Ngưỡng, nếu về sau cần, phải là tu chính riêng và phải ghi
+trước khi nhìn bảng kết quả tương ứng.
+
+**Giới hạn phải nêu trong bài:** độ phân giải không bao trọn chất lượng ảnh.
+Trang lệch, dấu mộc đè lên chữ số và in mờ lệch nét là những trục riêng, hiện
+chỉ ghi bằng lời chứ chưa đo được, nên một hệ số tương quan bằng 0 với dpi
+KHÔNG cho phép kết luận rằng chất lượng ảnh không ảnh hưởng.

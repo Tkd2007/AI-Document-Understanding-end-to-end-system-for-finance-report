@@ -8,7 +8,7 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   chỉ trong một ngày, vì chính commit cập nhật nó lại thành commit mới nhất.
   Chạy `git log --oneline -1` và `git status -sb`. Quy ước: **push sau mỗi
   commit**, nên `research` khớp `origin/research` là trạng thái bình thường.
-- **Test:** **481 xanh / 0 đỏ**, chạy hết khoảng 90 giây.
+- **Test:** **484 xanh / 0 đỏ**, chạy hết khoảng 50 giây.
   `ruff check src tests chay_gan_nhan.py` sạch.
 - **Bộ chỉ tiêu:** **27 với TT99, 26 với TT200; 9 đẳng thức** — kịch bản E,
   thi công 25/08/2026 (`f1c2738`). MỐC 1 đã đóng.
@@ -24,7 +24,9 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   nữa mới chốt được số phút cho giao thức trần người — xem mục 19.4 bước 2.
 - **Cập nhật:** 26/08/2026 (lần 3) — cả 10 tài liệu của danh mục đầu đã gán
   nhãn xong (mục 19.6), nên các con số đếm ở khối này và ở mục 0 được đồng bộ
-  lại theo `data/gold/` chứ không còn theo lần cập nhật trước.
+  lại theo `data/gold/`. **Câu 10 và Câu 11 đã đóng**: nhóm Stress thứ ba đo
+  bằng độ phân giải bản quét ghi làm biến liên tục (mục 19.7), và ký hiệu mẫu
+  thôi là dấu hiệu nhận diện chuẩn.
 
 ---
 
@@ -46,7 +48,7 @@ mục 16 (bước kế tiếp), mục 15 (lệnh hay dùng).
 | **16** | **Bước kế tiếp** | chọn việc |
 | 17 | Đã quyết nhưng chưa thi công | tránh làm lại việc đã quyết |
 | 18 | Nơi nộp — ICDAR 2027, hạn 28/02/2027 | lập lịch |
-| **19** | **Tầng gold**: công cụ, đồng hồ, nguồn, 10 tài liệu đầu | việc đang làm |
+| **19** | **Tầng gold**: công cụ, đồng hồ, trình tự, nguồn, độ phân giải | việc đang làm |
 | A | Hồ sơ đối chiếu Thông tư (Mốc 1) | tra mã số, đẳng thức, cạm bẫy văn bản |
 | B | Sổ thi công phương án C, **bước D chưa làm** | làm tiếp nhận diện chuẩn |
 
@@ -62,6 +64,7 @@ chứ không phải chi tiết cài đặt.
 Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "Câu 4 chọn ...".
 
 **Đang chờ:** Câu 3 (hoãn được), Câu 8 (chỉ chặn lượt chạy Mốc 3 kế tiếp).
+Không câu nào đang chặn việc gán nhãn.
 
 **Mốc 3 đã chạy xong lúc 16:05 ngày 25/08/2026 — điều kiện dừng KHÔNG kích
 hoạt.** Xem mục 13c. Việc kế tiếp không còn bị chặn: gán nhãn `data/gold/`
@@ -74,13 +77,14 @@ liên tục nghịch đảo trọn vẹn — tức thiết kế đang chọn ca 
 baseline 9. Có tiêm **nhiều hơn một lỗi mỗi lượt** ở lượt chạy tới không? Đây
 là thay đổi thiết kế thí nghiệm nên phải vào mục Sửa đổi của
 `PREREGISTRATION.md` TRƯỚC khi chạy. Chi tiết và số đo ở mục 13c.
-**Câu 10 — MỚI, không chặn ngay nhưng đổi một cam kết.** Đo trên 23 tài liệu
-của 20 doanh nghiệp: **không tài liệu nào là PDF chữ, tất cả đều là ảnh quét**
-— kể cả `VNM_2026Q1_TT99` đã gán nhãn. Nhóm Stress "bản scan chất lượng thấp"
-ở `ANNOTATION-GUIDELINE.md` mục 7 vì thế không phân biệt được gì. Đổi tiêu chí
-nhóm đó thành **độ phân giải bản quét** (dải đo được: ~100 dpi tới ~432 dpi,
-kèm trang lệch) hay giữ nguyên chữ và chỉ diễn giải lại? Số đo và lập luận ở
-mục 19.6(a). Đổi thì phải ghi tu chính.
+**Câu 10 — ĐÃ TRẢ LỜI 26/08/2026: đổi tiêu chí sang độ phân giải bản quét,
+ghi làm biến LIÊN TỤC chứ không chia nhóm theo ngưỡng.** Nhóm Stress thứ ba ở
+`ANNOTATION-GUIDELINE.md` mục 7 nhận ra bằng `do_phan_giai_dpi` trong
+`data/nguon_gold.json`, sinh bằng `python src/do_do_phan_giai.py`; chọn tài
+liệu theo thứ hạng trong tập gold, không theo một con số dpi tuyệt đối. Hai tu
+chính đã ghi: mục Sửa đổi của guideline (đổi tiêu chí) và của
+`PREREGISTRATION.md` (độ phân giải thành hiệp biến, chỉ dùng cho phân tích
+thứ cấp, không được dùng để loại tài liệu). Số đo và cạm bẫy ở mục 19.7.
 
 **Câu 11 — ĐÃ TRẢ LỜI 26/08/2026: bỏ ký hiệu mẫu khỏi bảng dấu hiệu.** Mục
 3.7 của `ANNOTATION-GUIDELINE.md` từng xếp `B 01a - DN` là dấu hiệu TT99,
@@ -1059,6 +1063,10 @@ PYTHONIOENCODING=utf-8 python src/constraints.py
 # TẢI 10 tài liệu gold đầu về data/bctc/ (danh mục ở data/nguon_gold.json)
 python src/tai_bctc.py
 
+# ĐO độ phân giải bản quét — trục phân nhóm Stress thứ ba (mục 19.7)
+python src/do_do_phan_giai.py            # chỉ in bảng
+python src/do_do_phan_giai.py --ghi      # ghi vào data/nguon_gold.json
+
 # CÔNG CỤ GÁN NHÃN tập gold, rồi mở http://127.0.0.1:8100
 # Dùng launcher chứ ĐỪNG gọi thẳng uvicorn: lệnh gọi thẳng cần đặt biến môi
 # trường, mà `VAR=x lệnh` chạy trên bash nhưng LỖI CÚ PHÁP trên PowerShell —
@@ -1323,7 +1331,7 @@ trước khi nộp, không tra liên tục.
 
 ---
 
-## 19. Tầng gold — công cụ, đồng hồ, nguồn tài liệu, 10 tài liệu đầu
+## 19. Tầng gold — công cụ, đồng hồ, trình tự, nguồn tài liệu, độ phân giải
 
 Viết 25/08/2026. Đây là mục mô tả hiện trạng của tầng gold; trước mục này,
 mọi tài liệu trong repo đều giả định `data/gold/` còn trống.
@@ -1606,10 +1614,13 @@ lại chính `VNM_2026Q1_TT99` — tài liệu gold đầu tiên: 169 byte trên
 Nó cũng là ảnh quét.
 
 Hệ quả cho guideline mục 7: nhóm Stress **"bản scan chất lượng thấp"** như
-đang viết không phân biệt được gì, vì mọi tài liệu đều là bản scan. Trục đo
-được là **độ phân giải và độ sạch của bản quét**, và nó trải rộng thật:
-`MWG_2025Q1` ~432 dpi so với `DLG_2026Q2` ~100 dpi và `SBT_2025Q2` ~127 dpi
-kèm trang lệch. Xem Câu 10 ở mục 0.
+viết cũ không phân biệt được gì, vì mọi tài liệu đều là bản scan. **ĐÃ SỬA
+26/08/2026** — nhóm đó nay đo bằng độ phân giải bản quét; số đo, cạm bẫy và
+hai tu chính kèm theo ở **mục 19.7**.
+
+Ba con số ước lượng bằng mắt từng ghi ở đây (`MWG` ~432 dpi, `SBT` ~127 dpi,
+`DGC` ~283 dpi) đều SAI và đã bỏ — chúng chia số điểm ảnh cho sai cạnh của
+trang ở những tài liệu đặt ảnh xoay 90°. Số đo đúng ở mục 19.7.
 
 Đây cũng là tin tốt cho hướng nghiên cứu: cả pipeline đi từ ảnh, nên không có
 tài liệu nào "dễ" theo kiểu đọc thẳng text layer, và luận điểm đọc lại nguồn
@@ -1642,6 +1653,72 @@ tắc sai ấy — `FORM_MARKERS` trong `src/fields_config.py` thì đã đúng 
 là doanh nghiệp giữ tên gọi cũ sau ngày TT99 hiệu lực thì đó là ca nhận diện
 chuẩn khó nhất có thể có, và **quy tắc "2026 thì là TT99" sai** — quy tắc ấy
 đang được dùng ngầm để chọn tài liệu, tuy không dùng để gán nhãn.
+
+### 19.7 Độ phân giải bản quét — số đo và cạm bẫy, 26/08/2026
+
+Đây là chỗ trả lời Câu 10. Nhóm Stress thứ ba của guideline mục 7 đổi từ "bản
+scan chất lượng thấp" — tiêu chí mà 100% quần thể thoả, tức không chia được
+nhóm nào — sang **độ phân giải bản quét**, ghi làm **biến liên tục**.
+
+**Công cụ:** `python src/do_do_phan_giai.py` in bảng, thêm `--ghi` thì ghi
+vào khoá `do_phan_giai_dpi` của từng mục trong `data/nguon_gold.json`. Đừng
+sửa tay khoá đó.
+
+| doc_id | dpi (trung vị) | Ghi chú |
+|---|---:|---|
+| `SBT_2025Q2_TT200` | **89,9** | thấp nhất lô, kèm trang lệch |
+| `DLG_2026Q2_TT99` | **100,0** | kèm trang lệch và nhoè |
+| `HNG_2025H1_TT200` | **143,9** | tài liệu DUY NHẤT trộn nhiều độ phân giải: có trang tới 300 |
+| `HPG_2026Q2_TT99` | 200,0 | |
+| `VRE_2026Q1_TT99` | 200,0 | |
+| `TTF_2026Q1_TT99` | 200,0 | |
+| `BMP_2026Q1_TT99` | 200,0 | |
+| `DGC_2025Q2_TT200` | 200,0 | |
+| `VHC_2025Q1_TT200` | 200,0 | |
+| `MWG_2025Q1_TT200` | **295,8** | cao nhất lô |
+
+Dải 89,9–295,8 dpi, trung vị 200,0.
+
+**Giới hạn đọc thẳng ra khỏi bảng: sáu trong mười rơi đúng 200,0 dpi.** Phân
+bố dồn cục chứ không trải đều, nên ở quy mô mười tài liệu sức phân biệt của
+trục này nằm gần hết ở hai đuôi. Đủ 100 tài liệu thì đo lại phân bố TRƯỚC khi
+tin vào một hệ số tương quan nào.
+
+**Cạm bẫy đã mất thời gian, đừng lặp lại: `horizontal_dpi` và `vertical_dpi`
+của pdfium SAI ở trang đặt ảnh xoay.** Hai trường đó chỉ chia cho phần đường
+chéo của ma trận đặt ảnh. Ma trận xoay 90° có đường chéo bằng 0 và giá trị
+nằm ở hai ô còn lại, nên pdfium chia nhầm cạnh. `SBT_2025Q2_TT200` bị báo
+`127,3 / 63,5` dpi — trông như bản quét bị kéo dãn gấp đôi theo một chiều —
+trong khi sự thật là **90 dpi đều cả hai chiều**, chỉ thấp chứ không méo.
+
+Cách đúng là chiếu qua ma trận: cạnh ngang của ảnh trải theo véc-tơ `(a, b)`,
+cạnh dọc theo `(c, d)`, lấy chuẩn Euclid từng véc-tơ. Đúng cho cả trang xoay
+lẫn trang thẳng. Đã chốt bằng test ở `tests/test_do_do_phan_giai.py`.
+
+Cùng cái bẫy ấy giải thích ba con số ước lượng bằng mắt trước đó: `MWG` ~432
+(thật: 295,8), `DGC` ~283 (thật: 200,0), `HNG` ~204 (thật: 143,9). Cả ba đều
+là số điểm ảnh chia cho **chiều rộng** trang trong khi ảnh nằm xoay. Chúng đã
+bị bỏ khỏi `da_kiem` của `data/nguon_gold.json` để file không mang hai con số
+chỏi nhau cho cùng một thứ.
+
+**Hai tu chính đã ghi.** Guideline mục Sửa đổi ghi việc đổi tiêu chí nhóm
+Stress. `PREREGISTRATION.md` mục Sửa đổi ghi độ phân giải thành **hiệp biến
+đăng ký trước**: được dùng cho phân tích THỨ CẤP và cho việc chọn tài liệu
+theo thứ hạng, **không** được dùng để loại tài liệu khỏi phân tích chính, và
+không đổi chỉ số chính hay điều kiện phản chứng của giả thuyết nào. Lý do
+phải đăng ký: một biến giải thích mới rất dễ bị lôi ra sau khi bảng kết quả
+đã xong để giải thích một chênh lệch không mong đợi, và lúc đó không ai phân
+biệt được nó với việc đi tìm hậu nghiệm.
+
+**Không có ngưỡng nào được chốt**, cố ý — chốt "thấp là dưới X dpi" trên một
+phân bố dồn cục của mười tài liệu là chọn tham số trên mẫu mỏng. Ngưỡng, nếu
+về sau cần, phải là tu chính riêng ghi trước khi nhìn bảng kết quả tương ứng.
+
+**Độ phân giải không bao trọn chữ "chất lượng".** Trang lệch, dấu mộc đỏ đè
+lên chữ số, in mờ lệch nét là những trục riêng mà máy chưa đo được —
+`VHC_2025Q1_TT200` ghi đúng mấy thứ đó trong `notes`. Hệ quả phải nêu trong
+bài: tương quan bằng 0 với dpi KHÔNG cho phép kết luận chất lượng ảnh không
+ảnh hưởng.
 
 ---
 

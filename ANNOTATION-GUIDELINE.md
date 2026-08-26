@@ -439,17 +439,28 @@ Trong đó **tập Stress 30 tài liệu** phải cố ý gồm bốn nhóm:
 |---|---|---|
 | Doanh nghiệp **lỗ** | VCSH âm, lãi gộp âm — ca biên phá vỡ mọi bất đẳng thức giả định có lãi | LNST âm, hoặc VCSH âm |
 | Báo cáo ghi **"triệu đồng"** | Ca biên của mỏ neo scale | Đọc dòng đơn vị tính |
-| Bản **scan** chất lượng thấp | Đo độ bền với chất lượng ảnh | Mở PDF, xem có phải ảnh nhúng không — **xem ghi chú ngay dưới bảng, cách nhận ra này đã hỏng** |
+| **Độ phân giải bản quét thấp** | Đo độ bền với chất lượng ảnh | `do_phan_giai_dpi.trung_vi` trong `data/nguon_gold.json`, sinh bằng `python src/do_do_phan_giai.py` — **sửa 26/08/2026**, xem ghi chú dưới bảng |
 | Công ty **vốn hoá nhỏ, ít được nhắc** | Kiểm memorization | Không thuộc VN30 |
 
-**Ghi chú 26/08/2026 — mọi báo cáo đều là ảnh quét, nên nhóm thứ ba như đang
-viết không phân biệt được gì.** Đo trên 23 tài liệu của 20 doanh nghiệp niêm
-yết: không tài liệu nào có lớp text thật; `pdftotext` lấy ra 44–734 byte cho
-cả tài liệu 25–65 trang, và phần ít ỏi đó là chú thích chữ ký số. Chính
-`VNM_2026Q1_TT99` cũng vậy. Trục thật sự đo được là **độ phân giải và độ sạch
-của bản quét** — dải quan sát được trải từ ~100 dpi kèm trang lệch tới ~432
-dpi. Việc sửa lời tiêu chí đang chờ người chủ trì quyết (`HANDOFF.md` mục 0,
-Câu 10); tới lúc đó, đọc nhóm thứ ba theo nghĩa "bản quét độ phân giải thấp".
+**Ghi chú 26/08/2026 — vì sao nhóm thứ ba đổi tiêu chí.** Tiêu chí cũ là
+"bản scan chất lượng thấp", nhận ra bằng cách mở PDF xem có phải ảnh nhúng
+không. Đo trên 23 tài liệu của 20 doanh nghiệp niêm yết thì tiêu chí ấy được
+**100% quần thể thoả**: không tài liệu nào có lớp text thật, `pdftotext` lấy
+ra 44–734 byte cho cả tài liệu 25–65 trang và phần ít ỏi đó là chú thích chữ
+ký số. Một tiêu chí mà cả tổng thể đều thoả thì không chia được nhóm nào.
+
+**Cách chọn tài liệu cho nhóm này: KHÔNG có ngưỡng dpi.** Ghi số đo vào danh
+mục rồi chọn theo **thứ hạng trong chính tập gold** — lấy tài liệu ở phần
+thấp của dải, không lấy tài liệu "dưới X dpi". Chốt một con số X lúc mới có
+10 tài liệu là chọn tham số trên mẫu mỏng, và đó cũng là tham số dễ chỉnh lại
+sau khi đã nhìn thấy kết quả nhất. Về sau phân tích bằng tương quan trên biến
+liên tục, mạnh hơn so hai nhóm chia bằng ngưỡng.
+
+**Độ phân giải không bao trọn chữ "chất lượng".** Trang lệch, dấu mộc đỏ đè
+lên chữ số, in mờ lệch nét đều là thứ máy chưa đo được và mắt thì thấy ngay.
+Ghi chúng vào `da_kiem` của danh mục bằng lời, và ghi vào `notes` của file
+gold nếu chúng thật sự cản việc đọc số — đó là hai trục khác nhau, đừng gộp
+vào con số dpi.
 
 Danh mục tài liệu đã chọn nằm ở `data/nguon_gold.json`, tải bằng
 `python src/tai_bctc.py`. Mỗi mục ghi rõ vai trò của tài liệu trong bốn nhóm
@@ -486,7 +497,46 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 > Mọi thay đổi guideline ghi vào đây kèm **ngày** và **lý do**, và ghi rõ
 > **những tài liệu nào phải gán nhãn lại**. Không sửa đè lên nội dung trên.
 
-### 26/08/2026 (muộn nhất) — Ký hiệu mẫu thôi là dấu hiệu nhận diện chuẩn
+### 26/08/2026 (muộn nhất) — Nhóm Stress thứ ba đo bằng độ phân giải bản quét
+
+**Chỗ sửa:** mục 7 đổi nhóm Stress thứ ba từ "bản scan chất lượng thấp" thành
+"độ phân giải bản quét thấp", và đổi cách nhận ra từ phán đoán mắt người sang
+số đo trong `data/nguon_gold.json`.
+
+**Lý do — tiêu chí cũ được 100% quần thể thoả.** Cách nhận ra cũ là "mở PDF,
+xem có phải ảnh nhúng không". Đo trên 23 tài liệu của 20 doanh nghiệp niêm
+yết thì không tài liệu nào có lớp text thật; `pdftotext` lấy ra 44–734 byte
+cho cả tài liệu 25–65 trang, và phần ít ỏi đó là chú thích chữ ký số, kể cả
+ở `VNM_2026Q1_TT99`. Một tiêu chí mà cả tổng thể đều thoả thì không chọn ra
+được gì, nên nhóm thứ ba đang chiếm một phần tư tập Stress mà không đóng góp
+trục biến thiên nào. Giữ nguyên chữ và "diễn giải lại" thì để lại trong một
+tài liệu cam kết một tiêu chí đã biết chắc là vô hiệu — đúng thứ mà việc viết
+guideline trước sinh ra để chống.
+
+**Trục thay thế trải rộng thật, đã đo.** `python src/do_do_phan_giai.py` trên
+mười tài liệu của danh mục đầu cho **89,9 – 295,8 dpi**, trung vị 200,0. Số
+đo ghi vào khoá `do_phan_giai_dpi` của từng mục trong `data/nguon_gold.json`.
+
+**Ghi làm biến LIÊN TỤC, không chia nhóm theo ngưỡng.** Chốt một ngưỡng "thấp
+là dưới X dpi" lúc mới có 10 tài liệu là chọn tham số trên mẫu mỏng, và là
+tham số dễ bị chỉnh lại nhất sau khi đã nhìn thấy kết quả. Chọn tài liệu cho
+nhóm thì theo thứ hạng trong chính tập gold; phân tích thì bằng tương quan
+trên biến liên tục.
+
+**Một giới hạn phải nói ra:** sáu trong mười tài liệu đo được **đúng 200,0
+dpi**. Phân bố hiện dồn cục chứ không trải đều, nên sức phân biệt của trục
+này ở quy mô 10 tài liệu chủ yếu nằm ở hai đuôi — `SBT` với `DLG` ở đầu thấp,
+`MWG` ở đầu cao. Đủ 100 tài liệu thì đo lại phân bố trước khi tin vào một
+phép tương quan nào.
+
+**Độ phân giải không bao trọn chữ "chất lượng".** Trang lệch, dấu mộc đỏ đè
+lên chữ số, in mờ lệch nét là những trục khác mà máy chưa đo được — ghi bằng
+lời vào `da_kiem` của danh mục và `notes` của file gold, đừng gộp vào dpi.
+
+**Không tài liệu nào phải gán nhãn lại:** tu chính này đổi cách CHỌN tài liệu
+và cách mô tả chúng, không đổi một quy tắc đọc số nào.
+
+### 26/08/2026 (muộn hơn nữa) — Ký hiệu mẫu thôi là dấu hiệu nhận diện chuẩn
 
 **Chỗ sửa:** mục 3.7 bỏ dòng `Ký hiệu mẫu B 01a - DN → TT99` khỏi bảng dấu
 hiệu, xếp hai dòng số hiệu thông tư lên trước, và thêm một luật phủ định nói

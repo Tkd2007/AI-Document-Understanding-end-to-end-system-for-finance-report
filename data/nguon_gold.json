@@ -9,7 +9,13 @@
     "KHÔNG được chép trường này — công cụ gán nhãn cố ý không đọc file này.",
     "",
     "da_kiem liệt kê những gì đã mở tài liệu ra xem tận nơi. Thứ không nằm",
-    "trong đó là suy đoán khi chọn, không phải sự thật đã kiểm."
+    "trong đó là suy đoán khi chọn, không phải sự thật đã kiểm.",
+    "",
+    "do_phan_giai_dpi là số ĐO BẰNG MÁY, sinh bởi src/do_do_phan_giai.py — đừng",
+    "sửa tay. trung_vi lấy theo trang, và mỗi trang lấy chiều THƯA HƠN trong hai",
+    "chiều vì đó là chiều quyết định nét chữ. Ghi làm biến LIÊN TỤC, không chia",
+    "nhóm theo ngưỡng: chốt một ngưỡng lúc mới có 10 tài liệu là chọn tham số",
+    "trên mẫu mỏng. Lý do đầy đủ ở tu chính 26/08/2026 của ANNOTATION-GUIDELINE.md."
   ],
   "nguon": "finance.vietstock.vn — công bố thông tin của HOSE/HNX/UPCoM",
   "ngay_lap": "2026-08-26",
@@ -27,9 +33,16 @@
       "da_kiem": [
         "tiêu đề 'BÁO CÁO TÌNH HÌNH TÀI CHÍNH CÔNG TY MẸ' — dấu hiệu TT99",
         "cột số ghi VND",
-        "bản scan ~200 dpi, không có lớp text"
+        "không có lớp text"
       ],
-      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/HPG_Baocaotaichinh_Q2_2026_Congtyme.pdf?ver=fc4c80c2"
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/HPG_Baocaotaichinh_Q2_2026_Congtyme.pdf?ver=fc4c80c2",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 25,
+        "so_trang_tong": 25
+      }
     },
     {
       "doc_id": "VRE_2026Q1_TT99",
@@ -46,7 +59,14 @@
         "dòng 'Đơn vị tính: Triệu VND' — hệ số 1.000.000",
         "cột so sánh ghi '(trình bày lại)'"
       ],
-      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY 1/VRE_Baocaotaichinh_Q1_2026_Congtyme.pdf"
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY 1/VRE_Baocaotaichinh_Q1_2026_Congtyme.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 36,
+        "so_trang_tong": 36
+      }
     },
     {
       "doc_id": "DLG_2026Q2_TT99",
@@ -62,9 +82,16 @@
         "tiêu đề 'BÁO CÁO TÌNH HÌNH TÀI CHÍNH' — dấu hiệu TT99",
         "cột ghi (VND)",
         "mã 420 lợi nhuận sau thuế chưa phân phối = (1.988.004.827.520)",
-        "trang quét hơi lệch và nhoè, kém nhất trong mười tài liệu"
+        "trang quét hơi lệch và nhoè"
       ],
-      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/DLG_Baocaotaichinh_Q2_2026_Congtyme.pdf?ver=763e9545"
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/DLG_Baocaotaichinh_Q2_2026_Congtyme.pdf?ver=763e9545",
+      "do_phan_giai_dpi": {
+        "trung_vi": 100.0,
+        "nho_nhat": 100.0,
+        "lon_nhat": 100.0,
+        "so_trang_do_duoc": 54,
+        "so_trang_tong": 54
+      }
     },
     {
       "doc_id": "TTF_2026Q1_TT99",
@@ -77,13 +104,20 @@
       "chuan_du_kien": "TT99",
       "vai_tro": "Ca biên DOANH NGHIỆP LỖ: lỗ luỹ kế ăn mòn phần lớn vốn điều lệ.",
       "da_kiem": [
-        "bản scan ~199 dpi, không có lớp text"
+        "không có lớp text"
       ],
       "chua_kiem": [
         "chuẩn mẫu biểu chưa mở ra xem tận mắt — suy từ kỳ báo cáo 2026",
         "lỗ 60,42 tỷ quý 1/2026 lấy từ báo chí, chưa đối chiếu trên chính báo cáo, và con số đó là HỢP NHẤT trong khi đây là bản riêng"
       ],
-      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY 1/TTF_Baocaotaichinh_Q1_2026_Congtyme.pdf"
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY 1/TTF_Baocaotaichinh_Q1_2026_Congtyme.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 41,
+        "so_trang_tong": 41
+      }
     },
     {
       "doc_id": "BMP_2026Q1_TT99",
@@ -97,10 +131,16 @@
       "vai_tro": "Đối chứng sạch cho TT99: bản in rõ, đơn vị VND, có lãi.",
       "da_kiem": [
         "tiêu đề 'tình hình tài chính' ở trang 4 — dấu hiệu TT99",
-        "dòng 'Đơn vị tính: VND'",
-        "bản scan ~200 dpi"
+        "dòng 'Đơn vị tính: VND'"
       ],
-      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY 1/BMP_Baocaotaichinh_Q1_2026_Congtyme.pdf"
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY 1/BMP_Baocaotaichinh_Q1_2026_Congtyme.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 36,
+        "so_trang_tong": 36
+      }
     },
     {
       "doc_id": "DGC_2025Q2_TT200",
@@ -113,10 +153,16 @@
       "chuan_du_kien": "TT200",
       "vai_tro": "Đối chứng sạch cho TT200.",
       "da_kiem": [
-        "tiêu đề 'Bảng cân đối kế toán' ở trang 2 — dấu hiệu TT200",
-        "bản scan ~283 dpi"
+        "tiêu đề 'Bảng cân đối kế toán' ở trang 2 — dấu hiệu TT200"
       ],
-      "source_url": "https://static2.vietstock.vn/data/HOSE/2025/BCTC/VN/QUY 2/DGC_Baocaotaichinh_Q2_2025_Congtyme.pdf"
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2025/BCTC/VN/QUY 2/DGC_Baocaotaichinh_Q2_2025_Congtyme.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 37,
+        "so_trang_tong": 37
+      }
     },
     {
       "doc_id": "HNG_2025H1_TT200",
@@ -132,10 +178,16 @@
         "tiêu đề 'BẢNG CÂN ĐỐI KẾ TOÁN HỢP NHẤT GIỮA NIÊN ĐỘ' — dấu hiệu TT200",
         "đơn vị 'Ngàn VND' — hệ số 1.000",
         "mã 61 'Lỗ thuần sau thuế của công ty mẹ' = (258.898.322) ngàn VND",
-        "báo cáo đã soát xét bởi Ernst & Young",
-        "bản scan ~204 dpi"
+        "báo cáo đã soát xét bởi Ernst & Young"
       ],
-      "source_url": "https://static2.vietstock.vn/data/UPCOM/2025/BCTC/VN/QUY 2/HNG_Baocaotaichinh_6T_2025_Soatxet_Hopnhat.pdf"
+      "source_url": "https://static2.vietstock.vn/data/UPCOM/2025/BCTC/VN/QUY 2/HNG_Baocaotaichinh_6T_2025_Soatxet_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 143.9,
+        "nho_nhat": 143.9,
+        "lon_nhat": 300.0,
+        "so_trang_do_duoc": 59,
+        "so_trang_tong": 59
+      }
     },
     {
       "doc_id": "SBT_2025Q2_TT200",
@@ -154,7 +206,14 @@
         "hai cột là 31/12/2025 và 30/6/2025",
         "trang quét hơi lệch"
       ],
-      "source_url": "https://static2.vietstock.vn/data/HOSE/2025/BCTC/VN/QUY 2/SBT_Baocaotaichinh_Q2_2025_Hopnhat.pdf"
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2025/BCTC/VN/QUY 2/SBT_Baocaotaichinh_Q2_2025_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 89.9,
+        "nho_nhat": 89.9,
+        "lon_nhat": 89.9,
+        "so_trang_do_duoc": 62,
+        "so_trang_tong": 62
+      }
     },
     {
       "doc_id": "MWG_2025Q1_TT200",
@@ -165,15 +224,21 @@
       "nganh": "Bán lẻ",
       "quy_mo": "VN30",
       "chuan_du_kien": "TT200",
-      "vai_tro": "Đối cực CHẤT LƯỢNG ẢNH: bản quét nét nhất trong mười tài liệu, để đo chênh lệch so với DLG và SBT.",
+      "vai_tro": "Đối cực CHẤT LƯỢNG ẢNH: bản quét dày điểm ảnh nhất trong mười tài liệu (295,8 dpi), để đo chênh lệch so với SBT và DLG ở đầu kia của dải.",
       "da_kiem": [
-        "bản scan ~432 dpi — cao nhất trong lô",
         "không có lớp text"
       ],
       "chua_kiem": [
         "chuẩn mẫu biểu chưa mở ra xem tận mắt — suy từ kỳ báo cáo 2025"
       ],
-      "source_url": "https://static2.vietstock.vn/data/HOSE/2025/BCTC/VN/QUY 1/MWG_Baocaotaichinh_Q1_2025_Hopnhat.pdf"
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2025/BCTC/VN/QUY 1/MWG_Baocaotaichinh_Q1_2025_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 295.8,
+        "nho_nhat": 295.8,
+        "lon_nhat": 295.8,
+        "so_trang_do_duoc": 44,
+        "so_trang_tong": 44
+      }
     },
     {
       "doc_id": "VHC_2025Q1_TT200",
@@ -186,12 +251,19 @@
       "chuan_du_kien": "TT200",
       "vai_tro": "Chống memorization: doanh nghiệp ngoài VN30, ít được nhắc trong dữ liệu huấn luyện.",
       "da_kiem": [
-        "bản scan ~200 dpi, 40 trang, chỉ 1,3 MB"
+        "40 trang, chỉ 1,3 MB"
       ],
       "chua_kiem": [
         "chuẩn mẫu biểu chưa mở ra xem tận mắt — suy từ kỳ báo cáo 2025"
       ],
-      "source_url": "https://static2.vietstock.vn/data/HOSE/2025/BCTC/VN/QUY 1/VHC_Baocaotaichinh_Q1_2025_Congtyme.pdf"
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2025/BCTC/VN/QUY 1/VHC_Baocaotaichinh_Q1_2025_Congtyme.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 40,
+        "so_trang_tong": 40
+      }
     }
   ]
 }

@@ -8,7 +8,7 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   chỉ trong một ngày, vì chính commit cập nhật nó lại thành commit mới nhất.
   Chạy `git log --oneline -1` và `git status -sb`. Quy ước: **push sau mỗi
   commit**, nên `research` khớp `origin/research` là trạng thái bình thường.
-- **Test:** **477 xanh / 0 đỏ**, chạy hết khoảng 60 giây.
+- **Test:** **481 xanh / 0 đỏ**, chạy hết khoảng 90 giây.
   `ruff check src tests chay_gan_nhan.py` sạch.
 - **Bộ chỉ tiêu:** **27 với TT99, 26 với TT200; 9 đẳng thức** — kịch bản E,
   thi công 25/08/2026 (`f1c2738`). MỐC 1 đã đóng.
@@ -17,13 +17,14 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   `main` và trên pull request, nên **CI thực tế không bao giờ chạy** — mọi
   việc kiểm phải làm tại chỗ. Muốn CI có ích thì thêm `research` vào phần
   trigger của `.github/workflows/ci.yml`, KHÔNG phải merge.
-- **Tập gold:** **1 / khoảng 100** tài liệu đã gán nhãn; **10 tài liệu tiếp
-  theo đã chọn và tải xong**, nằm ở `data/bctc/` — xem mục 19.6. Việc gán nhãn
-  ĐÃ BẮT ĐẦU, bằng công cụ trong `src/gan_nhan/` — xem mục 19.
-- **Cập nhật:** 26/08/2026 (lần 2) — nguồn tài liệu đã chốt và 10 tài liệu
-  đầu đã tải (mục 19.6); hệ số 0,6 của giao thức trần người đã được người
-  dùng chốt (Câu 9 đóng); đồng hồ của công cụ gán nhãn chuyển sang **người
-  tự bấm**, kèm khoá trạng thái tường minh trong file gold (mục 19.5)
+- **Tập gold:** **11 / khoảng 100** tài liệu đã gán nhãn — trọn cả **10 tài
+  liệu của danh mục đầu** (mục 19.6) cộng `VNM_2026Q1_TT99` vốn có trước danh
+  mục. Công cụ ở `src/gan_nhan/` — xem mục 19. **Chỉ 8 trong 11 có đồng hồ
+  chạy thật** (`trang_thai_dong_ho` bằng `da_do`), nên còn thiếu **2 tài liệu**
+  nữa mới chốt được số phút cho giao thức trần người — xem mục 19.4 bước 2.
+- **Cập nhật:** 26/08/2026 (lần 3) — cả 10 tài liệu của danh mục đầu đã gán
+  nhãn xong (mục 19.6), nên các con số đếm ở khối này và ở mục 0 được đồng bộ
+  lại theo `data/gold/` chứ không còn theo lần cập nhật trước.
 
 ---
 
@@ -66,7 +67,8 @@ mười tài liệu vừa tải)**.
 
 **Mốc 3 đã chạy xong lúc 16:05 ngày 25/08/2026 — điều kiện dừng KHÔNG kích
 hoạt.** Xem mục 13c. Việc kế tiếp không còn bị chặn: gán nhãn `data/gold/`
-(hiện **1/100**, đã bắt đầu — mục 19), và ba baseline còn thiếu (4, 5, 7).
+(hiện **11/100**, trọn danh mục 10 tài liệu đầu — mục 19), và ba baseline còn
+thiếu (4, 5, 7).
 
 **Câu 8 — MỚI, đang chờ.** Phép đo `do_nghich_dao_mot_loi.py` cho thấy tầng
 XBRL tiêm đúng một lỗi mỗi lượt, mà lỗi đơn định vị được lại là ca bộ giải
@@ -1110,9 +1112,10 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
 
 Cập nhật 26/08/2026. Đường găng nay đi qua **tầng gold**, không còn qua Mốc 3.
 
-1. **Gán nhãn 10 tài liệu ở `data/bctc/`**, đồng hồ chạy thật (mục 19.5–19.6).
-   Đủ 10 thì tính trung vị và chốt số phút cho giao thức trần người. Hai trong
-   mười đang vướng Câu 11 (mục 0).
+1. **Gán nhãn thêm 2 tài liệu có đồng hồ chạy thật** (mục 19.4 bước 2). Mười
+   tài liệu của `data/bctc/` đã gán nhãn xong, nhưng chỉ 8 trong số đó đếm
+   được vào trung vị, nên phải chọn thêm 2 mã mới. Đủ 10 thì tính trung vị và
+   tuyên số phút cho giao thức trần người.
 2. **Chọn 90 mã còn lại** rồi thêm vào `data/nguon_gold.json`. Nay là việc
    chọn, không còn là việc dò nguồn.
 3. **Ba baseline còn thiếu: 4, 5, 7.**
@@ -1133,9 +1136,13 @@ nhất. Cả hai đều sai, và sai theo hướng có lợi:
 | Đo trần người | 3 giờ | ~1–2 giờ |
 | Tìm và tải tài liệu | 15–20 giờ | **rẻ hẳn từ 26/08** — có API và script, xem mục 19.6 |
 
-Con số 10 phút cho công đoạn điền vẫn là **ước lượng bằng cảm giác**, không
-phải đồng hồ: `VNM_2026Q1_TT99` có `thoi_gian_giay` bằng 0. Việc 1 ở trên
-sinh ra chính là để thay nó bằng số đo.
+**Cập nhật 26/08/2026 — con số 10 phút nay có đồng hồ thay cho cảm giác.**
+Tám tài liệu đã đo cho 361–579 giây, trung vị **442 giây ≈ 7,4 phút**, tức
+công đoạn điền RẺ HƠN ước lượng cảm giác chừng một phần tư. Chiếu sang 100
+tài liệu thì khoản "điền nhãn" rơi về **~12 giờ** thay vì ~17 giờ trong bảng
+trên; bảng giữ nguyên con số cũ vì nó là ước dựa trên 10 phút, và ghi đè nó
+lúc mới có 8 số đo là chỉnh dự trù theo mẫu mỏng. Đủ 10 số đo thì cập nhật
+bảng một lần, không sửa dần.
 
 ### Ba việc song song, không cái nào chặn cái nào
 
@@ -1454,12 +1461,30 @@ chứ không viết kết luận bây giờ.
    liệu đầu đã chọn, đã tải, đã kiểm. Xem mục 19.6. Khoản "tìm và tải" mà mục
    16 xếp là đắt nhất nay rẻ đi hẳn: việc còn lại là chọn 90 mã, không phải đi
    dò từng nguồn.
-2. **Chạy đồng hồ thật trên 10 tài liệu đầu.** Không cần chờ đủ 100 — cứ gán
-   nhãn tới đâu đồng hồ chạy tới đó. Đủ 10 thì tính trung vị và chốt số phút
-   cho giao thức trần người. Đồng hồ nay **không tự chạy**: bấm nút "Bắt đầu
-   bấm giờ" (mục 19.5). Quên bấm thì công cụ từ chối ghi, nên không mất số
-   một cách âm thầm nữa — nhưng `VNM_2026Q1_TT99` vẫn không tính, tức cần
-   thêm **10** tài liệu có đồng hồ chứ không phải 9.
+2. **Chạy đồng hồ thật trên 10 tài liệu — CÒN THIẾU 2.** Không cần chờ đủ
+   100: cứ gán nhãn tới đâu đồng hồ chạy tới đó, đủ 10 thì tính trung vị và
+   chốt số phút cho giao thức trần người. Đồng hồ **không tự chạy**: bấm nút
+   "Bắt đầu bấm giờ" (mục 19.5); quên bấm thì công cụ từ chối ghi, nên không
+   mất số một cách âm thầm nữa.
+
+   Hiện `data/gold/` có 11 file nhưng chỉ **8** mang `trang_thai_dong_ho`
+   bằng `da_do`: 361, 416, 433, 438, 446, 461, 506, 579 giây. Ba file không
+   tính là `VNM_2026Q1_TT99` (thiếu hẳn khoá, mục 19.2), `DGC_2025Q2_TT200`
+   và `TTF_2026Q1_TT99` (`khong_do`). Vậy còn thiếu **2 tài liệu có đồng hồ**,
+   và hai tài liệu ấy phải nằm ngoài 11 file đã có — gán nhãn lại một file cũ
+   thì đo nhịp của lần gán nhãn thứ hai, không phải nhịp của lần đầu.
+
+   Ghi trước để khỏi tưởng kết quả còn là ẩn số: **hai tài liệu cuối không
+   đổi được kết luận nữa.** Trung vị của 10 số là trung bình số thứ 5 và thứ
+   6; tám số đã có kẹp hai vị trí đó lại, nên dù hai số mới nhỏ tuỳ ý hay lớn
+   tuỳ ý, trung vị cũng chỉ chạy trong dải 435,5–453,5 giây. Nhân 0,6 ra
+   4,36–4,54 phút — **toàn dải nằm dưới sàn 5 phút**. Đồng hồ trần người vì
+   thế sẽ là **5 phút**, và điều đó đã cố định về mặt số học.
+
+   Dù vậy **vẫn phải đo đủ 10 rồi mới tuyên**, vì công thức đăng ký là "trung
+   vị của 10 tài liệu". Tuyên sớm vì "đằng nào cũng ra 5 phút" thì con số vẫn
+   đúng nhưng cam kết thì hỏng, và lần sau không còn cách nào phân biệt một
+   suy luận số học với một lần tự cho phép mình bỏ bước.
 3. **Chốt 20 hay 33 tài liệu gán nhãn đôi.** `ADDENDUM` mục 5 viết "một phần
    ba tập gold", chốt khi tập là 60 nên ra 20. Tập nay khoảng 100 nên cách
    diễn đạt đó tự nó thành 33. Phải chọn một, và ghi tu chính.
@@ -1551,7 +1576,8 @@ python src/tai_bctc.py                    # tải cả 10
 python chay_gan_nhan.py --pdf-dir data/bctc
 ```
 
-**Mười tài liệu, 5 TT99 + 5 TT200, mỗi tài liệu gánh một vai:**
+**Mười tài liệu, 5 TT99 + 5 TT200, mỗi tài liệu gánh một vai. Tính tới
+26/08/2026 cả mười đã gán nhãn xong**, nằm ở `data/gold/`:
 
 | doc_id | Vai | Đã kiểm tận mắt |
 |---|---|---|

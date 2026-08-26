@@ -8,7 +8,7 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   chỉ trong một ngày, vì chính commit cập nhật nó lại thành commit mới nhất.
   Chạy `git log --oneline -1` và `git status -sb`. Quy ước: **push sau mỗi
   commit**, nên `research` khớp `origin/research` là trạng thái bình thường.
-- **Test:** **470 xanh / 0 đỏ**, chạy hết khoảng 60 giây.
+- **Test:** **477 xanh / 0 đỏ**, chạy hết khoảng 60 giây.
   `ruff check src tests chay_gan_nhan.py` sạch.
 - **Bộ chỉ tiêu:** **27 với TT99, 26 với TT200; 9 đẳng thức** — kịch bản E,
   thi công 25/08/2026 (`f1c2738`). MỐC 1 đã đóng.
@@ -17,11 +17,13 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   `main` và trên pull request, nên **CI thực tế không bao giờ chạy** — mọi
   việc kiểm phải làm tại chỗ. Muốn CI có ích thì thêm `research` vào phần
   trigger của `.github/workflows/ci.yml`, KHÔNG phải merge.
-- **Tập gold:** **1 / khoảng 100** tài liệu. Việc gán nhãn ĐÃ BẮT ĐẦU, bằng
-  công cụ trong `src/gan_nhan/` — xem mục 19.
-- **Cập nhật:** 26/08/2026 — hệ số 0,6 của giao thức trần người đã được
-  người dùng chốt (Câu 9 đóng); đồng hồ của công cụ gán nhãn chuyển sang
-  **người tự bấm**, kèm khoá trạng thái tường minh trong file gold (mục 19.5)
+- **Tập gold:** **1 / khoảng 100** tài liệu đã gán nhãn; **10 tài liệu tiếp
+  theo đã chọn và tải xong**, nằm ở `data/bctc/` — xem mục 19.6. Việc gán nhãn
+  ĐÃ BẮT ĐẦU, bằng công cụ trong `src/gan_nhan/` — xem mục 19.
+- **Cập nhật:** 26/08/2026 (lần 2) — nguồn tài liệu đã chốt và 10 tài liệu
+  đầu đã tải (mục 19.6); hệ số 0,6 của giao thức trần người đã được người
+  dùng chốt (Câu 9 đóng); đồng hồ của công cụ gán nhãn chuyển sang **người
+  tự bấm**, kèm khoá trạng thái tường minh trong file gold (mục 19.5)
 
 ---
 
@@ -34,8 +36,9 @@ chứ không phải chi tiết cài đặt.
 
 Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "Câu 4 chọn ...".
 
-**Đang chờ:** Câu 3 (hoãn được) và Câu 8 (chỉ chặn lượt chạy Mốc 3 kế
-tiếp). Không câu nào đang chặn việc gán nhãn.
+**Đang chờ:** Câu 3 (hoãn được), Câu 8 (chỉ chặn lượt chạy Mốc 3 kế tiếp),
+**Câu 10 và Câu 11 (MỚI, 26/08/2026 — Câu 11 CHẶN việc gán nhãn hai trong
+mười tài liệu vừa tải)**.
 
 **Mốc 3 đã chạy xong lúc 16:05 ngày 25/08/2026 — điều kiện dừng KHÔNG kích
 hoạt.** Xem mục 13c. Việc kế tiếp không còn bị chặn: gán nhãn `data/gold/`
@@ -47,6 +50,24 @@ liên tục nghịch đảo trọn vẹn — tức thiết kế đang chọn ca 
 baseline 9. Có tiêm **nhiều hơn một lỗi mỗi lượt** ở lượt chạy tới không? Đây
 là thay đổi thiết kế thí nghiệm nên phải vào mục Sửa đổi của
 `PREREGISTRATION.md` TRƯỚC khi chạy. Chi tiết và số đo ở mục 13c.
+**Câu 10 — MỚI, không chặn ngay nhưng đổi một cam kết.** Đo trên 23 tài liệu
+của 20 doanh nghiệp: **không tài liệu nào là PDF chữ, tất cả đều là ảnh quét**
+— kể cả `VNM_2026Q1_TT99` đã gán nhãn. Nhóm Stress "bản scan chất lượng thấp"
+ở `ANNOTATION-GUIDELINE.md` mục 7 vì thế không phân biệt được gì. Đổi tiêu chí
+nhóm đó thành **độ phân giải bản quét** (dải đo được: ~100 dpi tới ~432 dpi,
+kèm trang lệch) hay giữ nguyên chữ và chỉ diễn giải lại? Số đo và lập luận ở
+mục 19.6(a). Đổi thì phải ghi tu chính.
+
+**Câu 11 — MỚI, ĐANG CHẶN hai tài liệu.** `ANNOTATION-GUIDELINE.md` **mục 3.7
+mâu thuẫn với mục 2 của chính nó**: mục 3.7 xếp ký hiệu `B 01a - DN` là dấu
+hiệu TT99, còn mục 2 viết in đậm rằng hậu tố `a`/`b` là KỲ BÁO CÁO chứ không
+phải Thông tư và cả hai Thông tư đều dùng đủ ba ký hiệu. Hai tài liệu vừa tải
+(`SBT_2025Q2_TT200`, `HNG_2025H1_TT200`) rơi đúng vào chỗ mâu thuẫn: ký hiệu
+`B01a-DN/HN` nhưng tiêu đề *Bảng cân đối kế toán*, nên theo mục 3.7 phải ghi
+`UNKNOWN` dù chúng rõ ràng là TT200. Bỏ dòng ký hiệu mẫu khỏi bảng mục 3.7,
+hay sửa nó thành một dấu hiệu khác? Chi tiết ở mục 19.6(b). Đây là sửa quy
+tắc nên phải vào mục Sửa đổi của guideline, không sửa đè.
+
 **Câu 9 — ĐÃ TRẢ LỜI 26/08/2026: giữ hệ số 0,6.** Số phút đặt đồng hồ đo
 trần người là `0,6 × trung vị thoi_gian_giay của 10 tài liệu gold đầu tiên`,
 sàn 5 phút. **Đừng mở lại câu này**: giá trị của hệ số nằm ở chỗ nó được chốt
@@ -1226,11 +1247,14 @@ python -m pytest -q
 # Sinh lại báo cáo identifiability cho cả hai chuẩn
 PYTHONIOENCODING=utf-8 python src/constraints.py
 
+# TẢI 10 tài liệu gold đầu về data/bctc/ (danh mục ở data/nguon_gold.json)
+python src/tai_bctc.py
+
 # CÔNG CỤ GÁN NHÃN tập gold, rồi mở http://127.0.0.1:8100
 # Dùng launcher chứ ĐỪNG gọi thẳng uvicorn: lệnh gọi thẳng cần đặt biến môi
 # trường, mà `VAR=x lệnh` chạy trên bash nhưng LỖI CÚ PHÁP trên PowerShell —
 # shell chính của máy này. Đã mất thời gian vì việc đó một lần ngày 25/08.
-python chay_gan_nhan.py
+python chay_gan_nhan.py --pdf-dir data/bctc
 python chay_gan_nhan.py --pdf-dir D:/bctc --port 8200
 
 # Đo xem đẳng thức nào đáng mua (Mốc 1)
@@ -1650,11 +1674,11 @@ chứ không viết kết luận bây giờ.
 
 ### 19.4 Việc còn lại của tầng gold, theo thứ tự chặn nhau
 
-1. **Nguồn của 99 tài liệu còn lại — CHẶN mọi thứ khác, và là việc của người
-   dùng.** Không có nguồn thì không có gì để gán nhãn. Theo bảng ngân sách ở
-   mục 16, đây nay là khoản đắt nhất của cả tầng gold và là khoản duy nhất
-   chưa có số ước lượng nào. Phiên Claude viết được script tải khi người dùng
-   chỉ nguồn.
+1. ~~**Nguồn của 99 tài liệu còn lại — CHẶN mọi thứ khác**~~ — **ĐÃ GỠ CHẶN
+   26/08/2026.** Nguồn là `finance.vietstock.vn`, lấy được bằng máy; mười tài
+   liệu đầu đã chọn, đã tải, đã kiểm. Xem mục 19.6. Khoản "tìm và tải" mà mục
+   16 xếp là đắt nhất nay rẻ đi hẳn: việc còn lại là chọn 90 mã, không phải đi
+   dò từng nguồn.
 2. **Chạy đồng hồ thật trên 10 tài liệu đầu.** Không cần chờ đủ 100 — cứ gán
    nhãn tới đâu đồng hồ chạy tới đó. Đủ 10 thì tính trung vị và chốt số phút
    cho giao thức trần người. Đồng hồ nay **không tự chạy**: bấm nút "Bắt đầu
@@ -1721,6 +1745,100 @@ hồ đã chạy trông y hệt đồng hồ chưa ai đụng vào. Đúng cái 
 `trang_thai_dong_ho` đi sửa ở tầng file, lặp lại ở tầng bộ nhớ. Đã sửa bằng
 khoá `da_bat_dau` riêng. **Bài học chung: đừng suy trạng thái từ một con số
 bằng 0, ở bất kỳ tầng nào.**
+
+### 19.6 Nguồn tài liệu đã chốt, và 10 tài liệu đầu đã tải — 26/08/2026
+
+Rào chặn lớn nhất của tầng gold — "chưa biết lấy 99 tài liệu còn lại ở đâu" —
+đã gỡ. Nguồn là **`finance.vietstock.vn`**, mục công bố thông tin của
+HOSE/HNX/UPCoM.
+
+**Cách lấy được danh mục theo mã.** Trang `/{MÃ}/tai-tai-lieu.htm` nạp danh
+sách bằng AJAX nên `curl` trang đó không thấy gì. Danh sách thật nằm sau
+`POST /data/getdocument` với thân `code={MÃ}&page={N}&__RequestVerificationToken={token}`;
+token là input ẩn trong chính trang đó, và **thuộc tính HTML không đặt trong
+dấu nháy** nên biểu thức tìm kiếm dạng `value="..."` trượt sạch. Bỏ `type` ra
+khỏi thân yêu cầu: truyền `type=0` thì máy chủ trả mảng rỗng.
+
+URL file rất đều, tiện cho việc mở rộng sau này:
+
+```
+https://static2.vietstock.vn/data/{HOSE|HNX|UPCOM}/{năm}/BCTC/VN/{QUY n}/{MÃ}_Baocaotaichinh_{Q n}_{năm}_{Congtyme|Hopnhat}.pdf
+```
+
+**Đã vào repo:** [data/nguon_gold.json](data/nguon_gold.json) là danh mục
+nguồn (chỉ URL và siêu dữ liệu, không có số liệu tài chính, nên **vào git**),
+và [src/tai_bctc.py](src/tai_bctc.py) tải chúng về `data/bctc/` (**không** vào
+git). Đây chính là phương án phát hành mà `src/eval/schema.py` đã chốt từ đầu:
+phát hành nhãn kèm URL nguồn và script tải, không phát hành file PDF gốc.
+
+```
+python src/tai_bctc.py                    # tải cả 10
+python chay_gan_nhan.py --pdf-dir data/bctc
+```
+
+**Mười tài liệu, 5 TT99 + 5 TT200, mỗi tài liệu gánh một vai:**
+
+| doc_id | Vai | Đã kiểm tận mắt |
+|---|---|---|
+| `HPG_2026Q2_TT99` | nền, VN30, thép | tiêu đề TT99, cột VND |
+| `VRE_2026Q1_TT99` | **mỏ neo scale** | `Đơn vị tính: Triệu VND` |
+| `DLG_2026Q2_TT99` | **scan kém + số âm** | tiêu đề TT99, mã 420 âm 1.988 tỷ |
+| `TTF_2026Q1_TT99` | **lỗ**, vốn hoá nhỏ | mới kiểm độ phân giải |
+| `BMP_2026Q1_TT99` | đối chứng sạch TT99 | tiêu đề TT99, `Đơn vị tính: VND` |
+| `DGC_2025Q2_TT200` | đối chứng sạch TT200 | tiêu đề TT200 |
+| `HNG_2025H1_TT200` | **lỗ + `Ngàn VND` + dòng đổi tên** | cả ba, xem dưới |
+| `SBT_2025Q2_TT200` | **niên độ lệch** | cột đầu năm là 30/6, không phải 1/1 |
+| `MWG_2025Q1_TT200` | đối cực chất lượng ảnh | quét ~432 dpi, nét nhất lô |
+| `VHC_2025Q1_TT200` | chống memorization | ngoài VN30 |
+
+Năm trong mười là ca biên, đúng bằng tỷ lệ tập Stress mà guideline mục 7 chốt
+(30/60). Cố ý: mười tài liệu này vừa là tập gold vừa là nguồn của **trung vị
+nhịp gán nhãn** ở mục 19.3, nên chúng phải ĐẠI DIỆN cho tập 100, không được
+dồn toàn ca dễ (trung vị tụt, đồng hồ trần người quá ngặt) cũng không được
+dồn toàn ca khó (trung vị vống, đồng hồ quá rộng — đúng lỗi mà tu chính
+25/08 vừa sửa).
+
+#### Hai phát hiện làm lung lay giả định của guideline
+
+**(a) KHÔNG có báo cáo nào là PDF chữ. Tất cả đều là ảnh quét.** Đo trên 23
+tài liệu của 20 doanh nghiệp: `pdftotext` lấy ra từ 44 đến 734 byte cho cả
+tài liệu 25–65 trang, tức bằng 0. Phần "text" ít ỏi ấy là chú thích chữ ký
+số (`Reason: I am the author of this document`), không phải nội dung. Kiểm
+lại chính `VNM_2026Q1_TT99` — tài liệu gold đầu tiên: 169 byte trên 55 trang.
+Nó cũng là ảnh quét.
+
+Hệ quả cho guideline mục 7: nhóm Stress **"bản scan chất lượng thấp"** như
+đang viết không phân biệt được gì, vì mọi tài liệu đều là bản scan. Trục đo
+được là **độ phân giải và độ sạch của bản quét**, và nó trải rộng thật:
+`MWG_2025Q1` ~432 dpi so với `DLG_2026Q2` ~100 dpi và `SBT_2025Q2` ~127 dpi
+kèm trang lệch. Xem Câu 10 ở mục 0.
+
+Đây cũng là tin tốt cho hướng nghiên cứu: cả pipeline đi từ ảnh, nên không có
+tài liệu nào "dễ" theo kiểu đọc thẳng text layer, và luận điểm đọc lại nguồn
+áp cho **toàn bộ** tập gold chứ không riêng một nhóm.
+
+**(b) Guideline mục 3.7 tự mâu thuẫn với mục 2 về hậu tố `a`/`b`.** Mục 3.7
+xếp `Ký hiệu mẫu B 01a - DN` là dấu hiệu của **TT99**. Nhưng mục 2 của chính
+file đó viết, in đậm: *"Hậu tố `a`/`b` của ký hiệu mẫu biểu là KỲ BÁO CÁO,
+không phải Thông tư... Cả hai Thông tư đều dùng đủ ba ký hiệu"*. Hai chỗ
+không thể cùng đúng.
+
+Gặp thật khi soi: `SBT_2025Q2` mang ký hiệu `B01a-DN/HN` mà tiêu đề là *Bảng
+cân đối kế toán hợp nhất* — theo mục 3.7 thì đó là "thấy dấu hiệu của cả
+hai", tức phải ghi `UNKNOWN`, dù nó rõ ràng là TT200. `HNG_2025H1` cũng vậy
+(`B01a-DN/HN`, *Bảng cân đối kế toán hợp nhất giữa niên độ*). Nếu không sửa,
+hai tài liệu này bị gán `UNKNOWN` một cách máy móc và tỷ lệ TT99/TT200 vỡ.
+Xem Câu 11 ở mục 0. **Đây là sửa quy tắc nên phải vào mục Sửa đổi của
+`ANNOTATION-GUIDELINE.md`, không sửa đè.**
+
+#### Một mã đáng thêm vào tập Stress về sau
+
+`MSN_2026Q2` (Masan, đã tải thử): mục lục báo cáo quý 2 **năm 2026** ghi
+*Bảng cân đối kế toán (Mẫu số B01a-DN)* — tên gọi TT200 trên một kỳ mà TT99
+đã có hiệu lực. Chưa soi tới trang biểu mẫu thật nên chưa kết luận. Nếu đúng
+là doanh nghiệp giữ tên gọi cũ sau ngày TT99 hiệu lực thì đó là ca nhận diện
+chuẩn khó nhất có thể có, và **quy tắc "2026 thì là TT99" sai** — quy tắc ấy
+đang được dùng ngầm để chọn tài liệu, tuy không dùng để gán nhãn.
 
 ---
 

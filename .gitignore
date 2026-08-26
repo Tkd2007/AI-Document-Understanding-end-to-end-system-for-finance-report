@@ -62,6 +62,13 @@ data/legal/*
 data/xbrl/*
 !data/xbrl/.gitkeep
 
+# Bao cao tai chinh cua tap gold, tai bang src/tai_bctc.py. Cung ly do da ap
+# cho data/legal/ va data/xbrl/, cong them mot ly do rieng: ban PDF bao cao
+# niem yet co ban quyen trinh bay, nen phuong an phat hanh an toan la phat
+# hanh NHAN kem URL nguon va script tai. Thu vao git la data/nguon_gold.json.
+data/bctc/*
+!data/bctc/.gitkeep
+
 # OS/editor junk
 .DS_Store
 .vscode/

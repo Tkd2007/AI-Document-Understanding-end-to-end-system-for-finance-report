@@ -373,8 +373,21 @@ Trong đó **tập Stress 30 tài liệu** phải cố ý gồm bốn nhóm:
 |---|---|---|
 | Doanh nghiệp **lỗ** | VCSH âm, lãi gộp âm — ca biên phá vỡ mọi bất đẳng thức giả định có lãi | LNST âm, hoặc VCSH âm |
 | Báo cáo ghi **"triệu đồng"** | Ca biên của mỏ neo scale | Đọc dòng đơn vị tính |
-| Bản **scan** chất lượng thấp | Đo độ bền với chất lượng ảnh | Mở PDF, xem có phải ảnh nhúng không |
+| Bản **scan** chất lượng thấp | Đo độ bền với chất lượng ảnh | Mở PDF, xem có phải ảnh nhúng không — **xem ghi chú ngay dưới bảng, cách nhận ra này đã hỏng** |
 | Công ty **vốn hoá nhỏ, ít được nhắc** | Kiểm memorization | Không thuộc VN30 |
+
+**Ghi chú 26/08/2026 — mọi báo cáo đều là ảnh quét, nên nhóm thứ ba như đang
+viết không phân biệt được gì.** Đo trên 23 tài liệu của 20 doanh nghiệp niêm
+yết: không tài liệu nào có lớp text thật; `pdftotext` lấy ra 44–734 byte cho
+cả tài liệu 25–65 trang, và phần ít ỏi đó là chú thích chữ ký số. Chính
+`VNM_2026Q1_TT99` cũng vậy. Trục thật sự đo được là **độ phân giải và độ sạch
+của bản quét** — dải quan sát được trải từ ~100 dpi kèm trang lệch tới ~432
+dpi. Việc sửa lời tiêu chí đang chờ người chủ trì quyết (`HANDOFF.md` mục 0,
+Câu 10); tới lúc đó, đọc nhóm thứ ba theo nghĩa "bản quét độ phân giải thấp".
+
+Danh mục tài liệu đã chọn nằm ở `data/nguon_gold.json`, tải bằng
+`python src/tai_bctc.py`. Mỗi mục ghi rõ vai trò của tài liệu trong bốn nhóm
+trên và những gì đã mở ra kiểm tận mắt.
 
 Nhóm cuối quan trọng và hay bị quên: VLM nhiều khả năng đã thấy số liệu
 blue-chip trong pretraining. Nếu kết quả trên blue-chip cao hơn hẳn

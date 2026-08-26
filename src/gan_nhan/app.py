@@ -21,6 +21,7 @@ rồi mở http://127.0.0.1:8100
 import os
 import sys
 import time
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -66,13 +67,73 @@ async def _in_ly_do_tu_choi(request, exc):
         print(f"[TỪ CHỐI] {request.url.path} — {exc.detail}", file=sys.stderr)
     return await http_exception_handler(request, exc)
 
-# Lúc mở tài liệu, theo doc_id. Dùng để đo thời gian gán nhãn thật, thứ mà
-# ADDENDUM mục 6 cần để biết giao thức 15 phút một tài liệu còn sống không
-# sau khi bộ chỉ tiêu trải qua ba biểu mẫu. Nằm trong bộ nhớ tiến trình nên
-# tắt máy chủ là mất — chấp nhận được, vì con số này chỉ có nghĩa cho một
-# phiên làm việc liền mạch, còn ghép các phiên đứt quãng lại thì nó đo thời
-# gian nghỉ trưa chứ không đo tốc độ đọc.
-_bat_dau: dict[str, float] = {}
+@dataclass
+class DongHo:
+    """
+    Đồng hồ của một tài liệu: người gán nhãn tự bấm chạy và bấm dừng.
+
+    VÌ SAO KHÔNG TỰ CHẠY LÚC MỞ TÀI LIỆU, cách bản đầu làm. Con số cần đo là
+    thời gian một người đọc báo cáo và điền 27 ô, và nó nuôi thẳng vào giao
+    thức trần người (`PREREGISTRATION.md`, tu chính 25/08/2026: số phút đặt
+    đồng hồ bằng 0,6 × trung vị của 10 tài liệu đầu). Đồng hồ tự chạy đo sai
+    theo cả hai chiều: gõ `doc_id` xong mới đi tìm file PDF, hay để cửa sổ đó
+    mở qua buổi trưa, đều bơm thêm thời gian không phải thời gian làm việc;
+    ngược lại, người gõ `doc_id` sau cùng thì đồng hồ gần như không chạy.
+    Một trung vị dựng trên những con số đó không đáng để chốt tham số nào.
+
+    Vì thế `tong_giay` cộng dồn các ĐOẠN CHẠY chứ không lấy hiệu hai mốc:
+    tạm dừng là thao tác hạng nhất, và số lần tạm dừng được đếm để về sau
+    tách được tài liệu làm liền mạch khỏi tài liệu ngắt quãng.
+
+    Nằm trong bộ nhớ tiến trình nên tắt máy chủ là mất. Chấp nhận được, và
+    nay còn AN TOÀN hơn trước: mất đồng hồ thì `/api/luu` từ chối ghi chứ
+    không lặng lẽ ghi số 0 như một số đo.
+    """
+
+    # `da_bat_dau` là khoá riêng chứ không suy từ `tong_giay > 0`. Trên
+    # Windows, `time.monotonic()` nhảy theo bước ~15 ms, nên bấm chạy rồi
+    # bấm dừng ngay cho ra đúng 0,0 giây — và một đồng hồ đã chạy khi đó
+    # trông y hệt một đồng hồ chưa ai đụng vào. Đây đúng là lỗi mà khoá
+    # `trang_thai_dong_ho` của file gold đi sửa, chỉ khác tầng.
+    da_bat_dau: bool = False
+    tong_giay: float = 0.0
+    chay_tu: float | None = None
+    so_lan_tam_dung: int = 0
+
+    @property
+    def dang_chay(self) -> bool:
+        return self.chay_tu is not None
+
+    @property
+    def da_tung_chay(self) -> bool:
+        return self.da_bat_dau
+
+    def giay(self) -> int:
+        thoi = self.tong_giay
+        if self.chay_tu is not None:
+            thoi += time.monotonic() - self.chay_tu
+        return int(thoi)
+
+    def bat_dau(self) -> None:
+        """Chạy tiếp từ chỗ đang có. Bấm lúc đang chạy thì không làm gì."""
+        self.da_bat_dau = True
+        if self.chay_tu is None:
+            self.chay_tu = time.monotonic()
+
+    def tam_dung(self) -> None:
+        if self.chay_tu is not None:
+            self.tong_giay += time.monotonic() - self.chay_tu
+            self.chay_tu = None
+            self.so_lan_tam_dung += 1
+
+    def trang_thai(self) -> str:
+        if not self.da_bat_dau:
+            return "chua_bat_dau"
+        return "dang_chay" if self.dang_chay else "tam_dung"
+
+
+# Đồng hồ đang mở, theo doc_id.
+_dong_ho: dict[str, DongHo] = {}
 
 
 class YeuCauKiem(BaseModel):
@@ -95,6 +156,7 @@ class YeuCauLuu(BaseModel):
     danh_muc_kiem: dict[str, bool] = {}
     so_lan_kiem: int = 0
     sua_sau_khi_kiem: bool = False
+    khong_do_gio: bool = False
 
 
 def _chuan(ten: str) -> Standard:
@@ -301,11 +363,45 @@ def doc_lai_ban_ghi(doc_id: str) -> dict:
     }
 
 
-@app.post("/api/mo/{doc_id}")
-def bat_dau_bam_gio(doc_id: str) -> dict:
-    """Bấm giờ từ lúc mở tài liệu. Mở lại cùng một doc_id thì KHÔNG đặt lại."""
-    moc = _bat_dau.setdefault(doc_id, time.monotonic())
-    return {"doc_id": doc_id, "da_troi_giay": int(time.monotonic() - moc)}
+HANH_DONG_DONG_HO = ("bat-dau", "tam-dung")
+
+
+def _tra_ve_dong_ho(doc_id: str, dh: DongHo) -> dict:
+    return {
+        "doc_id": doc_id,
+        "trang_thai": dh.trang_thai(),
+        "da_troi_giay": dh.giay(),
+        "so_lan_tam_dung": dh.so_lan_tam_dung,
+    }
+
+
+@app.get("/api/dong-ho/{doc_id}")
+def xem_dong_ho(doc_id: str) -> dict:
+    """
+    Trạng thái đồng hồ của một tài liệu, kể cả khi chưa ai bấm.
+
+    Cần vì giao diện phải vẽ đúng nút ngay lúc người gõ xong `doc_id`: một
+    tài liệu đang dừng giữa chừng phải hiện "Tiếp tục" chứ không hiện "Bắt
+    đầu", nếu không thì bấm một cái là mất đoạn đã đo. Trả `chua_bat_dau`
+    cho doc_id chưa từng bấm chứ không báo 404 — chưa bấm là một trạng thái
+    hợp lệ, không phải một lỗi.
+    """
+    return _tra_ve_dong_ho(doc_id, _dong_ho.get(doc_id, DongHo()))
+
+
+@app.post("/api/dong-ho/{doc_id}/{hanh_dong}")
+def dieu_khien_dong_ho(doc_id: str, hanh_dong: str) -> dict:
+    """Chạy hoặc tạm dừng đồng hồ của một tài liệu."""
+    if hanh_dong not in HANH_DONG_DONG_HO:
+        raise HTTPException(400, f"Hành động không hợp lệ: {hanh_dong!r}")
+
+    dh = _dong_ho.setdefault(doc_id, DongHo())
+    if hanh_dong == "bat-dau":
+        dh.bat_dau()
+    else:
+        dh.tam_dung()
+
+    return _tra_ve_dong_ho(doc_id, dh)
 
 
 @app.post("/api/kiem")
@@ -362,6 +458,30 @@ def luu(yeu_cau: YeuCauLuu) -> dict:
     if thieu_o:
         raise HTTPException(400, {"loi": "danh_muc_kiem_chua_du", "con_thieu": thieu_o})
 
+    # Từ chối khi đồng hồ chưa từng chạy, trừ khi người khai rõ là không đo.
+    #
+    # Ghi lặng lẽ số 0 chính là cách `VNM_2026Q1_TT99` ra đời với một ô thời
+    # gian không ai đọc được nghĩa. Mà giao thức trần người lấy trung vị của
+    # 10 tài liệu đầu, nên một tài liệu quên bấm giờ không phải chuyện nhỏ:
+    # nó chỉ lộ ra lúc gom số, tức lúc đã quá muộn để bấm lại.
+    #
+    # Có lối thoát, và lối thoát phải là một hành động tường minh — cùng cách
+    # guideline mục 3.1 cho phép để trống đơn vị tính nhưng bắt ghi lý do.
+    # Gán nhãn lại một tài liệu cũ, hay sửa một ô sau khi phát hiện đọc nhầm,
+    # đều là việc hợp lệ mà con số thời gian ở đó vô nghĩa.
+    dh = _dong_ho.get(yeu_cau.doc_id, DongHo())
+    if not dh.da_tung_chay and not yeu_cau.khong_do_gio:
+        raise HTTPException(
+            400,
+            {
+                "loi": "dong_ho_chua_chay",
+                "chi_dan": "Bấm 'Bắt đầu bấm giờ' trước khi gán nhãn, hoặc tick 'không đo "
+                "giờ tài liệu này' nếu đây là lần sửa lại chứ không phải lần gán nhãn "
+                "đầu. Trung vị thời gian của 10 tài liệu đầu là thứ chốt số phút cho "
+                "giao thức trần người, nên một số 0 lẫn vào không sửa lại được.",
+            },
+        )
+
     ch = _chuan(yeu_cau.standard)
     he_so = _he_so_don_vi_hop_le(yeu_cau.unit_declared, yeu_cau.notes)
 
@@ -375,7 +495,6 @@ def luu(yeu_cau: YeuCauLuu) -> dict:
     da_co = GOLD_DIR / f"{Path(yeu_cau.doc_id).name}.json"
     so_lan_ghi = GroundTruthDoc.load(da_co).so_lan_ghi + 1 if da_co.is_file() else 1
 
-    moc = _bat_dau.get(yeu_cau.doc_id)
     ban_ghi = GroundTruthDoc(
         doc_id=yeu_cau.doc_id,
         ticker=yeu_cau.ticker,
@@ -389,16 +508,23 @@ def luu(yeu_cau: YeuCauLuu) -> dict:
         annotator=yeu_cau.annotator,
         annotated_at=datetime.now(UTC).isoformat(),
         notes=yeu_cau.notes,
-        thoi_gian_giay=int(time.monotonic() - moc) if moc else 0,
+        # Đồng hồ đã chạy thì con số của nó thắng, kể cả khi ô "không đo giờ"
+        # được tick: một số đo có thật đáng giữ hơn một lời khai mâu thuẫn
+        # với nó, và giao diện chỉ hiện ô đó khi đồng hồ đứng yên.
+        thoi_gian_giay=dh.giay() if dh.da_tung_chay else 0,
         so_lan_kiem_dang_thuc=yeu_cau.so_lan_kiem,
         sua_gia_tri_sau_khi_kiem=yeu_cau.sua_sau_khi_kiem,
         so_lan_ghi=so_lan_ghi,
+        trang_thai_dong_ho="da_do" if dh.da_tung_chay else "khong_do",
+        so_lan_tam_dung=dh.so_lan_tam_dung,
     )
     duong_dan = ban_ghi.save()
-    _bat_dau.pop(yeu_cau.doc_id, None)
+    _dong_ho.pop(yeu_cau.doc_id, None)
 
     return {
         "da_ghi": str(duong_dan),
+        "trang_thai_dong_ho": ban_ghi.trang_thai_dong_ho,
         "thoi_gian_giay": ban_ghi.thoi_gian_giay,
+        "so_lan_tam_dung": ban_ghi.so_lan_tam_dung,
         "so_lan_ghi": so_lan_ghi,
     }

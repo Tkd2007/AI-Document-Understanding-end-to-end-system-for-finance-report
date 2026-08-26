@@ -8,6 +8,7 @@ không ai phát hiện cho tới lúc phân tích kết quả cuối.
 """
 
 import json
+import time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -47,6 +48,7 @@ def _than(**doi):
         "downloaded_at": "2026-08-25",
         "annotator": "nguoi_kiem_thu",
         "danh_muc_kiem": dict.fromkeys(O_NGUOI_PHAI_TICK, True),
+        "khong_do_gio": True,
     }
     than.update(doi)
     return than
@@ -265,3 +267,134 @@ def test_ghi_de_thi_dem_so_lan_ghi_chu_khong_im_lang(client, tmp_path):
     assert r.json()["so_lan_ghi"] == 2
     ghi = json.loads((tmp_path / "gold" / "TEST_2026Q1_TT99.json").read_text(encoding="utf-8"))
     assert ghi["so_lan_ghi"] == 2
+
+
+# --- Đồng hồ do người tự bấm ------------------------------------------------
+#
+# Đồng hồ nuôi thẳng vào giao thức trần người: số phút đặt đồng hồ bằng
+# 0,6 × trung vị `thoi_gian_giay` của 10 tài liệu gold đầu tiên
+# (`PREREGISTRATION.md`, tu chính 25/08/2026). Một tài liệu quên bấm giờ chỉ
+# lộ ra lúc gom số, và lúc đó không bấm lại cho quá khứ được nữa — nên các
+# test dưới đây kiểm đúng chỗ đó.
+
+
+@pytest.fixture(autouse=True)
+def _dong_ho_sach():
+    """Mỗi test một đồng hồ trắng: trạng thái này sống ở mức tiến trình."""
+    mod._dong_ho.clear()
+    yield
+    mod._dong_ho.clear()
+
+
+def test_chua_bam_gio_thi_tu_choi_ghi_chu_khong_lang_le_ghi_so_0(client):
+    """
+    Ghi lặng lẽ số 0 chính là cách `VNM_2026Q1_TT99` ra đời với một ô thời
+    gian không ai đọc được nghĩa — không rõ vì không ai bấm giờ hay vì file
+    được sửa tay. Đường từ chối này tồn tại để ca đó không lặp lại.
+    """
+    r = client.post("/api/luu", json=_than(khong_do_gio=False))
+
+    assert r.status_code == 400
+    assert r.json()["detail"]["loi"] == "dong_ho_chua_chay"
+
+
+def test_khai_ro_khong_do_gio_thi_ghi_duoc_va_file_noi_ro_dieu_do(client, tmp_path):
+    """
+    Phải có lối thoát, vì gán nhãn lại một tài liệu cũ là việc hợp lệ mà con
+    số thời gian ở đó vô nghĩa. Nhưng lối thoát là một hành động tường minh,
+    và file ghi ra phải TỰ KHAI rằng nó không mang số đo nào.
+    """
+    r = client.post("/api/luu", json=_than(khong_do_gio=True))
+
+    assert r.status_code == 200
+    ghi = json.loads((tmp_path / "gold" / "TEST_2026Q1_TT99.json").read_text(encoding="utf-8"))
+    assert ghi["trang_thai_dong_ho"] == "khong_do"
+    assert ghi["thoi_gian_giay"] == 0
+
+
+def test_da_bam_gio_thi_file_khai_da_do_chu_khong_de_suy_tu_con_so(client, tmp_path):
+    """
+    `thoi_gian_giay` bằng 0 không phân biệt được "không ai bấm giờ" với "bấm
+    giờ ra 0 giây". Khoá trạng thái tường minh mới phân biệt được, và trung
+    vị của giao thức trần người chỉ lấy trên các tài liệu `da_do`.
+    """
+    client.post("/api/dong-ho/TEST_2026Q1_TT99/bat-dau")
+    r = client.post("/api/luu", json=_than(khong_do_gio=False))
+
+    assert r.status_code == 200
+    assert r.json()["trang_thai_dong_ho"] == "da_do"
+    ghi = json.loads((tmp_path / "gold" / "TEST_2026Q1_TT99.json").read_text(encoding="utf-8"))
+    assert ghi["trang_thai_dong_ho"] == "da_do"
+
+
+def test_so_do_that_thang_loi_khai_khong_do_gio(client):
+    """
+    Hai thứ mâu thuẫn nhau thì giữ cái đo được. Giao diện chỉ hiện ô "không
+    đo giờ" khi đồng hồ đứng yên, nên ca này chỉ tới được từ một client tự
+    viết — và kể cả khi đó, vứt một số đo có thật vẫn là mất mát không cứu
+    lại được, còn giữ nó thì cùng lắm là thừa một con số.
+    """
+    client.post("/api/dong-ho/TEST_2026Q1_TT99/bat-dau")
+    r = client.post("/api/luu", json=_than(khong_do_gio=True))
+
+    assert r.json()["trang_thai_dong_ho"] == "da_do"
+
+
+def test_tam_dung_thi_dong_ho_dung_lai_va_dem_so_lan(client):
+    """
+    `thoi_gian_giay` đếm thời gian LÀM VIỆC, không đếm thời gian đồng hồ
+    tường. Một tài liệu để mở qua buổi trưa và một tài liệu làm liền mạch mà
+    ra cùng một con số thì trung vị dựng trên chúng không chốt được gì.
+    """
+    client.post("/api/dong-ho/D/bat-dau")
+    d = client.post("/api/dong-ho/D/tam-dung").json()
+
+    assert d["trang_thai"] == "tam_dung"
+    assert d["so_lan_tam_dung"] == 1
+
+    dung_yen = client.get("/api/dong-ho/D").json()["da_troi_giay"]
+    time.sleep(1.1)
+    assert client.get("/api/dong-ho/D").json()["da_troi_giay"] == dung_yen
+
+
+def test_tiep_tuc_cong_don_chu_khong_dat_lai_ve_khong(client):
+    """
+    Nghỉ giữa chừng rồi làm tiếp là chuyện thường trong 100 tài liệu. Đặt
+    lại về 0 ở đây sẽ biến mọi tài liệu bị ngắt quãng thành một số đo hụt.
+    """
+    client.post("/api/dong-ho/D/bat-dau")
+    time.sleep(1.1)
+    client.post("/api/dong-ho/D/tam-dung")
+    d = client.post("/api/dong-ho/D/bat-dau").json()
+
+    assert d["trang_thai"] == "dang_chay"
+    assert d["da_troi_giay"] >= 1
+
+
+def test_xem_dong_ho_chua_bam_tra_trang_thai_chu_khong_bao_404(client):
+    """
+    Giao diện phải vẽ đúng nút ngay lúc người gõ xong doc_id: tài liệu đang
+    dừng giữa chừng phải hiện "Tiếp tục" chứ không hiện "Bắt đầu". Chưa bấm
+    là một trạng thái hợp lệ, không phải một lỗi.
+    """
+    d = client.get("/api/dong-ho/CHUA_TUNG_MO").json()
+
+    assert d["trang_thai"] == "chua_bat_dau"
+    assert d["da_troi_giay"] == 0
+
+
+def test_hanh_dong_la_khong_duoc_lang_le_bo_qua(client):
+    r = client.post("/api/dong-ho/D/xoa-het")
+
+    assert r.status_code == 400
+
+
+def test_ghi_xong_thi_dong_ho_duoc_don_di(client):
+    """
+    Tài liệu kế tiếp phải bắt đầu từ 00:00. Giữ lại đồng hồ cũ nghĩa là con
+    số của tài liệu trước cộng sang tài liệu sau mà không dấu hiệu nào.
+    """
+    client.post("/api/dong-ho/TEST_2026Q1_TT99/bat-dau")
+    client.post("/api/luu", json=_than())
+
+    assert client.get("/api/dong-ho/TEST_2026Q1_TT99").json()["trang_thai"] == "chua_bat_dau"

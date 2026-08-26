@@ -23,7 +23,13 @@
          padding:10px 16px;background:var(--the);border-bottom:1px solid var(--vien);
          position:sticky;top:0;z-index:5}
   header h1{font-size:15px;margin:0;font-weight:600;white-space:nowrap}
-  .gio{font-family:var(--mono);font-size:14px;color:var(--muc2)}
+  .gio{font-family:var(--mono);font-size:15px;color:var(--muc2)}
+  .gio.dang_chay{color:var(--dat);font-weight:600}
+  .gio.tam_dung{color:var(--canh)}
+  .gio.chua_bat_dau{opacity:.45}
+  .nhan-gio{font-size:12px;color:var(--muc2)}
+  .o-tick{display:flex;gap:5px;align-items:center;width:auto;font-size:13px;color:var(--muc2)}
+  .o-tick input{width:auto}
   .tien-do{font-size:13px;color:var(--muc2)}
   main{display:grid;grid-template-columns:minmax(320px,1fr) minmax(380px,520px);
        gap:12px;padding:12px;align-items:start}
@@ -78,7 +84,9 @@
   <h1>Gán nhãn tập gold</h1>
   <select id="file" style="width:auto;min-width:220px"></select>
   <span class="tien-do" id="tiendo"></span>
-  <span class="gio" id="gio">00:00</span>
+  <button id="btgio" class="chinh">▶ Bắt đầu bấm giờ</button>
+  <span class="gio chua_bat_dau" id="gio">00:00</span>
+  <span class="nhan-gio" id="trangthaigio">chưa bấm giờ</span>
 </header>
 
 <main>
@@ -129,6 +137,9 @@
       <button id="btkiem">Kiểm đẳng thức</button>
       <button id="btmolai">Mở lại bản đã lưu</button>
       <button id="btluu" class="chinh">Lưu file gold</button>
+      <label class="o-tick" id="okhongdogio" title="Dùng cho lần sửa lại, không phải lần gán nhãn đầu">
+        <input type="checkbox" id="khongdogio"> không đo giờ tài liệu này
+      </label>
     </div>
     <div class="kq" id="kq"></div>
     <div id="thongbao"></div>
@@ -139,10 +150,56 @@
 const $ = id => document.getElementById(id);
 let soTrang = 0, trangHienTai = 0, phong = 2.0;
 let nhanTheoTen = {}, moTaKiemTheoMa = {};
-let soLanKiem = 0, daKiemLan1 = false, suaSauKhiKiem = false, mocGio = null;
+let soLanKiem = 0, daKiemLan1 = false, suaSauKhiKiem = false;
+
+// Đồng hồ: MÁY CHỦ giữ con số thật, phía này chỉ vẽ lại mỗi giây từ lần đồng
+// bộ gần nhất. Làm ngược lại — trình duyệt đếm rồi gửi số lên — nghĩa là một
+// lần tải lại trang cũng xoá sạch phép đo, mà tải lại trang là chuyện thường
+// khi đang lật một PDF 40 trang.
+let gio = {trang_thai:'chua_bat_dau', goc:0, dongBo:Date.now(), soLanTamDung:0};
 
 const fmtGio = g => String(Math.floor(g/60)).padStart(2,'0')+':'+String(g%60).padStart(2,'0');
-setInterval(() => { if (mocGio) $('gio').textContent = fmtGio(Math.floor((Date.now()-mocGio)/1000)); }, 1000);
+const giaySong = () => gio.trang_thai === 'dang_chay'
+  ? gio.goc + Math.floor((Date.now() - gio.dongBo)/1000) : gio.goc;
+
+function veGio() {
+  const t = gio.trang_thai;
+  $('gio').textContent = fmtGio(giaySong());
+  $('gio').className = 'gio ' + t;
+  $('btgio').textContent =
+    t === 'dang_chay' ? '⏸ Tạm dừng' : t === 'tam_dung' ? '▶ Tiếp tục' : '▶ Bắt đầu bấm giờ';
+  $('btgio').className = t === 'dang_chay' ? '' : 'chinh';
+  $('trangthaigio').textContent =
+    t === 'chua_bat_dau' ? 'chưa bấm giờ'
+    : gio.soLanTamDung ? `đã dừng ${gio.soLanTamDung} lần` : 'đang đo';
+  // Ô "không đo giờ" chỉ có nghĩa khi đồng hồ chưa từng chạy. Để nó hiện
+  // lúc đã có số đo là mời người tự vứt số đo của chính mình.
+  $('okhongdogio').style.display = t === 'chua_bat_dau' ? '' : 'none';
+}
+setInterval(veGio, 1000);
+
+function nhanGio(d) {
+  gio = {trang_thai:d.trang_thai, goc:d.da_troi_giay,
+         dongBo:Date.now(), soLanTamDung:d.so_lan_tam_dung};
+  veGio();
+}
+
+async function dongBoGio(id) {
+  if (!id) return nhanGio({trang_thai:'chua_bat_dau', da_troi_giay:0, so_lan_tam_dung:0});
+  nhanGio(await (await fetch('/api/dong-ho/' + encodeURIComponent(id))).json());
+}
+
+$('btgio').onclick = async () => {
+  const id = $('doc_id').value.trim();
+  if (!id) {
+    $('thongbao').className = 'loi';
+    $('thongbao').textContent = 'Điền doc_id trước đã — đồng hồ chạy theo từng tài liệu.';
+    return;
+  }
+  const hanh_dong = gio.trang_thai === 'dang_chay' ? 'tam-dung' : 'bat-dau';
+  const r = await fetch(`/api/dong-ho/${encodeURIComponent(id)}/${hanh_dong}`, {method:'POST'});
+  nhanGio(await r.json());
+};
 
 async function nap() {
   const d = await (await fetch('/api/tai-lieu')).json();
@@ -235,16 +292,26 @@ $('btluu').onclick = async () => {
     downloaded_at:$('downloaded_at').value, annotator:$('annotator').value,
     notes:$('notes').value, danh_muc_kiem:kiem,
     so_lan_kiem:soLanKiem, sua_sau_khi_kiem:suaSauKhiKiem,
+    khong_do_gio:$('khongdogio').checked,
   };
   const r = await fetch('/api/luu', {method:'POST', headers:{'Content-Type':'application/json'},
                                      body: JSON.stringify(than)});
   const d = await r.json();
   if (r.ok) {
     $('thongbao').className = 'ok';
+    // Nói thẳng tài liệu này có đóng góp số cho trung vị hay không. Người
+    // gán nhãn là người duy nhất sửa được ngay lúc đó, mà chỉ lúc đó mới sửa
+    // được: gom số xong rồi thì không bấm lại đồng hồ cho quá khứ được nữa.
+    const doGio = d.trang_thai_dong_ho === 'da_do'
+      ? `đo được ${fmtGio(d.thoi_gian_giay)}`
+        + (d.so_lan_tam_dung ? ` (dừng ${d.so_lan_tam_dung} lần)` : '')
+      : 'KHÔNG đo giờ — tài liệu này không tính vào trung vị';
     $('thongbao').textContent = d.so_lan_ghi > 1
-      ? `Đã ghi đè ${d.da_ghi} — lần ghi thứ ${d.so_lan_ghi}`
-      : `Đã ghi ${d.da_ghi} — mất ${fmtGio(d.thoi_gian_giay)}`;
-    mocGio = null; nap();
+      ? `Đã ghi đè ${d.da_ghi} — lần ghi thứ ${d.so_lan_ghi}, ${doGio}`
+      : `Đã ghi ${d.da_ghi} — ${doGio}`;
+    $('khongdogio').checked = false;
+    nhanGio({trang_thai:'chua_bat_dau', da_troi_giay:0, so_lan_tam_dung:0});
+    nap();
   } else {
     $('thongbao').className = 'loi';
     $('thongbao').innerHTML = giaiThichLoi(d.detail);
@@ -277,6 +344,10 @@ function giaiThichLoi(chi_tiet) {
       + '<i>Ô trống hoặc dấu gạch trên báo cáo thì gõ <b>-</b>. '
       + 'Có dòng nhưng mờ không đọc ra thì gõ <b>?</b>.</i>';
   }
+
+  if (chi_tiet.loi === 'dong_ho_chua_chay')
+    return '<b>Chưa lưu được — đồng hồ chưa từng chạy cho tài liệu này.</b><br>'
+      + chi_tiet.chi_dan;
 
   if (chi_tiet.loi === 'de_trong_don_vi_ma_khong_ghi_chu')
     return '<b>Chưa lưu được — để trống đơn vị tính thì phải ghi lý do vào Ghi chú.</b><br>'
@@ -313,21 +384,27 @@ $('btmolai').onclick = async () => {
     el.classList.toggle('am', typeof x === 'number' && x < 0);
   });
 
-  // Bắt đầu lại bộ đếm cho lần sửa này. Cố ý KHÔNG cộng dồn thời gian của
-  // lần ghi trước: con số đó dùng để đo tốc độ gán nhãn một tài liệu mới,
-  // còn một lần sửa một ô là việc khác hẳn và trộn vào sẽ làm hỏng phép đo.
-  await fetch('/api/mo/' + encodeURIComponent(id), {method:'POST'});
-  mocGio = Date.now(); soLanKiem = 0; daKiemLan1 = false; suaSauKhiKiem = false;
+  // KHÔNG tự khởi động đồng hồ cho lần sửa này. Thời gian sửa một ô không
+  // cùng đơn vị với thời gian gán nhãn một tài liệu mới, mà trung vị của
+  // giao thức trần người lấy trên loại thứ hai. Muốn đo lần sửa thì người
+  // tự bấm; không muốn thì tick "không đo giờ tài liệu này".
+  await dongBoGio(id);
+  soLanKiem = 0; daKiemLan1 = false; suaSauKhiKiem = false;
 
   $('thongbao').className = 'ok';
   $('thongbao').textContent =
-    `Đã nạp lại ${id} (đây là bản ghi lần ${d.so_lan_ghi}). Sửa xong bấm Lưu để ghi đè.`;
+    `Đã nạp lại ${id} (đây là bản ghi lần ${d.so_lan_ghi}). Sửa xong bấm Lưu để ghi đè. `
+    + 'Đây là lần sửa nên đồng hồ KHÔNG tự chạy.';
 };
 
+// Đổi doc_id thì HỎI trạng thái đồng hồ của tài liệu mới, chứ không tự
+// khởi động. Đồng hồ tự chạy lúc gõ xong doc_id là cách bản đầu làm, và nó
+// đo nhầm cả hai chiều: người gõ doc_id rồi mới đi tìm file PDF thì đồng hồ
+// ăn thêm thời gian tìm file; người gõ doc_id sau cùng thì đồng hồ gần như
+// không chạy. Xem docstring lớp `DongHo` trong app.py.
 $('doc_id').onchange = async () => {
-  if (!$('doc_id').value) return;
-  await fetch('/api/mo/' + encodeURIComponent($('doc_id').value), {method:'POST'});
-  mocGio = Date.now(); soLanKiem = 0; daKiemLan1 = false; suaSauKhiKiem = false;
+  await dongBoGio($('doc_id').value.trim());
+  soLanKiem = 0; daKiemLan1 = false; suaSauKhiKiem = false;
 };
 $('file').onchange = doiFile;
 $('chuan').onchange = napChiTieu;
@@ -342,6 +419,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'PageUp') veTrang(trangHienTai - 1);
 });
 
+veGio();
 napChiTieu().then(nap);
 </script>
 </body>

@@ -101,6 +101,7 @@ DANH_MUC_KIEM = [
     ("kiem_cap_de_nham", "Đã kiểm riêng các cặp dễ nhầm ở guideline mục 3.6", False),
     ("khong_sua_cho_can", "Không sửa số cho cân đẳng thức; lệch đáng kể thì ghi notes", False),
     ("du_sieu_du_lieu", "source_url, downloaded_at, annotator, annotated_at đều có", True),
+    ("da_bam_gio", "Đã bấm giờ tài liệu này, hoặc khai rõ là không đo giờ", True),
 ]
 
 # Ô người PHẢI tự tick — máy không có cách nào biết.

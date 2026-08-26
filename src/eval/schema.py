@@ -79,6 +79,26 @@ class GroundTruthDoc:
     so_lan_kiem_dang_thuc: int = 0
     sua_gia_tri_sau_khi_kiem: bool = False
 
+    # trang_thai_dong_ho nói RÕ tài liệu này có được bấm giờ hay không, thay
+    # vì để người đọc suy ra từ `thoi_gian_giay == 0`. Hai thứ đó khác nhau:
+    # một tài liệu không ai bấm giờ và một tài liệu bấm giờ ra 0 giây là hai
+    # sự kiện khác hẳn, mà nếu chỉ nhìn con số 0 thì chúng giống hệt nhau.
+    # Phân biệt được là điều kiện cần để tính trung vị của giao thức trần
+    # người: trung vị đó chỉ được lấy trên các tài liệu `da_do`, và gộp nhầm
+    # một số 0 vào sẽ kéo tụt nó mà không ai thấy.
+    #
+    # `VNM_2026Q1_TT99` là ca đã xảy ra thật: nó có `thoi_gian_giay` bằng 0
+    # và không rõ vì đồng hồ không chạy hay vì file được sửa tay. Mặc định
+    # `khong_do` khiến mọi file ghi trước khi có khoá này tự khai đúng điều
+    # duy nhất chắc chắn về chúng — rằng không có số đo thời gian nào.
+    #
+    # so_lan_tam_dung là dấu vết đi kèm: `thoi_gian_giay` nay đếm thời gian
+    # LÀM VIỆC chứ không đếm thời gian đồng hồ tường, nên một tài liệu làm
+    # liền mạch và một tài liệu ngắt quãng năm lần có thể ra cùng một con số.
+    # Chúng không đáng tin như nhau, và chỉ khoá này mới tách được.
+    trang_thai_dong_ho: str = "khong_do"   # "da_do" | "khong_do"
+    so_lan_tam_dung: int = 0
+
     def __post_init__(self):
         thieu = [
             ten

@@ -111,6 +111,24 @@ lúc chưa tài liệu nào có số đo thời gian, và cửa sổ đó đã �
 gold thứ hai có đồng hồ chạy thật. Tu chính ghi ở `PREREGISTRATION.md`
 (26/08/2026) và `ANNOTATION-GUIDELINE.md` mục Sửa đổi.
 
+**Đã trả lời 26/08/2026 (đợt 2) — ba quyết định về tầng gold:**
+
+- **Người gán nhãn thứ hai: KHÔNG có. Người chủ trì tự gán nhãn.** Nghĩa là
+  phương án dự phòng ở `ADDENDUM` mục 5 được kích hoạt: chính người ấy gán
+  nhãn lại, sau **ít nhất hai tuần**, không xem bản cũ, và bài phải nói rõ
+  đây là bản thay thế kèm giới hạn. **Hệ quả lịch, tính được ngay:** mười
+  tài liệu đầu gán nhãn ngày 25–26/08/2026, nên lượt gán lại sớm nhất là
+  **09/09/2026**. Hai tuần ấy là thời gian CHỜ nằm trên đường găng, không
+  phải thời gian làm — bắt đầu muộn là mất trắng.
+- **Quy mô tập gold đi theo mốc: 10 → 60 → 100.** Mốc 10 đã xong. Mốc 60 là
+  chỗ mọi con số tính power của `ADDENDUM` mục 4 áp đúng như đã viết, vì bảng
+  đó lấy 60 làm số cụm độc lập; mốc 100 là đích. Đừng gộp ba mốc lại thành
+  "gán nhãn cho tới khi đủ 100".
+- **Quy tắc `None` ở pipeline: HOÃN, tính sau.** Đây là câu "coi `None` là 0
+  hay giữ nguyên" ở mục 12. Hoãn tường minh, không phải quên — nhưng nó vẫn
+  chặn việc chạy pipeline diện rộng trên tài liệu thật, nên phải quyết trước
+  bước đó.
+
 **Đã trả lời 26/08/2026:** Câu 9 → giữ hệ số 0,6.
 
 **Đã trả lời 25/08/2026 — tất cả trong một ngày:** Câu 1 → (a) ba con số định
@@ -776,7 +794,10 @@ không phải *chưa biết*. Chính báo cáo VNM in công thức rút gọn c�
 
 Phía **pipeline** thì chưa. VLM và OCR đều trả `None` cho dòng không đọc
 được, và ở đó `None` thật sự nhập nhằng giữa "dòng vắng mặt" với "đọc hỏng".
-Chưa sửa vì đây là đánh đổi có hai chiều thật, cần người quyết:
+
+**Người chủ trì đã HOÃN câu này ngày 26/08/2026** — hoãn tường minh, không
+phải quên. Nhưng nó vẫn chặn việc chạy pipeline diện rộng trên tài liệu thật,
+nên phải quyết trước bước đó. Đánh đổi có hai chiều thật:
 
 - Coi `None` là 0 → đẳng thức chạy được trên phần lớn tài liệu, nhưng một
   thành phần đọc hỏng sẽ sinh cảnh báo lệch đúng bằng giá trị của nó. Lệch
@@ -1501,13 +1522,18 @@ chứ không viết kết luận bây giờ.
    vị của 10 tài liệu". Tuyên sớm vì "đằng nào cũng ra 5 phút" thì con số vẫn
    đúng nhưng cam kết thì hỏng, và lần sau không còn cách nào phân biệt một
    suy luận số học với một lần tự cho phép mình bỏ bước.
-3. **Chốt 20 hay 33 tài liệu gán nhãn đôi.** `ADDENDUM` mục 5 viết "một phần
-   ba tập gold", chốt khi tập là 60 nên ra 20. Tập nay khoảng 100 nên cách
-   diễn đạt đó tự nó thành 33. Phải chọn một, và ghi tu chính.
-4. **Người gán nhãn thứ hai — chưa quyết.** Phương án dự phòng ở `ADDENDUM`
-   mục 5 là chính người đó gán lại sau **ít nhất hai tuần**. Nếu dùng phương
-   án này thì lượt gán lại phải bắt đầu SỚM, vì hai tuần là thời gian chờ
-   nằm trên đường găng chứ không phải thời gian làm.
+3. **Chốt 20 hay 33 tài liệu gán nhãn đôi — CÒN MỞ, và nay gắn với mốc.**
+   `ADDENDUM` mục 5 viết "một phần ba tập gold", chốt khi tập là 60 nên ra
+   20. Tập đích nay khoảng 100 nên cách diễn đạt đó tự nó thành 33. Với lộ
+   trình 10 → 60 → 100 thì câu hỏi thật là: một phần ba của MỐC NÀO. Phải
+   chọn một và ghi tu chính, muộn nhất là trước khi lượt gán nhãn lại đầu
+   tiên bắt đầu — vì chính lượt đó tiêu số tài liệu đã chọn.
+4. **Người gán nhãn thứ hai — ĐÃ QUYẾT 26/08/2026: không có, người chủ trì
+   tự gán nhãn.** Phương án dự phòng ở `ADDENDUM` mục 5 vì thế là phương án
+   đang dùng: chính người ấy gán lại sau **ít nhất hai tuần**, không xem bản
+   cũ. Mười tài liệu đầu gán nhãn 25–26/08/2026 nên **lượt gán lại sớm nhất
+   là 09/09/2026**. Hai tuần đó là thời gian chờ nằm trên đường găng chứ
+   không phải thời gian làm — mỗi ngày bắt đầu muộn là một ngày mất trắng.
 5. **Đo trần người**, 10 tài liệu, sau khi có số phút ở bước 2.
 
 ### 19.5 Đồng hồ do người tự bấm — 26/08/2026

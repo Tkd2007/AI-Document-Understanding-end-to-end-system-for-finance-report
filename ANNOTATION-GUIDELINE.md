@@ -238,6 +238,14 @@ JSON, vì nó tự kiểm các trường bắt buộc.
 
 `doc_id` theo mẫu `<mã CK>_<kỳ>_<chuẩn>`, ví dụ `VNM_2026Q1_TT99`.
 
+Ngoài nội dung tài liệu, file còn mang mấy khoá ghi lại **cách** tài liệu này
+được gán nhãn: `so_lan_ghi`, `so_lan_kiem_dang_thuc`, `sua_gia_tri_sau_khi_kiem`,
+`trang_thai_dong_ho`, `thoi_gian_giay`, `so_lan_tam_dung`. Công cụ gán nhãn
+tự điền hết. Khoá đáng chú ý nhất là `trang_thai_dong_ho`: `"da_do"` nghĩa là
+`thoi_gian_giay` là một số đo thật, `"khong_do"` nghĩa là không ai bấm giờ và
+con số 0 kia **không phải** một phép đo. Phân biệt hai ca đó là điều kiện cần
+để tính trung vị ở mục 6.
+
 `source_url` và `downloaded_at` **bắt buộc**: phương án phát hành dataset an
 toàn là phát hành annotation kèm URL nguồn và script tải, **không** phát hành
 file PDF gốc — bản PDF của báo cáo niêm yết vẫn có bản quyền trình bày.
@@ -314,12 +322,17 @@ Cho nên số phút phải nhỏ hơn hẳn nhịp làm kỹ, và phải suy ra 
 
 - Trường `thoi_gian_giay` trong mỗi file gold ghi thời gian thật của lượt gán
   nhãn kỹ. Lấy **trung vị của 10 tài liệu gold đầu tiên** làm nhịp kỹ `M`.
+- Chỉ tính các file có `trang_thai_dong_ho` bằng `"da_do"`. File `"khong_do"`
+  là file không ai bấm giờ, và `thoi_gian_giay` của nó bằng 0 vì không có số
+  đo chứ không phải vì làm xong trong 0 giây — gộp nó vào trung vị là kéo tụt
+  `M` bằng một con số không tồn tại.
 - Đặt đồng hồ ở **0,6 × M**, làm tròn tới phút, **sàn 5 phút**.
 - Hệ số 0,6 không phải hằng số tự nhiên. Giá trị của nó nằm ở chỗ được **chốt
   trước khi đo**, đúng để không bị chọn lại sau khi đã nhìn thấy kết quả trần
-  người. Nó **đang chờ người chủ trì xác nhận hoặc đổi** (`HANDOFF.md` mục 0,
-  Câu 9); hạn chót là lúc có đủ 10 tài liệu gold, sau đó đổi hệ số tức là
-  chọn tham số sau khi đã thấy dữ liệu.
+  người. **Người chủ trì đã xác nhận 0,6 ngày 26/08/2026**, khi tập gold còn
+  1 tài liệu và chưa tài liệu nào có số đo thời gian — tức chốt trước khi
+  nhìn thấy bất kỳ dữ liệu nào mà hệ số này áp lên. Từ đây nó là con số cố
+  định; đổi về sau phải ghi thêm một tu chính và nêu rõ lý do.
 
 Với ước lượng 10 phút hiện có thì đồng hồ sẽ rơi vào khoảng 6 phút. **Đừng
 dùng con số đó làm số chốt:** 10 phút là ước lượng của người chứ không phải
@@ -337,7 +350,14 @@ Trường hợp thứ hai là kết quả có giá trị hơn, và nó chỉ nh�
 đã đo.
 
 Ghi lại **thời gian thật** từng tài liệu, không chỉ ghi có kịp giờ hay
-không — chính chuỗi số đó là thứ chốt con số đặt đồng hồ ở trên. Tham chiếu để đối chiếu: tài liệu kinh tế học lịch sử cho biết người
+không — chính chuỗi số đó là thứ chốt con số đặt đồng hồ ở trên. Công cụ gán
+nhãn đo giúp, nhưng **chỉ khi người gán nhãn tự bấm nút "Bắt đầu bấm giờ"**:
+đồng hồ không tự chạy lúc mở tài liệu, vì như thế nó đếm cả quãng đi tìm file
+PDF lẫn quãng bỏ đi pha cà phê. Nghỉ giữa chừng thì bấm "Tạm dừng"; số lần
+dừng được ghi vào file để về sau tách tài liệu làm liền mạch khỏi tài liệu
+ngắt quãng. Quên bấm thì công cụ **từ chối ghi file** chứ không lặng lẽ ghi
+số 0 — một tài liệu quên bấm giờ chỉ lộ ra lúc gom số, và lúc đó không bấm
+lại cho quá khứ được nữa. Tham chiếu để đối chiếu: tài liệu kinh tế học lịch sử cho biết người
 kiểm tay tốn khoảng 20 phút một trang, còn OCR thương mại kèm sửa tay đưa
 xuống khoảng 8 phút.
 
@@ -375,6 +395,7 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 - [ ] Đã kiểm riêng các cặp dễ nhầm ở mục 3.6
 - [ ] Không sửa số cho cân đẳng thức; lệch đáng kể thì ghi `notes`
 - [ ] `source_url`, `downloaded_at`, `annotator`, `annotated_at` đều có
+- [ ] Đã bấm giờ tài liệu này, hoặc khai rõ là không đo giờ (mục 6)
 - [ ] File đặt đúng `data/gold/<doc_id>.json`
 
 ---
@@ -383,6 +404,36 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 
 > Mọi thay đổi guideline ghi vào đây kèm **ngày** và **lý do**, và ghi rõ
 > **những tài liệu nào phải gán nhãn lại**. Không sửa đè lên nội dung trên.
+
+### 26/08/2026 — Hệ số 0,6 được xác nhận; đồng hồ do người tự bấm
+
+**Hai thay đổi, cả hai ở mục 6, không tài liệu nào phải gán nhãn lại.**
+
+**(a) Hệ số 0,6 nay là con số chốt.** Tu chính 25/08 đặt số phút đo trần
+người ở `0,6 × trung vị thoi_gian_giay của 10 tài liệu gold đầu`, nhưng ghi
+rõ hệ số 0,6 do phiên Claude đề xuất và còn chờ người chủ trì. Người chủ trì
+xác nhận giữ 0,6 ngày 26/08/2026. Thời điểm xác nhận là điều đáng ghi: tập
+gold khi đó có 1 tài liệu và **chưa tài liệu nào có số đo thời gian**, nên hệ
+số được chốt trước khi nhìn thấy bất kỳ dữ liệu nào nó áp lên — đúng điều kiện
+mà việc đăng ký trước cần.
+
+**(b) `thoi_gian_giay` đổi nghĩa: thời gian LÀM VIỆC, do người tự bấm.** Bản
+trước, công cụ tự chạy đồng hồ lúc người gõ xong `doc_id`, nên con số ra là
+thời gian đồng hồ tường từ lúc đó tới lúc bấm Lưu. Nó đo sai theo cả hai
+chiều: gõ `doc_id` rồi mới đi tìm file PDF, hay để cửa sổ mở qua buổi trưa,
+đều bơm thêm thời gian không phải thời gian làm việc; ngược lại, người gõ
+`doc_id` sau cùng thì đồng hồ gần như không chạy. Một trung vị dựng trên
+những con số đó không đủ để chốt tham số nào.
+
+Nay có nút **"Bắt đầu bấm giờ"** và nút **"Tạm dừng"**; `thoi_gian_giay` là
+tổng các đoạn chạy, `so_lan_tam_dung` đếm số lần ngắt quãng. Quên bấm thì
+công cụ **từ chối ghi file** trừ khi người tick "không đo giờ tài liệu này",
+và file ghi ra tự khai điều đó qua khoá `trang_thai_dong_ho`.
+
+**Vì sao không tài liệu nào phải gán nhãn lại.** Số tài liệu có số đo thời
+gian dưới giao thức cũ là **0** — `VNM_2026Q1_TT99` có `thoi_gian_giay` bằng
+0, tức chưa từng có số đo nào để mất. Thay đổi này không chạm nội dung nhãn,
+không đổi bộ chỉ tiêu, không đổi quy tắc đọc số.
 
 ### 25/08/2026 (muộn hơn) — Giao thức đo trần người bỏ con số 15 phút cố định
 

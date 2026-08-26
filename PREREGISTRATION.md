@@ -758,6 +758,10 @@ nhận hoặc đổi** — xem `HANDOFF.md` mục 0, Câu 9. Hạn chót của v
 thời điểm có đủ 10 tài liệu gold; sau đó, đổi hệ số là chọn tham số sau khi
 đã thấy dữ liệu, và tu chính này mất hiệu lực bảo vệ.
 
+> *Đã giải quyết:* người chủ trì xác nhận giữ 0,6 ngày 26/08/2026, khi tập
+> gold còn 1 tài liệu và chưa tài liệu nào có số đo thời gian. Xem tu chính
+> 26/08/2026 ở cuối file.
+
 **Phạm vi: không tài liệu nào phải gán nhãn lại.** Tu chính chạm giao thức
 của 10 tài liệu đo trần người, mà số tài liệu đã gán nhãn dưới giao thức đó
 là **0**. `VNM_2026Q1_TT99` gán nhãn kỹ, không dưới đồng hồ. Không chỉ số
@@ -772,3 +776,59 @@ mất giá trị nếu chỉ ghi những lần làm đúng thứ tự. Thiệt h
 theo đoạn Phạm vi ở trên, nhưng cam kết thì đã không được giữ nguyên văn, và
 người đọc đối chiếu hai tu chính này sẽ thấy điều đó mà không cần ai giải
 thích.
+
+### 26/08/2026 — Hệ số 0,6 được chốt, và `thoi_gian_giay` đổi định nghĩa
+
+**Tu chính, hai phần.** Cả hai chạm giao thức đo trần người ở `ADDENDUM` mục
+6 và `ANNOTATION-GUIDELINE.md` mục 6, không phần nào chạm phát biểu của bốn
+giả thuyết.
+
+**(a) Hệ số 0,6 hết trạng thái chờ.** Tu chính 25/08/2026 ngay trên đây đặt
+số phút đo trần người ở `0,6 × trung vị thoi_gian_giay của 10 tài liệu gold
+đầu tiên`, và ghi rõ rằng hệ số 0,6 do phiên Claude đề xuất chứ không phải
+người chủ trì chọn. Người chủ trì xác nhận **giữ 0,6** ngày 26/08/2026.
+
+Thời điểm là thứ đáng ghi hơn cả con số. Lúc xác nhận, `data/gold/` có đúng
+**một** tài liệu và nó mang `thoi_gian_giay` bằng 0 — tức **chưa một số đo
+thời gian nào tồn tại**, nên hệ số không thể được chọn cho vừa một trung vị
+đã nhìn thấy. Đây đúng là điều kiện mà việc đăng ký trước cần, và nó chỉ còn
+đúng trong một cửa sổ hẹp: tài liệu gold thứ hai có đồng hồ chạy thật sẽ đóng
+cửa sổ đó lại vĩnh viễn.
+
+**(b) `thoi_gian_giay` nay là thời gian LÀM VIỆC, không phải thời gian đồng
+hồ tường.** Đây là thay đổi định nghĩa của chính đại lượng mà công thức ở
+phần (a) lấy trung vị, nên nó phải nằm ở đây chứ không chỉ nằm trong
+guideline.
+
+Bản trước, công cụ gán nhãn tự khởi động đồng hồ lúc người gõ xong `doc_id`
+và lấy hiệu tới lúc bấm Lưu. Cách đo đó lệch theo cả hai chiều, và không
+chiều nào nhỏ: gõ `doc_id` xong mới đi tìm file PDF, hay để cửa sổ mở qua
+buổi trưa, đều cộng vào những quãng không phải thời gian làm việc; ngược lại,
+người điền siêu dữ liệu sau cùng thì đồng hồ gần như không chạy. Với `n = 10`
+thì một tài liệu lệch kiểu đó đủ sức đẩy trung vị, và trung vị đó nhân với
+0,6 ra thẳng số phút mà bản đo trần người phải sống dưới nó.
+
+Nay người gán nhãn tự bấm **Bắt đầu** và **Tạm dừng**; `thoi_gian_giay` là
+tổng các đoạn chạy. Hai khoá mới đi kèm, cả hai đều để phép đo tự khai giới
+hạn của nó thay vì bắt người đọc suy đoán:
+
+- `trang_thai_dong_ho` — `"da_do"` hoặc `"khong_do"`. Trung vị chỉ lấy trên
+  các file `"da_do"`. Trước khoá này, một tài liệu không ai bấm giờ và một
+  tài liệu bấm giờ ra 0 giây ghi ra file giống hệt nhau.
+- `so_lan_tam_dung` — số lần ngắt quãng. Một tài liệu làm liền mạch và một
+  tài liệu dừng năm lần có thể ra cùng một `thoi_gian_giay`, nhưng chúng
+  không đáng tin như nhau, và về sau kiểm được xem có nên loại các lượt ngắt
+  quãng nhiều khỏi trung vị hay không.
+
+Công cụ **từ chối ghi file gold** khi đồng hồ chưa từng chạy, trừ khi người
+gán nhãn tick "không đo giờ tài liệu này". Lối thoát đó có thật vì gán nhãn
+lại một tài liệu cũ là việc hợp lệ mà con số thời gian ở đó vô nghĩa, nhưng
+nó phải là một hành động tường minh — cùng nguyên tắc mà guideline mục 3.1
+đã dùng cho ca báo cáo không khai báo đơn vị tính.
+
+**Phạm vi: không tài liệu nào phải gán nhãn lại, và lần này thứ tự cam kết
+được giữ.** Số tài liệu mang số đo thời gian dưới định nghĩa cũ là **0**, nên
+không có số liệu nào phải bỏ đi. Không chỉ số nào của H0–H3 đổi. Khác với tu
+chính 25/08 — nơi tài liệu đầu tiên chạy trước tu chính đáng lẽ phải chặn nó —
+tu chính này được ghi **trước** khi bất kỳ tài liệu nào được gán nhãn dưới
+giao thức bấm giờ mới.

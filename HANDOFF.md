@@ -8,7 +8,7 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   chỉ trong một ngày, vì chính commit cập nhật nó lại thành commit mới nhất.
   Chạy `git log --oneline -1` và `git status -sb`. Quy ước: **push sau mỗi
   commit**, nên `research` khớp `origin/research` là trạng thái bình thường.
-- **Test:** **461 xanh / 0 đỏ**, chạy hết khoảng 32 giây.
+- **Test:** **470 xanh / 0 đỏ**, chạy hết khoảng 60 giây.
   `ruff check src tests chay_gan_nhan.py` sạch.
 - **Bộ chỉ tiêu:** **27 với TT99, 26 với TT200; 9 đẳng thức** — kịch bản E,
   thi công 25/08/2026 (`f1c2738`). MỐC 1 đã đóng.
@@ -19,9 +19,9 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   trigger của `.github/workflows/ci.yml`, KHÔNG phải merge.
 - **Tập gold:** **1 / khoảng 100** tài liệu. Việc gán nhãn ĐÃ BẮT ĐẦU, bằng
   công cụ trong `src/gan_nhan/` — xem mục 19.
-- **Cập nhật:** 25/08/2026 (lần 2) — Mốc 3 đã chạy xong (mục 13c); công cụ
-  gán nhãn đã dựng và tài liệu gold đầu tiên đã có (mục 19); giao thức đo
-  trần người đã bỏ con số 15 phút cố định (mục 19.3)
+- **Cập nhật:** 26/08/2026 — hệ số 0,6 của giao thức trần người đã được
+  người dùng chốt (Câu 9 đóng); đồng hồ của công cụ gán nhãn chuyển sang
+  **người tự bấm**, kèm khoá trạng thái tường minh trong file gold (mục 19.5)
 
 ---
 
@@ -34,7 +34,8 @@ chứ không phải chi tiết cài đặt.
 
 Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "Câu 4 chọn ...".
 
-**Đang chờ:** Câu 3 (hoãn được). Không câu nào đang chặn việc gì.
+**Đang chờ:** Câu 3 (hoãn được) và Câu 8 (chỉ chặn lượt chạy Mốc 3 kế
+tiếp). Không câu nào đang chặn việc gán nhãn.
 
 **Mốc 3 đã chạy xong lúc 16:05 ngày 25/08/2026 — điều kiện dừng KHÔNG kích
 hoạt.** Xem mục 13c. Việc kế tiếp không còn bị chặn: gán nhãn `data/gold/`
@@ -46,15 +47,14 @@ liên tục nghịch đảo trọn vẹn — tức thiết kế đang chọn ca 
 baseline 9. Có tiêm **nhiều hơn một lỗi mỗi lượt** ở lượt chạy tới không? Đây
 là thay đổi thiết kế thí nghiệm nên phải vào mục Sửa đổi của
 `PREREGISTRATION.md` TRƯỚC khi chạy. Chi tiết và số đo ở mục 13c.
-**Câu 9 — MỚI, đang chờ, KHÔNG chặn việc gì nhưng có hạn chót.** Giao thức
-đo trần người vừa bỏ con số "15 phút một tài liệu" và thay bằng công thức
-`0,6 × trung vị thoi_gian_giay của 10 tài liệu gold đầu tiên`, sàn 5 phút
-(lý do ở mục 19.3, tu chính đã ghi vào `PREREGISTRATION.md` và
-`ANNOTATION-GUIDELINE.md` mục 6). **Hệ số 0,6 do phiên Claude đề xuất, không
-phải người dùng chọn.** Nó phải được người dùng xác nhận hoặc đổi **trước
-khi có đủ 10 tài liệu gold** — sau thời điểm đó, đổi hệ số là chọn tham số
-sau khi đã nhìn thấy dữ liệu, và tu chính mất hiệu lực bảo vệ. Đổi thì ghi
-thêm một tu chính nữa.
+**Câu 9 — ĐÃ TRẢ LỜI 26/08/2026: giữ hệ số 0,6.** Số phút đặt đồng hồ đo
+trần người là `0,6 × trung vị thoi_gian_giay của 10 tài liệu gold đầu tiên`,
+sàn 5 phút. **Đừng mở lại câu này**: giá trị của hệ số nằm ở chỗ nó được chốt
+lúc chưa tài liệu nào có số đo thời gian, và cửa sổ đó đã đóng khi tài liệu
+gold thứ hai có đồng hồ chạy thật. Tu chính ghi ở `PREREGISTRATION.md`
+(26/08/2026) và `ANNOTATION-GUIDELINE.md` mục Sửa đổi.
+
+**Đã trả lời 26/08/2026:** Câu 9 → giữ hệ số 0,6.
 
 **Đã trả lời 25/08/2026 — tất cả trong một ngày:** Câu 1 → (a) ba con số định
 vị; Câu 2 → (a) đo ma trận trước; Câu 4 → (a) cùng nguồn khác độ sâu; Câu 5 →
@@ -1575,6 +1575,9 @@ thư mục PDF tồn tại và không rỗng trước khi mở cổng.
 | `src/gan_nhan/so_viet.py` | Đọc số kiểu Việt: `1.234.567`, `(1.234)` là số âm, `-`/`–`/`—` là rỗng |
 | `src/gan_nhan/kiem.py` | Chạy 9 đẳng thức trên chính số vừa gõ, cộng danh mục kiểm của guideline |
 
+Đồng hồ nằm ở lớp `DongHo` trong `app.py` và **do người tự bấm** — xem mục
+19.5, kể cả khi chỉ định đụng vào một chỗ khác của công cụ.
+
 **Luật 1 (người gán nhãn mù với đầu ra pipeline) được chốt bằng test, không
 bằng lời hứa.** `tests/test_gan_nhan_mu_voi_pipeline.py` phân tích AST của cả
 gói và bắt đỏ nếu bất kỳ module nào import `router`, `extract_vlm`,
@@ -1596,16 +1599,20 @@ một lần sửa một ô vào sẽ làm hỏng chính phép đo trần ngườ
 `data/gold/VNM_2026Q1_TT99.json` — Vinamilk, quý 1 năm 2026, chuẩn TT99, 27
 chỉ tiêu, đơn vị VND (`unit_multiplier: 1`), cả **9 đẳng thức cân**.
 
-**Một chỗ cần người dùng xác nhận:** file này **không có khoá `so_lan_ghi`**
-và `thoi_gian_giay` bằng 0. Công cụ luôn ghi cả hai, nên dấu vết đó nói file
-được sửa bằng tay trong trình soạn thảo chứ không qua công cụ, hoặc được ghi
-bởi bản máy chủ cũ hơn. Không sai về nội dung — số liệu đã kiểm — nhưng nguồn
-gốc thì chưa rõ, và tài liệu đầu tiên là tài liệu đáng biết rõ nguồn gốc
-nhất. Nếu quả là sửa tay thì ghi một dòng vào `notes` của file.
+**Nguồn gốc chưa xác định được, và đã thôi truy.** File thiếu khoá
+`so_lan_ghi` và có `thoi_gian_giay` bằng 0, trong khi công cụ luôn ghi cả
+hai — dấu vết nói nó được sửa tay trong trình soạn thảo, hoặc được ghi bởi
+một bản máy chủ cũ hơn. Nội dung không sai: 9 đẳng thức cân, và chính người
+dùng đã bắt được lỗi mã 52 trên nó. Người dùng chọn **xử lý nguyên nhân thay
+vì chú thích triệu chứng**: thay vì ghi một dòng vào `notes` của một file,
+công cụ nay có nút bấm giờ tường minh và từ chối ghi khi đồng hồ chưa chạy
+(mục 19.5), nên ca này không lặp lại được nữa.
 
-**Hệ quả cho phép đo:** tài liệu này KHÔNG đóng góp số nào cho nhịp gán nhãn,
-vì `thoi_gian_giay` bằng 0. Trung vị nói ở mục 19.3 phải lấy từ 10 tài liệu
-có đồng hồ chạy thật.
+File giữ nguyên, không sửa. Với khoá `trang_thai_dong_ho` mới, nó tự đọc ra
+`"khong_do"` theo giá trị mặc định của schema — tức tự khai đúng điều duy
+nhất chắc chắn về nó, rằng không có số đo thời gian nào. **Hệ quả cho phép
+đo giữ nguyên:** tài liệu này KHÔNG đóng góp số nào cho nhịp gán nhãn; trung
+vị ở mục 19.3 phải lấy từ 10 tài liệu có đồng hồ chạy thật.
 
 ### 19.3 Hai thứ rút ra, cả hai ngược với dự đoán đã ghi
 
@@ -1623,8 +1630,8 @@ Giao thức mới: đồng hồ đặt ở **0,6 × trung vị `thoi_gian_giay` 
 gold đầu tiên**, làm tròn tới phút, **sàn 5 phút**. Chốt công thức chứ không
 chốt một con số, vì ước lượng 10 phút là cảm giác chứ không phải đồng hồ. Thứ
 duy nhất thật sự cần đăng ký trước là **hệ số 0,6** — nó phải được chọn trước
-khi nhìn thấy kết quả trần người. Xem Câu 9 ở mục 0: hệ số đó do phiên Claude
-đề xuất và người dùng chưa xác nhận.
+khi nhìn thấy kết quả trần người. **Người dùng đã chốt giữ 0,6 ngày
+26/08/2026**, lúc chưa tài liệu nào có số đo thời gian; Câu 9 đóng.
 
 **(b) Bước kiểm đẳng thức bắt được lỗi mà mắt người vừa bỏ qua — ngay ở tài
 liệu đầu tiên.** Thuế thu nhập hoãn lại (mã 52) bị đọc `1` thành `0` ở hàng
@@ -1650,7 +1657,10 @@ chứ không viết kết luận bây giờ.
    chỉ nguồn.
 2. **Chạy đồng hồ thật trên 10 tài liệu đầu.** Không cần chờ đủ 100 — cứ gán
    nhãn tới đâu đồng hồ chạy tới đó. Đủ 10 thì tính trung vị và chốt số phút
-   cho giao thức trần người.
+   cho giao thức trần người. Đồng hồ nay **không tự chạy**: bấm nút "Bắt đầu
+   bấm giờ" (mục 19.5). Quên bấm thì công cụ từ chối ghi, nên không mất số
+   một cách âm thầm nữa — nhưng `VNM_2026Q1_TT99` vẫn không tính, tức cần
+   thêm **10** tài liệu có đồng hồ chứ không phải 9.
 3. **Chốt 20 hay 33 tài liệu gán nhãn đôi.** `ADDENDUM` mục 5 viết "một phần
    ba tập gold", chốt khi tập là 60 nên ra 20. Tập nay khoảng 100 nên cách
    diễn đạt đó tự nó thành 33. Phải chọn một, và ghi tu chính.
@@ -1659,6 +1669,58 @@ chứ không viết kết luận bây giờ.
    án này thì lượt gán lại phải bắt đầu SỚM, vì hai tuần là thời gian chờ
    nằm trên đường găng chứ không phải thời gian làm.
 5. **Đo trần người**, 10 tài liệu, sau khi có số phút ở bước 2.
+
+### 19.5 Đồng hồ do người tự bấm — 26/08/2026
+
+Bản đầu của công cụ tự khởi động đồng hồ lúc người gõ xong `doc_id` và lấy
+hiệu tới lúc bấm Lưu. Người dùng yêu cầu thay bằng **nút bấm giờ tường
+minh**, sau khi ca `VNM_2026Q1_TT99` cho thấy một file gold có thể ra đời với
+ô thời gian không ai đọc được nghĩa.
+
+**Vì sao đo tự động là sai chứ không chỉ là kém tiện.** Con số cần đo nuôi
+thẳng vào giao thức trần người: số phút đặt đồng hồ bằng `0,6 × trung vị của
+10 tài liệu đầu`. Với `n = 10`, một tài liệu lệch đủ sức đẩy trung vị. Mà đo
+tự động lệch theo **cả hai** chiều: gõ `doc_id` rồi mới đi tìm file PDF, hay
+để cửa sổ mở qua buổi trưa, đều cộng thêm thời gian không phải thời gian làm
+việc; ngược lại, người điền siêu dữ liệu sau cùng thì đồng hồ gần như không
+chạy.
+
+**Đã làm:**
+
+| Chỗ | Thay đổi |
+|---|---|
+| `src/gan_nhan/app.py` | Lớp `DongHo` (chạy / tạm dừng / cộng dồn), endpoint `GET` và `POST /api/dong-ho/{doc_id}/{bat-dau\|tam-dung}`, thay hẳn `POST /api/mo/{doc_id}` |
+| `src/gan_nhan/giao_dien.html` | Nút "Bắt đầu bấm giờ" ⇄ "Tạm dừng" ⇄ "Tiếp tục", đồng hồ đổi màu theo trạng thái, ô tick "không đo giờ tài liệu này" |
+| `src/eval/schema.py` | Hai khoá mới: `trang_thai_dong_ho` (`"da_do"` / `"khong_do"`) và `so_lan_tam_dung` |
+| `src/gan_nhan/kiem.py` | Danh mục kiểm thêm ô `da_bam_gio`, đánh dấu máy tự kiểm |
+| Tài liệu | Tu chính vào `PREREGISTRATION.md` và mục Sửa đổi của `ANNOTATION-GUIDELINE.md`; guideline mục 4, 6, 8 |
+
+Chín test mới trong `tests/test_gan_nhan_app.py`, dưới tiêu đề "Đồng hồ do
+người tự bấm".
+
+**Ba quyết định thiết kế, mỗi cái có một lý do đáng nhớ:**
+
+1. **Máy chủ giữ đồng hồ, trình duyệt chỉ vẽ lại.** Làm ngược lại thì một lần
+   tải lại trang xoá sạch phép đo — mà tải lại trang là chuyện thường khi
+   đang lật một PDF 40 trang.
+2. **Từ chối ghi khi đồng hồ chưa từng chạy**, thay vì cảnh báo rồi vẫn ghi
+   số 0. Một tài liệu quên bấm giờ chỉ lộ ra lúc gom số, và lúc đó không bấm
+   lại cho quá khứ được nữa. Lối thoát là ô tick "không đo giờ tài liệu này",
+   tường minh — cùng khuôn với ca để trống đơn vị tính ở guideline mục 3.1.
+   Đồng hồ đã chạy thì số đo thắng lời khai, vì vứt một số đo có thật là mất
+   mát không cứu lại được.
+3. **Mở lại bản đã lưu KHÔNG tự chạy đồng hồ.** Thời gian sửa một ô không
+   cùng đơn vị với thời gian gán nhãn một tài liệu mới, mà trung vị lấy trên
+   loại thứ hai.
+
+**Một lỗi mà test bắt được, đáng ghi vì nó sẽ tái diễn ở chỗ khác.** Bản đầu
+của `DongHo` suy trạng thái từ `tong_giay > 0` — tức phân biệt "chưa bấm" với
+"đang tạm dừng" bằng chính con số 0. Trên Windows, `time.monotonic()` nhảy
+theo bước ~15 ms, nên bấm chạy rồi bấm dừng ngay cho ra đúng `0.0`, và đồng
+hồ đã chạy trông y hệt đồng hồ chưa ai đụng vào. Đúng cái lỗi mà khoá
+`trang_thai_dong_ho` đi sửa ở tầng file, lặp lại ở tầng bộ nhớ. Đã sửa bằng
+khoá `da_bat_dau` riêng. **Bài học chung: đừng suy trạng thái từ một con số
+bằng 0, ở bất kỳ tầng nào.**
 
 ---
 

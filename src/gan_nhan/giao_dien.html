@@ -271,6 +271,23 @@ function veKetQua(d) {
       return `<div class="thieu_thanh_phan">◦ ${r.mo_ta}<br>chưa chạy được — thiếu: ${r.thieu.join(', ')}</div>`;
     return `<div class="lech">✗ ${r.mo_ta}<br>lệch <span class="so">${r.lech.toLocaleString('vi-VN')}</span>
             — <b>đọc lại các dòng này trên báo cáo</b>, đừng sửa cho cân</div>`;
+  }).join('') + veDauKhauTru(d.dau_khau_tru);
+}
+
+// Dấu ba dòng khấu trừ hiện TRƯỚC khi người đi đọc lại báo cáo, vì lỗi dấu
+// và lỗi đọc cho ra cùng một triệu chứng là đẳng thức lệch, nhưng đòi hai
+// hành động trái ngược nhau. Gộp ca đạt thành một dòng để ba dòng ✓ không
+// đẩy kết quả đẳng thức xuống dưới màn hình.
+function veDauKhauTru(ds) {
+  if (!ds || !ds.length) return '';
+  const xau = ds.filter(r => r.trang_thai !== 'dat');
+  if (!xau.length)
+    return `<div class="dat">✓ Dấu ba dòng khấu trừ (mã 11, 51, 52) đúng quy ước mục 3.3</div>`;
+  return xau.map(r => {
+    const nhan = nhanTheoTen[r.truong] || r.truong;
+    if (r.trang_thai === 'nghi_sai_dau')
+      return `<div class="lech">✗ ${nhan}<br>${r.ly_do} — <b>sửa DẤU, đây không phải lỗi của báo cáo</b></div>`;
+    return `<div class="thieu_thanh_phan">◦ ${nhan}<br>chưa kiểm được dấu — ${r.ly_do}</div>`;
   }).join('');
 }
 

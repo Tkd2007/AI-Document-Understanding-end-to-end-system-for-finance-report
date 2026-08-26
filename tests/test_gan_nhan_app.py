@@ -8,6 +8,7 @@ không ai phát hiện cho tới lúc phân tích kết quả cuối.
 """
 
 import json
+import re
 import time
 
 import pytest
@@ -157,9 +158,16 @@ def test_kiem_khong_tra_ve_gia_tri_de_nghi_qua_HTTP(client):
         json={"standard": "TT99", "values": gia_tri, "unit_declared": "Đơn vị tính: VND"},
     ).json()
 
-    assert set(d) == {"he_so_don_vi", "o_khong_ro", "dang_thuc"}
+    assert set(d) == {"he_so_don_vi", "o_khong_ro", "dang_thuc", "dau_khau_tru"}
     for r in d["dang_thuc"]:
         assert set(r) == {"mo_ta", "trang_thai", "lech", "thieu"}
+    for r in d["dau_khau_tru"]:
+        assert set(r) == {"truong", "trang_thai", "ly_do"}
+        # `ly_do` chỉ được nhắc mã số và số hiệu mục của guideline, không được
+        # mang theo giá trị nào của tài liệu: nói "ghi dương" thì được, nói
+        # dương bao nhiêu thì đúng là mớm đáp án. Mã số dài nhất là 3 chữ số,
+        # còn giá trị trên BCTC luôn dài hơn thế nhiều.
+        assert not re.search(r"\d{4,}", r["ly_do"])
 
 
 def test_de_trong_don_vi_kem_ghi_chu_la_HOP_LE(client, tmp_path):

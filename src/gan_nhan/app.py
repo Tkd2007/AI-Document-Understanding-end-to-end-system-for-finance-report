@@ -40,7 +40,12 @@ from fields_config import (
     line_codes_for,
     parse_unit,
 )
-from gan_nhan.kiem import DANH_MUC_KIEM, con_thieu_o_kiem, kiem_dang_thuc
+from gan_nhan.kiem import (
+    DANH_MUC_KIEM,
+    con_thieu_o_kiem,
+    kiem_dang_thuc,
+    kiem_dau_khau_tru,
+)
 from gan_nhan.so_viet import doc_so, quy_doi
 from gan_nhan.trang import PHONG_MAC_DINH, anh_trang, so_trang
 
@@ -407,7 +412,8 @@ def dieu_khien_dong_ho(doc_id: str, hanh_dong: str) -> dict:
 @app.post("/api/kiem")
 def kiem(yeu_cau: YeuCauKiem) -> dict:
     """
-    Chạy đẳng thức trên số người vừa gõ. KHÔNG bao giờ trả về giá trị đề nghị.
+    Chạy đẳng thức và kiểm dấu ba dòng khấu trừ trên số người vừa gõ.
+    KHÔNG bao giờ trả về giá trị đề nghị.
 
     Trả mức lệch để người biết đi đọc lại dòng nào, và cố ý dừng ở đó. Suy ra
     giá trị đúng thì được — với lỗi đơn định vị được thì ràng buộc chốt luôn
@@ -430,6 +436,10 @@ def kiem(yeu_cau: YeuCauKiem) -> dict:
                 "thieu": list(r.thieu),
             }
             for r in kiem_dang_thuc(gia_tri, ch)
+        ],
+        "dau_khau_tru": [
+            {"truong": r.truong, "trang_thai": r.trang_thai, "ly_do": r.ly_do}
+            for r in kiem_dau_khau_tru(gia_tri)
         ],
     }
 

@@ -108,6 +108,13 @@ def doc_so(raw: str | None) -> tuple[float | None, str]:
 
     Số âm: báo cáo tài chính in trong ngoặc đơn `(1.234.567)`, một số báo
     cáo dùng dấu trừ. Guideline mục 3.3 coi cả hai là số âm.
+
+    Ngoại lệ ba dòng khấu trừ của mục 3.3 KHÔNG áp ở đây. Hàm này đọc một ô
+    rời và không biết ô đó thuộc chỉ tiêu nào, nên nó không thể phân biệt mã
+    11 với mã 40 — cả hai in trong ngoặc, chỉ một trong hai là số âm thật.
+    Quy ước dấu vì thế do người gán nhãn gõ và do `kiem.kiem_dau_khau_tru`
+    kiểm lại theo tên trường. Tự đảo dấu ở đây cũng sẽ là sửa lặng lẽ một giá
+    trị người vừa gõ, đúng thứ mà công cụ gán nhãn không được phép làm.
     """
     if raw is None:
         return None, KHONG_RO

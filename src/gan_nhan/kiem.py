@@ -26,6 +26,12 @@ khuyên:
   3. Đẳng thức thiếu thành phần được báo là `thieu_thanh_phan`, KHÔNG phải
      `dat`. Coi đẳng thức không chạy được là đẳng thức đã đạt là cách âm
      thầm biến một tài liệu dở dang thành một tài liệu sạch.
+
+`kiem_dau_khau_tru` phục vụ cùng mục đích nhưng cho một chế độ lỗi khác:
+người gán nhãn chép đúng từng chữ số mà vẫn thấy đẳng thức lệch, vì ba dòng
+khấu trừ in trong ngoặc đơn đã bị ghi thành số âm. Nó cũng chỉ BÁO chứ không
+sửa hộ — đảo dấu giúp một giá trị người vừa gõ là đúng loại can thiệp âm
+thầm mà cả module này được viết ra để chặn.
 """
 
 from dataclasses import dataclass
@@ -82,6 +88,102 @@ def kiem_dang_thuc(values: dict, standard: Standard) -> list[KetQuaMotDangThuc]:
     return ket
 
 
+# Ba chỉ tiêu mà guideline mục 3.3 bắt ghi DƯƠNG dù báo cáo in trong ngoặc
+# đơn. Để dưới dạng dữ liệu ở đây vì quy tắc phải có đúng một nơi định nghĩa.
+GIA_VON = "gia_von_hang_ban"
+TRUONG_THUE = ("thue_tndn_hien_hanh", "thue_tndn_hoan_lai")
+
+DAU_DAT = "dat"
+NGHI_SAI_DAU = "nghi_sai_dau"
+CHUA_GO = "chua_go"
+CHUA_QUYET_DINH_DUOC = "chua_quyet_dinh_duoc"
+
+
+@dataclass(frozen=True)
+class KetQuaMotDau:
+    """Kết quả kiểm dấu của MỘT chỉ tiêu khấu trừ."""
+
+    truong: str
+    trang_thai: str
+    ly_do: str
+
+
+def kiem_dau_khau_tru(values: dict) -> list[KetQuaMotDau]:
+    """
+    Kiểm dấu ba chỉ tiêu khấu trừ, theo guideline mục 3.3.
+
+    Vì sao cần một phép kiểm riêng thay vì để đẳng thức tự bắt: đẳng thức có
+    bắt được, nhưng nó báo ra một con số lệch, và người gán nhãn không có
+    cách nào phân biệt "lệch vì tôi ghi sai dấu" với "lệch vì báo cáo tự mâu
+    thuẫn". Hai ca đó cần hai hành động trái ngược — một bên sửa, một bên
+    tuyệt đối không được sửa mà phải ghi `notes`. Đoán nhầm ca là cách nhanh
+    nhất để một tài liệu sạch bị chữa hỏng.
+
+    Giá vốn hàng bán luôn dương: `FIELD_RULES` đã đặt `allow_negative` là
+    False cho nó, và văn bản đưa mã 11 vào công thức `Mã 20 = Mã 10 - Mã 11`
+    như một số dương.
+
+    Hai chỉ tiêu thuế thì dấu âm HỢP LỆ trong đúng một trường hợp — thuế là
+    thu nhập chứ không phải chi phí, tức lợi nhuận sau thuế lớn hơn lợi nhuận
+    trước thuế. Nên dấu của chúng quyết định bằng mã 50 và mã 60, không bằng
+    dấu ngoặc trên trang. Thiếu một trong hai mã đó thì trả
+    `chua_quyet_dinh_duoc` chứ không trả `dat`: coi một phép kiểm không chạy
+    được là một phép kiểm đã qua là cách âm thầm cấp giấy thông hành cho
+    đúng chỗ đang nghi ngờ.
+    """
+    ket = []
+
+    gia_von = values.get(GIA_VON)
+    if gia_von is None:
+        ket.append(KetQuaMotDau(GIA_VON, CHUA_GO, "chưa gõ hoặc đọc không ra"))
+    elif gia_von < 0:
+        ket.append(
+            KetQuaMotDau(
+                GIA_VON,
+                NGHI_SAI_DAU,
+                "giá vốn hàng bán ghi âm — báo cáo in trong ngoặc đơn nhưng "
+                "guideline mục 3.3 bắt ghi dương",
+            )
+        )
+    else:
+        ket.append(KetQuaMotDau(GIA_VON, DAU_DAT, ""))
+
+    truoc_thue = values.get("loi_nhuan_truoc_thue")
+    sau_thue = values.get("loi_nhuan_sau_thue")
+    thue_la_thu_nhap = (
+        None if truoc_thue is None or sau_thue is None else sau_thue > truoc_thue
+    )
+
+    for ten in TRUONG_THUE:
+        gia_tri = values.get(ten)
+        if gia_tri is None:
+            ket.append(KetQuaMotDau(ten, CHUA_GO, "chưa gõ hoặc đọc không ra"))
+        elif gia_tri >= 0:
+            ket.append(KetQuaMotDau(ten, DAU_DAT, ""))
+        elif thue_la_thu_nhap is None:
+            ket.append(
+                KetQuaMotDau(
+                    ten,
+                    CHUA_QUYET_DINH_DUOC,
+                    "ghi âm, nhưng thiếu mã 50 hoặc mã 60 nên chưa biết thuế "
+                    "làm tăng hay giảm lợi nhuận",
+                )
+            )
+        elif thue_la_thu_nhap:
+            ket.append(KetQuaMotDau(ten, DAU_DAT, ""))
+        else:
+            ket.append(
+                KetQuaMotDau(
+                    ten,
+                    NGHI_SAI_DAU,
+                    "ghi âm trong khi thuế làm giảm lợi nhuận (mã 60 < mã 50) "
+                    "— guideline mục 3.3 bắt ghi dương",
+                )
+            )
+
+    return ket
+
+
 # Danh mục kiểm, chép từ `ANNOTATION-GUIDELINE.md` mục 8.
 #
 # Để ở đây dưới dạng dữ liệu chứ không nhúng vào HTML, vì hai lý do: nó phải
@@ -95,7 +197,8 @@ DANH_MUC_KIEM = [
     ("da_xac_dinh_chuan", "Đã xác định chuẩn mẫu biểu, hoặc ghi UNKNOWN kèm lý do", True),
     ("don_vi_nguyen_van", "unit_declared chép nguyên văn; unit_multiplier khớp", True),
     ("da_quy_doi", "Mọi giá trị đã quy đổi về đồng", True),
-    ("am_bang_dau_tru", "Số âm ghi bằng dấu trừ, không phải ngoặc", True),
+    ("am_bang_dau_tru",
+     "Số âm ghi bằng dấu trừ, không phải ngoặc; mã 11, 51, 52 ghi dương", True),
     ("o_trong_ghi_0", "Ô trống, dấu gạch, dòng vắng mặt ghi 0; null chỉ khi đọc không ra", False),
     ("doi_chieu_ma_so", "Đã đối chiếu mã số, không chỉ tên chỉ tiêu", False),
     ("kiem_cap_de_nham", "Đã kiểm riêng các cặp dễ nhầm ở guideline mục 3.6", False),

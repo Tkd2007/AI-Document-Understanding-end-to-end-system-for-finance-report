@@ -9,12 +9,17 @@ biến một tài liệu gán nhãn dở dang thành một tài liệu trông đ
 
 from fields_config import Standard, fields_for
 from gan_nhan.kiem import (
+    CHUA_GO,
+    CHUA_QUYET_DINH_DUOC,
     DAT,
+    DAU_DAT,
     LECH,
+    NGHI_SAI_DAU,
     O_NGUOI_PHAI_TICK,
     THIEU_THANH_PHAN,
     con_thieu_o_kiem,
     kiem_dang_thuc,
+    kiem_dau_khau_tru,
 )
 
 
@@ -148,3 +153,109 @@ def test_danh_muc_kiem_bat_nguoi_tick_dung_nhung_o_may_khong_biet():
 
     assert con_thieu_o_kiem({}) == list(O_NGUOI_PHAI_TICK)
     assert con_thieu_o_kiem(dict.fromkeys(O_NGUOI_PHAI_TICK, True)) == []
+
+
+def _dau(values: dict) -> dict:
+    """Kết quả kiểm dấu, tra theo tên trường cho dễ đọc."""
+    return {r.truong: r.trang_thai for r in kiem_dau_khau_tru(values)}
+
+
+def test_gia_von_am_bi_bao_la_nghi_sai_dau():
+    """
+    Guideline mục 3.3 bắt mã 11 ghi dương dù báo cáo in trong ngoặc đơn, vì
+    văn bản đưa nó vào công thức `Mã 20 = Mã 10 - Mã 11` như một số dương.
+    """
+    dat = _dau({"gia_von_hang_ban": 100, "loi_nhuan_truoc_thue": 90, "loi_nhuan_sau_thue": 80})
+    assert dat["gia_von_hang_ban"] == DAU_DAT
+
+    am = _dau({"gia_von_hang_ban": -100, "loi_nhuan_truoc_thue": 90, "loi_nhuan_sau_thue": 80})
+    assert am["gia_von_hang_ban"] == NGHI_SAI_DAU
+
+
+def test_thue_am_hop_le_khi_thue_la_THU_NHAP_chu_khong_phai_chi_phi():
+    """
+    Đây là chỗ không được kiểm bằng dấu ngoặc trên trang giấy. Thông tư dành
+    dấu âm ở mã 51 và 52 cho ca thuế phát sinh bên Nợ, tức lợi nhuận sau thuế
+    LỚN HƠN lợi nhuận trước thuế. Bắt oan ca đó sẽ đẩy người gán nhãn đi sửa
+    một giá trị vốn đúng.
+    """
+    thu_nhap = _dau(
+        {
+            "gia_von_hang_ban": 100,
+            "thue_tndn_hien_hanh": -20,
+            "thue_tndn_hoan_lai": 0,
+            "loi_nhuan_truoc_thue": 80,
+            "loi_nhuan_sau_thue": 100,
+        }
+    )
+    assert thu_nhap["thue_tndn_hien_hanh"] == DAU_DAT
+
+    chi_phi = _dau(
+        {
+            "gia_von_hang_ban": 100,
+            "thue_tndn_hien_hanh": -20,
+            "thue_tndn_hoan_lai": 0,
+            "loi_nhuan_truoc_thue": 100,
+            "loi_nhuan_sau_thue": 80,
+        }
+    )
+    assert chi_phi["thue_tndn_hien_hanh"] == NGHI_SAI_DAU
+
+
+def test_thieu_ma_50_hoac_60_thi_bao_CHUA_QUYET_DINH_DUOC_chu_khong_bao_dat():
+    """
+    Cùng lý do mà đẳng thức thiếu thành phần được báo riêng: coi một phép
+    kiểm không chạy được là một phép kiểm đã qua là cách âm thầm cấp giấy
+    thông hành cho đúng chỗ đang nghi ngờ.
+    """
+    dat = _dau(
+        {
+            "gia_von_hang_ban": 100,
+            "thue_tndn_hien_hanh": -20,
+            "loi_nhuan_truoc_thue": None,
+            "loi_nhuan_sau_thue": 80,
+        }
+    )
+    assert dat["thue_tndn_hien_hanh"] == CHUA_QUYET_DINH_DUOC
+    assert dat["thue_tndn_hoan_lai"] == CHUA_GO
+
+
+def test_bo_so_DGC_that_da_tung_lot_qua_muoi_mot_lan_kiem_dang_thuc():
+    """
+    Hồi quy trên ca đã xảy ra thật, chép từ B02 của `DGC_2025Q2_TT200`.
+
+    Bộ số này chép đúng từng chữ số trên báo cáo nhưng ghi mã 11 và mã 51
+    theo dấu ngoặc, nên hai đẳng thức B02 lệch. File gold khi đó có
+    `so_lan_kiem_dang_thuc` bằng 11: người gán nhãn kiểm mười một lần mà
+    không tìm ra, vì không có lỗi đọc nào để tìm. Phép kiểm dấu tồn tại để
+    lần sau câu trả lời hiện ra ngay lần kiểm đầu.
+    """
+    v = {ten: 0 for ten in fields_for(Standard.TT200)}
+    v.update(
+        {
+            "doanh_thu_thuan": 196_237_282_225,
+            "gia_von_hang_ban": -107_515_846_476,
+            "loi_nhuan_gop": 88_721_435_749,
+            "ln_thuan_hdkd": 628_952_962_840,
+            "ln_khac": -83_660_312,
+            "loi_nhuan_truoc_thue": 628_869_302_528,
+            "thue_tndn_hien_hanh": -23_554_373_035,
+            "thue_tndn_hoan_lai": 0,
+            "loi_nhuan_sau_thue": 605_314_929_493,
+        }
+    )
+
+    dat = _dau(v)
+    assert dat["gia_von_hang_ban"] == NGHI_SAI_DAU
+    assert dat["thue_tndn_hien_hanh"] == NGHI_SAI_DAU
+
+    # Mức lệch đúng bằng GẤP ĐÔI trường bị đảo dấu — chữ ký số học của lỗi
+    # dấu, thứ tách nó khỏi ca báo cáo tự mâu thuẫn.
+    lech = {r.mo_ta: r.lech for r in kiem_dang_thuc(v, Standard.TT200) if r.trang_thai == LECH}
+    assert set(lech.values()) == {-2 * 107_515_846_476, -2 * 23_554_373_035}
+
+    # Đảo dấu theo mục 3.3 thì mọi đẳng thức cân, không phải đổi chữ số nào.
+    v["gia_von_hang_ban"] = 107_515_846_476
+    v["thue_tndn_hien_hanh"] = 23_554_373_035
+    assert all(r.trang_thai == DAT for r in kiem_dang_thuc(v, Standard.TT200))
+    assert all(t == DAU_DAT for t in _dau(v).values())

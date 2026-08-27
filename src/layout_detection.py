@@ -20,6 +20,31 @@ CONFIDENCE = 0.2
 # mất chữ số ở cột ngoài cùng bên phải, đúng cột chứa giá trị cần lấy.
 PADDING = 8
 
+# Nới RIÊNG mép TRÊN thêm nữa, tính theo TỶ LỆ chiều cao trang.
+#
+# Vì sao cần: dòng "Đơn vị tính: VND" nằm ngay trên bảng và NGOÀI box bảng.
+# Đo trên BMP trang 4 (cao 3504 px): DocLayout-YOLO nhận ra dòng ấy rất chắc
+# chắn — box lớp `plain text` conf 0,86 ở y 416..471 — nhưng vùng bảng bắt
+# đầu ở y 516 nên nó rơi ra ngoài, cách 45 px. Trên VNM trang 8 hụt 27 px.
+# VLM không đọc sai dòng ấy, nó chưa từng được đưa cho xem.
+#
+# Vì sao chỗ hụt này nặng hơn mọi con số accuracy: với lỗi sai đơn vị toàn
+# cục thì `Aδ = (c−1)Ax* = 0`, tức MỌI đẳng thức kế toán đều mù với nó. Bảng
+# vẫn cân hoàn hảo trong khi mọi con số sai 1000 lần. Dòng đơn vị là mỏ neo
+# tuyệt đối duy nhất, và mất nó là mất chế độ lỗi duy nhất mà cả tầng ràng
+# buộc không nhìn thấy được.
+#
+# Vì sao TỶ LỆ chứ không phải số pixel cố định: tập gold trải từ 89,9 tới
+# 295,8 dpi, nên cùng một khoảng cách vật lý trên trang cho ra số pixel khác
+# nhau gấp hơn ba lần. Một hằng số pixel vừa cho bản 300 dpi sẽ hụt trên bản
+# 100 dpi, và ngược lại thì nuốt cả tiêu đề công ty.
+#
+# 0,05 lấy từ số đo chứ không phải chọn bừa: trên BMP, nới trọn dòng đơn vị
+# cần 100 px = 2,9% chiều cao trang, còn khối tiêu đề công ty bắt đầu ở
+# y 208, tức 8,8% phía trên. 5% nằm giữa hai mốc đó — đủ để với tới dòng
+# đơn vị, chưa đủ để chạm khối tiêu đề.
+TY_LE_NOI_TREN = 0.05
+
 # Hai box chồng nhau quá mức này thì coi là cùng một bảng.
 #
 # 0.5 là ngưỡng quy ước của non-maximum suppression. Để cao hơn thì hai
@@ -123,7 +148,12 @@ def get_model():
     return _model
 
 
-def cat_vung(image: Image.Image, box: tuple[int, int, int, int], confidence: float) -> TableRegion:
+def cat_vung(
+    image: Image.Image,
+    box: tuple[int, int, int, int],
+    confidence: float,
+    tran_tren: int | None = None,
+) -> TableRegion:
     """
     Nới PADDING quanh box, clamp về trong khung ảnh, rồi cắt.
 
@@ -136,14 +166,54 @@ def cat_vung(image: Image.Image, box: tuple[int, int, int, int], confidence: flo
     x1, y1, x2, y2 = box
     width, height = image.size
 
+    # tran_tren=None giữ nguyên hành vi cũ. Đây là mặc định có chủ đích chứ
+    # không phải quên: hàm này còn được gọi ở chỗ không có danh sách box
+    # khác để mà tính mép trên, và ở đó nới bừa là nới mù.
+    mep_tren = y1 - PADDING if tran_tren is None else min(tran_tren, y1 - PADDING)
+
     crop_box = (
         max(0, x1 - PADDING),
-        max(0, y1 - PADDING),
+        max(0, mep_tren),
         min(width, x2 + PADDING),
         min(height, y2 + PADDING),
     )
 
     return TableRegion(image=image.crop(crop_box), bbox=crop_box, confidence=confidence)
+
+
+def tran_noi_tren(
+    box: tuple[int, int, int, int],
+    cac_box_khac: list[tuple[int, int, int, int]],
+    height: int,
+) -> int:
+    """
+    Mép trên xa nhất được phép cắt tới cho một vùng bảng.
+
+    Nới tới ĐỈNH của box gần nhất nằm ngay phía trên, chặn bằng
+    TY_LE_NOI_TREN nhân chiều cao trang. Không có box nào ở trên thì nới
+    trọn khoảng dự phòng đó.
+
+    Lấy trọn box phía trên chứ KHÔNG dừng ở mép dưới của nó: thứ cần lấy —
+    dòng "Đơn vị tính" — nằm BÊN TRONG box ấy, nên dừng ở mép dưới thì vẫn
+    hụt đúng dòng cần lấy, chỉ hụt ít hơn.
+
+    Chỉ xét box có phần chồng theo chiều NGANG với bảng. Bỏ điều kiện đó thì
+    một box số trang hay ghi chú ở lề cũng kéo được vùng cắt lên tận đầu
+    trang, và vùng cắt rộng ra vì một thứ không liên quan gì tới bảng.
+    """
+    x1, y1, x2, _ = box
+    gioi_han = max(0, y1 - int(height * TY_LE_NOI_TREN))
+
+    o_tren = [
+        khac
+        for khac in cac_box_khac
+        if khac[3] <= y1 and min(x2, khac[2]) > max(x1, khac[0])
+    ]
+    if not o_tren:
+        return gioi_han
+
+    gan_nhat = max(o_tren, key=lambda khac: khac[3])
+    return max(gioi_han, gan_nhat[1])
 
 
 def get_table_regions(image: Image.Image) -> list[TableRegion]:
@@ -162,12 +232,22 @@ def get_table_regions(image: Image.Image) -> list[TableRegion]:
     model = get_model()
     result = model.predict(image, imgsz=IMAGE_SIZE, conf=CONFIDENCE)[0]
 
-    regions = []
-    for box in result.boxes:
-        if model.names[int(box.cls)] != "table":
-            continue
-        toa_do = tuple(int(value) for value in box.xyxy[0])
-        regions.append(cat_vung(image, toa_do, float(box.conf)))
+    # Giữ lại box KHÔNG phải bảng thay vì bỏ ngay tại vòng lặp. Bản trước
+    # `continue` thẳng, nên box `plain text` chứa dòng "Đơn vị tính" bị vứt
+    # đúng tại đó dù model nhận ra nó với conf 0,86 — và không chỗ nào phía
+    # sau biết là nó từng tồn tại.
+    tat_ca = [
+        (tuple(int(gia_tri) for gia_tri in box.xyxy[0]), model.names[int(box.cls)], float(box.conf))
+        for box in result.boxes
+    ]
+    khong_phai_bang = [toa_do for toa_do, ten_lop, _ in tat_ca if ten_lop != "table"]
+    _, height = image.size
+
+    regions = [
+        cat_vung(image, toa_do, conf, tran_noi_tren(toa_do, khong_phai_bang, height))
+        for toa_do, ten_lop, conf in tat_ca
+        if ten_lop == "table"
+    ]
 
     return filter_overlapping(regions)
 

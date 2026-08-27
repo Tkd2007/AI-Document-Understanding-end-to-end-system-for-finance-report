@@ -301,7 +301,7 @@ giống nhau đến mức nếu một trang vào train và một trang vào test
 
 ## Sửa đổi
 
-**Mười bốn tu chính, không cái nào được rút gọn hay viết đè.** Đó là điều kiện
+**Mười lăm tu chính, không cái nào được rút gọn hay viết đè.** Đó là điều kiện
 để việc đăng ký trước còn giá trị: một bản ghi sửa được sau khi thấy kết quả
 thì không chứng minh được gì. Mục lục dưới đây thêm ngày 26/08/2026 để tìm
 nhanh, và nó là thứ DUY NHẤT được thêm vào phần này ngoài các tu chính.
@@ -320,8 +320,40 @@ nhanh, và nó là thứ DUY NHẤT được thêm vào phần này ngoài các 
 | 25/08 | Giao thức trần người bỏ con số 15 phút cố định | diễn giải kết quả |
 | 26/08 | Hệ số 0,6 được chốt; `thoi_gian_giay` đổi định nghĩa | diễn giải kết quả |
 | 26/08 | Độ phân giải bản quét thành hiệp biến ghi trước, phân tích thứ cấp | H1, H2, giới hạn |
+| 27/08 | Phân bố lỗi thật ở tầng gold khác hẳn phân bố bơm ở tầng XBRL | giới hạn H2, H3 |
 
 Mọi sửa đổi ghi vào đây kèm ngày và lý do, không sửa đè lên trên.
+
+### 27/08/2026 — phân bố lỗi thật khác hẳn phân bố đang bơm ở tầng XBRL
+
+**Ghi nhận, KHÔNG đổi thiết kế.** Tu chính này bắt buộc phải có trước khi
+diễn giải bất kỳ con số nào của tầng XBRL trong bài.
+
+Lượt chấm pipeline đầu tiên trên tập gold Việt Nam (10 tài liệu, 27/08/2026)
+cho phân bố chế độ lỗi sau, trên 49 trường lệch:
+
+| Chế độ lỗi | Số trường |
+|---|---:|
+| Bỏ trống | 25 |
+| Đảo dấu | 11 |
+| Định vị nhầm bảng | 10 |
+| Nhầm ô (`row_shift`) | 2 |
+| **Nhầm chữ số** | **1** |
+
+`src/nham_chu_so.py` bơm lỗi theo **ma trận nhầm chữ số**, tức mô phỏng đúng
+chế độ lỗi chiếm **1 trên 49** trường lệch của dữ liệu thật. Ba chế độ trội
+— bỏ trống, đảo dấu, định vị nhầm bảng — **không có trong bộ lỗi được bơm**.
+
+Hệ quả cho việc diễn giải, phải ghi vào phần Giới hạn của bài: mọi số đo
+định vị và sửa lỗi ở tầng XBRL đang được đo trên một phân bố lỗi **không đại
+diện** cho phân bố quan sát được ở tầng gold. Điều này KHÔNG làm hỏng tầng
+XBRL — tầng đó dùng để đo **năng lực** trên lỗi biết trước, và giá trị của
+nó nằm ở chỗ có ground truth về vị trí lỗi. Nhưng nó **cấm** việc chuyển
+thẳng một con số recall từ tầng XBRL sang phát biểu về tài liệu thật.
+
+**Không sửa bộ lỗi bơm ở lượt này**, vì đổi phân bố lỗi sau khi đã thấy kết
+quả là chọn phân bố theo kết quả. Nếu đổi thì phải ghi tu chính riêng, nêu
+rõ ngày và lý do, và chạy lại toàn bộ tầng XBRL.
 
 ### 22/08/2026 — Chốt trần số trường được sửa ở 2, và tách hai loại ABSTAIN
 

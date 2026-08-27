@@ -126,7 +126,7 @@ Báo cáo tài chính in số âm **trong ngoặc đơn**: `(1.234.567)`. Ghi gi
 |---|---|---|
 | Giá vốn hàng bán | 11 | **Luôn dương.** Giá vốn âm là dấu hiệu đọc sai, không phải số liệu |
 | Chi phí thuế TNDN hiện hành | 51 | Dương khi thuế làm **giảm** lợi nhuận (mã 60 < mã 50) |
-| Chi phí thuế TNDN hoãn lại | 52 | Dương khi thuế làm **giảm** lợi nhuận (mã 60 < mã 50) |
+| Chi phí thuế TNDN hoãn lại | 52 | Dương khi thuế làm **giảm** lợi nhuận (mã 60 < mã 50) — **QUY TẮC NÀY ĐANG BỊ CHẤT VẤN**, xem tu chính 27/08/2026 |
 
 *Vì sao cần ngoại lệ:* trên cùng một trang B02, dấu ngoặc mang **hai nghĩa
 khác nhau**, và quy tắc "ngoặc là âm" gộp chúng làm một.
@@ -496,6 +496,32 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 
 > Mọi thay đổi guideline ghi vào đây kèm **ngày** và **lý do**, và ghi rõ
 > **những tài liệu nào phải gán nhãn lại**. Không sửa đè lên nội dung trên.
+
+### 27/08/2026 — mã 52 của mục 3.3: quy tắc và nhãn gold đang mâu thuẫn
+
+**Chưa sửa quy tắc, mới ghi nhận mâu thuẫn.** Chờ người chủ trì quyết —
+`HANDOFF.md` mục 0 Câu 13. **Chưa tài liệu nào phải gán nhãn lại.**
+
+Mục 3.3 xếp mã 52 vào ba dòng khấu trừ ghi số dương, quy tắc là *dương khi
+mã 60 < mã 50*. Lượt chấm pipeline ngày 27/08/2026 phát hiện **nhãn gold của
+`MWG_2025Q1_TT200` và `VRE_2026Q1_TT99` ghi mã 52 ÂM, trong khi cả hai tài
+liệu đều có mã 60 < mã 50**.
+
+Về kế toán thì nhãn hợp lý hơn quy tắc. `Mã 60 = Mã 50 − Mã 51 − Mã 52`, nên
+một khoản **thu nhập** thuế hoãn lại (mã 52 âm) sống chung được với mã 60 <
+mã 50 miễn mã 51 đủ lớn. Mệnh đề *"dương khi mã 60 < mã 50"* đúng cho
+**tổng** thuế (`mã 51 + mã 52 = mã 50 − mã 60`) nhưng **sai khi áp riêng
+từng dòng**.
+
+Hệ quả đã thi công: `chuan_hoa_dau()` trong `src/fields_config.py` **cố ý bỏ
+mã 52 ra ngoài** (`a0cd5ab`). Áp nguyên văn quy tắc sẽ lật một mã 52 âm hợp
+lệ thành dương và đẻ ra lỗi câm mới. Trên tập gold, bỏ mã 52 ra cho đúng số
+trường sửa được như bản rộng hơn, mà không mang rủi ro đó.
+
+Hai đường ra, chưa chọn: (a) sửa câu chữ mục 3.3 để mã 52 giữ nguyên dấu như
+in, hoặc quyết định dấu bằng dấu Nợ/Có chứ không bằng mã 50 và 60; (b) gán
+nhãn lại mã 52 của MWG và VRE. Chọn (b) thì phải nói rõ vì sao nhãn cũ sai,
+vì nó đang khớp với chuẩn mực kế toán.
 
 ### 26/08/2026 (muộn nhất) — Nhóm Stress thứ ba đo bằng độ phân giải bản quét
 

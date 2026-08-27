@@ -8,7 +8,7 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   chỉ trong một ngày, vì chính commit cập nhật nó lại thành commit mới nhất.
   Chạy `git log --oneline -1` và `git status -sb`. Quy ước: **push sau mỗi
   commit**, nên `research` khớp `origin/research` là trạng thái bình thường.
-- **Test:** **484 xanh / 0 đỏ**, chạy hết khoảng 50 giây.
+- **Test:** **501 xanh / 0 đỏ**, chạy hết khoảng 37 giây.
   `ruff check src tests chay_gan_nhan.py` sạch.
 - **Bộ chỉ tiêu:** **27 với TT99, 26 với TT200; 9 đẳng thức** — kịch bản E,
   thi công 25/08/2026 (`f1c2738`). MỐC 1 đã đóng.
@@ -19,14 +19,20 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   trigger của `.github/workflows/ci.yml`, KHÔNG phải merge.
 - **Tập gold:** **11 / khoảng 100** tài liệu đã gán nhãn — trọn cả **10 tài
   liệu của danh mục đầu** (mục 19.6) cộng `VNM_2026Q1_TT99` vốn có trước danh
-  mục. Công cụ ở `src/gan_nhan/` — xem mục 19. **Chỉ 8 trong 11 có đồng hồ
+  mục. **Nhưng VNM KHÔNG có PDF trong `data/bctc/`**, nên mọi lượt chạy
+  pipeline chỉ chấm được **10** và lặng lẽ bỏ qua nó — xem mục 20.3. Công cụ ở `src/gan_nhan/` — xem mục 19. **Chỉ 8 trong 11 có đồng hồ
   chạy thật** (`trang_thai_dong_ho` bằng `da_do`), nên còn thiếu **2 tài liệu**
   nữa mới chốt được số phút cho giao thức trần người — xem mục 19.4 bước 2.
-- **Cập nhật:** 27/08/2026 — **mục 20 MỚI**: pipeline đã được chấm trên tập
-  gold, số thật đầu tiên của cả dự án. Kèm theo là chẩn đoán chỗ hỏng nghiêm
-  trọng nhất — dòng "Đơn vị tính" nằm ngoài vùng bảng YOLO cắt (20.4). Mốc 3
-  đã chạy lại và tái lập, trừ bảng lý do ABSTAIN (mục 13c). Tài liệu này cũng
-  được **nén**: mục 6–9 gộp vào mục 5, nhật ký commit thôi chép tay.
+- **Cập nhật:** 27/08/2026 (đợt 2) — **mục 20 viết lại đầy đủ**: lượt chấm
+  pipeline trên tập gold đã **xong 10/10 tài liệu có PDF**, và đây là số thật
+  đầu tiên của cả dự án. Kết quả cốt lõi: **81,5% trường đúng, lỗi câm
+  10,0%** — nhưng **21 trong 24 lỗi câm là hai con bug chứ không phải giới
+  hạn của mô hình**, nên tỷ lệ lỗi câm không quy giản được chỉ là **1,25%**
+  (mục 20.4). **Hai bản vá đã thi công**: quy tắc dấu (`a0cd5ab`, đo được
+  81,5% → 83,8% và lỗi câm 10,0% → 7,5%) và nới mép trên vùng cắt
+  (`05d00d0`, mới kiểm hình học, chưa chạy lại pipeline) — mục 20.5. Mốc 3
+  đã chạy lại và tái lập, trừ bảng lý do ABSTAIN (mục 13c). Tài liệu này
+  cũng được **nén**: mục 6–9 gộp vào mục 5, nhật ký commit thôi chép tay.
 
 ---
 
@@ -69,8 +75,22 @@ chứ không phải chi tiết cài đặt.
 Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "Câu 4 chọn ...".
 
 **Đang chờ:** Câu 3 (nội dung đã mất), Câu 8 (chỉ chặn lượt chạy Mốc 3 kế
-tiếp), **Câu 12 (MỚI 27/08 — loại 10 tài liệu đã chạy pipeline khỏi tập gán
-nhãn đôi hay không)**. Không câu nào đang chặn việc gán nhãn.
+tiếp), Câu 12 (loại 10 tài liệu đã chạy pipeline khỏi tập gán nhãn đôi hay
+không), **Câu 13 (MỚI 27/08 — mã 52: guideline và gold đang mâu thuẫn
+nhau)**. Không câu nào đang chặn việc gán nhãn.
+
+**Câu 13 — MỚI, không chặn code nhưng chặn câu chữ guideline.**
+`ANNOTATION-GUIDELINE.md` mục 3.3 xếp mã 52 (chi phí thuế TNDN hoãn lại) vào
+ba dòng khấu trừ "ghi số DƯƠNG dù in trong ngoặc", quy tắc là *dương khi mã
+60 < mã 50*. Nhưng **nhãn gold của MWG và VRE ghi mã 52 ÂM trong khi cả hai
+đều có mã 60 < mã 50** — dữ liệu thật mâu thuẫn với chữ nghĩa quy tắc. Về kế
+toán thì gold hợp lý hơn: `Mã 60 = Mã 50 − Mã 51 − Mã 52`, nên một khoản thu
+nhập thuế hoãn lại (mã 52 âm) sống chung được với mã 60 < mã 50 miễn mã 51
+đủ lớn; mệnh đề "dương khi mã 60 < mã 50" đúng cho **tổng** thuế nhưng sai
+khi áp riêng từng dòng. Bản vá dấu (`a0cd5ab`) vì thế **cố ý bỏ mã 52 ra
+ngoài** — áp nguyên văn sẽ lật một mã 52 âm hợp lệ thành dương và **đẻ ra
+lỗi câm mới**. Cần người chủ trì quyết: sửa câu chữ guideline cho mã 52, hay
+gán nhãn lại MWG và VRE? Chi tiết ở mục 20.6.
 
 **Câu 12 — MỚI, không chặn ngay nhưng có hạn.** Pipeline đã chạy trên 10 tài
 liệu gold đầu (mục 20), nên `data/output/tap_gold_*.json` và
@@ -1742,92 +1762,215 @@ tồn tại trong docstring chứ không tồn tại trong hành vi. Nay `redire
 > này khỏi tập gán nhãn đôi. Tập đích ~100 mà chỉ cần 20–33, nên thừa chỗ, và
 > nó gỡ rủi ro tận gốc thay vì phải giữ kỷ luật không mở file.
 
-### 20.3 Kết quả từng phần — lượt chạy CHƯA xong
+### 20.3 Kết quả đầy đủ — 10 tài liệu, lượt chạy xong 13:31 ngày 27/08/2026
 
-Chế độ `--chuan-tu-gold`. Kết quả đầy đủ ở
-`data/output/tap_gold_chuan_tu_gold.json`, cập nhật sau mỗi tài liệu.
+Chế độ `--chuan-tu-gold` (oracle chuẩn mẫu biểu). Kết quả ở
+`data/output/tap_gold_chuan_tu_gold.json`. **Bản sao trước khi vá** giữ ở
+`tap_gold_chuan_tu_gold_TRUOC-VA-2026-08-27.json` — đừng xoá, nó là mốc so
+sánh duy nhất cho hai bản vá dưới đây.
 
-| doc_id | Trường đúng | Lỗi câm | Đơn vị |
+**Là 10 tài liệu chứ không phải 11.** `VNM_2026Q1_TT99` có nhãn gold nhưng
+**không có PDF** trong `data/bctc/`, nên runner ghi nó vào `thieu_pdf` rồi
+bỏ qua. Đây là chỗ lệch sổ sách cần vá: `data/gold/` có 11 file còn
+`data/nguon_gold.json` khai 10, và VNM không có `do_phan_giai_dpi`, nên mọi
+phân tích theo độ phân giải sẽ **lặng lẽ** bỏ sót nó.
+
+| doc_id | Trường đúng | Lỗi câm | Đơn vị | Cảnh báo |
+|---|---:|---:|---|---:|
+| `DGC_2025Q2_TT200` | 24/26 = 0,923 | 0,040 | ok | 1 |
+| `DLG_2026Q2_TT99` | 24/27 = 0,889 | **0,000** | ok | 0 |
+| `TTF_2026Q1_TT99` | 24/27 = 0,889 | **0,000** | ok | 0 |
+| `MWG_2025Q1_TT200` | 23/26 = 0,885 | 0,115 | ok | 3 |
+| `BMP_2026Q1_TT99` | 23/27 = 0,852 | 0,042 | **SAI** | 2 |
+| `HPG_2026Q2_TT99` | 22/27 = 0,815 | 0,043 | ok | 2 |
+| `VRE_2026Q1_TT99` | 22/27 = 0,815 | 0,120 | ok | 4 |
+| `HNG_2025H1_TT200` | 18/26 = 0,692 | 0,250 | ok | 3 |
+| `SBT_2025Q2_TT200` | 18/26 = 0,692 | **0,308** | **SAI** | 3 |
+| `VHC_2025Q1_TT200` | 18/26 = 0,692 | 0,053 | ok | 0 |
+
+**Tổng: 216/265 = 81,5% trường đúng · lỗi câm 24/240 = 10,0% · đơn vị đúng
+8/10 · nhận diện chuẩn 10/10 (oracle, đương nhiên) · tài liệu đúng trọn vẹn
+0/10.**
+
+Nhịp chạy **17–33 phút một tài liệu**, phần lớn là bước dò mã số dòng bằng
+OCR — 864 giây trên 1161 giây của tài liệu cuối, tức **74%**. Bộ nhớ tiến
+trình dao động 1,4–4,7 GB theo trang; nó KHÔNG rò rỉ tuyến tính, đã theo dõi
+suốt lượt chạy và ba lần báo động đều là báo động sai.
+
+### 20.4 Phân bố chế độ lỗi — kết quả quan trọng nhất của lượt chạy
+
+49 trường lệch, phân loại bằng script đối chiếu dự đoán với gold (chỉ so
+cấu trúc, không in giá trị ô):
+
+| Chế độ lỗi | Số trường | Nguồn gốc |
+|---|---:|---|
+| Bỏ trống | 25 | không đọc được — **vô hại**, hệ biết mình thất bại |
+| **Đảo dấu** | **11** | quy tắc ngoại lệ guideline mục 3.3 chưa cài — đã vá |
+| **Khác (toàn bộ của SBT)** | **10** | định vị nhầm bảng B02 — CHƯA vá |
+| Nhầm ô | 2 | `row_shift` thật |
+| Nhầm chữ số | 1 | lỗi OCR thật |
+
+**Kết luận đáng giá nhất: 21 trong 24 lỗi câm là hai con bug, không phải
+giới hạn của mô hình.** Bỏ trống không tính vào lỗi câm. Trong 24 lỗi câm có
+11 đảo dấu và 10 của SBT, cả hai đều truy được về một chỗ hỏng cụ thể trong
+code. Chỉ còn **3 lỗi câm là lỗi thật của mô hình** — hai ca nhầm ô, một ca
+nhầm chữ số. **Tỷ lệ lỗi câm không quy giản được là 3/240 = 1,25%**; con số
+10,0% đang bị hai lỗi cài đặt kéo lên gấp tám lần.
+
+**Hai chế độ lỗi trội đi theo hai nguyên nhân tách bạch:**
+
+- **Bỏ trống ↔ độ phân giải.** DLG (100 dpi) bỏ trống 3, lỗi câm 0. MWG
+  (296 dpi) bỏ trống 0. Ảnh xấu thì hệ **không đọc được**, và nó **biết**
+  mình không đọc được.
+- **Đảo dấu ↔ lỗi cài đặt.** Không phụ thuộc dpi chút nào, và là nguồn của
+  gần như toàn bộ lỗi câm.
+
+**Trường hay sai nhất**, đếm trên 10 tài liệu: `thue_tndn_hien_hanh` 9 lần,
+`thue_tndn_hoan_lai` 7, `tai_san_sinh_hoc_ngan_han` 5 (đều bỏ trống),
+`anh_huong_ty_gia` 4 (đều bỏ trống), `gia_von_hang_ban` 4. Chỗ hụt nằm ở
+**vài chỉ tiêu cụ thể**, không rải đều.
+
+**SBT và VHC là ca đối chứng tự nhiên đẹp nhất lượt chạy cho ra.** Cả hai
+hỏng ở cùng một khâu — định vị bảng — mà kết cục ngược nhau:
+
+- **SBT** không tìm đúng B02 → **điền số của bảng khác vào**. Tám lỗi câm.
+  Toàn bộ B02 sai với những con số không liên quan (Levenshtein 8–13 vị trí
+  trên chuỗi 10–14 chữ số), trong khi B01 đúng sạch. Sáu trong tám trường có
+  nhiều hơn đúng một chữ số so với gold, tức lớn hơn cỡ 10 lần. Giả thuyết
+  dẫn đầu: hồ sơ 62 trang chứa **hai bộ báo cáo**, pipeline lấy B01 từ bộ
+  này và B02 từ bộ kia. **Chưa kiểm được** vì nhật ký chỉ ghi tóm tắt
+  ("OCR page N: X characters"), không giữ text. Muốn dứt điểm phải mở PDF
+  của SBT xem nó có mấy bộ báo cáo.
+- **VHC** không tìm được B03 → **để trống**. Sáu trường lưu chuyển tiền tệ
+  bỏ trống, không một lỗi câm nào từ B03; lỗi câm duy nhất của VHC là dòng
+  thuế đảo dấu.
+
+Cùng một hỏng hóc, một bên **thú nhận**, một bên **bịa**. Nếu giả thuyết SBT
+đúng thì đây là chế độ lỗi **nguy hiểm nhất** lượt chạy lộ ra — lỗi **chọn
+nguồn**, xảy ra trước khi trích xuất, và không đẳng thức nào trong B02 bắt
+được vì bộ số kia **tự nó cũng cân**.
+
+> **Phân bố lỗi thật KHÁC HẲN thứ đang bơm ở tầng XBRL.** Trên dữ liệu thật:
+> **1 lỗi chữ số trên 49 trường lệch**. Chế độ trội là dấu, định vị bảng, và
+> bỏ trống. `src/nham_chu_so.py` bơm lỗi theo ma trận nhầm chữ số, tức đang
+> mô phỏng một thế giới không phải thế giới này. Đã ghi tu chính vào
+> `PREREGISTRATION.md`.
+
+### 20.5 Hai bản vá đã thi công 27/08/2026
+
+**(a) Quy tắc dấu — `a0cd5ab`.** Trên trang B02 dấu ngoặc mang hai nghĩa: ở
+mã 40 là số liệu (lợi nhuận khác âm thật), ở mã 11 chỉ là cách trình bày
+"dòng này bị trừ đi", vì văn bản viết `Mã 20 = Mã 10 − Mã 11`.
+`parse_number()` không biết mình đang đọc chỉ tiêu nào nên áp "ngoặc là âm"
+cho cả hai nghĩa. Bằng chứng: MWG và VRE mỗi tài liệu sai **đúng ba dòng
+ngoại lệ** của guideline mục 3.3, không thừa không thiếu — và MWG là bản
+quét nét nhất lô (295,8 dpi), nên chuyện này không liên quan gì tới ảnh.
+
+Hàm `chuan_hoa_dau()` ở `src/fields_config.py`, gọi trong `validate_result()`
+ngay sau bước ép kiểu. **Không đặt ở router**: trước bước ép kiểu, giá trị
+VLM còn có thể là chuỗi, và một hàm kiểm dấu chạy trên chuỗi sẽ lặng lẽ
+không làm gì — bản nháp đầu mắc đúng lỗi đó, nay có test hồi quy khoá lại.
+Đặt trước các phép kiểm vì để giá vốn âm đi tiếp thì cảnh báo "âm bất
+thường" và đẳng thức mã 20 đều báo một lỗi không có thật.
+
+Đo lại trên kết quả đã lưu, **không tốn một lệnh gọi API nào**:
+
+| | Trước | Sau |
+|---|---:|---:|
+| Trường đúng | 216/265 = 81,5% | **222/265 = 83,8%** |
+| Lỗi câm | 24/240 = 10,0% | **18/240 = 7,5%** |
+
+MWG 23/26 → 25/26 · VRE 22/27 → 24/27 · VHC lỗi câm 0,053 → **0,000** ·
+HNG 0,250 → 0,208.
+
+> **CỐ Ý không giải đẳng thức `Mã 60 = Mã 50 − Mã 51 − Mã 52` để chọn dấu.**
+> Giải nó thì mọi kết quả đều thoả nó, và phép đo H1 — so vi phạm ràng buộc
+> với confidence của model — mất sạch nghĩa vì tín hiệu bị chính bước trích
+> xuất làm phẳng. Chỉ dùng **chiều** của mã 50 so với mã 60; độ lớn vẫn tự
+> do sai nên đẳng thức vẫn còn là phép kiểm độc lập. Có test khoá tính chất
+> này (`tests/test_chuan_hoa_dau.py`) — đừng "hoàn thiện" nó.
+
+**(b) Nới mép trên vùng cắt — `05d00d0`.** `get_table_regions()` lọc
+`!= "table"` rồi `continue`, nên box chứa dòng "Đơn vị tính" bị vứt ngay tại
+đó và không chỗ nào phía sau biết nó từng tồn tại. Trên BMP trang 4,
+DocLayout-YOLO nhận ra dòng ấy với **conf 0,86** ở y 416..471, trong khi
+vùng bảng bắt đầu ở y 516 — hụt **45 pixel**. Trên VNM trang 8 hụt 27. VLM
+không đọc sai dòng ấy, **nó chưa từng được đưa cho xem**.
+
+Vì sao chỗ này nặng hơn mọi con số accuracy: với lỗi sai đơn vị toàn cục thì
+`Aδ = (c−1)Ax* = 0`, tức **mọi đẳng thức kế toán đều mù với nó**. Bảng vẫn
+cân hoàn hảo, mọi phép kiểm vẫn báo ĐẠT, trong khi mọi con số sai 1000 lần.
+Lượt gold mất dòng này ở **2/10 tài liệu** (BMP và SBT, cả hai
+`don_vi_tinh_raw = None`).
+
+Cách vá, theo ràng buộc người chủ trì đặt ra là **không dùng pixel cố định**:
+nới tới **đỉnh của box gần nhất phía trên có chồng ngang với bảng**, chặn
+bằng `TY_LE_NOI_TREN = 0,05` nhân chiều cao trang. Lấy **trọn** box chứ
+không dừng ở mép dưới của nó, vì thứ cần lấy nằm bên trong nó. Điều kiện
+chồng ngang là để một box ở lề trang không kéo được vùng cắt lên tận đầu
+trang. 0,05 lấy từ số đo: trên BMP, nới trọn dòng đơn vị cần 2,9% chiều cao
+trang, còn khối tiêu đề công ty bắt đầu ở 8,8% phía trên.
+
+Kiểm trên hai trang từng hỏng:
+
+| Trang | Vùng cắt CŨ | Vùng cắt MỚI | Box lọt thêm vào |
 |---|---:|---:|---|
-| `BMP_2026Q1_TT99` | 23/27 | 0,042 | **SAI** |
-| `DGC_2025Q2_TT200` | 24/26 | 0,040 | ok |
-| `DLG_2026Q2_TT99` | 24/27 | **0,000** | ok |
+| BMP tr.4 (3504 px) | y 508 | **y 416** | `plain text` conf **0,86** — đúng dòng đơn vị |
+| SBT tr.5 (3508 px) | y 531 | **y 440** | `abandon` conf 0,62 ở góc phải |
 
-**`DLG_2026Q2_TT99` là kết quả đáng chú ý nhất tới lúc này**: nó là bản quét
-**kém nhất lô, 100 dpi**, mà **lỗi câm bằng 0** — mọi giá trị đọc ra đều
-đúng, ba trường còn lại là bỏ trống chứ không phải đọc sai. Lỗi ồn vô hại vì
-hệ biết mình thất bại; lỗi câm mới là thứ làm hỏng mọi tỷ số dựng trên nó.
-Nếu tính chất này giữ được trên cả tập thì đó là một kết quả bán được.
+Cả hai dừng ở đỉnh box gần nhất, **chưa chạm trần 5%**.
 
-**Nhịp chạy: 5–50 phút một tài liệu**, phần lớn là bước dò mã số dòng bằng
-OCR (886 giây trên 1272 giây của BMP, tức 70%). Tài liệu độ phân giải thấp
-và nhiều trang thì lâu nhất.
+> **ĐÂY MỚI LÀ KIỂM HÌNH HỌC.** Dòng đơn vị nay nằm trong ảnh đưa cho VLM,
+> nhưng **nó có đọc ra đúng hay không thì phải chạy lại pipeline mới biết**.
+> Đừng ghi vào bài báo rằng chỗ này đã sửa xong.
 
-### 20.4 Đơn vị tính KHÔNG đọc được — chẩn đoán xong, chưa vá
+### 20.6 Chỗ vênh giữa guideline và gold — ĐANG CHỜ NGƯỜI CHỦ TRÌ
 
-**Đây là chỗ hỏng nghiêm trọng nhất mà lượt chạy này lộ ra**, và nó nghiêm
-trọng hơn con số accuracy nhiều.
+Bản vá dấu **cố ý bỏ mã 52 ra ngoài** dù `ANNOTATION-GUIDELINE.md` mục 3.3
+liệt kê nó cùng mã 51. Xem Câu 13 ở mục 0.
 
-Vì sao: H0 chứng minh `Aδ = (c−1)Ax* = 0` cho lỗi sai đơn vị toàn cục —
-**mọi đẳng thức kế toán đều mù với nó**. Bảng vẫn cân hoàn hảo, mọi phép
-kiểm vẫn báo ĐẠT, trong khi mọi con số sai 1000 lần. Dòng "Đơn vị tính" vì
-thế là **mỏ neo tuyệt đối duy nhất**, và mất nó là mất chế độ lỗi duy nhất
-mà cả tầng ràng buộc không nhìn thấy được.
+Với MWG và VRE, `thue_tndn_hoan_lai` có **dự đoán dương, gold âm** — ngược
+chiều hai dòng kia. Mà cả hai tài liệu đều có mã 60 < mã 50, tức theo chữ
+nghĩa guideline thì mã 52 phải dương. **Nhãn gold mâu thuẫn với guideline.**
 
-**Nguyên nhân đã đo, không phải suy đoán.** Chạy DocLayout-YOLO trên
-`BMP_2026Q1_TT99` trang 4 (trang bảng cân đối, cao 3504 px):
+Về kế toán thì gold hợp lý hơn: `Mã 60 = Mã 50 − Mã 51 − Mã 52`, nên một
+khoản **thu nhập** thuế hoãn lại (mã 52 âm) sống chung được với mã 60 < mã
+50 miễn mã 51 đủ lớn. Câu "dương khi mã 60 < mã 50" đúng cho **tổng** thuế,
+sai khi áp riêng từng dòng. Áp nguyên văn thì bản vá sẽ lật một mã 52 âm hợp
+lệ thành dương và **đẻ ra lỗi câm mới**.
 
-| Lớp | conf | y | Là gì |
-|---|---:|---|---|
-| `abandon` ×2 | 0,93–0,94 | 82..208 | tiêu đề công ty |
-| `plain text` / `title` | 0,27–0,31 | 267..412 | tên báo cáo |
-| **`plain text`** | **0,86** | **416..471** | **"Đơn vị tính: VND"** |
-| `table` | 0,95 | **516**..2949 | bảng |
+Bỏ mã 52 ra cho **đúng 6 trường sửa được như bản rộng hơn**, mà không mang
+rủi ro đó. Nhưng câu chữ guideline vẫn cần sửa, và đó là quyết định của
+người chủ trì.
 
-Dòng đơn vị kết thúc ở **y = 471**, vùng bảng bắt đầu ở **y = 516** — cách
-nhau **45 pixel**. Và [layout_detection.py](src/layout_detection.py) lọc
-thẳng `if model.names[int(box.cls)] != "table": continue`, nên box conf 0,86
-chứa đúng thứ cần tìm bị bỏ ngay tại đó.
+### 20.7 Việc lượt chạy này lộ ra, CHƯA làm
 
-**VLM không đọc sai dòng ấy — nó chưa từng được đưa cho xem.**
-
-Đây đúng là hiện tượng proposal mục 6.3 dự đoán, đo trên VNM: trang 8 hụt
-**27 pixel**. BMP hụt 45. Cùng chế độ lỗi, hai tài liệu khác nhau.
-
-**Con số BMP đang che mất mức nghiêm trọng:** BMP là VND (×1) nên không đọc
-được đơn vị mà giá trị vẫn đúng 23/27 — trúng do may. `VRE` (`Triệu VND`) và
-`HNG` (`Ngàn VND`) mà hụt dòng đó thì **toàn bộ chỉ tiêu sai 10⁶ và 10³
-lần**. Cả hai nằm trong lượt đang chạy.
-
-**Hướng sửa đã chọn, chi tiết CHƯA chốt.** Người chủ trì chọn hướng **nới mép
-trên vùng cắt**, kèm một ràng buộc: **không dùng con số pixel cố định**, phải
-là một khoảng dự phòng co giãn. Lý do ràng buộc đó đúng: 120 px trên bản 300
-dpi và trên bản 100 dpi là hai khoảng cách vật lý khác hẳn nhau, và tập gold
-trải từ 89,9 tới 295,8 dpi.
-
-Cách bỏ được hẳn hằng số ma thuật: **nới mép trên cho tới mép dưới của box
-gần nhất phía trên**, chặn bằng một **tỷ lệ chiều cao trang** thay vì một số
-pixel. Như vậy nó tự hiệu chỉnh theo từng trang và từng độ phân giải.
-
-**Quyết định: chờ đủ 11 tài liệu rồi mới vá**, để chốt trên 11 số đo thay vì
-suy từ một. `PADDING = 8` trong `layout_detection.py` hiện là đối xứng.
-
-### 20.5 Ba việc lượt chạy này lộ ra, chưa làm
-
-1. **H1 CHƯA CHẠY ĐƯỢC ở cấu hình hiện tại.** `n_samples=1, temperature=0.0`
+1. **Chẩn đoán SBT** — toàn bộ B02 sai với số không liên quan trong khi B01
+   đúng sạch. Xem 20.4. Cần mở PDF xem hồ sơ có mấy bộ báo cáo. **10 trong
+   24 lỗi câm nằm ở đây**, và nếu là lỗi chọn nguồn thì không đẳng thức nào
+   bắt được.
+2. **Chạy lại để đo hiệu quả bản vá nới mép.** Hiệu quả bản vá dấu đã đo
+   được offline; bản vá nới mép thì **không**, vì nó đổi ảnh đầu vào. Rẻ
+   nhất là `--chi BMP SBT` (~25 phút) để biết đơn vị đã đọc được chưa, rồi
+   mới quyết chạy lại trọn bộ (~3,5 giờ).
+   > **BẪY:** `--chi BMP SBT` mà **không** kèm `--tiep-tuc` sẽ ghi đè
+   > `tap_gold_chuan_tu_gold.json` bằng đúng 2 tài liệu, xoá sạch kết quả 10
+   > tài liệu. Bản sao đã giữ ở `..._TRUOC-VA-2026-08-27.json`.
+3. **H1 CHƯA CHẠY ĐƯỢC ở cấu hình hiện tại.** `n_samples=1, temperature=0.0`
    cho confidence 1,0 ở mọi trường, mà `FieldResult.khong_do()` ghi rõ 1,0 ở
    đó nghĩa là **"không đo được"** chứ không phải "chắc chắn". H1 so vi phạm
    ràng buộc với confidence của model — cột confidence hằng số thì phép so
-   vô nghĩa. Muốn đo H1 phải bật `n_samples > 1`, và chi phí gọi API nhân
-   lên đúng k lần.
-2. **Mới có MỘT model, và là bản `:free`.** `OPENROUTER_MODEL` hiện là
+   vô nghĩa. Muốn đo H1 phải bật `n_samples > 1`, chi phí API nhân đúng k lần.
+4. **Mới có MỘT model, và là bản `:free`.** `OPENROUTER_MODEL` hiện là
    `google/gemma-4-31b-it:free`. Proposal baseline 2 đòi **ít nhất ba** —
    một open-weight, một closed, một model tiếng Việt.
-3. **Chế độ đầu-cuối chưa chạy.** Chỉ mới chạy `--chuan-tu-gold`. Chế độ mặc
+5. **Chế độ đầu-cuối chưa chạy.** Chỉ mới chạy `--chuan-tu-gold`. Chế độ mặc
    định chỉ khác ở 5 tài liệu TT200 (5 tài liệu TT99 lùi về TT99 nên trùng
    với oracle), nên chạy `--chi` trên đúng 5 mã đó là đủ và rẻ hơn một nửa.
-
----
+6. **`VNM_2026Q1_TT99` thiếu PDF.** Hoặc bổ sung file vào `data/bctc/`, hoặc
+   rút nhãn khỏi `data/gold/`. Để nguyên thì mọi lượt chạy sau đều lặng lẽ
+   bỏ qua nó, và `data/gold/` (11) với `data/nguon_gold.json` (10) tiếp tục
+   lệch nhau.
 
 ## Phụ lục A — MỐC 1: hồ sơ đối chiếu ma trận ràng buộc với Thông tư
 

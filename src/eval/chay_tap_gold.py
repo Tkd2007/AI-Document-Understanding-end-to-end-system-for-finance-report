@@ -25,9 +25,15 @@ CHẤM ĐIỂM ở mức TRƯỜNG, gộp tử và mẫu qua các tài liệu ch
 bình của các tỷ lệ — hai tài liệu có số chỉ tiêu khác nhau (26 với TT200, 27
 với TT99) nên trung bình của tỷ lệ không bằng tỷ lệ của tổng.
 
-Kết quả ghi ra `data/output/tap_gold_<chế độ>.json` TRƯỚC khi in bảng. Đây là
-bài học của lượt chạy Mốc 3 ngày 25/08: `bao_cao()` in thẳng ra stdout không
-lưu gì, nên muốn in lại bảng theo cách khác phải chạy lại 103 phút.
+Kết quả ghi ra `data/output/tap_gold_<chế độ>.json` sau MỖI tài liệu, không
+đợi tới cuối. Bản đầu chỉ ghi một lần ở cuối — bài học của lượt Mốc 3 ngày
+25/08 mới được áp một nửa, và nửa còn thiếu đã trả giá ngay: lượt chạy đêm
+26/08 chết lúc đang ở tài liệu 7/11, và **sáu tài liệu đã chấm xong biến mất
+sạch** cùng với ba tiếng gọi API. Ghi ở cuối chỉ chống được lỗi định dạng
+trong hàm in; nó không chống được tiến trình bị giết.
+
+`--tiep-tuc` đọc file kết quả cũ và BỎ QUA những tài liệu đã có trong đó, nên
+một lượt chạy đứt gánh nối lại được mà không trả tiền API hai lần.
 
 CẢNH BÁO VỀ LUẬT 1, và một cái bẫy đã bắt được. Guideline mục 1 buộc người
 gán nhãn phải MÙ với đầu ra pipeline. Tập gold hiện có 11 tài liệu và phương
@@ -192,6 +198,32 @@ def in_bang(cac_diem: list[dict], tong_hop: dict, hong: list[tuple[str, str]]) -
             print(f"  {doc_id}: {ly_do}")
 
 
+def ghi_ket_qua(duong_dan, che_do, cac_diem, hong, thieu_pdf) -> None:
+    """
+    Ghi đè file kết quả bằng mọi thứ đã chấm tới lúc này.
+
+    Gọi sau MỖI tài liệu chứ không chỉ ở cuối. Ghi đè trọn file thay vì nối
+    thêm vì file nhỏ — vài chục KB — nên cái giá bằng không, còn đổi lại thì
+    file luôn là JSON hợp lệ đọc được ngay cả khi tiến trình bị giết ở đúng
+    tài liệu kế tiếp.
+    """
+    duong_dan.write_text(
+        json.dumps(
+            {
+                "che_do": che_do,
+                "tong_hop": gop(cac_diem) if cac_diem else {},
+                "tung_tai_lieu": cac_diem,
+                "khong_chay_duoc": hong,
+                "thieu_pdf": thieu_pdf,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
 def main() -> int:
     bo_doc = argparse.ArgumentParser(description=__doc__)
     bo_doc.add_argument(
@@ -200,6 +232,11 @@ def main() -> int:
         help="lấy chuẩn mẫu biểu từ nhãn (điều kiện oracle) thay vì để pipeline tự xoay xở",
     )
     bo_doc.add_argument("--chi", nargs="*", help="chỉ chạy vài mã, vd --chi HPG BMP")
+    bo_doc.add_argument(
+        "--tiep-tuc",
+        action="store_true",
+        help="bỏ qua tài liệu đã có trong file kết quả cũ, chạy nốt phần còn lại",
+    )
     bo_doc.add_argument("--thu-muc-pdf", type=Path, default=THU_MUC_PDF)
     tham_so = bo_doc.parse_args()
 
@@ -208,20 +245,37 @@ def main() -> int:
         can = {m.upper() for m in tham_so.chi}
         cac_gold = [g for g in cac_gold if g.stem.split("_")[0].upper() in can]
 
+    che_do = "chuan_tu_gold" if tham_so.chuan_tu_gold else "dau_cuoi"
+    THU_MUC_RA.mkdir(parents=True, exist_ok=True)
+    duong_dan_ra = THU_MUC_RA / f"tap_gold_{che_do}.json"
+    duong_dan_nhat_ky = THU_MUC_RA / f"tap_gold_{che_do}_pipeline.log"
+
     cac_diem: list[dict] = []
     hong: list[tuple[str, str]] = []
     thieu_pdf: list[str] = []
+    da_co: set[str] = set()
 
-    che_do = "chuan_tu_gold" if tham_so.chuan_tu_gold else "dau_cuoi"
-    THU_MUC_RA.mkdir(parents=True, exist_ok=True)
-    duong_dan_nhat_ky = THU_MUC_RA / f"tap_gold_{che_do}_pipeline.log"
-    nhat_ky = duong_dan_nhat_ky.open("w", encoding="utf-8")
+    if tham_so.tiep_tuc and duong_dan_ra.exists():
+        cu = json.loads(duong_dan_ra.read_text(encoding="utf-8"))
+        cac_diem = cu.get("tung_tai_lieu", [])
+        hong = [tuple(h) for h in cu.get("khong_chay_duoc", [])]
+        da_co = {d["doc_id"] for d in cac_diem}
+        print(f"Nối tiếp: đã có {len(da_co)} tài liệu trong {duong_dan_ra}", file=sys.stderr)
+
+    # Nhật ký mở ở chế độ nối thêm khi tiếp tục, để kết xuất của lượt trước
+    # không bị xoá mất — nó là thứ duy nhất tra cứu được khi một tài liệu ra
+    # số lạ.
+    nhat_ky = duong_dan_nhat_ky.open("a" if tham_so.tiep_tuc else "w", encoding="utf-8")
 
     for i, duong_dan_gold in enumerate(cac_gold, 1):
         gold = doc_gold(duong_dan_gold)
         pdf = tham_so.thu_muc_pdf / f"{gold['doc_id']}.pdf"
         if not pdf.exists():
             thieu_pdf.append(gold["doc_id"])
+            continue
+
+        if gold["doc_id"] in da_co:
+            print(f"[{i:2d}/{len(cac_gold)}] {gold['doc_id']} — đã có, bỏ qua", file=sys.stderr)
             continue
 
         print(f"[{i:2d}/{len(cac_gold)}] {gold['doc_id']} …", file=sys.stderr, flush=True)
@@ -233,6 +287,11 @@ def main() -> int:
             hong.append((gold["doc_id"], f"{type(loi).__name__}: {loi}"))
             traceback.print_exc(file=sys.stderr)
 
+        # Ghi NGAY sau mỗi tài liệu. Xem đầu file: ghi một lần ở cuối đã làm
+        # mất sáu tài liệu khi tiến trình bị giết giữa chừng.
+        ghi_ket_qua(duong_dan_ra, che_do, cac_diem, hong, thieu_pdf)
+        nhat_ky.flush()
+
     nhat_ky.close()
 
     if not cac_diem:
@@ -242,25 +301,7 @@ def main() -> int:
         return 1
 
     tong_hop = gop(cac_diem)
-
-    # Ghi TRƯỚC khi in: lượt chạy này tốn tiền gọi API, nên một lỗi định
-    # dạng ở hàm in không được phép làm mất kết quả.
-    duong_dan_ra = THU_MUC_RA / f"tap_gold_{che_do}.json"
-    duong_dan_ra.write_text(
-        json.dumps(
-            {
-                "che_do": che_do,
-                "tong_hop": tong_hop,
-                "tung_tai_lieu": cac_diem,
-                "khong_chay_duoc": hong,
-                "thieu_pdf": thieu_pdf,
-            },
-            ensure_ascii=False,
-            indent=2,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
+    ghi_ket_qua(duong_dan_ra, che_do, cac_diem, hong, thieu_pdf)
 
     print(f"Chế độ: {che_do}\n")
     in_bang(cac_diem, tong_hop, hong)

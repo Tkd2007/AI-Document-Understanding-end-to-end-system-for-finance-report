@@ -22,11 +22,11 @@ Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
   mục. Công cụ ở `src/gan_nhan/` — xem mục 19. **Chỉ 8 trong 11 có đồng hồ
   chạy thật** (`trang_thai_dong_ho` bằng `da_do`), nên còn thiếu **2 tài liệu**
   nữa mới chốt được số phút cho giao thức trần người — xem mục 19.4 bước 2.
-- **Cập nhật:** 26/08/2026 (lần 3) — cả 10 tài liệu của danh mục đầu đã gán
-  nhãn xong (mục 19.6), nên các con số đếm ở khối này và ở mục 0 được đồng bộ
-  lại theo `data/gold/`. **Câu 10 và Câu 11 đã đóng**: nhóm Stress thứ ba đo
-  bằng độ phân giải bản quét ghi làm biến liên tục (mục 19.7), và ký hiệu mẫu
-  thôi là dấu hiệu nhận diện chuẩn.
+- **Cập nhật:** 27/08/2026 — **mục 20 MỚI**: pipeline đã được chấm trên tập
+  gold, số thật đầu tiên của cả dự án. Kèm theo là chẩn đoán chỗ hỏng nghiêm
+  trọng nhất — dòng "Đơn vị tính" nằm ngoài vùng bảng YOLO cắt (20.4). Mốc 3
+  đã chạy lại và tái lập, trừ bảng lý do ABSTAIN (mục 13c). Tài liệu này cũng
+  được **nén**: mục 6–9 gộp vào mục 5, nhật ký commit thôi chép tay.
 
 ---
 
@@ -39,7 +39,7 @@ mục 16 (bước kế tiếp), mục 15 (lệnh hay dùng).
 |---|---|---|
 | **0** | Câu hỏi đang chờ người chủ trì | luôn đọc trước tiên |
 | 1–2 | Đọc gì trước · Bối cảnh | phiên đầu tiên |
-| 3–9 | Nhật ký thi công, bẫy đã gặp, các phần A–F | tra khi đụng vào một phần cụ thể |
+| 3–5 | Nhật ký (tra `git log`), bẫy đã gặp, các phần đã đóng | tra khi đụng vào một phần cụ thể |
 | 10 | **MỐC 1 — đã đóng**, bộ chỉ tiêu | cần biết vì sao bộ chỉ tiêu là 27/26 |
 | 11 | Chỗ đã đi khác `BUILD-SPEC.md`, có chủ đích | trước khi "sửa lại cho đúng đặc tả" |
 | 12 | Chưa làm, theo thứ tự phụ thuộc | chọn việc |
@@ -49,8 +49,13 @@ mục 16 (bước kế tiếp), mục 15 (lệnh hay dùng).
 | 17 | Đã quyết nhưng chưa thi công | tránh làm lại việc đã quyết |
 | 18 | Nơi nộp — ICDAR 2027, hạn 28/02/2027 | lập lịch |
 | **19** | **Tầng gold**: công cụ, đồng hồ, trình tự, nguồn, độ phân giải | việc đang làm |
+| **20** | **Chấm pipeline trên tập gold** — số thật đầu tiên | việc đang làm |
 | A | Hồ sơ đối chiếu Thông tư (Mốc 1) | tra mã số, đẳng thức, cạm bẫy văn bản |
 | B | Sổ thi công phương án C, **bước D chưa làm** | làm tiếp nhận diện chuẩn |
+
+**Không có mục 6–9.** Chúng đã được gộp vào mục 5 ngày 27/08/2026 khi nén
+tài liệu; số mục của phần sau giữ nguyên để mọi tham chiếu cũ còn trỏ đúng.
+Tham chiếu "mục 6/7/8/9" trong tài liệu cũ nay đọc là 5.2 / 5.3 / 5.5 / 5.6.
 
 ---
 
@@ -63,8 +68,18 @@ chứ không phải chi tiết cài đặt.
 
 Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "Câu 4 chọn ...".
 
-**Đang chờ:** Câu 3 (hoãn được), Câu 8 (chỉ chặn lượt chạy Mốc 3 kế tiếp).
-Không câu nào đang chặn việc gán nhãn.
+**Đang chờ:** Câu 3 (nội dung đã mất), Câu 8 (chỉ chặn lượt chạy Mốc 3 kế
+tiếp), **Câu 12 (MỚI 27/08 — loại 10 tài liệu đã chạy pipeline khỏi tập gán
+nhãn đôi hay không)**. Không câu nào đang chặn việc gán nhãn.
+
+**Câu 12 — MỚI, không chặn ngay nhưng có hạn.** Pipeline đã chạy trên 10 tài
+liệu gold đầu (mục 20), nên `data/output/tap_gold_*.json` và
+`..._pipeline.log` chứa giá trị máy đoán cho **từng ô** của chúng. Người chủ
+trì đã chốt sẽ **tự gán nhãn lại** để đo đồng thuận (sớm nhất 09/09/2026) —
+mà Luật 1 buộc người gán nhãn mù với đầu ra pipeline. Cách gỡ triệt để:
+**loại 10 tài liệu này khỏi tập gán nhãn đôi**; tập đích ~100 mà chỉ cần
+20–33 nên thừa chỗ. Cách còn lại là giữ kỷ luật không mở hai file kia. Hạn:
+trước lượt gán nhãn lại đầu tiên. Đổi thì phải ghi tu chính guideline.
 
 **Mốc 3 đã chạy xong lúc 16:05 ngày 25/08/2026 — điều kiện dừng KHÔNG kích
 hoạt.** Xem mục 13c. Việc kế tiếp không còn bị chặn: gán nhãn `data/gold/`
@@ -203,346 +218,214 @@ mọi phần tử phải truy được về một chỗ cụ thể trên tài li
 
 ---
 
-## 3. Đã làm
+## 3. Nhật ký thi công — tra bằng `git log`, không chép lại ở đây
 
-### Ngày 21–22/08/2026
+Bản trước liệt kê ~45 commit của ba ngày 21–24/08/2026 thành ba bảng. Đó là
+thứ `git log --oneline` in ra chính xác hơn và không bao giờ cũ, nên phần
+chép tay đã bỏ. Giữ lại đúng những hash mà các mục khác trỏ tới:
 
-| Commit | Mục | Nội dung |
-|---|---|---|
-| `689e2d0` | D1 | `PREREGISTRATION.md` — dấu thời gian git là bằng chứng |
-| `4b20aea` | A1 | Điều kiện áp dụng cho `FIELD_RELATIONS` |
-| `7fd34f0` | A3 | Tách mã số dòng và mẫu biểu theo TT200 / TT99 |
-| `437e2a1` | A4 | Chuẩn hoá đơn vị tính + mỏ neo biên độ lớn |
-| `88c031e` | A2 | `src/constraints.py` — ma trận ràng buộc, identifiability |
-| `c85c812` | B1 | Cờ `DISABLE_CONSTRAINT_GATE` để đo H1 không vòng lặp |
-| `a5ec83e` | B2 | Confidence từng trường bằng self-consistency |
-| `0d74195` | B3 | Provenance từng trường qua suốt chuỗi |
-| `ad6684a` | B6 | Eval harness, thống kê, trường tái lập |
-| `2cf613a` | C1 | Sinh tập ứng viên sửa lỗi từ tài liệu |
-| `f1d236e` | C2 | Hai baseline đối chứng không còn thua vì lý do cài đặt — mục 5 |
-| `1dacb34` | B5 | Tầng đánh giá XBRL — mục 6 |
-| `9c3f7c9` | C2 | Trần `max_changes`, tách ABSTAIN theo lý do — mục 7 |
+| Hash | Vì sao còn được nhắc |
+|---|---|
+| `023321c` | Sửa `FORM_MARKERS` — hậu tố `a`/`b` là KỲ BÁO CÁO, không phải Thông tư |
+| `6744bee` | Thay đẳng thức giả thuyết bằng đẳng thức đã đối chiếu Công báo |
+| `4064519` | B4 — bộ chỉ tiêu lên 21, hai chuẩn hết đẳng cấu |
+| `df96ff2` | MỐC 1 đóng |
+| `ada6f75` | Phương án C — probe dò dòng, điền `0` cho dòng vắng mặt |
+| `e6c286c` | Donor thôi lấy từ chính công ty đang xét (rò rỉ đáp án) |
+| `f1c2738` | Bộ chỉ tiêu chuyển sang kịch bản E (27/26 chỉ tiêu, 9 đẳng thức) |
+| `90b271a` | Ma trận nhầm chữ số đo từ EasyOCR, dùng cho cả bộ tiêm lẫn bộ sinh |
+| `f80a53d` | Cột kỳ so sánh chọn theo độ phủ chỉ tiêu thay vì theo ngày |
 
-Ngoài ra `main` có `debac2f` (test khoá threading cho `merge_into_totals`).
-
-### Ngày 23/08/2026
-
-| Commit | Mục | Nội dung |
-|---|---|---|
-| `895b731` | F | Tách `requirements-dev.txt`; **sửa CI đang hỏng** — mục 8 |
-| `66296a6` | F | `MAX_UPLOAD_BYTES` đọc theo khối; `save=False` cho đường API |
-| `3abc812` | F | Early-stop ở vòng vùng; `DISABLE_EARLY_STOP` + `meta["early_stop"]` |
-| `100afb9` | F | Histogram latency, tự chia bucket |
-| `a3a5ea7` | F | **Đo engine OCR → quyết định GIỮ EasyOCR** — mục 9 |
-| `2015e8c` | — | README khớp lại hiện trạng |
-| `1d3f89d` | Mốc 1 | `constraints_scenarios.py` + bảng đối chiếu (nay là Phụ lục A) |
-| `9724504` | — | `ANNOTATION-GUIDELINE.md` |
-| `2c14420` | — | `fetch.py --dry-run` kiểm `SEC_USER_AGENT` |
-| `3fb6472` | Mốc 1 | Trích đẳng thức từ Công báo, đợt 1 |
-| **`023321c`** | A3 | **Sửa `FORM_MARKERS`: hậu tố a/b là KỲ, không phải Thông tư** — mục 10 |
-| **`6744bee`** | Mốc 1 | **Thay đẳng thức giả thuyết bằng đẳng thức đã đối chiếu** — mục 10 |
-| `e08d5e8` | Mốc 1 | Bảng đối chiếu đầy đủ cả hai chuẩn |
-| `32db2f7` | Mốc 1 | Đóng các ô chưa xác nhận của bảng đối chiếu |
-| **`4064519`** | **B4** | **Bộ chỉ tiêu lên 21, hai chuẩn hết đẳng cấu** — mục 10 |
-| **`df96ff2`** | **Mốc 1** | **Ghi quyết định vào đăng ký trước, đóng hai ô chờ của guideline** |
-
-### Ngày 24/08/2026
-
-| Commit | Mục | Nội dung |
-|---|---|---|
-| `5810ea2` | — | Vá bốn chỗ tài liệu tự mâu thuẫn; chốt nơi nộp (mục 17) |
-| **`fa5c6d2`** | **C** | **Chuẩn đi tới nơi kiểm đẳng thức; meta hợp nhất thay vì đè** |
-| **`88a77f5`** | **C** | **Bộ chỉ tiêu đi theo chuẩn ở prompt, trích xuất, dừng sớm** |
-| **`19fe938`** | **C** | **Oracle `tim_theo_ma_so()`; ô số hỏng thôi mượn số dòng dưới** |
-| **`ada6f75`** | **C** | **Probe dò dòng + điền 0; đẳng thức phân rã chạy được** |
-| `0088218` | — | Gộp bảng đối chiếu Mốc 1 và sổ thi công vào file này |
-| `fc7fc42` | — | Thôi OCR một trang hai lần; test thôi phụ thuộc `.env` |
-| `709e58c` | — | Đo lại trần `max_changes` trên bộ chỉ tiêu đã chốt |
-| `f09c407` | — | Bốn file MD khớp lại hiện trạng |
-| **`62b5be5`** | **MỐC 3** | **Runner `src/eval/moc3.py`; pilot Apple lộ 3 trục trặc** |
-| `7ad3cc1` | — | Hồ sơ XBRL thôi nằm trong git |
-| `29995f7` | — | Ghi kết quả pilot và mục 17 (lưu ý việc đã quyết chưa làm) |
-| **`e6c286c`** | **MỐC 3** | **Xử được nhiều công ty; donor thôi lấy từ công ty đang xét** |
-
-Chi tiết đầy đủ của phương án C ở **Phụ lục B**.
-
-Xen giữa là các commit cập nhật chính file này (`fa399e4`, `7c37ec9`,
-`7d93593`, `41c1a14`, `b53ed8f`, `b55722d`, `2a2198f`, `463bc5b`) và hai
-commit của người dùng (`78bf74a`, `2b28fe1`) tạo `MD file/.gitkeep` và
-`MD file/.gitignore`.
+Chi tiết phương án C ở **Phụ lục B**; đối chiếu Thông tư ở **Phụ lục A**.
 
 ---
 
-## 4. Cái bẫy đã gặp ở từng mục
+## 4. Cái bẫy đã gặp — phần còn ràng buộc việc đang làm
 
-**A1.** Ba trong sáu quan hệ `FIELD_RELATIONS` ngầm giả định doanh nghiệp có
-lãi và VCSH dương, mâu thuẫn với `FIELD_RULES` vốn cho phép âm. Mâu thuẫn
-không nằm yên: `FIELD_RELATIONS` là một phần cổng `is_acceptable()`, nên gặp
-báo cáo lỗ thì router coi kết quả **đúng** là chưa đạt, gọi VLM, và
-`has_warnings` mở đường cho VLM ghi đè lên số vốn đã đúng. *Đánh đổi đã
-biết:* điều kiện áp dụng đọc từ một field cũng do model trích ra, nên field
-điều kiện bị đọc sai thành âm sẽ làm luật tự tắt —
+**A1 — quan hệ có điều kiện.** Ba trong sáu quan hệ `FIELD_RELATIONS` ngầm
+giả định doanh nghiệp có lãi và VCSH dương, mâu thuẫn với `FIELD_RULES` vốn
+cho phép âm. Mâu thuẫn không nằm yên: `FIELD_RELATIONS` nằm trong cổng
+`is_acceptable()`, nên gặp báo cáo lỗ thì router coi kết quả **đúng** là
+chưa đạt, gọi VLM, và `has_warnings` mở đường cho VLM ghi đè lên số vốn đã
+đúng. *Đánh đổi đã biết:* field điều kiện cũng do model trích ra, nên nó bị
+đọc sai thành âm sẽ làm luật tự tắt —
 `test_field_dieu_kien_bi_doc_sai_thi_luat_tu_tat` chốt hành vi đó.
 
-**A3.** `detect_standard()` trả `None` khi không đủ dấu hiệu hoặc khi trang
-nhắc cả hai chuẩn — **không bao giờ đoán bừa**, vì nhận diện sai chuẩn là
-một chế độ lỗi riêng cần đo được. Dấu hiệu nó dùng là **tên báo cáo**
-("Bảng cân đối kế toán" của TT200 so với "Báo cáo tình hình tài chính" của
-TT99), và tên đó **đã đối chiếu văn bản, đúng**.
+**A3 — không bao giờ đoán chuẩn.** `detect_standard()` trả `None` khi không
+đủ dấu hiệu hoặc khi trang nhắc cả hai chuẩn, vì nhận diện sai chuẩn là một
+chế độ lỗi riêng cần đo được. Dấu hiệu là **tên báo cáo** và **số hiệu thông
+tư**, không phải ký hiệu mẫu biểu — xem tu chính 26/08 ở guideline.
 
-> **Phần suy luận về ký hiệu mẫu biểu ở mục này ĐÃ BỊ BÁC BỎ.** Bản trước
-> lập luận rằng `"B 01"` nằm trong `"B 01a"` nên marker TT200 phải mang
-> `(?!\s*a)`. Đối chiếu Công báo cho thấy tiền đề sai — xem mục 10.
+**A4 — mỏ neo tuyệt đối, và nó là chỗ yếu nhất của cả hệ.** Hệ ràng buộc
+thuần nhất nên `Aδ = (c−1)Ax* = 0`: **sai đơn vị toàn cục LUÔN vô hình với
+mọi đẳng thức**, không phải "thường vô hình". `TOTAL_ASSETS_BOUNDS` là check
+duy nhất trong `validate_result` không bất biến với phép nhân vô hướng.
+`don_vi_tinh` cố ý **không** nằm trong `FIELD_MAP` vì `validate_result` chạy
+`coerce_number` trên mọi khoá của nó. Đo trên tập gold 26–27/08 cho thấy
+đúng chỗ này đang hỏng — xem mục 20.
 
-**A4.** Mỏ neo tuyệt đối duy nhất phá được bất biến scale. Hệ ràng buộc
-thuần nhất nên `Aδ = (c−1)Ax* = 0`: sai đơn vị toàn cục **luôn** vô hình với
-mọi đẳng thức. `TOTAL_ASSETS_BOUNDS` là check duy nhất trong
-`validate_result` không bất biến với phép nhân vô hướng. `don_vi_tinh` cố ý
-**không** nằm trong `FIELD_MAP` vì `validate_result` chạy `coerce_number`
-trên mọi khoá của nó.
+**B1 — vòng lặp luận chứng.** Pipeline dùng chính đẳng thức kế toán làm cổng
+quyết định fallback, nên đo AUROC của vi phạm ràng buộc trên đầu ra đó là
+đánh giá một tín hiệu trên tập đã bị chính nó lọc. Lượt chạy ở chế độ đo
+đánh dấu bằng khoá `constraint_gate: false` trong `metrics.jsonl`.
 
-**B1.** Pipeline dùng chính đẳng thức kế toán làm cổng quyết định fallback,
-nên đo AUROC của vi phạm ràng buộc trên đầu ra đó là vòng lặp luận chứng.
-Lượt chạy ở chế độ đo được đánh dấu bằng khoá `constraint_gate: false`
-trong `metrics.jsonl`.
-
-**B2.** Ba quyết định trong cách tính phiếu, cả ba đều có thể sai theo hướng
+**B2 — ba quyết định trong cách tính phiếu**, cả ba có thể sai theo hướng
 lạc quan: `None` cũng là ứng viên bỏ phiếu; mẫu số là `n_samples` chứ không
 phải số mẫu parse được; hoà phiếu thì ưu tiên non-null rồi tới giá trị xuất
 hiện sớm nhất. `n_samples > 1` với `temperature = 0` **ném lỗi**.
 
-**B3.** Chuỗi từng đứt ở ba chỗ. Lọc IoU đi kèm chứ không phải việc rời:
-YOLO trả box chồng nhau (quan sát ở trang 31 và 35 báo cáo VNM), và kể từ
-khi có provenance thì đó là **sai dữ liệu** chứ không còn là lãng phí.
-`bbox` trả về là bbox **đã cộng padding và đã clamp**, có test cắt lại rồi
-so từng byte.
+**B3 — provenance đứt là mất đóng góp cốt lõi.** Lọc IoU đi kèm chứ không
+phải việc rời: YOLO trả box chồng nhau (quan sát ở trang 31 và 35 báo cáo
+VNM), và kể từ khi có provenance thì đó là **sai dữ liệu** chứ không còn là
+lãng phí. `bbox` trả về đã cộng padding và đã clamp, có test cắt lại rồi so
+từng byte.
 
-**B6.** Bootstrap **theo cụm tài liệu**, không theo trường; có test chứng
-minh việc phân cụm nới khoảng tin cậy hơn gấp đôi trên dữ liệu phân cụm.
+**B4 — ba lỗi im lặng khi mở bộ chỉ tiêu.** *Một,* dựng ma trận TT200 trên
+toàn bộ `FIELD_MAP` sẽ kéo theo `tai_san_sinh_hoc_ngan_han` — chỉ tiêu TT200
+không có — và bịa ra một cột toàn 0, làm sai chiều không gian null. Đó là lý
+do có `fields_for(standard)`; **đừng quay lại `list(FIELD_MAP)`**. *Hai,*
+`report()` từng chỉ nhắc "cột toàn 0" trong ghi chú từng dòng, nên khi không
+còn chỉ tiêu vô hình thì báo cáo trông y hệt báo cáo quên in phần đó. *Ba,*
+test `A @ x_ref ≈ 0` trên bộ số thật **không** bắt được việc bỏ sót hạng tử,
+vì giá trị của nó trên báo cáo VNM đúng bằng 0 — cái bắt được là test cột
+toàn 0. Bài học: test trên một bộ số thật không thay được test trên cấu trúc
+ma trận.
+
+**B6 — bootstrap theo CỤM TÀI LIỆU, không theo trường.** Có test chứng minh
+việc phân cụm nới khoảng tin cậy hơn gấp đôi trên dữ liệu phân cụm.
 `item_bootstrap_ci` (cách SAI) giữ lại có chủ đích để paper nêu định lượng
-khoảng tin cậy sẽ hẹp giả tạo bao nhiêu. **Không dùng DeLong** — lý do ở
-`PREREGISTRATION.md` mục 1 và docstring `src/eval/stats.py`. McNemar dùng
-kiểm định nhị thức **chính xác** nên phần đó không cần scipy.
+khoảng tin cậy hẹp giả tạo bao nhiêu. **Không dùng DeLong** — lý do ở
+`PREREGISTRATION.md` mục 1. McNemar dùng kiểm định nhị thức **chính xác**
+nên phần đó không cần scipy.
 
-**B4.** Ba chỗ suýt sai khi mở bộ chỉ tiêu, cả ba đều là lỗi im lặng.
-
-*Một,* dựng ma trận TT200 trên toàn bộ `FIELD_MAP` sẽ kéo theo
-`tai_san_sinh_hoc_ngan_han` — chỉ tiêu TT200 không có — và bịa ra một cột
-toàn 0 không tồn tại, làm sai luôn chiều không gian null của TT200. Đó là lý
-do có `fields_for(standard)`; đừng quay lại dùng `list(FIELD_MAP)`.
-
-*Hai,* `report()` trước đây chỉ nhắc "cột toàn 0" trong ghi chú từng dòng
-của bảng, nên khi không còn chỉ tiêu nào vô hình thì báo cáo trông y hệt một
-báo cáo quên in phần đó. Nay có dòng tổng quan nêu số đó kể cả khi bằng 0.
-
-*Ba,* test giá trị thật `A @ x_ref ≈ 0` **không** bắt được việc bỏ sót hạng
-tử tài sản sinh học, vì giá trị của nó trên báo cáo VNM đúng bằng 0. Cái bắt
-được là test cột toàn 0. Bài học: test trên một bộ số thật không thay được
-test trên cấu trúc ma trận.
-
-**C1.** Năm nguồn ứng viên. `cost = −log(xác suất tiên nghiệm)` để cộng cost
-tương đương nhân xác suất. **Bốn xác suất trong `XAC_SUAT_TIEN_NGHIEM` chưa
-đo trên dữ liệu thật** — xem mục 12.
+**C1 — năm nguồn ứng viên**, `cost = −log(xác suất tiên nghiệm)` để cộng
+cost tương đương nhân xác suất. **Bảng `XAC_SUAT_TIEN_NGHIEM` vẫn CHƯA hiệu
+chỉnh trên dữ liệu thật** — xem mục 12.
 
 ---
 
-## 5. C2 — đã xong, hai test đỏ sửa thế nào
+## 5. Các phần đã đóng — chỉ giữ ràng buộc còn hiệu lực
 
-File [src/repair/diagnose.py](src/repair/diagnose.py), test
-[tests/test_diagnose.py](tests/test_diagnose.py) (31 test, tất cả xanh).
+Năm mục C2, B5, `max_changes`, Phần F và engine OCR đều đã xong. Bản trước
+dành ~230 dòng kể lại quá trình; dưới đây chỉ còn những gì **ràng buộc việc
+sẽ làm**. Muốn quá trình thì tra hash ở mục 3.
 
-### Test đỏ 1 — baseline 8 trả nghiệm không thưa
+### 5.1 C2 — hai baseline không được thua vì lý do cài đặt
 
-IRLS xuất phát từ trọng số đều nên vòng đầu ra đúng nghiệm bình phương tối
-thiểu. Với hệ đối xứng như `a + b = c` thì nghiệm đó lại đều (δ = 5/3 ở cả
-ba toạ độ), nên trọng số vòng sau vẫn đều và thuật toán kẹt ở **điểm bất
-động thật sự**. Thêm nữa, trên chính ví dụ đó nghiệm rải đều **cũng** có
-chuẩn L1 bằng 5: cực tiểu L1 suy biến, và thứ test thật sự đòi là nghiệm
-**đỉnh**.
+**Baseline 8 dùng quy hoạch tuyến tính, KHÔNG dùng IRLS.** Trên hệ đối xứng
+như `a + b = c`, cực tiểu L1 suy biến: nghiệm rải đều `δ = 5/3` ở cả ba toạ
+độ có cùng chuẩn L1 với nghiệm dồn một chỗ, và IRLS xuất phát từ trọng số
+đều thì kẹt ở đó vĩnh viễn. Nay tách `delta = u − v` với `u, v ≥ 0` rồi tối
+thiểu hoá `Σ(u + v)` bằng `scipy.optimize.linprog` (HiGHS) — nghiệm LP là
+nghiệm đỉnh nên số toạ độ khác 0 không vượt `rank(A)`. Baseline mạnh hơn thì
+kết luận về phương pháp đề xuất đáng tin hơn.
 
-Đã thay bằng `scipy.optimize.linprog` (HiGHS), tách `delta = u − v` với
-`u, v ≥ 0` rồi tối thiểu hoá `Σ(u + v)`. Nghiệm LP là nghiệm đỉnh nên số
-toạ độ khác 0 không vượt quá `rank(A)`. Lợi ích ngoài việc test xanh:
-baseline 8 hết là nghiệm xấp xỉ, bỏ được caveat trong paper — baseline mạnh
-hơn thì kết luận về phương pháp đề xuất đáng tin hơn.
+**Baseline 9 phải VÉT HẾT một cardinality rồi mới phân xử**, không được trả
+tổ hợp đầu tiên theo thứ tự chỉ số — nếu không thì đối chứng trung tâm của
+cả nghiên cứu thắng thua theo thứ tự khai báo field. Phân xử bằng **tổng
+khoảng cách tới donor**; trường không có donor thì lấy giá trị hiện tại làm
+mốc.
 
-### Test đỏ 2 — baseline 9 chọn trường theo thứ tự chỉ số
+### 5.2 B5 — tầng XBRL: vì sao có, và ba chỗ dễ làm hỏng
 
-`diagnose()` duyệt **hết** mọi tổ hợp ở một cardinality rồi mới chọn theo
-hàm mục tiêu, còn `diagnose_fellegi_holt_donor()` trả về tổ hợp **đầu tiên**
-theo thứ tự chỉ số rồi thoát — trong khi docstring của chính nó khẳng định
-"Giống hệt `diagnose()` ở việc chọn TRƯỜNG nào sửa". Tức baseline trung tâm
-của cả nghiên cứu đang thắng thua theo thứ tự khai báo field.
+**Phân vai: XBRL lo POWER, gold Việt Nam lo VALIDITY.** Tập gold cho khoảng
+1500 trường nhưng H2/H3 đo trên **số lỗi**, mà tỷ lệ lỗi 5–15% chỉ cho
+75–225 quan sát — 75 quan sát cho khoảng tin cậy rộng chừng ±0,11.
 
-Đã sửa: donor cũng duyệt hết một cardinality rồi phân xử bằng **tổng khoảng
-cách tới donor**. Trường không có giá trị donor thì lấy chính giá trị hiện
-tại làm mốc. Certificate ghi thêm `lech_so_voi_donor` cho từng trường bị sửa.
-
----
-
-## 6. B5 — tầng đánh giá XBRL, đã dựng xong
-
-Module [src/eval/xbrl_tier/](src/eval/xbrl_tier/) — sáu file. Test
-[tests/test_xbrl_tier.py](tests/test_xbrl_tier.py), 38 test, không cái nào
-chạm mạng.
-
-**Vì sao tồn tại:** tập gold 60 tài liệu cho khoảng 1500 trường, nhưng H2 và
-H3 đo trên **SỐ LỖI**. Tỷ lệ lỗi 5–15% chỉ cho 75–225 lỗi, mà 75 quan sát
-cho khoảng tin cậy rộng chừng ±0,11. Nên đây là **điều kiện để H2 và H3 có
-power**. Phân vai: **XBRL lo power, gold Việt Nam lo validity.**
-
-| File | Việc | Quyết định cần biết |
-|---|---|---|
-| `linkbase.py` | `*_cal.xml` → đẳng thức, → ma trận A | Parse thẳng bằng `xml.etree`, **không dùng `arelle`** |
-| `facts.py` | companyfacts → bảng giá trị | **Chỉ lấy fact CÙNG MỘT hồ sơ** — (a) |
-| `table.py` | Bảng hai cột kỳ | Lỗi lệch dòng/cột định nghĩa bằng hình học trang |
-| `render.py` | Bảng → ảnh + bbox + chuỗi đã vẽ | Vẽ thẳng bằng Pillow, ném lỗi khi font thiếu glyph — (c) |
-| `inject.py` | Inject lỗi theo taxonomy | Bảng nhầm chữ số **RỘNG HƠN** `repair.candidates` — (b) |
-| `fetch.py` | Tải hồ sơ từ EDGAR | **SCRIPT CHO NGƯỜI DÙNG CHẠY** |
-
-### Ba chỗ dễ làm hỏng nếu không biết lý do
-
-**(a) `facts.py` chỉ lấy fact của cùng một hồ sơ.** companyfacts gộp mọi lần
-công bố, nên cùng một ngày kết thúc kỳ có thể có nhiều giá trị. Trộn hai hồ
-sơ vào một bảng sẽ **phá vỡ đẳng thức kế toán một cách âm thầm**, và khi đó
-tầng này mất đúng thứ duy nhất làm nên giá trị của nó.
+**(a) `facts.py` chỉ lấy fact của CÙNG MỘT hồ sơ.** companyfacts gộp mọi lần
+công bố, nên trộn hai hồ sơ vào một bảng sẽ phá vỡ đẳng thức kế toán một
+cách âm thầm — mất đúng thứ duy nhất làm nên giá trị của tầng này.
 `test_chi_lay_fact_cua_dung_mot_ho_so` chốt chuyện này.
 
-**(b) `inject.py` KHÔNG dùng chung bảng nhầm chữ số với
-`repair.candidates`.** Dùng chung thì mọi lỗi inject đều nằm sẵn trong tập
-ứng viên, và phương pháp đề xuất thắng vì thí nghiệm được dựng cho nó thắng.
-Nên `inject` thay một chữ số bằng **bất kỳ chữ số nào khác**, còn
-`repair.candidates` chỉ sinh bốn cặp hay nhầm. Phần lỗi rơi ra ngoài tập ứng
-viên là phần phương pháp **phải chịu thua**. **Đừng "thống nhất" hai bảng
-này lại.**
+**(b) Bộ tiêm và bộ sinh ứng viên dùng CHUNG ma trận nhầm chữ số, nhưng
+KHÁC ĐỘ SÂU.** *(Sửa 25/08/2026 — bản trước ghi ngược lại, và câu "đừng
+thống nhất hai bảng này" ở đây đã hết hiệu lực.)* Cảnh báo cũ đúng khi cả
+hai bảng đều là phỏng đoán, nhưng cái giá của nó không ai tính: hai bảng
+lệch nhau làm độ phủ `digit_substitution` chỉ còn 0,092 — tức chỉ số đo ĐỘ
+TRÙNG CỦA HAI BẢNG PHỎNG ĐOÁN, không đo phương pháp. Nay cả hai đọc từ ma
+trận **đã đo** ở `src/nham_chu_so.py`, nhưng bộ tiêm lấy **trọn phân phối**
+còn bộ sinh chỉ lấy **6 cặp đầu**. Khoảng hở đó giữ nguyên tinh thần cảnh
+báo cũ và là thứ giữ cho cơ chế ABSTAIN còn kiểm chứng được. Độ phủ sau khi
+sửa: 0,615.
 
 **(c) `render.py` ném lỗi khi font thiếu glyph.** Font đi kèm Pillow không
 có glyph tiếng Việt có dấu: "Đơn vị tính" render ra "□n v□ t□nh" mà ảnh vẫn
-trông bình thường. Nên chữ cố định mặc định **tiếng Anh**, ô trống dùng gạch
-nối ASCII, và `render()` kiểm mọi ký tự rồi **ném `ValueError`**.
+trông bình thường. Chữ cố định mặc định **tiếng Anh**, ô trống dùng gạch nối
+ASCII, và `render()` kiểm mọi ký tự rồi ném `ValueError`. `RenderedTable`
+mang khoá `texts` — chuỗi **đúng như đã vẽ**, vì bộ đo OCR phải so với cái
+đã VẼ chứ không phải với giá trị số (`1234567.0` vẽ thành `"1,234,567"`).
 
-`RenderedTable` mang thêm khoá `texts` — chuỗi **đúng như đã vẽ** cho từng
-ô. Bộ đo OCR ở mục 9 cần so với cái đã VẼ chứ không phải với giá trị số:
-`1234567.0` được vẽ thành `"1,234,567"`, số âm thành `"(1,234,567)"`.
-
-### Kết quả chạy thử toàn chuỗi
-
-Chuỗi `linkbase → bảng → inject → sinh ứng viên → chẩn đoán` đã chạy thông
-đầu-cuối trên bảng 8 chỉ tiêu, 3 đẳng thức.
-
-> **Bảng 8 chỉ tiêu này KHÔNG phải bộ chỉ tiêu TT200/TT99.** Dự án có hai
-> bảng số tách biệt hẳn nhau, và trộn chúng là hiểu sai cả mục 7 lẫn mục 12:
+> **Hai bảng số tách biệt hẳn nhau, trộn là hiểu sai cả mục 7 lẫn mục 12:**
 >
 > | | Bộ chỉ tiêu Việt Nam | Bảng tầng XBRL |
 > |---|---|---|
 > | Khai ở | `src/fields_config.py` | `src/eval/xbrl_tier/` |
 > | Nguồn | Thông tư 200 và 99 | Linkbase hồ sơ SEC (Mỹ) |
-> | Quy mô | 20–21 chỉ tiêu, 7 đẳng thức | 8 chỉ tiêu, 3 đẳng thức |
+> | Quy mô | 27/26 chỉ tiêu, 9 đẳng thức | trung vị 158 chỉ tiêu |
 > | Dùng để | Trích xuất báo cáo Việt Nam thật | Sinh lỗi có kiểm soát cho H2/H3 |
 >
-> `diagnose()` không biết gì về bộ chỉ tiêu nào cả — nó nhận `A` và
+> `diagnose()` không biết gì về bộ chỉ tiêu nào — nó nhận `A` và
 > `field_order` từ nơi gọi, nên chạy trên **cả hai**.
 
-Kết quả:
+### 5.3 Trần `max_changes = 2` — hạn chế của phương pháp, không phải cài đặt
 
-1. Inject `DIGIT_SUB` vào `Cash` (`1 → 9`) làm đúng **1 đẳng thức** vi phạm.
-2. Giá trị thật **không** nằm trong tập ứng viên vì cặp `1→9` không thuộc
-   bốn cặp hay nhầm. `diagnose()` trả `ABSTAIN` — **thua đúng**.
-3. Baseline 9 trả `REPAIRED` nhưng **sửa sai trường** — cho ra bảng cân đối
-   hoàn hảo và sai sự thật. Đúng thứ `fabrication_rate` sinh ra để bắt.
+Chi phí nằm trọn ở việc **chứng minh KHÔNG có nghiệm**, mà đó lại là ca
+thường gặp vì tập ứng viên đóng cố ý không chứa mọi cách sửa. Đo trên bài
+toán 8 chỉ tiêu / 87 ứng viên: không đặt trần thì hết 30 giây; đặt trần 2
+thì 16 mili giây. Đo lại 24/08 trên chính ma trận TT200/TT99 (20–21 chỉ
+tiêu, 100–105 ứng viên): trần 2 mất 33–56 ms, trần 3 mất 958–1128 ms, không
+đặt trần thì vẫn hết giờ 30 giây. **Mỗi nấc đắt lên khoảng 20 lần.**
 
-Sau `inject_scale_toan_cuc` với `k = 3`, **mọi đẳng thức vẫn thoả tuyệt
-đối** — bản chạy được của chứng minh ở `constraints.py`.
+Áp cho `diagnose()` **và** baseline 9 vì H3 so ở cùng ngân sách. Baseline 8
+**không** áp trần, có chủ đích: delta của nó chạy tự do trong `ℝⁿ` và nghiệm
+đỉnh đã tự giới hạn số toạ độ khác 0.
 
----
+**Tài liệu có ba trường cùng sai sẽ không được sửa.** Đã ghi vào mục Sửa đổi
+của `PREREGISTRATION.md`. **Bảng kết quả phải báo cáo tỷ lệ tài liệu rơi vào
+ca đó.**
 
-## 7. Trần `max_changes` và tách ABSTAIN — `9c3f7c9`
+Ở `max_changes = 2` chi phí đi theo `C(n,2)`, nên tăng từ 21 lên 40 chỉ tiêu
+chỉ đắt lên chừng 3,7 lần — vẫn dưới một phần tư giây. **Ràng buộc thật khi
+mở rộng bộ chỉ tiêu là chi phí gán nhãn tay, không phải chi phí tính toán.**
 
-Trong lúc chạy thử B5, `diagnose()` **hết 30 giây** trên bài toán chỉ có 8
-chỉ tiêu và 87 ứng viên:
+### 5.4 Tách ABSTAIN theo lý do — đừng bao giờ gộp lại
 
-| Ca | `max_changes` | Kết quả | Thời gian |
-|---|---|---|---|
-| Lỗi KHÔNG sửa được | không đặt | ABSTAIN vì **hết giờ** | **30.158 ms** |
-| Lỗi KHÔNG sửa được | 2 | ABSTAIN vì **vô nghiệm** | **16 ms** |
-| Lỗi sửa được | không đặt | REPAIRED, đúng `Cash` | 1,8 ms |
-
-**Chi phí nằm trọn ở việc chứng minh KHÔNG có nghiệm**, mà đó lại là ca
-thường gặp vì tập ứng viên đóng cố ý không chứa mọi cách sửa.
-
-Đã chốt `MAX_CHANGES_MAC_DINH = 2`, áp cho `diagnose()` **và** baseline 9,
-vì H3 so ở cùng ngân sách. Baseline 8 **không** áp trần có chủ đích: delta
-của nó chạy tự do trong `ℝⁿ`, và nghiệm đỉnh đã tự giới hạn số toạ độ khác
-0 không vượt quá `rank(A)`.
-
-**Đây là hạn chế của phương pháp, không phải chi tiết cài đặt.** Tài liệu có
-ba trường cùng sai sẽ không được sửa. Đã ghi vào mục Sửa đổi của
-`PREREGISTRATION.md`. **Bảng kết quả phải báo cáo tỷ lệ tài liệu rơi vào ca
-đó.**
-
-### Tách ABSTAIN — đừng gộp lại
-
-`Diagnosis` có `ma_ly_do`, lấy giá trị trong một **tập đóng**:
-
-| Mã | Nghĩa |
-|---|---|
-| `vo_nghiem` | Đã vét cạn **MỌI** tổ hợp và không có nghiệm |
-| `vuot_tran_thay_doi` | Hết tổ hợp trong trần — **chưa duyệt tới tổ hợp lớn hơn** |
-| `het_gio` | Hết ngân sách thời gian |
-| `thieu_gia_tri` | Không dựng được vector nên không kiểm được ràng buộc |
-| `bo_giai_that_bai` | Bộ giải LP của baseline 8 không trả nghiệm |
-| `""` | Không ABSTAIN |
+| Mã | Nghĩa | Chứng minh được luận điểm chống bịa? |
+|---|---|---|
+| `vo_nghiem` | Đã vét cạn MỌI tổ hợp và không có nghiệm | **CÓ — ca duy nhất** |
+| `vuot_tran_thay_doi` | Hết tổ hợp trong trần, chưa duyệt tổ hợp lớn hơn | không |
+| `het_gio` | Hết ngân sách thời gian | không |
+| `thieu_gia_tri` | Không dựng được vector nên không kiểm được ràng buộc | không |
+| `bo_giai_that_bai` | Bộ giải LP của baseline 8 không trả nghiệm | không |
 
 Luận điểm chống bịa phát biểu là *không cách đọc nào của tài liệu này làm
-bảng cân đối được*. **Chỉ `vo_nghiem` mới chứng minh được điều đó.**
-`vuot_tran_thay_doi` chỉ nghĩa là ta đã không tìm. Gộp hai thứ lại là tính
-công cho phương pháp ở những ca nó không chứng minh được gì.
+bảng cân đối được*. Gộp `vuot_tran_thay_doi` vào `vo_nghiem` là tính công
+cho phương pháp ở những ca nó không chứng minh được gì.
 
----
+**Đo được ở cả hai lượt Mốc 3: `vo_nghiem` = 0 trên 520 lượt.** Xem mục 13c.
 
-## 8. Phần F đã xong — và một lỗi CI nằm im từ `f1d236e`
+### 5.5 Phần F — hai thứ còn ràng buộc
 
-Tám mục dọn dẹp của BUILD-SPEC Phần F đều đã làm. Ba chỗ đáng nhớ:
+**CI thực tế KHÔNG BAO GIỜ CHẠY.** Workflow chỉ trigger trên `main` và trên
+pull request, mà `research` không bao giờ merge. Một lỗi từng nằm im vì
+chuyện này: bước cài liệt kê tay `pytest ruff numpy pillow openai
+python-dotenv`, thiếu `scipy`, trong khi `repair/diagnose.py` import
+`scipy.optimize.linprog` ở mức module — pytest hỏng ở bước **collect** nên
+cả 31 test của `test_diagnose.py` biến mất chứ không phải đỏ. Đã sửa danh
+sách, nhưng **mọi việc kiểm vẫn phải làm tại chỗ**. Muốn CI có ích thì thêm
+`research` vào phần trigger của `.github/workflows/ci.yml`, KHÔNG phải merge.
 
-**CI đang hỏng mà không ai biết.** Bước cài của workflow liệt kê tay
-`pytest ruff numpy pillow openai python-dotenv`, không có `scipy`, trong
-khi `repair/diagnose.py` import `scipy.optimize.linprog` ở mức module từ
-`f1d236e`. Hậu quả không phải một test đỏ mà là pytest hỏng ở bước
-**collect** — cả 31 test của `test_diagnose.py` biến mất. Nó lọt lưới vì CI
-chỉ chạy khi push lên `main` và khi mở PR, còn loạt việc này nằm trên
-`research`. Đã kiểm chứng bằng cách chặn import `scipy` để mô phỏng đúng môi
-trường CI, rồi sửa danh sách và ghi kèm lý do nó phải phủ mọi import mức
-module.
+**`meta["early_stop"]` là khoá tường minh, và nó tồn tại vì phép ĐO.** Nhánh
+`PATIENCE_PAGES` dừng khi mới đủ field BẮT BUỘC, tức cố ý bỏ qua phần đuôi
+tài liệu. Một chỉ tiêu nằm ở phần đuôi sẽ có tỷ lệ "không đọc được" cao —
+nhưng đó là tạo tác của điều kiện dừng, và **không nhìn ra được từ bảng kết
+quả** vì trường bị bỏ qua và trường đọc hỏng đều là một ô null.
+`DISABLE_EARLY_STOP=true` tắt hẳn, cùng vai với `DISABLE_CONSTRAINT_GATE`.
 
-**`meta["early_stop"]` là khoá tường minh, và nó tồn tại vì phép ĐO.**
-Nhánh `PATIENCE_PAGES` dừng khi mới đủ field BẮT BUỘC, tức cố ý bỏ qua phần
-đuôi tài liệu. Sau B4 mở rộng bộ trường, một chỉ tiêu mới nằm ở phần đuôi đó
-sẽ có tỷ lệ "không đọc được" cao — nhưng đó là tạo tác của điều kiện dừng,
-và **không nhìn ra được từ bảng kết quả** vì trường bị bỏ qua và trường đọc
-hỏng đều là một ô null. Cờ `DISABLE_EARLY_STOP=true` tắt hẳn, cùng vai với
-`DISABLE_CONSTRAINT_GATE`.
+### 5.6 Engine OCR — GIỮ EasyOCR, và một kết quả dùng được cho bài
 
-**Test khoá threading đã được kiểm chứng đúng cách spec đòi.** Thay
-`_totals_lock` bằng `contextlib.nullcontext()` rồi chạy lại: đỏ cả 3/3 lượt.
-
-Mọi thay đổi trong loạt này đều được kiểm bằng cách **đục thủng đúng tính
-năng mà test canh, rồi xác nhận test đỏ** — tổng 14 đột biến, tất cả đều bị
-bắt.
-
----
-
-## 9. Engine OCR — đã quyết: GIỮ EasyOCR
-
-BUILD-SPEC nói rõ mục này "không được để trống". Đã đo, không đổi engine.
-
-Module [src/eval/ocr_compare.py](src/eval/ocr_compare.py), báo cáo ở
-`data/output/ocr_engine_easyocr.md` (đã gỡ khỏi `.gitignore`).
-
-**Vì sao đo được ngay mà không cần tập gold:** `render.py` đã cho ảnh bảng,
-bbox từng ô và chuỗi đúng như đã vẽ. Ground truth mức ô có sẵn, chính xác
-tuyệt đối, không tốn một phút gán nhãn.
-
-Kết quả trên 45 ô số, phổ độ lớn 4–13 chữ số:
+Đo trên 45 ô số render sẵn (ground truth mức ô chính xác tuyệt đối, không
+tốn một phút gán nhãn — `render.py` cho cả ảnh, bbox và chuỗi đã vẽ):
 
 | Ảnh | Levenshtein | Đúng con số | Không ra số |
 |---|---:|---:|---:|
@@ -552,33 +435,28 @@ Kết quả trên 45 ô số, phổ độ lớn 4–13 chữ số:
 | **độ phân giải thấp** | **0,934** | **0,467** | **0,000** |
 
 **Kết luận 1 — giữ EasyOCR.** Con số 0,646 của Ajayi et al. đo trên bảng
-KHOA HỌC. Trên ô số thì 0,999. Đây là câu trả lời có số liệu cho reviewer.
+KHOA HỌC; trên ô số thì 0,999. Đây là câu trả lời có số liệu cho reviewer.
 
-**Kết luận 2, quan trọng hơn với luận điểm của bài.** Ở độ phân giải thấp,
-chỉ số ký tự vẫn báo 0,934 trong khi **chưa tới một nửa** số đọc ra là đúng.
-Và tỷ lệ "không ra số" bằng **0** — mọi ô sai đều parse ra một con số hợp
-lệ. Đó chính là lỗi câm, đo được, trên dữ liệu có ground truth hoàn hảo.
-Hệ quả: **không được báo cáo Levenshtein accuracy một mình.**
+**Kết luận 2, quan trọng hơn.** Ở độ phân giải thấp, chỉ số ký tự vẫn báo
+0,934 trong khi **chưa tới một nửa** số đọc ra là đúng, và tỷ lệ "không ra
+số" bằng **0** — mọi ô sai đều parse ra một con số hợp lệ. Đó chính là lỗi
+câm, đo được, trên dữ liệu có ground truth hoàn hảo. **Không được báo cáo
+Levenshtein accuracy một mình.**
 
-### Việc còn chờ người quyết
+*(Mục "việc còn chờ người quyết" ở đây đã ĐÓNG: cặp `9→0` áp đảo mà bảng bốn
+cặp cũ không có, nay đã đo thành ma trận đầy đủ và áp vào cả hai phía —
+`90b271a`, xem 5.2(b).)*
 
-Cặp nhầm chữ số quan sát được ở độ phân giải thấp: `9→0` (23 lần),
-`6→0` (8), `9→8` (1). `repair/candidates.py` đang sinh ứng viên từ bốn cặp
-`(0,8) (1,7) (3,8) (5,6)` — **cặp áp đảo `9→0` không nằm trong đó**.
+### 5.7 Bẫy `sys.path` — đã cắn hai lần, sẽ cắn lần ba
 
-**CHƯA áp vào, và cố ý.** Đây mới là một engine, một bảng tổng hợp, một mức
-xuống cấp. Lưu ý ranh giới ở mục 6(b): việc hiệu chỉnh `candidates` theo số
-đo là hợp lệ; việc cho `inject` sinh lỗi theo đúng bảng mà `candidates` biết
-cách sửa thì không.
-
-### Bẫy đã gặp khi dựng module này
-
-`python src/eval/ocr_compare.py` đặt `src/eval/` lên **đầu** `sys.path`, và
+Chạy `python src/eval/<file>.py` đặt `src/eval/` lên **đầu** `sys.path`, và
 `eval/metrics.py` ở đó che mất `src/metrics.py` của pipeline. Lỗi nổ ra tận
 trong `ocr_baseline` với `ImportError: cannot import name 'timer' from
-'metrics'`, trỏ vào một file chẳng liên quan. Cùng họ với vụ `src/types.py`.
-Khối `__main__` của `ocr_compare.py` tự gỡ thư mục script khỏi `sys.path`.
-`fetch.py` đã kiểm, KHÔNG dính lỗi này.
+'metrics'`, trỏ vào một file chẳng liên quan. Cùng họ với vụ `src/types.py`
+che module `types` chuẩn (mục 11). **Mọi script trong `src/eval/` phải tự gỡ
+thư mục của chính nó khỏi `sys.path` trong khối `__main__`** — `moc3.py`,
+`ocr_compare.py`, `chay_tap_gold.py` đều đã làm; `fetch.py` đã kiểm, không
+dính.
 
 ---
 
@@ -844,8 +722,9 @@ quả, đừng để suy ra từ sự vắng mặt của khoá khác.
    theo `C(n,2)`, nên tăng từ 21 lên 40 chỉ tiêu chỉ đắt lên chừng 3,7 lần —
    vẫn dưới một phần tư giây. **Ràng buộc thật khi mở rộng là chi phí gán
    nhãn tay, không phải chi phí tính toán.**
-5. Bảng bốn cặp nhầm chữ số trong `repair/candidates.py` — cặp áp đảo `9→0`
-   **không nằm trong bảng**. Lý do chưa sửa ở mục 9.
+5. ~~Bảng bốn cặp nhầm chữ số trong `repair/candidates.py`~~ — **ĐÃ SỬA
+   `90b271a`.** Nay đọc từ ma trận đã đo ở `src/nham_chu_so.py`; xem 5.2(b)
+   và 5.6.
 6. `MAX_UPLOAD_BYTES = 50 MB` trong `api.py` — chọn theo đúng một tài liệu.
 
 ---
@@ -1032,6 +911,42 @@ ghi vào mục Sửa đổi của `PREREGISTRATION.md` TRƯỚC khi chạy.
   `bao_cao()` nay sinh ra, vì không có bản JSON để in lại. Lượt chạy sau sẽ
   ghi đè file này bằng bản sinh thật.
 
+#### Lượt chạy lại 26/08/2026 — tái lập, và một chỗ KHÔNG tái lập
+
+Chạy lại nguyên xi để kiểm repo còn tái lập được sau loạt commit 26/08. Kết
+quả ở `data/output/moc3_26082026.md`. Độ phủ ứng viên đo lại trước khi chạy
+cũng khớp từng chữ số (sign 1,000 / digit_sub 0,615 / row_shift 0,015 /
+col_shift 0,000).
+
+| Chỉ số | 25/08 | 26/08 |
+|---|---:|---:|
+| Còn sai — đề xuất / baseline 9 | 0,719 / 0,646 | **0,719 / 0,646** |
+| Định vị đúng — đề xuất / b9 | 0,227 / 0,288 | **0,227 / 0,288** |
+| Lỗi câm — đề xuất / b9 | 0,00488 / 0,00597 | **0,004873 / 0,005970** |
+| Bịa — đề xuất / b9 | 0,00400 / 0,00609 | **0,003956 / 0,006088** |
+
+**Nhưng bảng lý do ABSTAIN thì đảo lộn:**
+
+| Lý do | 25/08 | 26/08 |
+|---|---:|---:|
+| `het_gio` | 85 | **156** |
+| `vuot_tran_thay_doi` | 162 | **93** |
+| `vo_nghiem` | **0** | **0** |
+
+**71 lượt trên 249 chuyển bucket**, chỉ vì lượt 26/08 phải chia CPU với việc
+chấm tập gold. `het_gio` đo tải máy chứ không đo phương pháp, nên **bảng này
+không tái lập được** — và nó nằm trong cùng một báo cáo với các con số vốn
+tái lập hoàn hảo, không có gì đánh dấu để phân biệt. **Trong bài phải ghi rõ
+bảng lý do ABSTAIN phụ thuộc ngân sách tính toán**, hoặc bỏ `het_gio` ra khỏi
+mọi lập luận.
+
+**Chỗ nặng hơn: `vo_nghiem` = 0 trên 520 lượt, ở CẢ HAI lượt chạy.** Chính
+báo cáo ghi *"`vo_nghiem` là ca DUY NHẤT chứng minh được"* luận điểm chống
+bịa — và nó chưa từng xảy ra. Toàn bộ ABSTAIN đều là *ta đã không tìm*, không
+phải *không có*. Lập luận chống bịa ở tầng XBRL vì thế **không** tựa được vào
+bảng ABSTAIN; nó tựa vào tỷ lệ bịa mức trường (0,00396 so 0,00609), và đó mới
+là con số được phép dùng.
+
 #### Trạng thái Mốc 3 sau lượt chạy này
 
 **Điều kiện dừng KHÔNG kích hoạt.** Được phép đi tiếp sang C3, C4, D2–D4 và
@@ -1078,7 +993,7 @@ Từ `BUILD-SPEC.md` mục 0.2 và chỉ thị trực tiếp của người dùn
 - **`time.monotonic()` trên Windows quá thô** để test khoảng vài mili giây.
   Test bộ điều tốc của `fetch.py` dùng đồng hồ giả qua `monkeypatch`.
 - **Module trong `src/eval/` chạy như script sẽ che `src/metrics.py`** bằng
-  `src/eval/metrics.py` — xem mục 9.
+  `src/eval/metrics.py` — xem mục 5.7.
 
 ---
 
@@ -1098,6 +1013,11 @@ python src/tai_bctc.py
 # ĐO độ phân giải bản quét — trục phân nhóm Stress thứ ba (mục 19.7)
 python src/do_do_phan_giai.py            # chỉ in bảng
 python src/do_do_phan_giai.py --ghi      # ghi vào data/nguon_gold.json
+
+# CHẤM PIPELINE trên tập gold (mục 20). Tốn tiền gọi API thật, 5-50 phút
+# một tài liệu. Kết quả ghi sau MỖI tài liệu nên đứt gánh không mất.
+PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/chay_tap_gold.py --chuan-tu-gold
+PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/chay_tap_gold.py --tiep-tuc --chuan-tu-gold
 
 # CÔNG CỤ GÁN NHÃN tập gold, rồi mở http://127.0.0.1:8100
 # Dùng launcher chứ ĐỪNG gọi thẳng uvicorn: lệnh gọi thẳng cần đặt biến môi
@@ -1149,17 +1069,25 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
 
 Cập nhật 26/08/2026. Đường găng nay đi qua **tầng gold**, không còn qua Mốc 3.
 
-1. **Gán nhãn thêm 2 tài liệu có đồng hồ chạy thật** (mục 19.4 bước 2). Mười
+1. **Vá bước đọc dòng "Đơn vị tính"** — mục 20.4. Chẩn đoán xong, hướng đã
+   chọn, chỉ chờ đủ 11 số đo để chốt chi tiết. Đây là việc gấp nhất vì nó là
+   chế độ lỗi DUY NHẤT mà cả tầng ràng buộc mù hoàn toàn.
+2. **Gán nhãn thêm 2 tài liệu có đồng hồ chạy thật** (mục 19.4 bước 2). Mười
    tài liệu của `data/bctc/` đã gán nhãn xong, nhưng chỉ 8 trong số đó đếm
    được vào trung vị, nên phải chọn thêm 2 mã mới. Đủ 10 thì tính trung vị và
    tuyên số phút cho giao thức trần người.
-2. **Chọn 90 mã còn lại** rồi thêm vào `data/nguon_gold.json`. Nay là việc
-   chọn, không còn là việc dò nguồn.
-3. **Ba baseline còn thiếu: 4, 5, 7.**
-4. **Bước D của phương án C** — nhận diện chuẩn mẫu biểu (Phụ lục B). Việc rẻ
-   nên làm trước: chạy lại phép đo `tieu_de_trong_vung_cat` trên 10 tài liệu
-   mới thay vì một tài liệu như hiện nay.
-5. Sau đó: pilot 20 tài liệu → **MỐC 2** (tính lại power) → C3 → C4 → D2/D3/D4.
+3. **Chọn mã cho mốc 60** rồi thêm vào `data/nguon_gold.json` — người chủ
+   trì chốt lộ trình 10 → 60 → 100 ngày 26/08. Nay là việc chọn, không còn
+   là việc dò nguồn.
+4. **Bước D của phương án C** — nhận diện chuẩn mẫu biểu (Phụ lục B). Cùng
+   họ với việc 1 và nên làm liền sau: cả hai đều là "thứ cần đọc nằm ngoài
+   vùng bảng đã cắt". Chạy lại phép đo `tieu_de_trong_vung_cat` trên 10 tài
+   liệu thay vì một tài liệu như hiện nay.
+5. **Ba baseline còn thiếu: 4, 5, 7.**
+6. **Bật `n_samples > 1`** — không có nó thì H1 không đo được (mục 20.5).
+7. Sau đó: **C3** (vòng lặp đọc lại) → **C4** (verdict) → chạy Mốc 3 TRÊN
+   TẦNG GOLD → D2/D3/D4. **Chỉ bước đó mới đóng được Mốc 3**; tầng XBRL đã
+   cho hết những gì nó có thể cho.
 
 ### Ngân sách tầng gold, đối chiếu với số đo thật
 
@@ -1756,6 +1684,148 @@ lên chữ số, in mờ lệch nét là những trục riêng mà máy chưa đ
 `VHC_2025Q1_TT200` ghi đúng mấy thứ đó trong `notes`. Hệ quả phải nêu trong
 bài: tương quan bằng 0 với dpi KHÔNG cho phép kết luận chất lượng ảnh không
 ảnh hưởng.
+
+---
+
+## 20. Chấm pipeline trên tập gold — số thật đầu tiên, 26–27/08/2026
+
+Trước mục này, **mọi con số chất lượng của dự án đều lấy trên tầng XBRL Mỹ
+hoặc trên đúng một báo cáo VNM**. Đây là chỗ đầu tiên pipeline bị chấm trên
+bộ tài liệu Việt Nam có nhãn tay.
+
+### 20.1 Công cụ `src/eval/chay_tap_gold.py`
+
+Repo đã có `src/eval/metrics.py` chấm điểm nhưng **không module nào gọi
+pipeline rồi so với nhãn**. Đây là D2 phiên bản tối thiểu.
+
+```
+PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/chay_tap_gold.py --chuan-tu-gold
+PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/chay_tap_gold.py            # đầu-cuối
+PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/chay_tap_gold.py --tiep-tuc  # nối lượt đứt
+```
+
+**Hai chế độ, và khoảng cách giữa chúng CHÍNH LÀ phép đo.** `router.chon_chuan`
+hiện không có nguồn `nhan_dien`, nên không ai chỉ định thì nó lùi về
+`DEFAULT_STANDARD` là TT99. Tập gold có 5 tài liệu TT200, mà mã 270 của
+TT200 là mã 280 của TT99 — chạy sai bảng thì kết quả hỏng vì lý do chẳng
+liên quan gì tới phương pháp. `--chuan-tu-gold` là điều kiện **oracle**, đo
+trích xuất tách khỏi nhận diện; chế độ mặc định là hiện trạng đầu-cuối. Hiệu
+số đo đúng một thứ: **bước D của phương án C đáng giá bao nhiêu.**
+
+Chấm ở mức TRƯỜNG, **gộp tử và mẫu** qua các tài liệu chứ không lấy trung
+bình của các tỷ lệ — TT200 có 26 chỉ tiêu còn TT99 có 27 nên hai cách cho
+hai con số khác nhau, và chỉ cách đầu cộng dồn được cho bootstrap theo cụm.
+
+### 20.2 Hai cái bẫy đã trả giá, đừng lặp lại
+
+**(a) Ghi kết quả một lần ở cuối = mất sạch khi tiến trình bị giết.** Lượt
+chạy đêm 26/08 chết lúc đang ở tài liệu 7/11; **sáu tài liệu đã chấm xong
+biến mất** cùng ba tiếng gọi API. Bài học này đã có sẵn trong docstring —
+dẫn chính lượt Mốc 3 ngày 25/08 — nhưng chỉ được áp một nửa: *"ghi TRƯỚC khi
+in"* chống được lỗi định dạng trong hàm in, **không** chống được tiến trình
+bị giết, mà đó mới là thứ xảy ra. Nay ghi sau **mỗi** tài liệu, và
+`--tiep-tuc` bỏ qua doc_id đã có để không trả tiền API hai lần.
+
+**(b) Bảng gộp sạch nhưng pipeline tự in giá trị từng ô ra CÙNG stdout.**
+`route_document` in một bản kết xuất theo trang; `> file.txt` gom cả chúng
+lẫn bảng vào một chỗ (79 khối trong lượt đầu). Biện pháp phòng vệ khi đó chỉ
+tồn tại trong docstring chứ không tồn tại trong hành vi. Nay `redirect_stdout`
+đổ chúng vào `data/output/tap_gold_<chế độ>_pipeline.log`.
+
+> **LUẬT 1 — chỗ này phải giữ kỷ luật.** Người chủ trì sẽ **tự gán nhãn lại**
+> tập này sau ít nhất hai tuần để đo đồng thuận (quyết định 26/08). Hai file
+> `tap_gold_*.json` và `tap_gold_*_pipeline.log` **có giá trị từng ô** —
+> người sẽ gán nhãn lại đọc chúng là lượt gán lại bị neo và phép đo đồng
+> thuận mất giá trị.
+>
+> **Cách gỡ triệt để, ĐANG CHỜ NGƯỜI CHỦ TRÌ xác nhận:** loại 10 tài liệu
+> này khỏi tập gán nhãn đôi. Tập đích ~100 mà chỉ cần 20–33, nên thừa chỗ, và
+> nó gỡ rủi ro tận gốc thay vì phải giữ kỷ luật không mở file.
+
+### 20.3 Kết quả từng phần — lượt chạy CHƯA xong
+
+Chế độ `--chuan-tu-gold`. Kết quả đầy đủ ở
+`data/output/tap_gold_chuan_tu_gold.json`, cập nhật sau mỗi tài liệu.
+
+| doc_id | Trường đúng | Lỗi câm | Đơn vị |
+|---|---:|---:|---|
+| `BMP_2026Q1_TT99` | 23/27 | 0,042 | **SAI** |
+| `DGC_2025Q2_TT200` | 24/26 | 0,040 | ok |
+| `DLG_2026Q2_TT99` | 24/27 | **0,000** | ok |
+
+**`DLG_2026Q2_TT99` là kết quả đáng chú ý nhất tới lúc này**: nó là bản quét
+**kém nhất lô, 100 dpi**, mà **lỗi câm bằng 0** — mọi giá trị đọc ra đều
+đúng, ba trường còn lại là bỏ trống chứ không phải đọc sai. Lỗi ồn vô hại vì
+hệ biết mình thất bại; lỗi câm mới là thứ làm hỏng mọi tỷ số dựng trên nó.
+Nếu tính chất này giữ được trên cả tập thì đó là một kết quả bán được.
+
+**Nhịp chạy: 5–50 phút một tài liệu**, phần lớn là bước dò mã số dòng bằng
+OCR (886 giây trên 1272 giây của BMP, tức 70%). Tài liệu độ phân giải thấp
+và nhiều trang thì lâu nhất.
+
+### 20.4 Đơn vị tính KHÔNG đọc được — chẩn đoán xong, chưa vá
+
+**Đây là chỗ hỏng nghiêm trọng nhất mà lượt chạy này lộ ra**, và nó nghiêm
+trọng hơn con số accuracy nhiều.
+
+Vì sao: H0 chứng minh `Aδ = (c−1)Ax* = 0` cho lỗi sai đơn vị toàn cục —
+**mọi đẳng thức kế toán đều mù với nó**. Bảng vẫn cân hoàn hảo, mọi phép
+kiểm vẫn báo ĐẠT, trong khi mọi con số sai 1000 lần. Dòng "Đơn vị tính" vì
+thế là **mỏ neo tuyệt đối duy nhất**, và mất nó là mất chế độ lỗi duy nhất
+mà cả tầng ràng buộc không nhìn thấy được.
+
+**Nguyên nhân đã đo, không phải suy đoán.** Chạy DocLayout-YOLO trên
+`BMP_2026Q1_TT99` trang 4 (trang bảng cân đối, cao 3504 px):
+
+| Lớp | conf | y | Là gì |
+|---|---:|---|---|
+| `abandon` ×2 | 0,93–0,94 | 82..208 | tiêu đề công ty |
+| `plain text` / `title` | 0,27–0,31 | 267..412 | tên báo cáo |
+| **`plain text`** | **0,86** | **416..471** | **"Đơn vị tính: VND"** |
+| `table` | 0,95 | **516**..2949 | bảng |
+
+Dòng đơn vị kết thúc ở **y = 471**, vùng bảng bắt đầu ở **y = 516** — cách
+nhau **45 pixel**. Và [layout_detection.py](src/layout_detection.py) lọc
+thẳng `if model.names[int(box.cls)] != "table": continue`, nên box conf 0,86
+chứa đúng thứ cần tìm bị bỏ ngay tại đó.
+
+**VLM không đọc sai dòng ấy — nó chưa từng được đưa cho xem.**
+
+Đây đúng là hiện tượng proposal mục 6.3 dự đoán, đo trên VNM: trang 8 hụt
+**27 pixel**. BMP hụt 45. Cùng chế độ lỗi, hai tài liệu khác nhau.
+
+**Con số BMP đang che mất mức nghiêm trọng:** BMP là VND (×1) nên không đọc
+được đơn vị mà giá trị vẫn đúng 23/27 — trúng do may. `VRE` (`Triệu VND`) và
+`HNG` (`Ngàn VND`) mà hụt dòng đó thì **toàn bộ chỉ tiêu sai 10⁶ và 10³
+lần**. Cả hai nằm trong lượt đang chạy.
+
+**Hướng sửa đã chọn, chi tiết CHƯA chốt.** Người chủ trì chọn hướng **nới mép
+trên vùng cắt**, kèm một ràng buộc: **không dùng con số pixel cố định**, phải
+là một khoảng dự phòng co giãn. Lý do ràng buộc đó đúng: 120 px trên bản 300
+dpi và trên bản 100 dpi là hai khoảng cách vật lý khác hẳn nhau, và tập gold
+trải từ 89,9 tới 295,8 dpi.
+
+Cách bỏ được hẳn hằng số ma thuật: **nới mép trên cho tới mép dưới của box
+gần nhất phía trên**, chặn bằng một **tỷ lệ chiều cao trang** thay vì một số
+pixel. Như vậy nó tự hiệu chỉnh theo từng trang và từng độ phân giải.
+
+**Quyết định: chờ đủ 11 tài liệu rồi mới vá**, để chốt trên 11 số đo thay vì
+suy từ một. `PADDING = 8` trong `layout_detection.py` hiện là đối xứng.
+
+### 20.5 Ba việc lượt chạy này lộ ra, chưa làm
+
+1. **H1 CHƯA CHẠY ĐƯỢC ở cấu hình hiện tại.** `n_samples=1, temperature=0.0`
+   cho confidence 1,0 ở mọi trường, mà `FieldResult.khong_do()` ghi rõ 1,0 ở
+   đó nghĩa là **"không đo được"** chứ không phải "chắc chắn". H1 so vi phạm
+   ràng buộc với confidence của model — cột confidence hằng số thì phép so
+   vô nghĩa. Muốn đo H1 phải bật `n_samples > 1`, và chi phí gọi API nhân
+   lên đúng k lần.
+2. **Mới có MỘT model, và là bản `:free`.** `OPENROUTER_MODEL` hiện là
+   `google/gemma-4-31b-it:free`. Proposal baseline 2 đòi **ít nhất ba** —
+   một open-weight, một closed, một model tiếng Việt.
+3. **Chế độ đầu-cuối chưa chạy.** Chỉ mới chạy `--chuan-tu-gold`. Chế độ mặc
+   định chỉ khác ở 5 tài liệu TT200 (5 tài liệu TT99 lùi về TT99 nên trùng
+   với oracle), nên chạy `--chi` trên đúng 5 mã đó là đủ và rẻ hơn một nửa.
 
 ---
 

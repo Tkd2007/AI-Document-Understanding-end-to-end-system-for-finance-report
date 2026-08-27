@@ -67,7 +67,7 @@ from pathlib import Path
 
 # Chạy như script thì thư mục src/eval/ nằm đầu sys.path và eval/metrics.py
 # che mất src/metrics.py của pipeline. Cùng họ với vụ src/types.py — xem
-# HANDOFF.md mục 9. Gỡ thư mục script ra trước khi import bất cứ thứ gì.
+# HANDOFF.md mục 5.7. Gỡ thư mục script ra trước khi import bất cứ thứ gì.
 if __name__ == "__main__":
     _thu_muc_script = str(Path(__file__).resolve().parent)
     sys.path[:] = [p for p in sys.path if Path(p).resolve() != Path(_thu_muc_script)]

@@ -171,6 +171,66 @@ FIELD_RULES = {
     "tien_dau_ky":               {"allow_negative": False, "required": False},
 }
 
+
+def chuan_hoa_dau(gia_tri: dict) -> tuple[dict, list[str]]:
+    """
+    Sửa dấu ba dòng khấu trừ mà dấu ngoặc KHÔNG mang nghĩa số âm.
+
+    Trên cùng một trang B02, dấu ngoặc mang hai nghĩa khác nhau. Ở mã 40 nó
+    là số liệu — lợi nhuận khác âm thật. Ở mã 11 nó chỉ là cách trình bày
+    "dòng này bị trừ đi", vì văn bản viết `Mã 20 = Mã 10 − Mã 11`, tức mã 11
+    vào công thức như một số dương. `parse_number()` không biết mình đang
+    đọc chỉ tiêu nào nên áp "ngoặc là âm" cho cả hai nghĩa.
+
+    Đây không phải lỗi giả định: trên tập gold ngày 27/08/2026, MWG và VRE
+    mỗi tài liệu sai đúng ba dòng này — không thừa, không thiếu — và tổng
+    cộng 8 trong 24 lỗi câm đo được đến từ đây. Quy tắc chép từ
+    ANNOTATION-GUIDELINE.md mục 3.3, không phát minh thêm.
+
+    Trả về (giá trị đã sửa, danh sách khoá bị đổi dấu). Danh sách ấy đi vào
+    meta chứ không im lặng: một bước lật dấu không ghi lại thì về sau không
+    ai phân biệt được "báo cáo in dương" với "ta đã lật".
+
+    CỐ Ý BỎ MÃ 52 RA NGOÀI, dù guideline liệt kê nó cùng mã 51. Guideline
+    viết "dương khi mã 60 < mã 50", và mệnh đề đó đúng cho TỔNG thuế nhưng
+    sai khi áp riêng từng dòng: `Mã 60 = Mã 50 − Mã 51 − Mã 52`, nên một
+    khoản thu nhập thuế hoãn lại (mã 52 âm) sống chung được với mã 60 < mã
+    50 miễn mã 51 đủ lớn. Nhãn gold của MWG và VRE ngày 27/08/2026 ghi mã 52
+    ÂM trong khi cả hai đều có mã 60 < mã 50 — tức dữ liệu thật mâu thuẫn
+    với chữ nghĩa guideline. Áp nguyên văn thì hàm này sẽ lật một mã 52 âm
+    hợp lệ thành dương và ĐẺ RA lỗi câm mới. Bỏ mã 52 ra cho đúng số trường
+    sửa được như cũ trên tập gold, mà không mang rủi ro ấy. Chỗ vênh giữa
+    guideline và gold đang chờ người chủ trì phân xử.
+
+    CỐ Ý KHÔNG giải đẳng thức `Mã 60 = Mã 50 − Mã 51 − Mã 52` để chọn dấu.
+    Giải nó ra dấu thì mọi kết quả đều thoả nó, và phép đo H1 — so vi phạm
+    ràng buộc với confidence của model — mất sạch nghĩa vì tín hiệu bị chính
+    bước trích xuất làm phẳng. Ở đây chỉ dùng CHIỀU của mã 50 so với mã 60,
+    đúng như guideline viết; độ lớn vẫn tự do sai, nên đẳng thức vẫn còn khả
+    năng vỡ và vẫn còn là phép kiểm độc lập.
+    """
+    ra = dict(gia_tri)
+    da_doi: list[str] = []
+
+    gia_von = ra.get("gia_von_hang_ban")
+    if isinstance(gia_von, (int, float)) and gia_von < 0:
+        ra["gia_von_hang_ban"] = -gia_von
+        da_doi.append("gia_von_hang_ban")
+
+    truoc_thue = ra.get("loi_nhuan_truoc_thue")
+    sau_thue = ra.get("loi_nhuan_sau_thue")
+    # Thiếu một trong hai thì KHÔNG đoán. Guideline buộc quyết định bằng mã
+    # 50 và 60, và cả hai đều in sẵn trên trang, nên suy diễn khi vắng chúng
+    # là tự cho mình quyền mà quy tắc không cho.
+    if isinstance(truoc_thue, (int, float)) and isinstance(sau_thue, (int, float)):
+        thue = ra.get("thue_tndn_hien_hanh")
+        if sau_thue < truoc_thue and isinstance(thue, (int, float)) and thue < 0:
+            ra["thue_tndn_hien_hanh"] = -thue
+            da_doi.append("thue_tndn_hien_hanh")
+
+    return ra, da_doi
+
+
 def _khong_am(value) -> bool:
     """
     Giá trị này không âm chứ? Thiếu dữ liệu (None) cũng tính là không âm.

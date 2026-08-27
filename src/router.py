@@ -515,6 +515,9 @@ def route_document(
             gia_tri_tran(result), dau_vet
         )
 
+        # validate_result() sửa dấu ba dòng khấu trừ ngay sau bước ép kiểu —
+        # xem mục 1b trong đó. Ở đây không đụng vào dấu: trước khi ép kiểu,
+        # giá trị VLM còn có thể là chuỗi.
         da_kiem = validate_result(gia_tri_da_dien, standard)
         data = da_kiem["data"]
 

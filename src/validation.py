@@ -22,6 +22,7 @@ from fields_config import (
     TOTAL_ASSETS_BOUNDS,
     UNIT_KEY,
     Standard,
+    chuan_hoa_dau,
     identities_for,
     parse_unit,
 )
@@ -130,6 +131,15 @@ def validate_result(result: dict, standard: Standard) -> dict:
             number *= he_so
 
         data[key] = number
+
+    # 1b. Sửa dấu ba dòng khấu trừ, NGAY SAU khi ép kiểu và TRƯỚC mọi phép
+    #     kiểm. Phải nằm ở đây chứ không phải trong router: trước bước ép
+    #     kiểu thì giá trị VLM còn có thể là chuỗi, và một hàm kiểm dấu chạy
+    #     trên chuỗi sẽ lặng lẽ không làm gì cả — hỏng đúng kiểu khó thấy
+    #     nhất. Đặt trước bước 2 và 4 vì để giá vốn âm đi tiếp thì cả cảnh
+    #     báo "âm bất thường" lẫn đẳng thức mã 20 đều báo một lỗi không có
+    #     thật, và tầng ràng buộc sẽ đi sửa chỗ không hỏng.
+    data, dau_da_sua = chuan_hoa_dau(data)
 
     # 2. Số âm ở những chỉ tiêu không được phép âm
     for key, value in data.items():
@@ -249,6 +259,10 @@ def validate_result(result: dict, standard: Standard) -> dict:
             "don_vi_tinh_chuan": don_vi_chuan or None,
             "don_vi_tinh_he_so": he_so,
             "standard": standard.value,
+            # Khoá nào đã bị lật dấu. Không ghi lại thì về sau không ai phân
+            # biệt được "báo cáo in dương" với "ta đã sửa", và một bước sửa
+            # vô hình là bước không kiểm toán lại được.
+            "dau_da_sua": dau_da_sua,
         },
         "warnings": warnings,
     }

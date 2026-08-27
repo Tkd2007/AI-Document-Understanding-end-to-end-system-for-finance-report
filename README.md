@@ -559,15 +559,30 @@ Chín đẳng thức kế toán nối chúng lại, khai báo ở `FIELD_IDENTIT
 
 - **Layout Detection** (DocLayout-YOLO): working — lọc trang không có bảng
   và cắt riêng từng vùng bảng trước khi đưa vào OCR/VLM.
-- **OCR Pipeline** (EasyOCR + regex): working nhưng **tắt mặc định**
-  (`USE_OCR_FIRST=false`). Trên OCR text của báo cáo VNM Q1/2026, kết hợp alias +
-  mã số dòng trích đúng **11/11 chỉ tiêu** *dưới bộ chỉ tiêu cũ*, nhưng vẫn chậm
-  hơn nhiều so với chạy thẳng VLM — xem phần lý do ở trên. Bộ 27 chỉ tiêu sau kịch bản E
-  chưa đo lại.
-- **VLM Pipeline** (Gemma 4 31B via OpenRouter): working, verified accurate
-  on the same 54-page report — 11/11 field *dưới bộ chỉ tiêu cũ*, dừng sớm ở
-  trang 10. Có retry với
-  exponential backoff khi gặp 429, và dừng sớm theo `PATIENCE_PAGES`.
+- **OCR Pipeline** (EasyOCR + regex): working, **tắt mặc định trong code**
+  (`USE_OCR_FIRST=false`) nhưng bật được qua `.env`. Bật thì nó là khoản đắt
+  nhất của cả lượt chạy: đo trên `BMP_2026Q1_TT99`, bước dò mã số dòng chiếm
+  **886 giây trên 1272 giây**, tức 70% thời gian, vì EasyOCR chạy CPU.
+- **VLM Pipeline** (Gemma 4 31B via OpenRouter): working. Chạy ở
+  `n_samples=1, temperature=0.0`, nên confidence trả về là **1,0 ở mọi
+  trường** và con số đó nghĩa là *không đo được*, không phải *chắc chắn* —
+  muốn đo H1 phải bật `n_samples > 1`. Có retry với exponential backoff khi
+  gặp 429, và dừng sớm theo `PATIENCE_PAGES`.
+
+### Đo trên tập gold — số thật đầu tiên, 27/08/2026
+
+`python src/eval/chay_tap_gold.py --chuan-tu-gold` chấm pipeline với nhãn
+tay. Kết quả từng phần (lượt chạy chưa xong, cập nhật ở `HANDOFF.md` mục 20):
+khoảng **88–92% trường đúng**, tỷ lệ lỗi câm 0–4%. `DLG_2026Q2_TT99` — bản
+quét kém nhất lô, 100 dpi — cho **lỗi câm bằng 0**: mọi giá trị đọc ra đều
+đúng, phần còn lại là bỏ trống chứ không phải đọc sai.
+
+**Một chỗ hỏng đã biết, chưa vá:** pipeline không đọc được dòng "Đơn vị
+tính" vì nó nằm **ngoài** vùng bảng mà YOLO cắt — YOLO nhận ra dòng đó với
+conf 0,86 rồi `get_table_regions()` vứt đi vì không thuộc lớp `table`. Với
+báo cáo ghi "Triệu VND" hay "Ngàn VND" thì hụt dòng này làm sai **toàn bộ**
+chỉ tiêu 10⁶ và 10³ lần, mà không đẳng thức kế toán nào phát hiện được. Chẩn
+đoán đầy đủ ở `HANDOFF.md` mục 20.4.
 - **Document Classifier & Router**: implemented — gọi VLM khi kết quả chưa đủ
   field bắt buộc **hoặc** validation còn warning. Layout detection và convert
   PDF chỉ chạy một lần, dùng chung cho cả hai nhánh.

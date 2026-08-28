@@ -41,6 +41,13 @@ data/output/*
 !data/output/ma_tran_nham_chu_so_*.md
 !data/output/ma_tran_nham_chu_so_*.json
 
+# Ngoai le: bao cao pham vi cua luat dau. Do bang cach chay lai luat tren
+# ket qua da luu roi so voi nhan tay; thu ghi ra chi la TEN CHI TIEU va SO
+# DEM, khong mot con so tai chinh nao. Phai vao git vi no la bang chung cho
+# mot luat dinh vi se duoc viet vao bai, va con so "bao nham 0/10" chi co
+# nghia khi neo vao mot commit cu the cung phien ban luat.
+!data/output/luat_dau_*.md
+
 # Ngoai le: phep do tieu de co lot vao vung bang da cat khong. Do tren bao
 # cao VNM that, nhung thu ghi ra chi la DONG TIEU DE va TOA DO khung — kho
 # co mot con so tai chinh nao trong do. Phai vao git vi no la cau tra loi

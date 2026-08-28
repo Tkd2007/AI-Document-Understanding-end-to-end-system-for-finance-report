@@ -133,9 +133,12 @@ PROMPT_RULES = [
     'ở khoá "don_vi_tinh", ví dụ "triệu đồng". Nếu ảnh không có dòng đó, trả null cho khoá này — '
     'không được suy đoán đơn vị từ độ lớn của các con số.',
 
-    '7. Chỉ lấy số liệu của KỲ BÁO CÁO NGẮN NHẤT VÀ MỚI NHẤT. Xác định cột bằng NHÃN/TIÊU ĐỀ '
-    'cột, KHÔNG dựa vào vị trí cột đầu tiên bên trái, vì trang có thể bị xoay 90 độ và thứ tự '
-    'cột khác nhau giữa các mẫu báo cáo.',
+    '7. Chỉ lấy số liệu của KỲ BÁO CÁO NGẮN NHẤT VÀ MỚI NHẤT. Ưu tiên xác định cột bằng '
+    'NHÃN/TIÊU ĐỀ cột theo các quy tắc 7b-7d dưới đây. Khi nhãn cột mờ hoặc thiếu thì ĐƯỢC '
+    'PHÉP dùng VỊ TRÍ làm căn cứ phụ: theo mẫu biểu Việt Nam, cột số liệu ĐẦU TIÊN ngay sau '
+    'các cột nhãn ("Mã số", "Chỉ tiêu", "Thuyết minh") chính là kỳ báo cáo hiện tại. Lưu ý '
+    '"đầu tiên" tính theo chiều đọc CỦA BẢNG, không phải theo mép trái của ảnh — trang có thể '
+    'bị xoay 90 độ, và khi đó chiều đọc cũng xoay theo.',
 
     '7b. Bảng kết quả kinh doanh quý thường có BỐN cột số liệu, chia làm hai nhóm: nhóm "Quý '
     '<số>" và nhóm LUỸ KẾ (nhãn ghi "Luỹ kế từ đầu năm...", "Kỳ kế toán <N> tháng...", "6 '

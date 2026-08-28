@@ -39,11 +39,26 @@ PADDING = 8
 # nhau gấp hơn ba lần. Một hằng số pixel vừa cho bản 300 dpi sẽ hụt trên bản
 # 100 dpi, và ngược lại thì nuốt cả tiêu đề công ty.
 #
-# 0,05 lấy từ số đo chứ không phải chọn bừa: trên BMP, nới trọn dòng đơn vị
-# cần 100 px = 2,9% chiều cao trang, còn khối tiêu đề công ty bắt đầu ở
-# y 208, tức 8,8% phía trên. 5% nằm giữa hai mốc đó — đủ để với tới dòng
-# đơn vị, chưa đủ để chạm khối tiêu đề.
-TY_LE_NOI_TREN = 0.05
+# NÂNG TỪ 0,05 LÊN 0,13 ngày 28/08/2026, và ĐỔI LUÔN Ý ĐỒ. Mức 0,05 cũ cố ý
+# dừng TRƯỚC khối tiêu đề: nó chỉ nhắm dòng "Đơn vị tính" (2,9% trên BMP) và
+# tránh chạm khối tiêu đề công ty (8,8%). Nay khối tiêu đề là thứ MUỐN lấy,
+# vì hai thứ nằm trong đó trả lời hai câu hỏi đang mở:
+#
+#   * KÝ HIỆU MẪU (`B01a-DN` so với `B01a-DN/HN`) nói bảng thuộc bộ báo cáo
+#     RIÊNG hay HỢP NHẤT. Hồ sơ có cả hai bộ mà không phân biệt được thì
+#     pipeline lấy bảng cân đối từ bộ này và kết quả kinh doanh từ bộ kia.
+#   * TIÊU ĐỀ báo cáo là dấu hiệu nhận diện CHUẨN mà `detect_standard()` cần,
+#     và phép đo `tieu_de_trong_vung_cat` từng ghi nhận nó lọt vào vùng cắt
+#     0/2 lần.
+#
+# 0,13 lấy từ số đo trên hai trang dựng đứng: ôm trọn mọi box phía trên cần
+# 0,100 ở `SBT` trang 5 và 0,124 ở `BMP` trang 4. Đây là hằng số hiệu chỉnh
+# trên HAI tài liệu — đo lại khi tập gold rộng ra.
+#
+# Trần vẫn phải có, và vẫn theo TỶ LỆ chứ không theo pixel: tập gold trải từ
+# 89,9 tới 295,8 dpi nên cùng một khoảng cách vật lý cho ra số pixel khác nhau
+# gấp hơn ba lần.
+TY_LE_NOI_TREN = 0.13
 
 # Hai box chồng nhau quá mức này thì coi là cùng một bảng.
 #
@@ -189,13 +204,27 @@ def tran_noi_tren(
     """
     Mép trên xa nhất được phép cắt tới cho một vùng bảng.
 
-    Nới tới ĐỈNH của box gần nhất nằm ngay phía trên, chặn bằng
-    TY_LE_NOI_TREN nhân chiều cao trang. Không có box nào ở trên thì nới
-    trọn khoảng dự phòng đó.
+    Đi NGƯỢC LÊN theo CHUỖI box nằm phía trên, mỗi lần lấy trọn box gần nhất,
+    dừng khi hết box hoặc khi box kế tiếp vượt quá TY_LE_NOI_TREN nhân chiều
+    cao trang. Không có box nào ở trên thì nới trọn khoảng dự phòng đó.
 
-    Lấy trọn box phía trên chứ KHÔNG dừng ở mép dưới của nó: thứ cần lấy —
-    dòng "Đơn vị tính" — nằm BÊN TRONG box ấy, nên dừng ở mép dưới thì vẫn
-    hụt đúng dòng cần lấy, chỉ hụt ít hơn.
+    VÌ SAO PHẢI ĐI THEO CHUỖI chứ không lấy đúng một box. Bản trước chỉ lấy
+    box gần nhất, và trên thực tế nó luôn dừng ở dòng "Đơn vị tính" — box gần
+    bảng nhất. Nhưng phía trên dòng ấy còn hai thứ cần đọc: KÝ HIỆU MẪU
+    (`B01a-DN/HN`) nói bảng này thuộc bộ báo cáo riêng hay hợp nhất, và TIÊU
+    ĐỀ báo cáo nói đây là chuẩn nào. Đo trên `SBT_2025Q2` trang 5: dòng đơn vị
+    ở tỷ lệ 0,028 nên lọt, còn ký hiệu mẫu ở 0,100 nên bị bỏ lại. Cả hai đều
+    nằm trong cùng một chuỗi box xếp chồng lên nhau, nên đi theo chuỗi thì lấy
+    được cả, mà không phải nới mù một khoảng cố định.
+
+    Lấy TRỌN box chứ KHÔNG dừng ở mép dưới của nó: thứ cần lấy nằm BÊN TRONG
+    box ấy, nên dừng ở mép dưới thì vẫn hụt đúng dòng cần lấy, chỉ hụt ít hơn.
+
+    GIỚI HẠN ĐÃ BIẾT, đo được: cách này chỉ cứu được trang DỰNG ĐỨNG. Trang
+    xoay 90 độ thì ký hiệu mẫu nằm ở CẠNH BÊN chứ không nằm phía trên, và
+    `SBT` trang 8 với `DGC` trang 7 — cả hai đều là bảng kết quả kinh doanh
+    xoay ngang — không có box nào phía trên chồng ngang với bảng. Nới lên bao
+    nhiêu cũng không tới. Ca đó cần một cơ chế khác.
 
     Chỉ xét box có phần chồng theo chiều NGANG với bảng. Bỏ điều kiện đó thì
     một box số trang hay ghi chú ở lề cũng kéo được vùng cắt lên tận đầu
@@ -204,16 +233,29 @@ def tran_noi_tren(
     x1, y1, x2, _ = box
     gioi_han = max(0, y1 - int(height * TY_LE_NOI_TREN))
 
-    o_tren = [
-        khac
-        for khac in cac_box_khac
-        if khac[3] <= y1 and min(x2, khac[2]) > max(x1, khac[0])
+    chong_ngang = [
+        khac for khac in cac_box_khac if min(x2, khac[2]) > max(x1, khac[0])
     ]
-    if not o_tren:
-        return gioi_han
 
-    gan_nhat = max(o_tren, key=lambda khac: khac[3])
-    return max(gioi_han, gan_nhat[1])
+    moc = y1
+    dinh = None
+    while True:
+        ke_tiep = [khac for khac in chong_ngang if khac[3] <= moc and khac[1] < moc]
+        if not ke_tiep:
+            break
+
+        gan_nhat = max(ke_tiep, key=lambda khac: khac[3])
+        # Lấy TRỌN box hoặc không lấy nó. Cắt ngang một box là cắt ngang đúng
+        # dòng chữ cần đọc, tức vẫn hụt, chỉ hụt ít hơn — mà lại còn đưa cho
+        # model một dòng cụt trông như dòng đầy đủ.
+        if gan_nhat[1] < gioi_han:
+            break
+
+        dinh = moc = gan_nhat[1]
+
+    # Không chạm được box nào thì nới trọn khoảng dự phòng; chạm được thì dừng
+    # ở đỉnh box cuối cùng của chuỗi, tức nới ĐÚNG tới chỗ có thứ để đọc.
+    return gioi_han if dinh is None else max(gioi_han, dinh)
 
 
 def get_table_regions(image: Image.Image) -> list[TableRegion]:

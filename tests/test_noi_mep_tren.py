@@ -1,10 +1,14 @@
 """
-Nới mép trên vùng bảng để dòng "Đơn vị tính" lọt vào vùng cắt.
+Nới mép trên vùng bảng để những thứ nằm NGOÀI box bảng lọt vào vùng cắt.
 
-Số đo trong bộ test này lấy từ BMP_2026Q1_TT99 trang 4, đo ngày 27/08/2026:
-trang cao 3504 px, box `plain text` chứa dòng đơn vị ở y 416..471 (conf
-0,86), vùng bảng bắt đầu ở y 516. Chạy được mà không cần YOLO — tran_noi_tren
-là hàm hình học thuần.
+Ban đầu chỉ nhắm dòng "Đơn vị tính". Từ 28/08/2026 nhắm thêm hai thứ nữa nằm
+cao hơn: KÝ HIỆU MẪU (`B01a-DN` so với `B01a-DN/HN`, phân biệt bộ báo cáo
+riêng với hợp nhất) và TIÊU ĐỀ báo cáo (dấu hiệu nhận diện chuẩn). Vì thế hàm
+đi ngược lên theo CHUỖI box chứ không lấy đúng một box gần nhất.
+
+Số đo lấy từ BMP_2026Q1_TT99 trang 4 (trang cao 3504 px, dòng đơn vị ở y
+416..471 conf 0,86, bảng bắt đầu ở y 516) và SBT_2025Q2_TT200 trang 5. Chạy
+được mà không cần YOLO — tran_noi_tren là hàm hình học thuần.
 """
 
 from PIL import Image
@@ -32,11 +36,43 @@ def test_khong_co_box_o_tren_thi_noi_tron_khoang_du_phong():
     assert tran == BANG[1] - int(CAO_TRANG * TY_LE_NOI_TREN)
 
 
+def test_lay_ca_khoi_tieu_de_cong_ty():
+    """
+    Khối tiêu đề nay là thứ MUỐN lấy, không còn là thứ phải tránh.
+
+    Ý đồ đã đảo ngày 28/08/2026. Mức 0,05 cũ cố ý dừng trước khối này; nay ký
+    hiệu mẫu (`B01a-DN` so với `B01a-DN/HN`) nằm trong đó, và nó là thứ phân
+    biệt bộ báo cáo RIÊNG với HỢP NHẤT — chính chỗ hồ sơ SBT lẫn hai bộ.
+    """
+    assert tran_noi_tren(BANG, [TIEU_DE_CONG_TY], CAO_TRANG) == TIEU_DE_CONG_TY[1]
+
+
 def test_bi_chan_boi_ty_le_chieu_cao_trang():
-    """Box tiêu đề công ty ở tận y 82 không được kéo vùng cắt lên tới đó."""
-    tran = tran_noi_tren(BANG, [TIEU_DE_CONG_TY], CAO_TRANG)
+    """
+    Trần vẫn phải bó, nếu không một box ở tận đầu trang kéo vùng cắt lên hết.
+
+    Lấy TRỌN box hoặc không lấy: box vượt trần thì bỏ hẳn chứ không cắt ngang
+    nó — cắt ngang là cắt ngang đúng dòng chữ cần đọc, vẫn hụt mà lại đưa cho
+    model một dòng cụt trông như dòng đầy đủ.
+    """
+    qua_xa = (300, 5, 2000, 40)
+    tran = tran_noi_tren(BANG, [qua_xa], CAO_TRANG)
+
     assert tran == BANG[1] - int(CAO_TRANG * TY_LE_NOI_TREN)
-    assert tran > TIEU_DE_CONG_TY[3]
+    assert tran > qua_xa[3]
+
+
+def test_di_nguoc_len_theo_CHUOI_box_chu_khong_lay_mot_box():
+    """
+    Chuỗi box xếp chồng: dòng đơn vị sát bảng, rồi tới khối tiêu đề phía trên.
+
+    Bản trước chỉ lấy box GẦN NHẤT nên luôn dừng ở dòng đơn vị, và ký hiệu mẫu
+    phía trên bị bỏ lại. Đo trên SBT trang 5: dòng đơn vị ở tỷ lệ 0,028 nên
+    lọt, ký hiệu mẫu ở 0,100 nên bị bỏ — cả hai nằm trong cùng một chuỗi.
+    """
+    tran = tran_noi_tren(BANG, [DONG_DON_VI, TIEU_DE_CONG_TY], CAO_TRANG)
+
+    assert tran == TIEU_DE_CONG_TY[1], "dừng ở box gần nhất, không đi hết chuỗi"
 
 
 def test_box_khong_chong_ngang_thi_bo_qua():

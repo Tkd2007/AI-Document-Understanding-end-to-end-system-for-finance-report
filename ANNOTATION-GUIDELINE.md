@@ -115,18 +115,18 @@ Báo cáo in `29.403` ở đơn vị "triệu đồng" thì ghi `29403000000`.
 *Vì sao:* hai tài liệu khác đơn vị mà lưu ở đơn vị gốc thì không so được với
 nhau, và mọi phép đo accuracy trên nhiều công ty mất nghĩa.
 
-### 3.3 Số âm, và ba dòng khấu trừ luôn ghi dương
+### 3.3 Số âm, và dấu của ba dòng khấu trừ
 
 Báo cáo tài chính in số âm **trong ngoặc đơn**: `(1.234.567)`. Ghi giá trị âm:
 `-1234567`. Một số báo cáo dùng dấu trừ. Cả hai đều là số âm, ghi như nhau.
 
-**Ngoại lệ — ba chỉ tiêu khấu trừ dưới đây ghi số DƯƠNG dù in trong ngoặc:**
+**Ba chỉ tiêu khấu trừ dưới đây không theo luật "ngoặc là âm":**
 
 | Chỉ tiêu | Mã | Quy tắc |
 |---|---|---|
 | Giá vốn hàng bán | 11 | **Luôn dương.** Giá vốn âm là dấu hiệu đọc sai, không phải số liệu |
-| Chi phí thuế TNDN hiện hành | 51 | Dương khi thuế làm **giảm** lợi nhuận (mã 60 < mã 50) |
-| Chi phí thuế TNDN hoãn lại | 52 | Dương khi thuế làm **giảm** lợi nhuận (mã 60 < mã 50) — **QUY TẮC NÀY ĐANG BỊ CHẤT VẤN**, xem tu chính 27/08/2026 |
+| Chi phí thuế TNDN hiện hành | 51 | **Giữ nguyên dấu như in**, rồi kiểm bằng đẳng thức mã 60 |
+| Chi phí thuế TNDN hoãn lại | 52 | **Giữ nguyên dấu như in**, rồi kiểm bằng đẳng thức mã 60 |
 
 *Vì sao cần ngoại lệ:* trên cùng một trang B02, dấu ngoặc mang **hai nghĩa
 khác nhau**, và quy tắc "ngoặc là âm" gộp chúng làm một.
@@ -140,15 +140,25 @@ Ghi mã 11 thành số âm làm đẳng thức `giá vốn + lãi gộp = doanh 
 lệch đúng **gấp đôi** giá vốn, và người gán nhãn sẽ đi tìm một lỗi không tồn
 tại trên báo cáo.
 
-*Vì sao mã 51 và 52 phải quyết định dấu bằng mã 50 và 60, không bằng dấu
-ngoặc:* Thông tư dành riêng dấu âm ở hai chỉ tiêu này cho một nghĩa hẹp.
+*Vì sao mã 51 và 52 phải kiểm bằng đẳng thức, không bằng chiều của mã 50 so
+với mã 60:* Thông tư dành riêng dấu âm ở hai chỉ tiêu này cho một nghĩa hẹp.
 TT200 Điều 113 mục 3.16–3.17 (TT99 mục 3.17–3.18) nói số liệu "được ghi vào
 chỉ tiêu này bằng số âm dưới hình thức ghi trong ngoặc đơn" **khi phát sinh
-bên Nợ**, tức khi thuế là *thu nhập* chứ không phải chi phí. Nhưng nhiều
-doanh nghiệp in ngoặc cho cả khoản thuế là chi phí bình thường, theo nghĩa
-trình bày. Chép nguyên dấu ngoặc sẽ trộn hai trạng thái thật sự khác nhau
-vào cùng một giá trị âm; quyết định bằng mã 50 và 60 thì tách được, và cả
-hai ô đó đều đã in sẵn trên trang nên không phải suy đoán gì.
+bên Nợ**, tức khi thuế là *thu nhập* chứ không phải chi phí. Một mã 52 âm vì
+thế là một trạng thái kế toán CÓ THẬT, không phải lỗi trình bày.
+
+Chiều của mã 50 so với mã 60 không tách được hai trạng thái ấy, vì
+`Mã 60 = Mã 50 − Mã 51 − Mã 52` chỉ ràng buộc **tổng** hai dòng thuế: mã 51
+đủ lớn thì mã 60 < mã 50 vẫn đúng trong khi mã 52 âm hợp lệ. Phép kiểm dùng
+được là chính đẳng thức đó:
+
+- Bộ số **đã cân** → dấu âm là số liệu thật, giữ nguyên, không sửa gì.
+- Đẳng thức **lệch đúng gấp đôi** một trong hai dòng thuế → dòng đó ghi
+  ngược dấu. Đọc lại đúng ô ấy trên báo cáo. Nếu đọc lại vẫn ra dấu cũ thì
+  giữ nguyên và ghi `notes`, đừng lật dấu cho cân.
+
+Công cụ gán nhãn chạy sẵn phép kiểm này (`kiem_dau_khau_tru`), nên không
+phải tính tay.
 
 Mọi chỉ tiêu **không có** trong bảng trên giữ nguyên dấu như in — kể cả lợi
 nhuận gộp, lợi nhuận khác, vốn chủ sở hữu và bốn dòng lưu chuyển tiền, vì ở
@@ -514,8 +524,9 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
       bảng dấu hiệu ở mục 3.7, và **không** theo hậu tố `a`/`b`
 - [ ] `unit_declared` chép **nguyên văn**; `unit_multiplier` khớp
 - [ ] Mọi giá trị đã quy đổi về **đồng**
-- [ ] Số âm ghi bằng dấu trừ, không phải ngoặc; ba dòng khấu trừ
-      (mã 11, 51, 52) ghi **dương** — mục 3.3
+- [ ] Số âm ghi bằng dấu trừ, không phải ngoặc; giá vốn (mã 11) ghi
+      **dương**; hai dòng thuế (mã 51, 52) giữ nguyên dấu như in rồi kiểm
+      bằng đẳng thức mã 60 — mục 3.3
 - [ ] Ô trống, dấu gạch, và dòng vắng mặt đều ghi `0`; `null` **chỉ** dùng
       khi có dòng mà đọc không ra (mục 3.4)
 - [ ] Đã đối chiếu **mã số**, không chỉ tên chỉ tiêu
@@ -531,6 +542,42 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 
 > Mọi thay đổi guideline ghi vào đây kèm **ngày** và **lý do**, và ghi rõ
 > **những tài liệu nào phải gán nhãn lại**. Không sửa đè lên nội dung trên.
+
+### 28/08/2026 — Mã 51 và 52 giữ nguyên dấu như in; quy tắc cũ đã SAI
+
+**Kết luận Câu 13: nhãn gold đúng, guideline sai.** Quy tắc *"dương khi mã 60
+< mã 50"* ở mục 3.3 bị bỏ, thay bằng "giữ nguyên dấu như in, rồi kiểm bằng
+đẳng thức mã 60". **Không tài liệu nào phải gán nhãn lại** — xem bằng chứng
+bên dưới.
+
+Vì sao quy tắc cũ sai: `Mã 60 = Mã 50 − Mã 51 − Mã 52` chỉ ràng buộc **tổng**
+hai dòng thuế. Mã 51 đủ lớn thì mã 60 < mã 50 vẫn đúng trong khi mã 52 âm
+hoàn toàn hợp lệ — mã 52 âm là **thu nhập** thuế hoãn lại, một trạng thái kế
+toán có thật mà chính Thông tư mô tả (TT200 Điều 113 mục 3.17, phát sinh bên
+Nợ ghi trong ngoặc đơn). Mệnh đề cũ đúng cho tổng thuế nhưng sai khi áp riêng
+từng dòng, nên áp nguyên văn sẽ lật một giá trị hợp lệ thành sai.
+
+Bằng chứng trên toàn bộ 11 file `data/gold/`, đo ngày 28/08/2026:
+
+| | Số tài liệu |
+|---|---|
+| Mã 51 âm | **0** |
+| Mã 52 âm | **3** — `HNG_2025H1_TT200`, `MWG_2025Q1_TT200`, `VRE_2026Q1_TT99` |
+| Đẳng thức `mã 60 = mã 50 − mã 51 − mã 52` lệch | **0** |
+
+Cả ba tài liệu có mã 52 âm đều cân đẳng thức tới từng đồng, tức dấu âm ấy là
+số liệu thật chứ không phải lỗi chép. Quy tắc mới giữ nguyên chúng, nên không
+nhãn nào phải sửa. (Tu chính 27/08/2026 chỉ nêu MWG và VRE; HNG là ca thứ ba,
+tìm ra khi rà lại toàn bộ tập gold.)
+
+Quy tắc mới cũng áp cho **mã 51**, dù Câu 13 chỉ hỏi về mã 52: cùng một lập
+luận, và mã 51 âm cũng có nghĩa kế toán riêng. Không tài liệu nào bị ảnh
+hưởng vì mã 51 dương ở cả 11 file.
+
+Không có thay đổi hành vi nào ở code. `chuan_hoa_dau()` đã cố ý bỏ mã 52 ra
+ngoài từ `a0cd5ab`, và `kiem_dau_khau_tru()` trong công cụ gán nhãn vốn đã
+xét theo tiêu chí "lật dấu làm cân đẳng thức" chứ không theo chiều mã 50/60.
+Tu chính này làm câu chữ guideline khớp lại với hai chỗ đó.
 
 ### 28/08/2026 — Tài liệu đã chạy pipeline bị loại khỏi tập gán nhãn đôi
 
@@ -556,31 +603,14 @@ tài liệu hiện có đều mang `loai_da_chay_pipeline`),
 `VNM_2026Q1_TT99` cũng bị loại dù không nằm trong danh mục nguồn: nó có nhãn
 gold và có đầu ra pipeline từ những lượt chạy trên tài liệu mẫu.
 
-### 27/08/2026 — mã 52 của mục 3.3: quy tắc và nhãn gold đang mâu thuẫn
+### 27/08/2026 — mã 52 của mục 3.3: ghi nhận mâu thuẫn, chưa sửa quy tắc
 
-**Chưa sửa quy tắc, mới ghi nhận mâu thuẫn.** Chờ người chủ trì quyết —
-`HANDOFF.md` mục 0 Câu 13. **Chưa tài liệu nào phải gán nhãn lại.**
-
-Mục 3.3 xếp mã 52 vào ba dòng khấu trừ ghi số dương, quy tắc là *dương khi
-mã 60 < mã 50*. Lượt chấm pipeline ngày 27/08/2026 phát hiện **nhãn gold của
-`MWG_2025Q1_TT200` và `VRE_2026Q1_TT99` ghi mã 52 ÂM, trong khi cả hai tài
-liệu đều có mã 60 < mã 50**.
-
-Về kế toán thì nhãn hợp lý hơn quy tắc. `Mã 60 = Mã 50 − Mã 51 − Mã 52`, nên
-một khoản **thu nhập** thuế hoãn lại (mã 52 âm) sống chung được với mã 60 <
-mã 50 miễn mã 51 đủ lớn. Mệnh đề *"dương khi mã 60 < mã 50"* đúng cho
-**tổng** thuế (`mã 51 + mã 52 = mã 50 − mã 60`) nhưng **sai khi áp riêng
-từng dòng**.
-
-Hệ quả đã thi công: `chuan_hoa_dau()` trong `src/fields_config.py` **cố ý bỏ
-mã 52 ra ngoài** (`a0cd5ab`). Áp nguyên văn quy tắc sẽ lật một mã 52 âm hợp
-lệ thành dương và đẻ ra lỗi câm mới. Trên tập gold, bỏ mã 52 ra cho đúng số
-trường sửa được như bản rộng hơn, mà không mang rủi ro đó.
-
-Hai đường ra, chưa chọn: (a) sửa câu chữ mục 3.3 để mã 52 giữ nguyên dấu như
-in, hoặc quyết định dấu bằng dấu Nợ/Có chứ không bằng mã 50 và 60; (b) gán
-nhãn lại mã 52 của MWG và VRE. Chọn (b) thì phải nói rõ vì sao nhãn cũ sai,
-vì nó đang khớp với chuẩn mực kế toán.
+Lượt chấm pipeline phát hiện nhãn gold của `MWG_2025Q1_TT200` và
+`VRE_2026Q1_TT99` ghi mã 52 ÂM trong khi cả hai đều có mã 60 < mã 50, tức
+ngược với chữ nghĩa mục 3.3 lúc đó. Mục này chỉ **ghi nhận** mâu thuẫn và
+chuyển lên người chủ trì (Câu 13); quy tắc chưa đổi, không tài liệu nào phải
+gán nhãn lại. **Đã được tu chính 28/08/2026 ở trên thay thế trọn vẹn** — đọc
+mục đó để biết kết luận và bằng chứng.
 
 ### 26/08/2026 (muộn nhất) — Nhóm Stress thứ ba đo bằng độ phân giải bản quét
 
@@ -656,6 +686,12 @@ gì về những lần còn lại.
 
 **Thay đổi ở mục 3.3 và danh mục kiểm mục 8. Một tài liệu phải sửa:
 `DGC_2025Q2_TT200`.**
+
+> **ĐÃ BỊ TU CHÍNH 28/08/2026 SỬA MỘT PHẦN.** Quy tắc "mã 51 và 52 ghi dương
+> khi mã 60 < mã 50" đặt ra ở đây **đã bị bỏ**; hai dòng thuế nay giữ nguyên
+> dấu như in rồi kiểm bằng đẳng thức mã 60. Phần về **mã 11 (giá vốn) vẫn còn
+> hiệu lực nguyên vẹn**, và toàn bộ lập luận dưới đây vẫn là hồ sơ lý do của
+> nó. Đọc tu chính 28/08 trước khi áp bất cứ điều gì cho mã 51 hoặc 52.
 
 **Bản trước nói "in trong ngoặc đơn ⇒ ghi giá trị âm", không trừ trường hợp
 nào.** Quy tắc đó đúng với dòng mà dấu âm là số liệu, và sai với dòng mà dấu

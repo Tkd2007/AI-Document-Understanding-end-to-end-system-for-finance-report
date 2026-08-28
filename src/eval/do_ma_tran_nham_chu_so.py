@@ -14,7 +14,7 @@ bảng khác nhau, cả hai đều là phỏng đoán:
 Xác suất một lỗi tiêm vào nằm sẵn trong tập ứng viên vì thế xấp xỉ
 (7/10)×(1/9) ≈ 0,078, và đo được 0,092 trên lượt chạy Mốc 3 ngày
 24/08/2026. Con số đó là ĐỘ TRÙNG CỦA HAI BẢNG PHỎNG ĐOÁN, không mang thông
-tin gì về phương pháp — xem HANDOFF.md mục 13b.
+tin gì về phương pháp — xem HANDOFF.md mục 13.1.
 
 Module này biến bảng đó từ phỏng đoán thành số đếm được, một lần, để
 `src/nham_chu_so.py` đóng băng lại và cả hai phía cùng đọc từ đó.

@@ -307,10 +307,17 @@ giống nhau đến mức nếu một trang vào train và một trang vào test
 
 ## Sửa đổi
 
-**Mười sáu tu chính, không cái nào được rút gọn hay viết đè.** Đó là điều kiện
+**Mười bốn tu chính, không cái nào được rút gọn hay viết đè.** Đó là điều kiện
 để việc đăng ký trước còn giá trị: một bản ghi sửa được sau khi thấy kết quả
-thì không chứng minh được gì. Mục lục dưới đây thêm ngày 26/08/2026 để tìm
-nhanh, và nó là thứ DUY NHẤT được thêm vào phần này ngoài các tu chính.
+thì không chứng minh được gì. **Mục này vì thế cố ý nằm ngoài mọi đợt dọn dẹp
+tài liệu của repo** — nén nó lại là phá đúng thứ nó tồn tại để bảo vệ. Mục lục
+dưới đây thêm ngày 26/08/2026 để tìm nhanh, và nó là thứ DUY NHẤT được thêm
+vào phần này ngoài các tu chính.
+
+Phân biệt với `CHANGELOG.md`: ở đây là **thay đổi cam kết nghiên cứu** (giả
+thuyết, chỉ số, điều kiện phản chứng, quy trình gán nhãn); ở đó là **thay đổi
+đổi con số**, kèm số đo trước và sau. Một thay đổi có thể phải vào cả hai — tu
+chính ghi *ta cam kết đo khác đi*, changelog ghi *con số đã đổi bao nhiêu*.
 
 | Ngày | Tu chính | Chạm tới |
 |---|---|---|

@@ -12,7 +12,7 @@ này là kết luận sai chắc chắn: lần chạy 26 hồ sơ cho độ ph�
 phần ba số lượt vốn không thể sửa được bởi bất kỳ phương pháp đọc-lại nào.
 
 Kết quả lần chạy 24/08/2026 nằm ở `data/output/moc3_do_phu_ung_vien.md`, và
-HANDOFF.md mục 13b diễn giải kèm cạm bẫy đi theo.
+HANDOFF.md mục 13.1 diễn giải kèm cạm bẫy đi theo.
 
 TÁCH "generator thiếu" KHỎI "bị trần cắt": đếm cả trước lẫn sau
 `_khu_trung_va_cat()`, vì hai nguyên nhân này cần hai cách sửa khác hẳn

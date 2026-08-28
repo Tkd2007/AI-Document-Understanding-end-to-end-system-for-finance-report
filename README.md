@@ -561,8 +561,15 @@ Chín đẳng thức kế toán nối chúng lại, khai báo ở `FIELD_IDENTIT
   và cắt riêng từng vùng bảng trước khi đưa vào OCR/VLM.
 - **OCR Pipeline** (EasyOCR + regex): working, **tắt mặc định trong code**
   (`USE_OCR_FIRST=false`) nhưng bật được qua `.env`. Bật thì nó là khoản đắt
-  nhất của cả lượt chạy: đo trên `BMP_2026Q1_TT99`, bước dò mã số dòng chiếm
-  **886 giây trên 1272 giây**, tức 70% thời gian, vì EasyOCR chạy CPU.
+  nhất của cả lượt chạy: trên lượt chấm gold, OCR chiếm **77% tổng thời gian**
+  (~27,6 giây một trang, quét 100% số trang), vì EasyOCR chạy CPU và
+  `run_ocr_first()` **không có bộ đếm kiên nhẫn** — nó chỉ dừng khi
+  `is_acceptable()` đúng, mà nhánh regex đọc hỏng chữ Việt có dấu nên điều đó
+  gần như không xảy ra.
+
+  > **Cảnh báo: `.env` trên máy phát triển đang đặt `USE_OCR_FIRST=true`**,
+  > tức ngược với mặc định tài liệu mô tả. Chốt cấu hình trước khi trích dẫn
+  > bất kỳ số đo nào — xem `HANDOFF.md` mục 12.2.
 - **VLM Pipeline** (Gemma 4 31B via OpenRouter): working. Chạy ở
   `n_samples=1, temperature=0.0`, nên confidence trả về là **1,0 ở mọi
   trường** và con số đó nghĩa là *không đo được*, không phải *chắc chắn* —
@@ -571,18 +578,32 @@ Chín đẳng thức kế toán nối chúng lại, khai báo ở `FIELD_IDENTIT
 
 ### Đo trên tập gold — số thật đầu tiên, 27/08/2026
 
-`python src/eval/chay_tap_gold.py --chuan-tu-gold` chấm pipeline với nhãn
-tay. Kết quả từng phần (lượt chạy chưa xong, cập nhật ở `HANDOFF.md` mục 20):
-khoảng **88–92% trường đúng**, tỷ lệ lỗi câm 0–4%. `DLG_2026Q2_TT99` — bản
-quét kém nhất lô, 100 dpi — cho **lỗi câm bằng 0**: mọi giá trị đọc ra đều
-đúng, phần còn lại là bỏ trống chứ không phải đọc sai.
+`python src/eval/chay_tap_gold.py --chuan-tu-gold` chấm pipeline với nhãn tay
+trên **10 tài liệu của 10 công ty**. Bảng đầy đủ ở `HANDOFF.md` mục 20.3.
 
-**Một chỗ hỏng đã biết, chưa vá:** pipeline không đọc được dòng "Đơn vị
-tính" vì nó nằm **ngoài** vùng bảng mà YOLO cắt — YOLO nhận ra dòng đó với
-conf 0,86 rồi `get_table_regions()` vứt đi vì không thuộc lớp `table`. Với
-báo cáo ghi "Triệu VND" hay "Ngàn VND" thì hụt dòng này làm sai **toàn bộ**
-chỉ tiêu 10⁶ và 10³ lần, mà không đẳng thức kế toán nào phát hiện được. Chẩn
-đoán đầy đủ ở `HANDOFF.md` mục 20.4.
+| | Lượt chạy 27/08 | Sau bản vá dấu `a0cd5ab` |
+|---|---:|---:|
+| Trường đúng | 216/265 = **81,5%** | **222/265 = 83,8%** |
+| Lỗi câm | 24/240 = **10,0%** | **18/240 = 7,5%** |
+| Đơn vị tính đúng | 8/10 | 8/10 |
+| Tài liệu đúng trọn vẹn | 0/10 | 0/10 |
+
+**Con số đáng đọc nhất không nằm trong bảng: 21 trong 24 lỗi câm là hai con
+bug chứ không phải giới hạn của mô hình**, nên tỷ lệ lỗi câm không quy giản
+được chỉ là **1,25%**. `DLG_2026Q2_TT99` — bản quét kém nhất lô, 100 dpi — cho
+**lỗi câm bằng 0**: ảnh xấu thì hệ không đọc được, và nó **biết** mình không
+đọc được.
+
+**Hai chỗ hỏng đã biết:**
+
+- **Dòng "Đơn vị tính" nằm ngoài vùng bảng YOLO cắt** — YOLO nhận ra nó với
+  conf 0,86 rồi `get_table_regions()` vứt đi vì không thuộc lớp `table`. Với
+  báo cáo ghi "Triệu VND" hay "Ngàn VND" thì hụt dòng này làm sai **toàn bộ**
+  chỉ tiêu 10⁶ hoặc 10³ lần, mà **không đẳng thức kế toán nào phát hiện được**.
+  Đã vá `05d00d0`, nhưng **mới kiểm hình học** — chưa chạy lại pipeline.
+- **`SBT_2025Q2_TT200` điền B02 bằng số của một bảng khác** trong khi B01 đúng
+  sạch. 10/24 lỗi câm nằm ở đây. Nghi lỗi **chọn nguồn** trong hồ sơ 62 trang;
+  bộ số kia tự nó cũng cân nên không ràng buộc nào bắt được. Chưa vá.
 - **Document Classifier & Router**: implemented — gọi VLM khi kết quả chưa đủ
   field bắt buộc **hoặc** validation còn warning. Layout detection và convert
   PDF chỉ chạy một lần, dùng chung cho cả hai nhánh.
@@ -622,7 +643,7 @@ chỉ tiêu 10⁶ và 10³ lần, mà không đẳng thức kế toán nào phá
   **Prometheus** scrape `/metrics` mỗi 15s, giữ 15 ngày. Grafana dựng qua
   provisioning nên dashboard nằm trong repo. Chưa có Alertmanager (cảnh báo)
   và Loki (log).
-- **Unit test**: 318 test với `pytest`, không cần model hay mạng nên chạy
+- **Unit test**: 510 test với `pytest`, không cần model hay mạng nên chạy
   trong vài giây. Đáng chú ý là test đẳng thức kế toán: sửa một chỉ tiêu
   lệch 10 triệu đồng trên tổng tài sản 47 nghìn tỷ vẫn bị bắt — kiểm chứng
   được lựa chọn `IDENTITY_TOLERANCE_RATIO=1e-7`. `test_router.py` phủ cổng
@@ -644,8 +665,10 @@ chỉ tiêu 10⁶ và 10³ lần, mà không đẳng thức kế toán nào phá
 
 ### Not yet done
 
-- Đánh giá có hệ thống: chưa có tập test nhiều báo cáo từ nhiều công ty để
-  đo accuracy, hiện mới verify tay trên một báo cáo.
+- Đánh giá có hệ thống: **đã có** — 11 tài liệu gán nhãn tay ở `data/gold/`,
+  10 trong số đó đã chấm (mục Status ở trên). Còn thiếu: chế độ đầu-cuối (mới
+  chạy chế độ oracle chuẩn mẫu biểu), và mới **một** model (`:free`) trong khi
+  thiết kế đòi ít nhất ba.
 - Unit test mới phủ phần logic thuần (parse số, validation, cổng fallback
   của router, bộ đếm `/metrics`). Chưa có test cho OCR và VLM — những phần cần model hoặc gọi
   mạng, sẽ cần mock/fixture ảnh thay vì gọi thật.
@@ -656,15 +679,7 @@ chỉ tiêu 10⁶ và 10³ lần, mà không đẳng thức kế toán nào phá
   Nó ngăn được việc nạp cả file vào RAM, nhưng KHÔNG ngăn được việc truyền dữ
   liệu lên — chỗ chặn đúng là reverse proxy, tầng repo này chưa có.
 
-Đã xong so với bản trước của mục này:
-
-- **Chuẩn hoá đơn vị tính** — prompt đọc dòng "Đơn vị tính:" ở header bảng,
-  `UNIT_MULTIPLIERS` quy đổi hết về đồng **trước** mọi phép kiểm. Cần thiết vì
-  hệ ràng buộc thuần nhất: sai đơn vị toàn cục luôn vô hình với mọi đẳng thức
-  kế toán, nên chỉ một biên trị tuyệt đối mới bắt được nó.
-- **Engine OCR** — câu hỏi "EasyOCR có đủ tốt không" đã đo, không còn để trống.
-  Kết quả và cách chạy lại: [`src/eval/ocr_compare.py`](src/eval/ocr_compare.py)
-  và `data/output/ocr_engine_easyocr.md`.
+Nhật ký thay đổi kèm số đo trước và sau: [CHANGELOG.md](CHANGELOG.md).
 
 
 ## Vài thứ chỉ lộ ra khi chạy thật

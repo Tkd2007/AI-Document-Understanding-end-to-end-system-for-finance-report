@@ -184,30 +184,34 @@ def chuan_hoa_dau(gia_tri: dict) -> tuple[dict, list[str]]:
 
     Đây không phải lỗi giả định: trên tập gold ngày 27/08/2026, MWG và VRE
     mỗi tài liệu sai đúng ba dòng này — không thừa, không thiếu — và tổng
-    cộng 8 trong 24 lỗi câm đo được đến từ đây. Quy tắc chép từ
-    ANNOTATION-GUIDELINE.md mục 3.3, không phát minh thêm.
+    cộng 8 trong 24 lỗi câm đo được đến từ đây.
 
     Trả về (giá trị đã sửa, danh sách khoá bị đổi dấu). Danh sách ấy đi vào
     meta chứ không im lặng: một bước lật dấu không ghi lại thì về sau không
     ai phân biệt được "báo cáo in dương" với "ta đã lật".
 
-    CỐ Ý BỎ MÃ 52 RA NGOÀI, dù guideline liệt kê nó cùng mã 51. Guideline
-    viết "dương khi mã 60 < mã 50", và mệnh đề đó đúng cho TỔNG thuế nhưng
-    sai khi áp riêng từng dòng: `Mã 60 = Mã 50 − Mã 51 − Mã 52`, nên một
-    khoản thu nhập thuế hoãn lại (mã 52 âm) sống chung được với mã 60 < mã
-    50 miễn mã 51 đủ lớn. Nhãn gold của MWG và VRE ngày 27/08/2026 ghi mã 52
-    ÂM trong khi cả hai đều có mã 60 < mã 50 — tức dữ liệu thật mâu thuẫn
-    với chữ nghĩa guideline. Áp nguyên văn thì hàm này sẽ lật một mã 52 âm
-    hợp lệ thành dương và ĐẺ RA lỗi câm mới. Bỏ mã 52 ra cho đúng số trường
-    sửa được như cũ trên tập gold, mà không mang rủi ro ấy. Chỗ vênh giữa
-    guideline và gold đang chờ người chủ trì phân xử.
+    MÃ 52 KHÔNG BAO GIỜ BỊ ĐỤNG TỚI, và đó nay là kết luận đã chốt chứ không
+    còn là phòng xa. Câu 13 (28/08/2026) phân xử: nhãn gold đúng, guideline
+    sai. `Mã 60 = Mã 50 − Mã 51 − Mã 52` chỉ ràng buộc TỔNG hai dòng thuế,
+    nên mã 52 âm — thu nhập thuế hoãn lại — sống chung được với mã 60 < mã
+    50 miễn mã 51 đủ lớn. Ba tài liệu gold (HNG, MWG, VRE) có mã 52 âm và cả
+    ba đều cân đẳng thức tới từng đồng. Lật chúng là ĐẺ RA lỗi câm mới.
+
+    MÃ 51 VẪN XÉT THEO CHIỀU MÃ 50/60, TỨC CHẶT HƠN GUIDELINE HIỆN HÀNH.
+    Sau tu chính 28/08/2026, guideline nói mã 51 giữ nguyên dấu như in rồi
+    kiểm bằng đẳng thức — tiêu chí mà `gan_nhan.kiem.kiem_dau_khau_tru()`
+    dùng cho người gán nhãn. Hàm này KHÔNG dùng tiêu chí đó, vì nó sẽ giải
+    đẳng thức ra dấu (xem đoạn dưới). Chỗ vênh là có thật và đã biết: nó vô
+    hại trên dữ liệu hiện có (mã 51 dương ở cả 11 file gold) nhưng sẽ lật
+    nhầm một mã 51 âm hợp lệ nếu gặp. Đường đóng nó là chuyển quyết định dấu
+    của cả hai dòng thuế sang tầng repair, nơi được phép dùng ràng buộc.
 
     CỐ Ý KHÔNG giải đẳng thức `Mã 60 = Mã 50 − Mã 51 − Mã 52` để chọn dấu.
     Giải nó ra dấu thì mọi kết quả đều thoả nó, và phép đo H1 — so vi phạm
     ràng buộc với confidence của model — mất sạch nghĩa vì tín hiệu bị chính
-    bước trích xuất làm phẳng. Ở đây chỉ dùng CHIỀU của mã 50 so với mã 60,
-    đúng như guideline viết; độ lớn vẫn tự do sai, nên đẳng thức vẫn còn khả
-    năng vỡ và vẫn còn là phép kiểm độc lập.
+    bước trích xuất làm phẳng. Ở đây chỉ dùng CHIỀU của mã 50 so với mã 60;
+    độ lớn vẫn tự do sai, nên đẳng thức vẫn còn khả năng vỡ và vẫn còn là
+    phép kiểm độc lập.
     """
     ra = dict(gia_tri)
     da_doi: list[str] = []
@@ -219,9 +223,9 @@ def chuan_hoa_dau(gia_tri: dict) -> tuple[dict, list[str]]:
 
     truoc_thue = ra.get("loi_nhuan_truoc_thue")
     sau_thue = ra.get("loi_nhuan_sau_thue")
-    # Thiếu một trong hai thì KHÔNG đoán. Guideline buộc quyết định bằng mã
-    # 50 và 60, và cả hai đều in sẵn trên trang, nên suy diễn khi vắng chúng
-    # là tự cho mình quyền mà quy tắc không cho.
+    # Thiếu một trong hai thì KHÔNG đoán. Tiêu chí duy nhất hàm này được
+    # phép dùng là chiều của mã 50 so với mã 60, nên vắng một trong hai là
+    # vắng luôn căn cứ — đoán tiếp là tự cho mình một quyền không có.
     if isinstance(truoc_thue, (int, float)) and isinstance(sau_thue, (int, float)):
         thue = ra.get("thue_tndn_hien_hanh")
         if sau_thue < truoc_thue and isinstance(thue, (int, float)) and thue < 0:

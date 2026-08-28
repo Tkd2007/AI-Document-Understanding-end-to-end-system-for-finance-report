@@ -1,38 +1,36 @@
 # Bàn giao — hạ tầng nghiên cứu ViFinKIE
 
-Viết để một phiên Claude khác đọc và làm tiếp mà **không cần hỏi lại gì**.
-Mọi tham chiếu đều là đường dẫn file hoặc commit hash.
+Viết để một phiên Claude khác đọc và làm tiếp mà **không cần hỏi lại gì**. Mọi
+tham chiếu đều là đường dẫn file hoặc commit hash.
 
-- **Nhánh:** `research` (tách từ `main` tại `4216291`)
-- **Commit gần nhất:** cố ý KHÔNG ghi hash ở đây — dòng này đã cũ đi ba lần
-  chỉ trong một ngày, vì chính commit cập nhật nó lại thành commit mới nhất.
-  Chạy `git log --oneline -1` và `git status -sb`. Quy ước: **push sau mỗi
-  commit**, nên `research` khớp `origin/research` là trạng thái bình thường.
-- **Test:** **501 xanh / 0 đỏ**, chạy hết khoảng 37 giây.
-  `ruff check src tests chay_gan_nhan.py` sạch.
-- **Bộ chỉ tiêu:** **27 với TT99, 26 với TT200; 9 đẳng thức** — kịch bản E,
-  thi công 25/08/2026 (`f1c2738`). MỐC 1 đã đóng.
-- **`main`:** **KHÔNG BAO GIỜ MERGE** — chỉ thị của người dùng, 24/08/2026.
-  `research` đi trước 56 commit và cứ để vậy. Hệ quả: CI hiện chỉ chạy trên
-  `main` và trên pull request, nên **CI thực tế không bao giờ chạy** — mọi
-  việc kiểm phải làm tại chỗ. Muốn CI có ích thì thêm `research` vào phần
-  trigger của `.github/workflows/ci.yml`, KHÔNG phải merge.
-- **Tập gold:** **11 / khoảng 100** tài liệu đã gán nhãn — trọn cả **10 tài
-  liệu của danh mục đầu** (mục 19.6) cộng `VNM_2026Q1_TT99` vốn có trước danh
-  mục. **Nhưng VNM KHÔNG có PDF trong `data/bctc/`**, nên mọi lượt chạy
-  pipeline chỉ chấm được **10** và lặng lẽ bỏ qua nó — xem mục 20.3. Công cụ ở `src/gan_nhan/` — xem mục 19. **Chỉ 8 trong 11 có đồng hồ
-  chạy thật** (`trang_thai_dong_ho` bằng `da_do`), nên còn thiếu **2 tài liệu**
-  nữa mới chốt được số phút cho giao thức trần người — xem mục 19.4 bước 2.
-- **Cập nhật:** 27/08/2026 (đợt 2) — **mục 20 viết lại đầy đủ**: lượt chấm
-  pipeline trên tập gold đã **xong 10/10 tài liệu có PDF**, và đây là số thật
-  đầu tiên của cả dự án. Kết quả cốt lõi: **81,5% trường đúng, lỗi câm
-  10,0%** — nhưng **21 trong 24 lỗi câm là hai con bug chứ không phải giới
-  hạn của mô hình**, nên tỷ lệ lỗi câm không quy giản được chỉ là **1,25%**
-  (mục 20.4). **Hai bản vá đã thi công**: quy tắc dấu (`a0cd5ab`, đo được
-  81,5% → 83,8% và lỗi câm 10,0% → 7,5%) và nới mép trên vùng cắt
-  (`05d00d0`, mới kiểm hình học, chưa chạy lại pipeline) — mục 20.5. Mốc 3
-  đã chạy lại và tái lập, trừ bảng lý do ABSTAIN (mục 13c). Tài liệu này
-  cũng được **nén**: mục 6–9 gộp vào mục 5, nhật ký commit thôi chép tay.
+**File này giữ HIỆN TRẠNG.** Bốn loại nội dung khác nằm ở chỗ khác, và đừng
+chép lại vào đây:
+
+| Cần gì | Đọc ở đâu |
+|---|---|
+| Thay đổi nào đổi con số, kèm số đo trước/sau | `CHANGELOG.md` |
+| Cam kết nghiên cứu và mọi tu chính kèm ngày | `PREREGISTRATION.md`, mục Sửa đổi |
+| Quy tắc gán nhãn và mọi tu chính kèm ngày | `ANNOTATION-GUIDELINE.md`, mục Sửa đổi |
+| Cách chạy, cách cài, cấu trúc thư mục | `README.md` |
+| Nhật ký commit | `git log --oneline` |
+
+- **Nhánh:** `research` (tách từ `main` tại `4216291`). **`main` KHÔNG BAO GIỜ
+  MERGE** — chỉ thị của người dùng 24/08/2026. Hệ quả: CI chỉ chạy trên `main`
+  và trên pull request, nên **CI thực tế không bao giờ chạy** — mọi việc kiểm
+  phải làm tại chỗ. Muốn CI có ích thì thêm `research` vào phần trigger của
+  `.github/workflows/ci.yml`, **không phải merge**.
+- **Trạng thái commit:** chạy `git log --oneline -1` và `git status -sb`. Quy
+  ước: push sau mỗi commit, nên `research` khớp `origin/research` là bình thường.
+- **Kiểm:** `pytest` (510 xanh, ~60 giây) và `ruff check src tests chay_gan_nhan.py`.
+- **Bộ chỉ tiêu:** **27 với TT99, 26 với TT200; 9 đẳng thức** — kịch bản E
+  (`f1c2738`). MỐC 1 đã đóng, MỐC 3 chưa đóng nhưng điều kiện dừng không kích
+  hoạt.
+- **Tập gold:** **11 / khoảng 100** tài liệu đã gán nhãn. `VNM_2026Q1_TT99`
+  **không có PDF** trong `data/bctc/` nên mọi lượt chạy pipeline chỉ chấm được
+  **10**. Chỉ **8/11** có đồng hồ chạy thật.
+- **Số thật mới nhất:** 81,5% trường đúng, lỗi câm 10,0% (lượt gold 27/08); sau
+  bản vá dấu `a0cd5ab` là **83,8%** và **7,5%**. **Lỗi câm không quy giản được
+  chỉ 1,25%** — 21/24 lỗi câm là hai con bug. Mục 20.
 
 ---
 
@@ -45,140 +43,80 @@ mục 16 (bước kế tiếp), mục 15 (lệnh hay dùng).
 |---|---|---|
 | **0** | Câu hỏi đang chờ người chủ trì | luôn đọc trước tiên |
 | 1–2 | Đọc gì trước · Bối cảnh | phiên đầu tiên |
-| 3–5 | Nhật ký (tra `git log`), bẫy đã gặp, các phần đã đóng | tra khi đụng vào một phần cụ thể |
-| 10 | **MỐC 1 — đã đóng**, bộ chỉ tiêu | cần biết vì sao bộ chỉ tiêu là 27/26 |
+| 3–5 | Hash còn được nhắc, bẫy đã gặp, các phần đã đóng | tra khi đụng vào một phần cụ thể |
+| 10 | **MỐC 1 — đã đóng**, định luật của H0 | trước khi dựng bảng cho paper |
 | 11 | Chỗ đã đi khác `BUILD-SPEC.md`, có chủ đích | trước khi "sửa lại cho đúng đặc tả" |
-| 12 | Chưa làm, theo thứ tự phụ thuộc | chọn việc |
-| 13 | **MỐC 3 — chưa đóng**, kết quả ở 13c | đọc bảng kết quả |
+| **12** | Chưa làm, và **hai quyết định đang treo** | chọn việc |
+| 13 | **MỐC 3 — chưa đóng**, trần trên của bộ giải liên tục | đọc bảng kết quả |
 | 14–15 | Quy ước bắt buộc · Lệnh hay dùng | mỗi lần bắt tay làm |
 | **16** | **Bước kế tiếp** | chọn việc |
 | 17 | Đã quyết nhưng chưa thi công | tránh làm lại việc đã quyết |
-| 18 | Nơi nộp — ICDAR 2027, hạn 28/02/2027 | lập lịch |
-| **19** | **Tầng gold**: công cụ, đồng hồ, trình tự, nguồn, độ phân giải | việc đang làm |
+| 18 | Nơi nộp — ICDAR 2027, hạn 28/02/2027 · related work | lập lịch, viết bài |
+| **19** | **Tầng gold**: công cụ, trình tự, nguồn, độ phân giải | việc đang làm |
 | **20** | **Chấm pipeline trên tập gold** — số thật đầu tiên | việc đang làm |
 | A | Hồ sơ đối chiếu Thông tư (Mốc 1) | tra mã số, đẳng thức, cạm bẫy văn bản |
-| B | Sổ thi công phương án C, **bước D chưa làm** | làm tiếp nhận diện chuẩn |
+| B | Phương án C, **bước D chưa làm** | làm tiếp nhận diện chuẩn |
 
-**Không có mục 6–9.** Chúng đã được gộp vào mục 5 ngày 27/08/2026 khi nén
-tài liệu; số mục của phần sau giữ nguyên để mọi tham chiếu cũ còn trỏ đúng.
-Tham chiếu "mục 6/7/8/9" trong tài liệu cũ nay đọc là 5.2 / 5.3 / 5.5 / 5.6.
+**Không có mục 6–9.** Chúng đã gộp vào mục 5; số mục của phần sau giữ nguyên để
+mọi tham chiếu cũ còn trỏ đúng. "Mục 6/7/8/9" trong tài liệu cũ nay đọc là
+5.2 / 5.3 / 5.5 / 5.6.
 
 ---
 
-## 0. CÂU HỎI ĐANG CHỜ NGƯỜI DÙNG TRẢ LỜI
+## 0. CÂU HỎI ĐANG CHỜ NGƯỜI CHỦ TRÌ
 
-Mục này là nơi DUY NHẤT liệt kê những thứ đang chờ quyết định. Phiên Claude
-mới đọc mục này trước tiên; nếu người dùng chưa trả lời thì hỏi lại đúng
-những câu dưới đây chứ đừng tự chọn, vì mỗi câu đều đổi kết luận khoa học
-chứ không phải chi tiết cài đặt.
+Nơi DUY NHẤT liệt kê những thứ đang chờ quyết định. Nếu người dùng chưa trả lời
+thì **hỏi lại đúng những câu dưới đây chứ đừng tự chọn** — mỗi câu đổi kết luận
+khoa học chứ không phải chi tiết cài đặt. Người dùng trả lời được bằng một tin
+nhắn duy nhất, dạng "Câu 8 chọn ...".
 
-Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "Câu 4 chọn ...".
+**Đang chờ: Câu 3 (nội dung đã mất), Câu 8, và Câu 14 (MỚI 28/08).** Không câu
+nào chặn việc gán nhãn, nhưng **Câu 14 chặn mọi bảng kết quả gộp qua tài liệu**.
 
-**Đang chờ:** Câu 3 (nội dung đã mất), Câu 8 (chỉ chặn lượt chạy Mốc 3 kế
-tiếp), **Câu 13 (MỚI 27/08 — mã 52: guideline và gold đang mâu thuẫn nhau)**.
-Không câu nào đang chặn việc gán nhãn.
+**Câu 8 — có tiêm nhiều hơn một lỗi mỗi lượt ở tầng XBRL không?** Phép đo
+`do_nghich_dao_mot_loi.py` cho thấy tầng XBRL tiêm đúng một lỗi mỗi lượt, mà lỗi
+đơn định vị được lại chính là ca bộ giải liên tục nghịch đảo trọn vẹn — tức
+thiết kế đang chọn **ca thuận lợi nhất cho baseline 9**. Đây là thay đổi thiết
+kế thí nghiệm nên phải vào mục Sửa đổi của `PREREGISTRATION.md` **TRƯỚC** khi
+chạy. Số đo và lập luận ở mục 13.3–13.4. *Chỉ chặn lượt chạy Mốc 3 kế tiếp.*
 
-**Câu 13 — MỚI, không chặn code nhưng chặn câu chữ guideline.**
-`ANNOTATION-GUIDELINE.md` mục 3.3 xếp mã 52 (chi phí thuế TNDN hoãn lại) vào
-ba dòng khấu trừ "ghi số DƯƠNG dù in trong ngoặc", quy tắc là *dương khi mã
-60 < mã 50*. Nhưng **nhãn gold của MWG và VRE ghi mã 52 ÂM trong khi cả hai
-đều có mã 60 < mã 50** — dữ liệu thật mâu thuẫn với chữ nghĩa quy tắc. Về kế
-toán thì gold hợp lý hơn: `Mã 60 = Mã 50 − Mã 51 − Mã 52`, nên một khoản thu
-nhập thuế hoãn lại (mã 52 âm) sống chung được với mã 60 < mã 50 miễn mã 51
-đủ lớn; mệnh đề "dương khi mã 60 < mã 50" đúng cho **tổng** thuế nhưng sai
-khi áp riêng từng dòng. Bản vá dấu (`a0cd5ab`) vì thế **cố ý bỏ mã 52 ra
-ngoài** — áp nguyên văn sẽ lật một mã 52 âm hợp lệ thành dương và **đẻ ra
-lỗi câm mới**. Cần người chủ trì quyết: sửa câu chữ guideline cho mã 52, hay
-gán nhãn lại MWG và VRE? Chi tiết ở mục 20.6.
+**Câu 14 — MỚI: quy ước dấu của HNG ngược với phần còn lại của tập gold.**
+`HNG_2025H1_TT200` lỗ, và báo cáo đổi tên dòng thành "Lỗ thuần từ hoạt động
+kinh doanh" rồi in số DƯƠNG — nhãn mang dấu, con số chỉ mang độ lớn. Gold chép
+đúng như in theo guideline mục 3.3, nên `ln_thuan_hdkd` của HNG dương trong khi
+cùng chỉ tiêu ở tài liệu khác âm khi lỗ. **Không khoá nào trong file gold khai
+ra chuyện đó**, và ràng buộc kế toán chứng minh được là không phân xử được —
+lật dấu trọn một hệ con nhất quán vẫn cân. Chi tiết và hai đường ra ở mục
+20.4b. *Chặn mọi phân tích gộp qua tài liệu.*
 
-**Câu 12 — ĐÃ TRẢ LỜI 28/08/2026: loại hẳn, không dựa vào kỷ luật.** Tài
-liệu đã chạy pipeline vĩnh viễn không được vào tập gán nhãn đôi, vì phương án
-tự gán nhãn lại khiến người gán lại chính là người đã xem đầu ra máy — và một
-lượt gán nhãn bị neo thì vẫn cho ra alpha bình thường, không dấu vết. Trạng
-thái ở khoá `gan_nhan_doi` của `data/nguon_gold.json`; đối chiếu bằng
-`PYTHONPATH=src python src/eval/tap_dong_thuan.py`;
-`tests/test_tap_dong_thuan.py` đỏ khi có đầu ra pipeline mà danh mục chưa
-đánh dấu. **Hệ quả lịch:** cả 10 tài liệu gold đầu lẫn `VNM_2026Q1_TT99` đều
-đã chạy, nên hiện **không tài liệu nào đủ điều kiện** — lượt gán nhãn đôi
-phải chờ tập gold có thêm tài liệu mới, mốc hai tuần 09/09/2026 chỉ là điều
-kiện cần. Tu chính đã ghi ở `ANNOTATION-GUIDELINE.md` mục 5 và mục Sửa đổi,
-`PREREGISTRATION.md` mục 7 và mục Sửa đổi.
+**Câu 3 — NỘI DUNG CÂU ĐÃ MẤT.** Câu này được liệt kê là đang chờ nhưng nguyên
+văn không còn ở bất kỳ file nào trong repo — chỉ còn cái tên; nó nằm trong phần
+"giữ lại nguyên văn từng câu" đã bị xoá trong một lần nén tài liệu. Vì không thể
+tự đoán lại một câu hỏi đổi kết luận khoa học, việc đúng là **hỏi lại người chủ
+trì Câu 3 là gì**, hoặc coi như nó không tồn tại và đánh số mới cho câu kế tiếp.
+Nó được đánh dấu "hoãn được" nên chưa chặn việc gì.
 
-**Mốc 3 đã chạy xong lúc 16:05 ngày 25/08/2026 — điều kiện dừng KHÔNG kích
-hoạt.** Xem mục 13c. Việc kế tiếp không còn bị chặn: gán nhãn `data/gold/`
-(hiện **11/100**, trọn danh mục 10 tài liệu đầu — mục 19), và ba baseline còn
-thiếu (4, 5, 7).
+### Câu đã trả lời — tra ràng buộc kèm theo ở cột cuối
 
-**Câu 8 — MỚI, đang chờ.** Phép đo `do_nghich_dao_mot_loi.py` cho thấy tầng
-XBRL tiêm đúng một lỗi mỗi lượt, mà lỗi đơn định vị được lại là ca bộ giải
-liên tục nghịch đảo trọn vẹn — tức thiết kế đang chọn ca thuận lợi nhất cho
-baseline 9. Có tiêm **nhiều hơn một lỗi mỗi lượt** ở lượt chạy tới không? Đây
-là thay đổi thiết kế thí nghiệm nên phải vào mục Sửa đổi của
-`PREREGISTRATION.md` TRƯỚC khi chạy. Chi tiết và số đo ở mục 13c.
+Nguyên văn các câu đã trả lời KHÔNG còn được giữ; ràng buộc thì còn, và nằm ở
+mục Sửa đổi của `PREREGISTRATION.md` hoặc `ANNOTATION-GUIDELINE.md`.
 
-**Câu 3 — NỘI DUNG CÂU ĐÃ MẤT KHỎI TÀI LIỆU.** Câu này được liệt kê là đang
-chờ nhưng nguyên văn của nó không còn ở bất kỳ file nào trong repo — chỉ còn
-lại cái tên. Nó từng nằm trong phần "giữ lại nguyên văn từng câu" ở cuối mục
-này, và phần đó đã bị xoá trong một lần nén tài liệu. Vì không thể tự đoán
-lại một câu hỏi đổi kết luận khoa học, việc đúng là **hỏi lại người chủ trì
-xem Câu 3 là gì**, hoặc coi như nó không tồn tại và đánh số mới cho câu kế
-tiếp. Nó được đánh dấu "hoãn được" nên chưa chặn việc gì.
-
-**Câu 10 — ĐÃ TRẢ LỜI 26/08/2026: đổi tiêu chí sang độ phân giải bản quét,
-ghi làm biến LIÊN TỤC chứ không chia nhóm theo ngưỡng.** Nhóm Stress thứ ba ở
-`ANNOTATION-GUIDELINE.md` mục 7 nhận ra bằng `do_phan_giai_dpi` trong
-`data/nguon_gold.json`, sinh bằng `python src/do_do_phan_giai.py`; chọn tài
-liệu theo thứ hạng trong tập gold, không theo một con số dpi tuyệt đối. Hai tu
-chính đã ghi: mục Sửa đổi của guideline (đổi tiêu chí) và của
-`PREREGISTRATION.md` (độ phân giải thành hiệp biến, chỉ dùng cho phân tích
-thứ cấp, không được dùng để loại tài liệu). Số đo và cạm bẫy ở mục 19.7.
-
-**Câu 11 — ĐÃ TRẢ LỜI 26/08/2026: bỏ ký hiệu mẫu khỏi bảng dấu hiệu.** Mục
-3.7 của `ANNOTATION-GUIDELINE.md` từng xếp `B 01a - DN` là dấu hiệu TT99,
-mâu thuẫn với mục 2 của chính nó. Nay bảng chỉ còn số hiệu thông tư (đặt
-trước, vì chắc chắn hơn) và tiêu đề báo cáo, kèm một luật phủ định nói thẳng
-rằng hậu tố `a`/`b` không kết luận được gì về Thông tư. `SBT_2025Q2_TT200` và
-`HNG_2025H1_TT200` giữ nguyên nhãn `TT200`, không phải gán nhãn lại. Tu chính
-ở mục Sửa đổi của guideline; **thứ tự cam kết bị vượt đã ghi lại tại đó**, vì
-hai tài liệu ấy được gán nhãn trước khi quy tắc được sửa.
-
-**Câu 9 — ĐÃ TRẢ LỜI 26/08/2026: giữ hệ số 0,6.** Số phút đặt đồng hồ đo
-trần người là `0,6 × trung vị thoi_gian_giay của 10 tài liệu gold đầu tiên`,
-sàn 5 phút. **Đừng mở lại câu này**: giá trị của hệ số nằm ở chỗ nó được chốt
-lúc chưa tài liệu nào có số đo thời gian, và cửa sổ đó đã đóng khi tài liệu
-gold thứ hai có đồng hồ chạy thật. Tu chính ghi ở `PREREGISTRATION.md`
-(26/08/2026) và `ANNOTATION-GUIDELINE.md` mục Sửa đổi.
-
-**Đã trả lời 26/08/2026 (đợt 2) — ba quyết định về tầng gold:**
-
-- **Người gán nhãn thứ hai: KHÔNG có. Người chủ trì tự gán nhãn.** Nghĩa là
-  phương án dự phòng ở `ADDENDUM` mục 5 được kích hoạt: chính người ấy gán
-  nhãn lại, sau **ít nhất hai tuần**, không xem bản cũ, và bài phải nói rõ
-  đây là bản thay thế kèm giới hạn. **Hệ quả lịch, tính được ngay:** mười
-  tài liệu đầu gán nhãn ngày 25–26/08/2026, nên lượt gán lại sớm nhất là
-  **09/09/2026**. Hai tuần ấy là thời gian CHỜ nằm trên đường găng, không
-  phải thời gian làm — bắt đầu muộn là mất trắng.
-- **Quy mô tập gold đi theo mốc: 10 → 60 → 100.** Mốc 10 đã xong. Mốc 60 là
-  chỗ mọi con số tính power của `ADDENDUM` mục 4 áp đúng như đã viết, vì bảng
-  đó lấy 60 làm số cụm độc lập; mốc 100 là đích. Đừng gộp ba mốc lại thành
-  "gán nhãn cho tới khi đủ 100".
-- **Quy tắc `None` ở pipeline: HOÃN, tính sau.** Đây là câu "coi `None` là 0
-  hay giữ nguyên" ở mục 12. Hoãn tường minh, không phải quên — nhưng nó vẫn
-  chặn việc chạy pipeline diện rộng trên tài liệu thật, nên phải quyết trước
-  bước đó.
-
-**Đã trả lời 26/08/2026:** Câu 9 → giữ hệ số 0,6.
-
-**Đã trả lời 25/08/2026 — tất cả trong một ngày:** Câu 1 → (a) ba con số định
-vị; Câu 2 → (a) đo ma trận trước; Câu 4 → (a) cùng nguồn khác độ sâu; Câu 5 →
-nới trần 10/20; Câu 6 → ghi làm giới hạn; Câu 7 → (a) hoà thì hoãn phán
-quyết. Cộng thêm một quyết định không đánh số: chỉ số chính của H3 trên tầng
-XBRL chuyển sang mức LƯỢT.
-
-Nguyên văn của các câu đã trả lời KHÔNG còn được giữ ở đây — phần đó đã bị
-xoá trong một lần nén tài liệu, và đó cũng là lý do Câu 3 nay chỉ còn cái
-tên. Ràng buộc kèm theo từng câu đã trả lời thì vẫn còn, nhưng nằm ở mục Sửa
-đổi của `PREREGISTRATION.md` chứ không ở đây; tra theo ngày trả lời.
+| Câu | Ngày | Quyết định | Ràng buộc còn hiệu lực |
+|---|---|---|---|
+| 1 | 25/08 | Báo cáo **ba** con số định vị | Con số "trên lượt có ra tay" **không bao giờ đứng một mình** — mục 13.2 |
+| 2 | 25/08 | Đo ma trận nhầm chữ số trước | Bộ tiêm và bộ sinh dùng chung nguồn, **khác độ sâu** — mục 13.1 |
+| 4 | 25/08 | Cùng nguồn khác độ sâu | như trên |
+| 5 | 25/08 | Nới trần ứng viên 6/12 → **10/20** | `CHANGELOG.md` 25/08 |
+| 6 | 25/08 | Ghi làm giới hạn | — |
+| 7 | 25/08 | Tầng XBRL **hoà thì hoãn** phán quyết H3 | Thắng trong phạm vi kiểm được ⇒ không kích hoạt điều kiện dừng — mục 13 |
+| 9 | 26/08 | Giữ **hệ số 0,6** cho đồng hồ trần người | **ĐỪNG MỞ LẠI** — giá trị của nó nằm ở chỗ được chốt lúc chưa tài liệu nào có số đo, và cửa sổ đó đã đóng |
+| 10 | 26/08 | Nhóm Stress thứ ba = **độ phân giải**, biến liên tục | Không được dùng để loại tài liệu khỏi phân tích chính — mục 19.5 |
+| 11 | 26/08 | Bỏ ký hiệu mẫu khỏi bảng dấu hiệu nhận diện chuẩn | Hậu tố `a`/`b` là **kỳ báo cáo**; SBT và HNG giữ nhãn TT200 |
+| 12 | 28/08 | Tài liệu **đã chạy pipeline bị loại vĩnh viễn** khỏi tập gán nhãn đôi | Hiện **0/11** đủ điều kiện; lượt gán nhãn đôi chờ tập gold vượt mốc 11 — mục 19.3 |
+| 13 | 28/08 | **Nhãn gold đúng, guideline sai** — mã 51 và 52 giữ nguyên dấu như in | `chuan_hoa_dau()` không bao giờ đụng mã 52; chỗ vênh còn lại ở mã 51 — xem docstring hàm đó |
+| — | 26/08 | **Không có người gán nhãn thứ hai**; người chủ trì tự gán lại sau ≥ 2 tuần | Bài phải nói rõ đây là bản thay thế kèm giới hạn |
+| — | 26/08 | Quy mô tập gold theo mốc **10 → 60 → 100** | Đừng gộp ba mốc thành "gán nhãn cho tới khi đủ 100" |
+| — | 25/08 | Chỉ số chính của H3 trên tầng XBRL tính ở **mức LƯỢT** | Tầng gold giữ mức trường |
 
 ---
 
@@ -425,7 +363,7 @@ Luận điểm chống bịa phát biểu là *không cách đọc nào của t�
 bảng cân đối được*. Gộp `vuot_tran_thay_doi` vào `vo_nghiem` là tính công
 cho phương pháp ở những ca nó không chứng minh được gì.
 
-**Đo được ở cả hai lượt Mốc 3: `vo_nghiem` = 0 trên 520 lượt.** Xem mục 13c.
+**Đo được ở cả hai lượt Mốc 3: `vo_nghiem` = 0 trên 520 lượt.** Xem mục 13.4.
 
 ### 5.5 Phần F — hai thứ còn ràng buộc
 
@@ -483,124 +421,65 @@ dính.
 
 ---
 
-## 10. MỐC 1 — ĐÃ ĐÓNG
+## 10. MỐC 1 — ĐÃ ĐÓNG, và định luật rút ra từ nó
 
-Người dùng đã tải năm file Công báo vào `data/legal/` (đã gitignore). Trích
-bằng `pdftotext -layout` cho PDF và `antiword -m UTF-8.txt` cho `.doc` cũ.
+Đối chiếu ma trận ràng buộc với năm file Công báo (`data/legal/`, đã gitignore).
+**Hồ sơ đối chiếu đầy đủ kèm nguyên văn trích dẫn ở Phụ lục A**; bảng số của
+từng kịch bản ở `CHANGELOG.md` 23/08 và 25/08/2026. Mục này giữ ba thứ còn chi
+phối việc sẽ làm.
 
-| File | Chuẩn | Nội dung |
-|---|---|---|
-| `2015_287 + 288-200_2014_TT-BTC.pdf` | TT200 | Điều 88–113; đẳng thức B01 ở Điều 112, B02 ở Điều 113 |
-| `2015_289 + 290-200_2014_TT-BTC.pdf` | TT200 | Điều 114–130; đẳng thức B03 ở Điều 114 |
-| `2025_1577 + 1578_99-2025-TT-BTC.doc` | TT99 | **Phụ lục IV Mục 1 — biểu mẫu**, tức bảng mã số gốc |
-| `2025_1579 + 1580_99-2025-TT-BTC.doc` | TT99 | Báo cáo tình hình tài chính + B02 |
-| `2025_1581 + 1582_99-2025-TT-BTC.doc` | TT99 | cuối B02 + B03 + B09 |
-
-**Bộ này đã đủ, không cần tìm thêm văn bản.** Năm file phủ trọn chương báo cáo
-tài chính của cả hai Thông tư, gồm cả B09 mà dự án chưa dùng tới.
-
-Đừng bỏ qua số `1577 + 1578` vì bản trước của tài liệu này ghi nhầm là nó
-"không chứa phần báo cáo tài chính". Nó không chứa đẳng thức viết bằng lời,
-nhưng nó chính là **Phụ lục IV Mục 1 — BIỂU MẪU BÁO CÁO TÀI CHÍNH**, tức đúng
-cái nguồn mà `BUILD-SPEC.md` mục A3 đòi phải lấy mã số dòng TT99 từ đó thay vì
-từ bài tóm tắt trên mạng. Biểu mẫu còn in sẵn đẳng thức ngay trong tên chỉ
-tiêu: `TỔNG CỘNG TÀI SẢN (280 = 100 + 200)`.
-
-Chi tiết đầy đủ ở **Phụ lục A** cuối file này. Tóm tắt:
-
-### Ba đẳng thức repo đang dùng: đều ĐÚNG
-
-- `100 + 200 = 270/280` — khớp nguyên văn
-- `300 + 400 = 270/280` — đúng, nhưng là đẳng thức **suy ra**: văn bản viết
-  `Mã số 440 = Mã số 300 + Mã số 400` rồi viết **riêng** `Tổng cộng Tài sản
-  = Tổng cộng Nguồn vốn`
-- `11 + 20 = 10` — khớp `Mã số 20 = Mã số 10 − Mã số 11`
-
-### Kết quả đo — `python src/constraints_scenarios.py`
-
-| KB | Kịch bản | Chỉ tiêu | Định vị được | Bước này mua được |
-|---|---|---:|---:|---|
-| A | Hiện tại | 11 | 1/11 (9%) | — |
-| B | **+ Tổng cộng nguồn vốn (440)** | 12 | 2/12 (17%) | **+1 → +1, tỷ lệ 1,00** |
-| C | + chuỗi lãi lỗ B02 | 16 | 3/16 (19%) | +4 → +1, tỷ lệ 0,25 |
-| D | + phân rã Tài sản ngắn hạn | 20 | 5/20 (25%) | +4 → +2, tỷ lệ 0,50 |
-| E | + B03 và liên kết chéo | 26 | 7/26 (27%) | +6 → +2, tỷ lệ 0,33 |
-
-**Bước rẻ nhất là B: thêm ĐÚNG MỘT chỉ tiêu.** Tổng cộng nguồn vốn nằm ngay
-trong hai đẳng thức nên định vị được lập tức, và là con số in ở cuối bảng
-cân đối — rẻ cả về chi phí gán nhãn.
-
-> **MỘT KẾT LUẬN CŨ ĐÃ BỊ BÁC BỎ.** Bản trước của mục này dùng đẳng thức
-> **giả thuyết** và nói liên kết chéo hiệu quả **gấp đôi** phân rã. Sai: hai
-> đẳng thức từng được giả định — liên kết Lợi nhuận chưa phân phối (B01) với
-> Lợi nhuận sau thuế (B02), và phân rã Vốn chủ sở hữu — **không có trong văn
-> bản**. Với đẳng thức thật, liên kết chéo cho tỷ lệ 0,33, **thấp hơn** phân
-> rã 0,50. Đã chốt bằng `test_lien_ket_cheo_KHONG_hieu_qua_hon_phan_ra`.
->
-> **Bài học, đã ghi vào docstring `constraints_scenarios.py`:** đừng để đẳng
-> thức giả thuyết chạy vào bảng kết quả, kể cả khi chúng hợp lý về kế toán.
+**Ba đẳng thức repo đang dùng từ đầu: đều ĐÚNG.** `100 + 200 = 270/280` khớp
+nguyên văn; `300 + 400 = 270/280` đúng nhưng là đẳng thức **suy ra** (văn bản
+viết `Mã 440 = Mã 300 + Mã 400` rồi viết **riêng** `Tổng cộng Tài sản = Tổng
+cộng Nguồn vốn`); `11 + 20 = 10` khớp `Mã 20 = Mã 10 − Mã 11`.
 
 ### Định luật rút ra — thứ quyết định hướng đi của H0
 
-> Một chỉ tiêu định vị được **khi và chỉ khi** tập đẳng thức chứa nó khác
-> tập đẳng thức của **mọi** chỉ tiêu khác.
+> Một chỉ tiêu định vị được **khi và chỉ khi** tập đẳng thức chứa nó khác tập
+> đẳng thức của **mọi** chỉ tiêu khác.
 
-Trong một đẳng thức phân rã đơn lẻ `a + b = tổng` thì **cả ba** nằm ngoài
-tầm — hai thành phần có cột bằng nhau, còn cột của tổng là `[−1]` tỷ lệ với
-cột `[1]`. Phân rã một chỉ tiêu làm **chính nó** định vị được nhưng sinh ra
-một tầng lá mới; đó là cái cối xay, và mỗi lá mới tốn chi phí gán nhãn.
+Trong một đẳng thức phân rã đơn lẻ `a + b = tổng` thì **cả ba** nằm ngoài tầm —
+hai thành phần có cột bằng nhau, còn cột của tổng là `[−1]` tỷ lệ với cột `[1]`.
+Phân rã một chỉ tiêu làm **chính nó** định vị được nhưng sinh ra một tầng lá
+mới; đó là cái cối xay, và mỗi lá mới tốn chi phí gán nhãn nhân với cả tập gold.
 
 `minimal_localizing_set()` trả `None` ở **mọi** kịch bản, và `hang_ton_kho`
-không định vị được ở kịch bản nào — mà đó đúng là chỉ tiêu đã có lỗi đọc
-thật trên báo cáo VNM. **Ràng buộc kế toán chứng minh được là không bao giờ
-bắt được lỗi đó.** Kết luận cho bài: ràng buộc đơn thuần không đủ, trọng số
-dồn sang mỏ neo đơn vị tính (proposal 6.3) và bước đọc lại (6.2) — đúng như
-mục 6.1 đã lường trước.
+không định vị được ở kịch bản nào — mà đó đúng là chỉ tiêu đã có lỗi đọc thật
+trên báo cáo VNM. **Ràng buộc kế toán chứng minh được là không bao giờ bắt được
+lỗi đó.** Kết luận cho bài: ràng buộc đơn thuần không đủ, trọng số dồn sang mỏ
+neo đơn vị tính (proposal 6.3) và bước đọc lại (6.2).
 
-### Bốn kết quả còn lại — đã dời sang Phụ lục A để khỏi chép hai lần
+### Cái bẫy đọc bảng kịch bản — sẽ quay lại khi dựng bảng cho paper
 
-Liên kết chéo B03 → B01 có thật và được văn bản khai báo tường minh; hai mã
-số đổi nghĩa giữa hai chuẩn (270 và 142) là nguồn lỗi câm; `FORM_MARKERS`
-đã sai và đã sửa (`023321c`); trục TT200 → TT99 hẹp hơn tưởng nhưng không
-rỗng. Cả bốn ở **Phụ lục A** cuối file, kèm nguyên văn trích dẫn.
+Top-3 của kịch bản D (0,90) thấp hơn C (0,94) nhìn như bước lùi, nhưng đo trên
+**đúng 16 chỉ tiêu của C** thì D cho **0,975** so với 0,938 — không chỉ tiêu nào
+xấu đi. Trung bình tụt vì D thêm bốn chỉ tiêu vốn dĩ khó. Đây là **hiệu ứng cấu
+thành**, và **bảng kết quả phải in Top-k kèm phân rã theo lớp lẫn**, nếu không
+người đọc sẽ rút ra kết luận ngược.
 
-### MỐC 1 ĐÃ ĐÓNG — bộ chỉ tiêu chốt ở kịch bản D
+Cùng loại bẫy, một tầng khác: xếp hạng kịch bản theo "số chỉ tiêu định vị được
+trên mỗi chỉ tiêu thêm vào" là **sai thước** — nó gộp *cột toàn 0* (vô hình với
+cả H1 lẫn H2) với *lẫn lớp* (H1 vẫn bắt được), và nhị phân hoá "định vị được"
+trong khi H2 báo cáo bằng Top-1/Top-3.
 
-Người dùng chốt ngày 23/08/2026: **kịch bản D**, và **không** gán nhãn cột kỳ
-so sánh. Đã ghi vào mục Sửa đổi của [PREREGISTRATION.md](PREREGISTRATION.md)
-và thi công ở commit `4064519`.
+### Hai kết luận đã bị bác bỏ bằng số đo — đừng khôi phục
 
-**Đề xuất trong bản bàn giao trước là kịch bản B, và nó SAI vì dùng nhầm
-thước.** Ghi lại đây để phiên sau đừng lặp lại: bảng kịch bản xếp hạng theo
-"số chỉ tiêu định vị được trên mỗi chỉ tiêu thêm vào", một chỉ số có hai lỗ.
-Nó gộp *cột toàn 0* với *lẫn lớp* làm một, trong khi cột toàn 0 nghĩa là vô
-hình với **cả H1 lẫn H2** còn lẫn lớp thì H1 vẫn bắt được. Và nó nhị phân
-hoá "định vị được", trong khi H2 báo cáo bằng Top-1/Top-3 — lớp lẫn 2 đạt
-trần Top-3 100%, lớp lẫn 5 chỉ đạt 60%.
+1. **Liên kết chéo KHÔNG hiệu quả gấp đôi phân rã.** Bản trước dùng đẳng thức
+   **giả thuyết**; hai trong số đó — nối Lợi nhuận chưa phân phối (B01) với Lợi
+   nhuận sau thuế (B02), và phân rã Vốn chủ sở hữu — **không có trong văn bản**.
+   Với đẳng thức thật: liên kết chéo 0,33, phân rã 0,50 — ngược hẳn. Chốt bằng
+   `test_lien_ket_cheo_KHONG_hieu_qua_hon_phan_ra`. **Bài học đã ghi vào docstring
+   `constraints_scenarios.py`: đừng để đẳng thức giả thuyết chạy vào bảng kết
+   quả, kể cả khi chúng hợp lý về kế toán.**
+2. **Không gán nhãn cột kỳ so sánh** (trả lời proposal 6.1(d)). Thêm cột kỳ
+   trước **nhân đôi** số chỉ tiêu mà trần Top-1 và Top-3 **không đổi một điểm
+   nào**: hai cột thoả cùng một hệ đẳng thức độc lập nên ma trận thành khối chéo
+   `[[A,0],[0,A]]`, không residual nào nối chúng. Mỏ neo chéo ở proposal 6.3 vẫn
+   giữ, nhưng nó là kiểm biên độ nên chỉ cần **một** con số tổng tài sản kỳ
+   trước, không cần cả cột.
 
-Đo lại theo đúng chỉ số H1/H2 dùng:
-
-| KB | Chỉ tiêu | **Vô hình** | Trần Top-1 | Trần Top-3 | Ô gán nhãn (×60) |
-|---|---:|---:|---:|---:|---:|
-| A cũ | 11 | 3 | 0,36 | 0,73 | 660 |
-| B | 12 | 3 | 0,42 | 0,75 | 720 |
-| C | 16 | 1 | 0,50 | 0,94 | 960 |
-| **D chốt** | **20–21** | **0** | **0,50** | **0,90** | **1 200** |
-| E | 26 | 0 | 0,54 | 0,96 | 1 560 |
-
-**Cái bẫy đọc bảng này, và nó sẽ quay lại khi dựng bảng cho paper:** Top-3
-của D thấp hơn C nhìn như bước lùi, nhưng đo trên đúng 16 chỉ tiêu của C thì
-D cho **0,975** so với 0,938 của C — không chỉ tiêu nào xấu đi. Trung bình
-tụt vì D thêm bốn chỉ tiêu vốn dĩ khó. Đây là hiệu ứng cấu thành, và **bảng
-kết quả phải in Top-k kèm phân rã theo lớp lẫn**, nếu không người đọc sẽ rút
-ra kết luận ngược.
-
-Con số cho cột kỳ so sánh, trả lời proposal mục 6.1(d): thêm cột kỳ trước
-nhân đôi số chỉ tiêu mà trần Top-1 và Top-3 **không đổi một điểm nào**. Hai
-cột thoả cùng một hệ đẳng thức độc lập nên ma trận thành khối chéo
-`[[A,0],[0,A]]` — không residual nào nối chúng. Mỏ neo chéo ở proposal 6.3
-vẫn giữ, nhưng nó là kiểm biên độ nên chỉ cần **một** con số tổng tài sản kỳ
-trước, không cần cả cột.
+**Bộ chỉ tiêu chốt ở kịch bản D ngày 23/08, rồi chuyển sang E ngày 25/08** —
+xem mục 17.1. **Đừng đổi nữa.**
 
 ---
 
@@ -654,16 +533,13 @@ Ghi lại để phiên sau không "sửa ngược" theo spec.
 
 ---
 
-## 12. Chưa làm
+## 12. Chưa làm, và hai quyết định đang treo
 
 Theo thứ tự phụ thuộc trong `BUILD-SPEC.md` phần E.
 
 | Mục | Trạng thái | Chặn bởi |
 |---|---|---|
-| C2, B5, Phần F, README | **XONG** | — |
-| Guideline gán nhãn, bảng đối chiếu Mốc 1 | **XONG** | — |
-| Đối chiếu Công báo | **XONG** — mục 10 | — |
-| **B4** mở rộng bộ trường | **XONG** — `4064519` | — |
+| A1–A4, B1–B6, C1, C2, Phần F, README, guideline | **XONG** | — |
 | **MỐC 1** | **ĐÓNG** — `df96ff2` | — |
 | Bỏ qua đẳng thức khi thiếu thành phần | **XONG** — phương án C, `ada6f75` | — |
 | Nhận diện chuẩn thật (nguồn `nhan_dien`) | **Chưa** — bước D, Phụ lục B | Quyết định của người |
@@ -671,223 +547,162 @@ Theo thứ tự phụ thuộc trong `BUILD-SPEC.md` phần E.
 | **C4** verdict ba trạng thái | Chưa | C3 |
 | **D2** runner / **D3** bảng / **D4** hình | Chưa | C4, rồi D2 |
 
-### Phương án C — đã quyết và đã thi công 24/08/2026
+### 12.1 Quy tắc `None` ở pipeline — HOÃN tường minh 26/08/2026
 
-Người dùng chốt: phân biệt "dòng vắng mặt" với "dòng đọc hỏng" bằng cách dò
-**mã số dòng** trên text OCR, và ghi số `0` của dòng vắng mặt vào **cả `data`
-đầu ra** kèm khoá trạng thái tường minh. Bốn commit, bẫy đã gặp, và bước D
-còn lại: xem **Phụ lục B**.
+`validate_result()` bỏ qua **cả đẳng thức** nếu bất kỳ thành phần nào là `None`
+([src/validation.py:168](src/validation.py#L168)). Với đẳng thức phân rã tài
+sản ngắn hạn (5 thành phần ở TT200, 6 ở TT99) thì chỉ cần **một** dòng không
+đọc được là đẳng thức giá trị nhất im lặng không chạy.
 
-### Việc mở ra từ B4, cần quyết trước khi chạy pipeline trên tài liệu thật
+Phía **gán nhãn tay** đã xử lý: guideline mục 3.4 quy định dòng vắng mặt ghi
+`0`, vì TT99 mục 1.2.3 bảo đảm chỉ tiêu không có số liệu được miễn trình bày —
+vắng mặt là *bằng không*, không phải *chưa biết*. Phía **pipeline** thì chưa:
+VLM và OCR đều trả `None`, và ở đó `None` thật sự nhập nhằng.
 
-`validate_result()` bỏ qua **cả đẳng thức** nếu bất kỳ thành phần nào là
-`None` ([src/validation.py:168](src/validation.py#L168)). Với bộ đẳng thức
-cũ — 3 đẳng thức trên các chỉ tiêu đầu bảng vốn luôn được in — điều đó vô
-hại. Với đẳng thức phân rã tài sản ngắn hạn (5 thành phần ở TT200, 6 ở TT99)
-thì chỉ cần **một** dòng không đọc được là đẳng thức giá trị nhất im lặng
-không chạy.
-
-Phía **gán nhãn tay** đã xử lý: `ANNOTATION-GUIDELINE.md` mục 3.4 nay quy
-định dòng vắng mặt ghi `0` chứ không phải `null`, vì TT99 mục 1.2.3 bảo đảm
-chỉ tiêu không có số liệu được miễn trình bày — vắng mặt là *bằng không*,
-không phải *chưa biết*. Chính báo cáo VNM in công thức rút gọn của nó,
-`100 = 110 + 120 + 130 + 140 + 160`, bỏ hẳn mã 150.
-
-Phía **pipeline** thì chưa. VLM và OCR đều trả `None` cho dòng không đọc
-được, và ở đó `None` thật sự nhập nhằng giữa "dòng vắng mặt" với "đọc hỏng".
-
-**Người chủ trì đã HOÃN câu này ngày 26/08/2026** — hoãn tường minh, không
-phải quên. Nhưng nó vẫn chặn việc chạy pipeline diện rộng trên tài liệu thật,
-nên phải quyết trước bước đó. Đánh đổi có hai chiều thật:
+Người chủ trì đã **hoãn** — nhưng nó vẫn chặn việc chạy pipeline diện rộng trên
+tài liệu thật. Đánh đổi có hai chiều thật:
 
 - Coi `None` là 0 → đẳng thức chạy được trên phần lớn tài liệu, nhưng một
-  thành phần đọc hỏng sẽ sinh cảnh báo lệch đúng bằng giá trị của nó. Lệch
-  đó là **cảnh báo đúng hướng** (có gì đó sai thật) nhưng **quy trách nhiệm
-  sai chỗ**, và C1/C2 sẽ đi tìm ứng viên cho nhầm chỉ tiêu.
-- Giữ nguyên → an toàn nhưng đẳng thức mới gần như không bao giờ chạy, tức
-  phần lớn cái mà Mốc 1 mua được sẽ không tới được pipeline.
+  thành phần đọc hỏng sẽ sinh cảnh báo lệch đúng bằng giá trị của nó. Lệch đó
+  là **cảnh báo đúng hướng** nhưng **quy trách nhiệm sai chỗ**, và C1/C2 sẽ đi
+  tìm ứng viên cho nhầm chỉ tiêu.
+- Giữ nguyên → an toàn nhưng đẳng thức mới gần như không bao giờ chạy, tức phần
+  lớn cái mà Mốc 1 mua được sẽ không tới được pipeline.
 
-Gợi ý nếu cần một hướng: phân biệt được hai ca bằng chính **mã số dòng** —
-nếu `extract_field_by_code()` tìm thấy dòng nhưng không đọc ra số thì là đọc
-hỏng, còn không tìm thấy dòng thì là vắng mặt. Đường đó cần B3 provenance,
-vốn đã có. Dù chọn hướng nào cũng phải ghi trạng thái **tường minh** vào kết
-quả, đừng để suy ra từ sự vắng mặt của khoá khác.
+Gợi ý nếu cần một hướng: phân biệt hai ca bằng chính **mã số dòng** — probe của
+phương án C đã làm được đúng việc đó ở nhánh OCR. Dù chọn hướng nào cũng phải
+ghi trạng thái **tường minh** vào kết quả, đừng để suy ra từ sự vắng mặt của
+khoá khác.
 
-### Hằng số chưa hiệu chỉnh — đo lại trước khi tin
+### 12.2 Nhánh OCR — đã có bộ đếm kiên nhẫn, còn phải đo cái giá
 
-1. `TOTAL_ASSETS_BOUNDS` trong `fields_config.py` — hiện `(1e10, 1e15)`,
-   dựa trên suy luận, chưa dựa trên phân phối đo được.
-2. `XAC_SUAT_TIEN_NGHIEM` trong `repair/candidates.py` — đi **thẳng** vào
-   hàm mục tiêu của C2, nên đặt sai thì thuật toán vẫn chạy và vẫn cho
-   nghiệm, chỉ là ưu tiên sai loại sửa.
-3. `FIELD_RATIO_BOUNDS` và `REVENUE_TO_ASSETS_LIMIT` — hiệu chỉnh trên
-   **đúng một công ty** (VNM Q1/2026). Người dùng đã ra chỉ thị rõ: **không
-   chỉnh các ngưỡng này khi dữ liệu mới chỉ có một công ty**.
-4. `MAX_CHANGES_MAC_DINH = 2` — **ĐÃ ĐO LẠI 24/08/2026 trên bộ chỉ tiêu đã
-   chốt, giữ nguyên giá trị 2.** Số đo cũ lấy trên bảng 8 chỉ tiêu của tầng
-   XBRL; số mới lấy trên chính ma trận ràng buộc TT200/TT99, ca vô nghiệm
-   (đắt nhất), 5 ứng viên mỗi chỉ tiêu:
+**Phát hiện 28/08/2026, phải chốt trước lượt chạy lại kế tiếp.** File `.env`
+của máy này đặt `USE_OCR_FIRST=true`, trong khi docstring `router.py` nói nhánh
+này **tắt mặc định**. Hệ quả đã đo được:
 
-   | Chuẩn | Chỉ tiêu | Ứng viên | `max_changes` | Thời gian |
-   |---|---:|---:|---:|---:|
-   | TT200 | 20 | 100 | 2 | **33 ms** |
-   | TT200 | 20 | 100 | 3 | 958 ms |
-   | TT200 | 20 | 100 | không đặt | **hết giờ 30 s** |
-   | TT99 | 21 | 105 | 2 | **56 ms** |
-   | TT99 | 21 | 105 | 3 | 1 128 ms |
-   | TT99 | 21 | 105 | không đặt | **hết giờ 30 s** |
+| | |
+|---|---|
+| OCR chiếm | **77%** tổng thời gian chạy (5,28 / 6,84 giờ) |
+| Mỗi trang OCR | ~27,6 giây |
+| Trang được quét | **100%** số trang của mọi tài liệu |
+| Lần `run_ocr_first` dừng sớm | **0/9** — "OCR chưa đạt" 9 lần |
 
-   Kết luận: trần 2 vẫn thừa sức ở bộ 21, và **mỗi nấc `max_changes` đắt lên
-   khoảng 20 lần**. Bỏ trần thì vẫn hết giờ y như ở bộ 8 — chi phí nằm trọn ở
-   việc chứng minh KHÔNG có nghiệm, đúng như kết luận cũ.
+Lý do nhánh OCR không bao giờ dừng sớm: nó chỉ dừng khi `is_acceptable()` đúng,
+mà nhánh regex đọc hỏng chữ tiếng Việt có dấu nên điều đó gần như không xảy ra.
+Nhánh VLM thì ngược lại — `PATIENCE_PAGES = 3` kích hoạt ở **9/10** tài liệu,
+dừng ở trang 6–18 của tài liệu 25–62 trang, chỉ tốn 7–18 lượt gọi.
 
-   Hệ quả cho việc mở rộng bộ chỉ tiêu về sau: ở `max_changes = 2` chi phí đi
-   theo `C(n,2)`, nên tăng từ 21 lên 40 chỉ tiêu chỉ đắt lên chừng 3,7 lần —
-   vẫn dưới một phần tư giây. **Ràng buộc thật khi mở rộng là chi phí gán
-   nhãn tay, không phải chi phí tính toán.**
-5. ~~Bảng bốn cặp nhầm chữ số trong `repair/candidates.py`~~ — **ĐÃ SỬA
-   `90b271a`.** Nay đọc từ ma trận đã đo ở `src/nham_chu_so.py`; xem 5.2(b)
-   và 5.6.
-6. `MAX_UPLOAD_BYTES = 50 MB` trong `api.py` — chọn theo đúng một tài liệu.
+**ĐÃ THI CÔNG 28/08/2026 — `PATIENCE_PAGES_OCR = 10`.** `run_ocr_first()` nay
+dừng sau mười trang liên tiếp không trích thêm được chỉ tiêu nào, và nhánh VLM
+đọc tiếp từ đó. Cố ý **không** gác điều kiện dừng sau `has_required_fields()`
+như nhánh VLM làm: ở nhánh regex điều kiện ấy gần như không bao giờ đúng, nên
+gác vào là dựng lại đúng vòng lặp không có trần mà bộ đếm sinh ra để cắt.
+
+**Vì sao 10 chứ không phải 3 như nhánh VLM.** Không có cái gác trên nghĩa là bộ
+đếm chạy ngay từ trang 1, mà trang đầu báo cáo niêm yết là bìa, trang ký, mục
+lục, phần giới thiệu. Để 3 thì vòng lặp dừng ở trang 3 TRƯỚC khi tới bảng nào,
+và nhánh OCR thành vô dụng một cách im lặng. Bảng B01 sớm nhất của tập gold ở
+trang 4. **Ngưỡng này là điều kiện để nhánh OCR còn chạy, không phải tham số
+tinh chỉnh tốc độ** — hạ nó xuống là tắt nhánh OCR mà không ai thấy.
+
+**CÒN LẠI, chưa làm — đo cái giá.** Probe dò dòng (`do_dau_vet_dong`) chỉ đọc
+`cached_pages`, nên nhánh OCR dừng sớm hơn thì probe thấy ít trang hơn và kết
+luận "dòng vắng mặt trên biểu mẫu" có thể đổi. Hai khoá mới trong
+`metrics.jsonl` để so hai lượt chạy: `ocr_dung_som` (dừng vì lý do gì, ở trang
+nào) và `probe_so_trang`. **Chạy lại 2 tài liệu là đủ; phải đo, không đoán.**
+
+Vẫn còn phải quyết `USE_OCR_FIRST` đặt gì cho các lượt chạy sau — bộ đếm chỉ
+chặn được chi phí, nó không trả lời câu hỏi nhánh regex có đáng chạy không.
+
+**Và một hệ quả cho việc trích dẫn:** lượt chấm gold 27/08 chạy với
+`USE_OCR_FIRST=true`, tức một cấu hình khác cấu hình tài liệu mô tả. Một số giá
+trị có thể đến từ nhánh regex chứ không từ VLM.
+
+**ĐỪNG nâng `PATIENCE_PAGES`** — nó nới đúng nhánh đang được kiểm soát tốt và
+không chạm nhánh chiếm 77% chi phí.
+
+### 12.3 Hằng số chưa hiệu chỉnh — đo lại trước khi tin
+
+1. `TOTAL_ASSETS_BOUNDS` trong `fields_config.py` — hiện `(1e10, 1e15)`, dựa
+   trên suy luận, chưa dựa trên phân phối đo được.
+2. `XAC_SUAT_TIEN_NGHIEM` trong `repair/candidates.py` — đi **thẳng** vào hàm
+   mục tiêu của C2, nên đặt sai thì thuật toán vẫn chạy và vẫn cho nghiệm, chỉ
+   là ưu tiên sai loại sửa.
+3. `FIELD_RATIO_BOUNDS` và `REVENUE_TO_ASSETS_LIMIT` — hiệu chỉnh trên **đúng
+   một công ty** (VNM Q1/2026). Chỉ thị của người dùng: **không chỉnh các ngưỡng
+   này khi dữ liệu mới chỉ có một công ty.**
+4. `MAX_CHANGES_MAC_DINH = 2` — **đã đo lại 24/08/2026 trên bộ chỉ tiêu đã
+   chốt, giữ nguyên giá trị 2** (bảng ở `CHANGELOG.md`). Hai kết luận còn ràng
+   buộc: mỗi nấc `max_changes` đắt lên **khoảng 20 lần**, chi phí nằm trọn ở
+   việc chứng minh KHÔNG có nghiệm; và ở `max_changes = 2` chi phí đi theo
+   `C(n,2)` nên **ràng buộc thật khi mở rộng bộ chỉ tiêu là chi phí gán nhãn
+   tay, không phải chi phí tính toán**.
+5. `MAX_UPLOAD_BYTES = 50 MB` trong `api.py` — chọn theo đúng một tài liệu.
 
 ---
 
 ## 13. MỐC 3 — điều kiện dừng KHÔNG kích hoạt, mốc chưa đóng
 
-**Hiện trạng nằm ở mục 13c.** Hai lượt chạy trước (24/08 và 24/08 tối) đã bị
-lượt 25/08 thay thế hoàn toàn; dưới đây chỉ giữ lý do của từng thứ đã chặn,
-vì mỗi cái là một cạm bẫy có thể lặp lại.
-
 `BUILD-SPEC.md` phần E định nghĩa mốc: **nếu baseline 9 ngang bằng phương pháp
 đề xuất thì luận điểm "đọc lại nguồn" sai** — dừng, báo cáo, lùi paper về tầng
 dataset + identifiability, đừng chạy tiếp C3 và toàn bộ ablation.
 
-**Bốn thứ từng chặn phép đo, đã gỡ hết trong ngày 25/08:**
+**Kết quả: điều kiện dừng KHÔNG kích hoạt.** Được phép đi tiếp sang C3, C4,
+D2–D4 và sang việc gán nhãn `data/gold/`. Bảng số đầy đủ ở
+[data/output/moc3_15congty.md](data/output/moc3_15congty.md) và ở
+`CHANGELOG.md` mục 25/08/2026; **mốc chưa ĐÓNG** vì phán quyết cuối cùng của H3
+nằm ở **tầng gold Việt Nam**, nơi có ảnh nên cả năm nguồn ứng viên đều chạy và
+cả bốn chế độ lỗi đều kiểm được khả năng sửa. Tầng XBRL đã cho hết những gì nó
+có thể cho.
+
+### 13.1 Bốn thứ từng làm hỏng phép đo — cạm bẫy có thể lặp lại
 
 | Thứ chặn | Vì sao nó làm hỏng phép đo | Đã gỡ |
 |---|---|---|
-| Rò rỉ đáp án | Donor tính trung vị trên cả hồ sơ đang xét nên 32% chỉ tiêu có donor trùng khít giá trị thật — baseline 9 khi đó là oracle. Sau khi sửa, chỉ số chống bịa **đảo chiều** sang có lợi cho đề xuất | `e6c286c` loại cả công ty đang xét, không chỉ hồ sơ |
+| Rò rỉ đáp án | Donor tính trung vị trên cả hồ sơ đang xét nên 32% chỉ tiêu có donor trùng khít giá trị thật — baseline 9 khi đó là **oracle** | `e6c286c` loại cả công ty đang xét |
 | Tắt mất nguồn ứng viên chính | Gọi `generate()` không truyền `o_lan_can`, tức bỏ hẳn việc đọc lại ô lân cận — đúng cơ chế cần chứng minh | đã sửa |
-| Cột kỳ so sánh rỗng | 0/158 chỉ tiêu có giá trị ở kỳ thứ hai nên `col_shift` bỏ 120/130 lượt | `f80a53d` chọn kỳ theo **độ phủ chỉ tiêu** thay vì theo ngày |
-| Ma trận nhầm chữ số chưa đo từ dữ liệu thật | Bộ tiêm và bộ sinh dùng hai mô hình lỗi khác nhau nên chỉ số `digit_sub` không mang thông tin về phương pháp | `90b271a` đo từ EasyOCR trên sáu font; độ phủ 0,046 → 0,615 |
+| Cột kỳ so sánh rỗng | 0/158 chỉ tiêu có giá trị ở kỳ thứ hai nên `col_shift` bỏ 120/130 lượt | `f80a53d` chọn kỳ theo **độ phủ chỉ tiêu** |
+| Ma trận nhầm chữ số chưa đo từ dữ liệu thật | Bộ tiêm và bộ sinh dùng hai mô hình lỗi khác nhau nên chỉ số `digit_sub` không mang thông tin về phương pháp | `90b271a`; độ phủ 0,046 → 0,615 |
 
-Cộng thêm hai thứ không phải lỗi mà là quyết định của người: cách chấm khi một
-phương pháp **từ chối trả lời** (đếm ABSTAIN là trượt tức đo mức sẵn sàng
-đoán, không đo độ đúng — chốt báo cáo cả ba con số, Câu 1), và trần ứng viên
-nới 6/12 → 10/20 theo số đo (`68ce4d2`, Câu 5).
+**Phép đo phải chạy lại mỗi lần đụng vào bộ sinh ứng viên hoặc bộ tiêm lỗi:**
+[src/eval/do_phu_ung_vien.py](src/eval/do_phu_ung_vien.py) — nhanh, không gọi
+`diagnose()`. **Độ phủ chính là thứ quyết định bảng Mốc 3 đọc ra nghĩa gì.**
 
 **Một giới hạn không gỡ được ở tầng XBRL:** `row_shift` cần ảnh, tức cần
 `data/gold/`. Và toàn bộ dữ liệu là doanh nghiệp Mỹ theo US-GAAP.
 
-**Phép đo phải chạy lại mỗi lần đụng vào bộ sinh ứng viên hoặc bộ tiêm lỗi:**
-[src/eval/do_phu_ung_vien.py](src/eval/do_phu_ung_vien.py) — nhanh, không gọi
-`diagnose()`. Độ phủ chính là thứ quyết định bảng Mốc 3 đọc ra nghĩa gì.
+### 13.2 Bảng gộp không đọc được một mình — phải tách theo chế độ lỗi
 
-
-### 13c. Lượt chạy Mốc 3 sau khi sửa hết bốn thứ chặn — 25/08/2026
-
-**Chạy 14:22–16:05, 103 phút**, 26 hồ sơ của 14 công ty, **520 lượt** (4 chế
-độ lỗi × 5 seed × 26 hồ sơ). Kết quả đầy đủ ở
-[data/output/moc3_15congty.md](data/output/moc3_15congty.md). Khác lượt chạy
-24/08 ở bốn điểm, mỗi điểm là một thứ chặn đã gỡ:
-
-1. Ma trận nhầm chữ số nay **đo được từ EasyOCR trên sáu font** (`90b271a`),
-   dùng chung cho bộ tiêm và bộ sinh nhưng **khác độ sâu** — bộ sinh giữ 6
-   cặp đầu, bộ tiêm lấy trọn phân phối. Độ phủ `digit_sub` 0,046 → 0,615.
-2. Cột kỳ so sánh nay chọn theo **độ phủ chỉ tiêu** thay vì theo ngày
-   (`f80a53d`), nên `col_shift` inject được đủ 130 lượt thay vì 10.
-3. Trần ứng viên nới 6/12 → **10/20** theo số đo (`68ce4d2`).
-4. Bảng tách theo chế độ lỗi thêm **trước** lượt chạy (`ea1ffb2`), vì việc
-   đếm nằm ở `chay()` chứ không ở `bao_cao()`.
-
-#### Bảng gộp — và vì sao nó không đọc được một mình
-
-| Chỉ số | Đề xuất | Baseline 9 | Ai thắng |
-|---|---:|---:|---|
-| Tỷ lệ lượt còn sai sau sửa (CHÍNH) | 0,719 | 0,646 | baseline 9 |
-| Tỷ lệ lỗi câm mức trường (phụ) | 0,00488 | 0,00597 | đề xuất |
-| **Tỷ lệ bịa mức trường (phụ)** | **0,00400** | **0,00609** | **đề xuất** |
-| Định vị đúng / tổng lượt (CHÍNH) | 0,227 | 0,288 | baseline 9 |
-| Tỷ lệ ra tay | 0,285 | 0,606 | — |
-| Định vị đúng TRÊN LƯỢT CÓ RA TAY | **0,797** | 0,476 | đề xuất |
-| VERIFIED / REPAIRED / ABSTAIN | 125 / 148 / 247 | 125 / 315 / 80 |  |
-
-#### Bảng tách theo chế độ lỗi — bảng quyết định
-
-| Chế độ lỗi | Kiểm được khả năng SỬA? | Còn sai — đề xuất | Còn sai — baseline 9 | Ra tay — đề xuất |
+| Chế độ lỗi | Kiểm được khả năng SỬA? | Còn sai — đề xuất | — baseline 9 | Ra tay — đề xuất |
 |---|---|---:|---:|---:|
 | `sign` | có | **0,392** | 0,600 | 0,608 |
 | `digit_substitution` | có | **0,485** | 0,592 | 0,377 |
 | `row_shift` | KHÔNG — phủ 0,015 | 1,000 | 0,654 | 0,062 |
 | `col_shift` | KHÔNG — phủ 0,000 | 1,000 | 0,738 | 0,092 |
 
-#### Đọc kết quả — theo ba tu chính ghi trước khi có bất kỳ con số nào
+Trên hai chế độ tầng này kiểm được, đề xuất thắng **+20,8 điểm** (`sign`) và
+**+10,7 điểm** (`digit_substitution`), cả hai vượt xa ngưỡng effect size 3 điểm.
+Chiều chống bịa cũng thắng (0,00400 so 0,00609) — thắng cả hai chiều, chứ không
+phải thắng chiều một mà thua chiều hai.
 
-Đây là chỗ dễ bị cáo buộc đọc kết quả theo ý mình nhất, nên phải nói rõ thứ
-tự thời gian, và nói cho đúng chứ không nói cho đẹp. Lượt chạy bắt đầu
-**14:22:53** và chỉ sinh ra con số đầu tiên lúc **16:05** — `bao_cao()` in một
-lần ở cuối, không có kết quả trung gian nào ra màn hình.
+Ở `row_shift`/`col_shift` đề xuất **ABSTAIN đúng như thiết kế** (ra tay 0,062 và
+0,092) trong khi baseline 9 nặn giá trị donor. Đó là **chưa được kiểm**, không
+phải **đã thua**.
 
-| Tu chính | Commit | Giờ | So với lúc chạy | So với lúc CÓ SỐ |
-|---|---|---|---|---|
-| Bảng tách theo chế độ lỗi | `ea1ffb2` | 14:18 | trước 5 phút | trước 107 phút |
-| Câu 7 — hoà thì hoãn phán quyết | `113e741` | 14:23 | **sau 7 giây** | trước 102 phút |
-| Câu 7 vào PREREGISTRATION | `525fb42` | 14:30 | **sau 7 phút** | trước 95 phút |
+### 13.3 Trần trên của mọi bộ giải liên tục — kết quả đổi cách đọc cả bảng
 
-Hai dòng cuối commit sau lúc bấm chạy, nên câu "ghi trước khi chạy" là SAI và
-không được viết vào bài. Câu đúng, và cũng là câu mang giá trị đăng ký trước
-thật: **cả ba đều được ghi trước khi tồn tại bất kỳ con số nào của lượt
-chạy** — sớm nhất là 95 phút. Quyết định Câu 7 do người dùng chốt trong tin
-nhắn trước khi lượt chạy được bấm; commit chỉ là lúc chép nó vào file.
+Nghi vấn ban đầu: baseline 9 sửa đúng 26–35% lượt `row_shift`/`col_shift` trong
+khi ở hai chế độ đó giá trị thật đã bị ghi đè và biến mất khỏi bảng.
 
-Kiểm lại bằng `git log --format='%h %ad %s' --date=format:'%d/%m %H:%M'` và
-`ls -l --time-style=full-iso data/output/moc3_15congty.md` (file tạo lúc
-14:22:53, kích thước 0 cho tới 16:05).
+**Giả thuyết đầu đã bị bác bằng số đo** — nghi các lượt trúng rơi vào chỉ tiêu
+có giá trị thật bằng 0: đo được **0 trên 520 lượt**. Bộ đếm giữ lại trong bảng
+để lần sau không ai kiểm lại.
 
-- Tu chính *"Tầng XBRL chỉ kiểm được khả năng SỬA cho 2 trong 4 chế độ lỗi"*
-  nói bảng gộp là trung bình của hai nhóm khác bản chất nên không mang nghĩa,
-  và H3 cho `row_shift`/`col_shift` **phải chờ tập gold**.
-- Trên hai chế độ tầng này kiểm được, đề xuất thắng **+20,8 điểm phần trăm**
-  (`sign`) và **+10,7 điểm** (`digit_substitution`) — cả hai vượt xa ngưỡng
-  effect size 3 điểm đã chốt ở mục 1 của `PREREGISTRATION.md`.
-- Tu chính Câu 7 nói trên tầng XBRL: **thua** kích hoạt điều kiện dừng,
-  **hoà** hoãn phán quyết, **thắng** là bằng chứng mạnh.
-
-Ghép lại: trong phạm vi tầng XBRL kiểm được, **đề xuất THẮNG**, và điều kiện
-dừng Mốc 3 **không kích hoạt**. Hai chế độ lệch dòng/lệch cột chưa được kiểm
-chứ không phải đã thua — ở đó đề xuất ABSTAIN đúng như thiết kế (ra tay 0,062
-và 0,092) trong khi baseline 9 nặn giá trị donor.
-
-Chiều chống bịa cũng thắng: **0,00400 so với 0,00609**. Theo mục 1 của
-`PREREGISTRATION.md`, thắng chiều một mà thua chiều hai là kết quả tiêu cực —
-lượt này thắng cả hai chiều.
-
-#### ĐÃ ĐO XONG NGHI VẤN — và câu trả lời đổi cách đọc cả bảng
-
-Nghi vấn ban đầu: baseline 9 sửa đúng **26–35% số lượt** `row_shift`/
-`col_shift` trong khi ở hai chế độ đó giá trị thật đã bị ghi đè và biến mất
-khỏi bảng, nên nó không có nguồn nào để lấy lại đúng con số ấy.
-
-**Giả thuyết đầu — đã bị bác bằng số đo.** Nghi là các lượt trúng rơi vào chỉ
-tiêu có giá trị thật bằng 0, vì tu chính 24/08 ghi dòng vắng mặt là `0` nên
-trung vị donor bằng 0 sẽ khớp mà không cần biết gì. Đo được **0 trên 520
-lượt** có giá trị thật bằng 0, và donor khớp giá trị thật **0 trên 520 lượt**.
-Sai hoàn toàn. Bộ đếm giữ lại trong bảng để lần sau không ai kiểm lại.
-
-**Lời giải thích đúng, và nó quan trọng hơn nhiều.** Baseline 9 không điền
-thẳng giá trị donor: nó chọn bộ giá trị gần donor nhất **mà vẫn thoả ràng
-buộc**, tức giải một bài tối ưu liên tục. Khi đúng một trường sai và trường
-đó được thả ra một mình thì `r = δᵢ·aᵢ`, nên nghiệm duy nhất là `δ = −δᵢ`,
-bất kể donor ở đâu. **Baseline 9 không bịa — nó NGHỊCH ĐẢO**, và với lỗi đơn
-định vị được thì phép nghịch đảo trả lại đúng giá trị thật tới từng chữ số.
-
-Dấu vết nằm sẵn trong bảng: tỷ lệ sửa đúng của baseline 9 gần trùng tỷ lệ
-định vị đúng ở ba trong bốn chế độ — lệch 1–2 lượt trên 130. Nó sửa đúng KHI
-VÀ CHỈ KHI nó định vị đúng.
-
-Phép đo mới ([src/eval/do_nghich_dao_mot_loi.py](src/eval/do_nghich_dao_mot_loi.py),
-kết quả ở [data/output/moc3_nghich_dao_mot_loi.md](data/output/moc3_nghich_dao_mot_loi.md))
-xác nhận cơ chế bằng đại số và cho ra một con số dùng được cho cả bài:
+**Lời giải thích đúng: baseline 9 không bịa, nó NGHỊCH ĐẢO.** Nó chọn bộ giá
+trị gần donor nhất *mà vẫn thoả ràng buộc*. Khi đúng một trường sai và trường
+đó được thả ra một mình thì `r = δᵢ·aᵢ`, nên nghiệm duy nhất là `δ = −δᵢ`, bất
+kể donor ở đâu. Dấu vết nằm sẵn trong bảng: nó sửa đúng KHI VÀ CHỈ KHI nó định
+vị đúng (lệch 1–2 lượt trên 130 ở ba trong bốn chế độ).
 
 | Trạng thái | Tỷ lệ | Nghĩa |
 |---|---:|---|
@@ -895,10 +710,10 @@ xác nhận cơ chế bằng đại số và cho ra một con số dùng đượ
 | Không chốt | 0,146 | Khoảng hở mà việc đọc lại nguồn tồn tại để lấp |
 | Cột bằng 0 | 0,246 | Không ràng buộc nào bảo vệ — kết quả của **H0** |
 
-Con số 0,246 khớp với 125/520 = 0,240 lượt VERIFIED trong bảng Mốc 3, tức hai
-phép đo độc lập cho cùng một câu trả lời.
+Con số 0,246 khớp 125/520 = 0,240 lượt VERIFIED, tức hai phép đo độc lập cho
+cùng một câu trả lời.
 
-#### Chuẩn hoá theo trần — bảng Mốc 3 đọc ra nghĩa khác hẳn bảng thô
+**Chuẩn hoá theo trần — cách trình bày nên dùng trong bài:**
 
 | Chế độ lỗi | Trần | Đề xuất | % trần | Baseline 9 | % trần |
 |---|---:|---:|---:|---:|---:|
@@ -907,78 +722,42 @@ phép đo độc lập cho cùng một câu trả lời.
 | `row_shift` | 0,608 | 0,000 | 0,0% | 0,346 | 56,9% |
 | `col_shift` | 0,585 | 0,000 | 0,0% | 0,262 | 44,8% |
 
-Ở `sign`, phương pháp đề xuất **giải đúng MỌI lượt mà thông tin tồn tại** và
-im lặng ở phần còn lại. Không thể hơn được nữa. Đây là cách trình bày kết quả
-nên dùng trong bài: chuẩn hoá theo trần identifiability biến H0 từ một mục
-độc lập thành công cụ làm cho H2 và H3 đọc được.
+Ở `sign`, đề xuất **giải đúng MỌI lượt mà thông tin tồn tại** và im lặng ở phần
+còn lại. Chuẩn hoá theo trần identifiability biến H0 từ một mục độc lập thành
+công cụ làm cho H2 và H3 đọc được.
 
-#### HỆ QUẢ CHO THIẾT KẾ THÍ NGHIỆM — phần phải nhớ nhất
+### 13.4 Bốn thứ ràng buộc lượt chạy sau
 
-Tầng XBRL tiêm **đúng một lỗi mỗi lượt**, mà lỗi đơn định vị được lại chính
-là ca phép nghịch đảo liên tục giải trọn vẹn. **Thiết kế hiện tại đang chọn
-đúng ca thuận lợi nhất cho baseline 9.**
+1. **Thiết kế hiện tại đang chọn ca thuận lợi nhất cho baseline 9** (Câu 8,
+   mục 0). Tầng XBRL tiêm **đúng một lỗi mỗi lượt**, mà lỗi đơn định vị được
+   lại chính là ca phép nghịch đảo liên tục giải trọn vẹn. Khoảng hở mà "đọc
+   lại nguồn" lấp là ca ràng buộc KHÔNG chốt được giá trị: nhiều lỗi đồng thời,
+   cột bằng 0, cột tỷ lệ với nhau, lỗi nằm trong `null(A)`. **Lượt chạy tới
+   phải tiêm nhiều hơn một lỗi mỗi lượt** — thay đổi thiết kế, nên ghi vào mục
+   Sửa đổi của `PREREGISTRATION.md` TRƯỚC khi chạy.
+2. **`het_gio` đo tải máy chứ không đo phương pháp.** Lượt 26/08 tái lập từng
+   chữ số mọi chỉ số chính, nhưng **71/249 lượt ABSTAIN chuyển bucket** giữa
+   `het_gio` (85 → 156) và `vuot_tran_thay_doi` (162 → 93) chỉ vì phải chia CPU
+   với việc chấm tập gold. Trong bài phải **ghi rõ bảng lý do ABSTAIN phụ thuộc
+   ngân sách tính toán**, hoặc bỏ `het_gio` ra khỏi mọi lập luận.
+3. **`vo_nghiem` = 0 trên 520 lượt, ở CẢ HAI lượt chạy.** Chính báo cáo ghi
+   *`vo_nghiem` là ca DUY NHẤT chứng minh được* luận điểm chống bịa — và nó
+   chưa từng xảy ra. Toàn bộ ABSTAIN đều là *ta đã không tìm*, không phải
+   *không có*. Lập luận chống bịa ở tầng XBRL vì thế **không** tựa được vào
+   bảng ABSTAIN; nó tựa vào tỷ lệ bịa mức trường, và đó mới là con số được
+   phép dùng.
+4. **Kết quả không được lưu dạng JSON.** `chay()` trả dict rồi `bao_cao()` in
+   ngay ra stdout. Muốn in lại bảng theo cách khác phải chạy lại 103 phút. Cần
+   ghi `data/output/moc3_<ngày>.json` trong khối `__main__` trước lượt kế tiếp.
 
-Khoảng hở mà "đọc lại nguồn" lấp là ca ràng buộc KHÔNG chốt được giá trị:
-nhiều lỗi đồng thời, cột bằng 0, cột tỷ lệ với nhau, và lỗi nằm trong
-`null(A)`. Đây là số đo chứ không phải lời bào chữa, và nó nói **lượt chạy
-tới phải tiêm nhiều hơn một lỗi mỗi lượt**. Đó là thay đổi thiết kế, nên phải
-ghi vào mục Sửa đổi của `PREREGISTRATION.md` TRƯỚC khi chạy.
+> **Thứ tự thời gian của ba tu chính, ghi lại vì đây là chỗ dễ bị cáo buộc đọc
+> kết quả theo ý mình.** Lượt chạy bấm lúc 14:22:53 và sinh con số đầu tiên lúc
+> 16:05. Bảng tách theo chế độ lỗi commit 14:18 (trước khi chạy); hai tu chính
+> Câu 7 commit 14:23 và 14:30 — **sau lúc bấm chạy**. Câu "ghi trước khi chạy"
+> là SAI và không được viết vào bài. Câu đúng: **cả ba được ghi trước khi tồn
+> tại bất kỳ con số nào**, sớm nhất 95 phút. Quyết định Câu 7 do người dùng
+> chốt trong tin nhắn trước khi bấm chạy; commit chỉ là lúc chép vào file.
 
-#### Việc phải làm mà lượt chạy này lộ ra
-
-- **Kết quả không được lưu dạng JSON.** `chay()` trả dict rồi `bao_cao()` in
-  ngay ra stdout; không gì được ghi lại. Muốn in lại bảng theo cách khác phải
-  chạy lại 103 phút. Cần ghi `data/output/moc3_<ngày>.json` trong khối
-  `__main__` trước lượt chạy kế tiếp.
-- **`data/output/moc3_15congty.md` đã bị sửa tay** ở `db09dc8` đúng bằng thứ
-  `bao_cao()` nay sinh ra, vì không có bản JSON để in lại. Lượt chạy sau sẽ
-  ghi đè file này bằng bản sinh thật.
-
-#### Lượt chạy lại 26/08/2026 — tái lập, và một chỗ KHÔNG tái lập
-
-Chạy lại nguyên xi để kiểm repo còn tái lập được sau loạt commit 26/08. Kết
-quả ở `data/output/moc3_26082026.md`. Độ phủ ứng viên đo lại trước khi chạy
-cũng khớp từng chữ số (sign 1,000 / digit_sub 0,615 / row_shift 0,015 /
-col_shift 0,000).
-
-| Chỉ số | 25/08 | 26/08 |
-|---|---:|---:|
-| Còn sai — đề xuất / baseline 9 | 0,719 / 0,646 | **0,719 / 0,646** |
-| Định vị đúng — đề xuất / b9 | 0,227 / 0,288 | **0,227 / 0,288** |
-| Lỗi câm — đề xuất / b9 | 0,00488 / 0,00597 | **0,004873 / 0,005970** |
-| Bịa — đề xuất / b9 | 0,00400 / 0,00609 | **0,003956 / 0,006088** |
-
-**Nhưng bảng lý do ABSTAIN thì đảo lộn:**
-
-| Lý do | 25/08 | 26/08 |
-|---|---:|---:|
-| `het_gio` | 85 | **156** |
-| `vuot_tran_thay_doi` | 162 | **93** |
-| `vo_nghiem` | **0** | **0** |
-
-**71 lượt trên 249 chuyển bucket**, chỉ vì lượt 26/08 phải chia CPU với việc
-chấm tập gold. `het_gio` đo tải máy chứ không đo phương pháp, nên **bảng này
-không tái lập được** — và nó nằm trong cùng một báo cáo với các con số vốn
-tái lập hoàn hảo, không có gì đánh dấu để phân biệt. **Trong bài phải ghi rõ
-bảng lý do ABSTAIN phụ thuộc ngân sách tính toán**, hoặc bỏ `het_gio` ra khỏi
-mọi lập luận.
-
-**Chỗ nặng hơn: `vo_nghiem` = 0 trên 520 lượt, ở CẢ HAI lượt chạy.** Chính
-báo cáo ghi *"`vo_nghiem` là ca DUY NHẤT chứng minh được"* luận điểm chống
-bịa — và nó chưa từng xảy ra. Toàn bộ ABSTAIN đều là *ta đã không tìm*, không
-phải *không có*. Lập luận chống bịa ở tầng XBRL vì thế **không** tựa được vào
-bảng ABSTAIN; nó tựa vào tỷ lệ bịa mức trường (0,00396 so 0,00609), và đó mới
-là con số được phép dùng.
-
-#### Trạng thái Mốc 3 sau lượt chạy này
-
-**Điều kiện dừng KHÔNG kích hoạt.** Được phép đi tiếp sang C3, C4, D2–D4 và
-sang việc gán nhãn `data/gold/`.
-
-**Nhưng Mốc 3 chưa ĐÓNG**, và lý do nay chỉ còn đúng một: phán quyết cuối
-cùng của H3 nằm ở **tầng gold Việt Nam**, nơi có ảnh nên cả năm nguồn ứng
-viên đều chạy và cả bốn chế độ lỗi đều kiểm được khả năng sửa. Tầng XBRL đã
-cho tất cả những gì nó có thể cho.
 ---
 
 ## 14. Quy ước bắt buộc
@@ -1033,7 +812,7 @@ PYTHONIOENCODING=utf-8 python src/constraints.py
 # TẢI 10 tài liệu gold đầu về data/bctc/ (danh mục ở data/nguon_gold.json)
 python src/tai_bctc.py
 
-# ĐO độ phân giải bản quét — trục phân nhóm Stress thứ ba (mục 19.7)
+# ĐO độ phân giải bản quét — trục phân nhóm Stress thứ ba (mục 19.5)
 python src/do_do_phan_giai.py            # chỉ in bảng
 python src/do_do_phan_giai.py --ghi      # ghi vào data/nguon_gold.json
 
@@ -1052,6 +831,16 @@ python chay_gan_nhan.py --pdf-dir D:/bctc --port 8200
 # AI CÒN ĐƯỢC VÀO TẬP GÁN NHÃN ĐÔI (Câu 12). Chạy TRƯỚC khi chọn tài liệu
 # cho lượt gán nhãn lại: tài liệu đã chạy pipeline thì đáp án đã lộ.
 PYTHONPATH=src python src/eval/tap_dong_thuan.py
+
+# ĐO LUẬT DẤU trên tập gold. Chạy lại trên kết quả đã lưu, KHÔNG gọi API,
+# nên chạy lại được sau mỗi lần đụng vào luật. Kết quả:
+# data/output/luat_dau_tap_gold.md
+PYTHONPATH=src python src/eval/do_luat_dau.py
+
+# BẬT TẦNG REPAIR trên đường chạy tài liệu (mặc định TẮT). Bật nó thì đầu ra
+# đã bị ràng buộc làm sạch, nên lượt chạy đó KHÔNG dùng được cho H1.
+# Certificate ghi ở meta["chung_chi_repair"] của kết quả.
+BAT_TANG_REPAIR=true python src/router.py <file.pdf>
 
 # Đo xem đẳng thức nào đáng mua (Mốc 1)
 PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/constraints_scenarios.py
@@ -1094,204 +883,133 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
 
 ## 16. Bước kế tiếp
 
-Cập nhật 26/08/2026. Đường găng nay đi qua **tầng gold**, không còn qua Mốc 3.
+Đường găng đi qua **tầng gold**, không còn qua Mốc 3.
 
-1. **Vá bước đọc dòng "Đơn vị tính"** — mục 20.4. Chẩn đoán xong, hướng đã
-   chọn, chỉ chờ đủ 11 số đo để chốt chi tiết. Đây là việc gấp nhất vì nó là
-   chế độ lỗi DUY NHẤT mà cả tầng ràng buộc mù hoàn toàn.
-2. **Gán nhãn thêm 2 tài liệu có đồng hồ chạy thật** (mục 19.4 bước 2). Mười
-   tài liệu của `data/bctc/` đã gán nhãn xong, nhưng chỉ 8 trong số đó đếm
-   được vào trung vị, nên phải chọn thêm 2 mã mới. Đủ 10 thì tính trung vị và
-   tuyên số phút cho giao thức trần người.
-3. **Chọn mã cho mốc 60** rồi thêm vào `data/nguon_gold.json` — người chủ
-   trì chốt lộ trình 10 → 60 → 100 ngày 26/08. Nay là việc chọn, không còn
-   là việc dò nguồn.
-4. **Bước D của phương án C** — nhận diện chuẩn mẫu biểu (Phụ lục B). Cùng
-   họ với việc 1 và nên làm liền sau: cả hai đều là "thứ cần đọc nằm ngoài
-   vùng bảng đã cắt". Chạy lại phép đo `tieu_de_trong_vung_cat` trên 10 tài
-   liệu thay vì một tài liệu như hiện nay.
-5. **Ba baseline còn thiếu: 4, 5, 7.**
-6. **Bật `n_samples > 1`** — không có nó thì H1 không đo được (mục 20.5).
-7. Sau đó: **C3** (vòng lặp đọc lại) → **C4** (verdict) → chạy Mốc 3 TRÊN
-   TẦNG GOLD → D2/D3/D4. **Chỉ bước đó mới đóng được Mốc 3**; tầng XBRL đã
-   cho hết những gì nó có thể cho.
+1. **Chạy lại `--chi BMP SBT`** — một lượt chạy trả lời được BA câu cùng lúc,
+   nên nó là việc rẻ nhất trên bàn:
+   *(a)* bản vá nới mép có đọc ra dòng "Đơn vị tính" không (mục 20.5b);
+   *(b)* bộ đếm kiên nhẫn của nhánh OCR tiết kiệm được bao nhiêu giờ (mục 12.2);
+   *(c)* probe mất bao nhiêu trang vì bộ đếm ấy — so `probe_so_trang` với
+   lượt 27/08. Xem bẫy `--tiep-tuc` ở 20.2.
+2. **Chẩn đoán SBT** — 10/24 lỗi câm, nghi lỗi **chọn nguồn** (mục 20.4). Đây
+   là khoản lớn nhất còn lại, và luật dấu **chứng minh được là không chạm tới
+   nó**: bộ số lấy từ bảng khác tự nó cũng cân nên residual bằng 0 tuyệt đối.
+4. **Gán nhãn thêm 2 tài liệu có đồng hồ chạy thật** (mục 19.3 bước 1).
+5. **Chọn mã cho mốc 60** rồi thêm vào `data/nguon_gold.json`.
+6. **Bước D của phương án C** — nhận diện chuẩn mẫu biểu (Phụ lục B). Cùng họ
+   với việc 2: cả hai là "thứ cần đọc nằm ngoài vùng bảng đã cắt". Chạy lại
+   `tieu_de_trong_vung_cat` trên 10 tài liệu thay vì một.
+7. **Ba baseline còn thiếu: 4, 5, 7.**
+8. **Bật `n_samples > 1`** — không có nó thì H1 không đo được (mục 20.6).
+9. Sau đó: **C3** (vòng lặp đọc lại) → **C4** (verdict) → chạy Mốc 3 TRÊN TẦNG
+   GOLD → D2/D3/D4. **Chỉ bước đó mới đóng được Mốc 3.**
 
 ### Ngân sách tầng gold, đối chiếu với số đo thật
 
-Dự trù cũ đoán 45–60 giờ cho 60 tài liệu và xếp công đoạn điền là khoản nặng
-nhất. Cả hai đều sai, và sai theo hướng có lợi:
-
 | Khoản | Dự trù cũ (60 tài liệu, 21 chỉ tiêu) | Ước theo số đo (100 tài liệu, 27 chỉ tiêu) |
 |---|---:|---:|
-| Điền nhãn | 20–25 giờ | **~17 giờ** |
+| Điền nhãn | 20–25 giờ | **~12 giờ** (trung vị 442 giây × 100) |
 | Gán nhãn đôi + phân xử | 8–10 giờ | ~3,5–6 giờ |
 | Đo trần người | 3 giờ | ~1–2 giờ |
-| Tìm và tải tài liệu | 15–20 giờ | **rẻ hẳn từ 26/08** — có API và script, xem mục 19.6 |
+| Tìm và tải tài liệu | 15–20 giờ | **còn việc chọn mã** — có API và script |
 
-**Cập nhật 26/08/2026 — con số 10 phút nay có đồng hồ thay cho cảm giác.**
-Tám tài liệu đã đo cho 361–579 giây, trung vị **442 giây ≈ 7,4 phút**, tức
-công đoạn điền RẺ HƠN ước lượng cảm giác chừng một phần tư. Chiếu sang 100
-tài liệu thì khoản "điền nhãn" rơi về **~12 giờ** thay vì ~17 giờ trong bảng
-trên; bảng giữ nguyên con số cũ vì nó là ước dựa trên 10 phút, và ghi đè nó
-lúc mới có 8 số đo là chỉnh dự trù theo mẫu mỏng. Đủ 10 số đo thì cập nhật
-bảng một lần, không sửa dần.
+Con số ~12 giờ dựa trên **8** số đo; đủ 10 thì cập nhật bảng **một lần**, không
+sửa dần theo mẫu mỏng.
 
 ### Ba việc song song, không cái nào chặn cái nào
 
 - **Tìm người hướng dẫn hoặc đồng tác giả.** Nâng xác suất được nhận nhiều
   nhất trên mỗi đơn vị công sức — hơn bất kỳ thí nghiệm nào còn lại. Bài Q1
-  đầu tay không có người hướng dẫn mạnh thường chết ở khâu framing và khâu
-  trả lời reviewer, không phải ở khâu kết quả.
+  đầu tay không có người hướng dẫn mạnh thường chết ở khâu framing và khâu trả
+  lời reviewer, không phải ở khâu kết quả.
 - **Đo throughput API thật trên 5 tài liệu.** B2 dùng self-consistency k=5;
-  nhân với 10 baseline, nhiều model, nhiều seed, cộng tầng XBRL hàng nghìn
-  tài liệu thì đây là hàng chục nghìn lời gọi trên free tier OpenRouter. Rủi
-  ro này không làm chậm lịch — nó có thể **chặn hẳn việc tạo ra con số**.
-- **Chốt người gán nhãn thứ hai.** Nếu dùng phương án dự phòng (`ADDENDUM`
-  mục 5: tự gán lại sau ít nhất hai tuần) thì lượt gán lại phải bắt đầu SỚM,
-  vì hai tuần là thời gian **chờ** nằm trên đường găng.
-
-
-## 17. LƯU Ý — việc người dùng đã quyết nhưng CHƯA thi công
-
-Mục này giữ những việc đã có quyết định nhưng cố ý hoãn lại. Đọc mục này
-trước khi bắt đầu bất kỳ việc gì ở mục 16, kẻo làm theo con số cũ.
-
-### 17.1 Đổi bộ chỉ tiêu từ kịch bản D sang **kịch bản E** — ĐÃ LÀM 25/08/2026
-
-> **Thi công xong ở `f1c2738`.** Sáu bước dưới đây đã làm hết trừ bước 4 —
-> đo lại trần người — vì chỉ người sẽ gán nhãn mới đo được. Giữ nguyên phần
-> mô tả bên dưới làm hồ sơ lý do; hiện trạng và số đo ở ngay dưới đây.
-
-**Đo được sau khi thi công:**
-
-| | Kịch bản D | Kịch bản E |
-|---|---:|---:|
-| Chỉ tiêu (TT200 / TT99) | 20 / 21 | 26 / 27 |
-| Đẳng thức | 7 | 9 |
-| `rank(A)` | 7 | 9 |
-| `dim null(A)` (TT200 / TT99) | 13 / 14 | 17 / 18 |
-| Định vị được lỗi một-trường (TT200) | 5 / 20 | 7 / 26 |
-| Chỉ tiêu có cột toàn 0 | 0 | 0 |
-
-Hai chỉ tiêu mới định vị được: `lctt_thuan` và **`tien_va_tuong_duong_tien`**.
-Cái thứ hai là điểm đáng giá riêng của E — nó ĐÃ nằm trong bộ từ trước
-nhưng lẫn trong lớp năm thành phần của mã 100, và đẳng thức liên kết chéo
-B03 gắn cho nó một đẳng thức THỨ HAI để tách ra. Không nhóm mở rộng nào
-khác gỡ được một chỉ tiêu CŨ ra khỏi lớp lẫn.
-
-**Phần không đẹp, phải báo cáo vì nó là kết quả của H0:** không gian null
-tăng 13 → 17 chiều, còn TỶ LỆ định vị được gần như đứng yên (25% → 27%).
-Thêm 6 chỉ tiêu mà chỉ mua 2 đẳng thức thì 4 chiều chênh lệch rơi thẳng vào
-không gian vô hình. E tốt hơn D nhưng không sửa được kết luận nền của H0.
-
-**~~CÒN LẠI, và nó CHẶN tài liệu gán nhãn đầu tiên~~ — ĐÃ GIẢI QUYẾT
-25/08/2026, nhưng KHÔNG theo thứ tự đã cam kết.** Việc phải làm là bấm giờ
-thử với 27 chỉ tiêu rải qua ba biểu mẫu, trước tài liệu đầu tiên. Thực tế
-chạy ngược: tài liệu đầu tiên được gán nhãn trước, rồi chính nó cung cấp số
-liệu. Kết quả ngược với dự đoán — giao thức 15 phút không vỡ mà **chùng** —
-và con số 15 phút đã bị bỏ. Đầy đủ ở mục 19.3; tu chính đã ghi vào
-`PREREGISTRATION.md` và `ANNOTATION-GUIDELINE.md`. Thiệt hại thực bằng 0 vì
-số tài liệu đã gán nhãn dưới giao thức trần người vẫn là 0, nhưng thứ tự thì
-đã khác cam kết và điều đó được ghi lại chứ không bỏ qua.
-
-**Một khoảng trống mới sinh ra, đã chốt bằng test:** bộ số đối chiếu
-`VNM_Q1_2026` trong `tests/test_constraints.py` do người đọc tay và chỉ phủ
-B01 với B02. Bản PDF trong `data/samples/` là ảnh scan nên không rút số B03
-bằng máy được. Hai test dùng bộ số này nay chạy trên phần phủ được, và
-`test_bo_so_that_chua_phu_duoc_B03_va_test_phai_noi_ra` chốt tường minh sáu
-chỉ tiêu còn thiếu — bổ sung số vào bộ đối chiếu thì test đó đỏ và nhắc gỡ
-phần cắt bớt. Việc bổ sung cần người đọc tay từ báo cáo.
+  nhân với 10 baseline, nhiều model, nhiều seed, cộng tầng XBRL thì đây là hàng
+  chục nghìn lời gọi trên free tier OpenRouter. Rủi ro này không làm chậm lịch
+  — nó có thể **chặn hẳn việc tạo ra con số**.
+- **Bắt đầu chuỗi hai tuần cho lượt gán nhãn lại càng sớm càng tốt** (mục 19.3
+  bước 4): đó là thời gian **chờ** nằm trên đường găng.
 
 ---
 
-**Hồ sơ lý do** — vì sao E chứ không phải phân rã tiếp: nối chéo gắn đẳng
-thức thứ hai vào chỉ tiêu ĐÃ CÓ, còn phân rã mở thêm một tầng lá mới mà mỗi
-lá là chi phí gán nhãn nhân với cả tập gold. Số đo tỷ lệ đánh đổi ở Phụ lục
-A.1; tu chính đầy đủ kèm ngày ở `PREREGISTRATION.md` mục Sửa đổi 25/08/2026.
+## 17. Việc đã quyết nhưng CHƯA thi công
 
-Việc này cố ý làm khi `data/gold/` còn **trống hoàn toàn**, vì đổi bộ chỉ
-tiêu sau đó sẽ buộc gán nhãn lại cả tập. Cửa sổ ấy nay đã đóng: tập gold có
-một tài liệu, và mười tài liệu nữa đang chờ. **Đừng đổi bộ chỉ tiêu nữa.**
+Đọc mục này trước khi bắt đầu bất kỳ việc gì ở mục 16, kẻo làm theo con số cũ.
 
-### 17.2 Quy mô tập gold lên **khoảng 100 tài liệu** — CHƯA CẬP NHẬT TÀI LIỆU
+### 17.1 Bộ chỉ tiêu đã chuyển sang kịch bản E — ĐÃ LÀM 25/08/2026 (`f1c2738`)
 
-Người dùng chốt ngày 24/08/2026: tìm khoảng **100** tài liệu thay vì 60.
-Việc sửa tài liệu cho khớp con số này được **cố ý hoãn**, và đây là danh sách
-chỗ phải sửa khi làm:
+Số đo D so với E ở `CHANGELOG.md` 25/08/2026. Ba thứ còn ràng buộc:
 
-- `ANNOTATION-GUIDELINE.md` mục 7 — đang ghi "60 tài liệu, chia 30 TT200 +
-  30 TT99". Giữ tỷ lệ 50/50 vì trục transfer của ablation 8 dựa vào đó.
-- `PREREGISTRATION.md` — thêm mục Sửa đổi. Bắt buộc: quy mô mẫu là tham số
-  của mọi phép tính power.
-- `ADDENDUM` mục 4 — mọi con số tính power đều lấy 60 làm số cụm độc lập
-  ("1500 quan sát nhưng chỉ 60 cụm"). Với 100 tài liệu thì cả bảng đó đổi.
+- **`tien_va_tuong_duong_tien` là điểm đáng giá riêng của E.** Nó ĐÃ nằm trong
+  bộ từ trước nhưng lẫn trong lớp năm thành phần của mã 100; đẳng thức liên kết
+  chéo B03 gắn cho nó một đẳng thức **thứ hai** để tách ra. Không nhóm mở rộng
+  nào khác gỡ được một chỉ tiêu CŨ ra khỏi lớp lẫn.
+- **Phần không đẹp, phải báo cáo vì nó là kết quả của H0:** không gian null
+  tăng 13 → 17 chiều còn tỷ lệ định vị được gần như đứng yên (25% → 27%). **E
+  tốt hơn D nhưng không sửa được kết luận nền của H0.**
+- **ĐỪNG ĐỔI BỘ CHỈ TIÊU NỮA.** Việc này cố ý làm khi `data/gold/` còn trống
+  hoàn toàn, vì đổi sau đó buộc gán nhãn lại cả tập. Cửa sổ ấy đã đóng.
+
+**Một khoảng trống mới sinh ra, đã chốt bằng test:** bộ số đối chiếu
+`VNM_Q1_2026` trong `tests/test_constraints.py` do người đọc tay và chỉ phủ B01
+với B02 — bản PDF trong `data/samples/` là ảnh scan nên không rút số B03 bằng
+máy được. `test_bo_so_that_chua_phu_duoc_B03_va_test_phai_noi_ra` chốt tường
+minh sáu chỉ tiêu còn thiếu; bổ sung số thì test đó đỏ và nhắc gỡ phần cắt bớt.
+
+**Thứ tự cam kết đã bị vượt, ghi lại chứ không bỏ qua:** việc bấm giờ thử đáng
+lẽ phải làm **trước** tài liệu đầu tiên; thực tế tài liệu đầu tiên được gán
+nhãn trước rồi chính nó cung cấp số liệu. Thiệt hại thực bằng 0 vì số tài liệu
+đã gán nhãn dưới giao thức trần người vẫn là 0.
+
+### 17.2 Quy mô tập gold lên khoảng 100 — CHƯA CẬP NHẬT TÀI LIỆU
+
+Người dùng chốt 24/08/2026: khoảng **100** thay vì 60. Việc sửa tài liệu cho
+khớp được **cố ý hoãn**; đây là danh sách chỗ phải sửa khi làm:
+
+- `ANNOTATION-GUIDELINE.md` mục 7 — đang ghi "60 tài liệu, chia 30 TT200 + 30
+  TT99". **Giữ tỷ lệ 50/50** vì trục transfer của ablation 8 dựa vào đó.
+- `PREREGISTRATION.md` — thêm mục Sửa đổi. Bắt buộc: quy mô mẫu là tham số của
+  mọi phép tính power.
+- `ADDENDUM` mục 4 — mọi con số tính power lấy 60 làm số cụm độc lập. Với 100
+  thì cả bảng đó đổi.
 
 **Điều phải nói kèm, kẻo con số 100 bị hiểu sai:** thêm tài liệu chủ yếu chỉ
-giúp **H1**. H2 và H3 đo trên **số lỗi**, không phải số trường — ở 60 tài
-liệu số lỗi rơi vào 75–225, lên 100 cũng chỉ thành 125–375. Đó đúng là lý do
-`ADDENDUM` mục 4 kết luận tầng XBRL là **bắt buộc** chứ không phải "nếu có
-thời gian". Muốn thêm số liệu cho H2/H3 thì **mở rộng tầng XBRL rẻ hơn hẳn**
-so với gán nhãn thêm tài liệu tay.
+giúp **H1**. H2 và H3 đo trên **số lỗi**, không phải số trường — ở 60 tài liệu
+số lỗi rơi vào 75–225, lên 100 cũng chỉ thành 125–375. Đó đúng là lý do
+`ADDENDUM` mục 4 kết luận tầng XBRL là **bắt buộc**. Muốn thêm số liệu cho
+H2/H3 thì **mở rộng tầng XBRL rẻ hơn hẳn** so với gán nhãn thêm tài liệu tay.
 
 ---
 
 ## 18. Nơi nộp — đã chốt 24/08/2026
 
-**Đích: ICDAR 2027 main track, hạn nộp 28/02/2027.** Kuala Lumpur, 18–22/08/2027.
+**Đích: ICDAR 2027 main track, hạn 28/02/2027.** Kuala Lumpur, 18–22/08/2027.
 Springer LNCS, tối đa 17 trang kể cả hình và tài liệu tham khảo, phản biện ẩn
-danh hai chiều có rebuttal, cho phép đăng arXiv trước.
+danh hai chiều có rebuttal, cho phép đăng arXiv trước. Lý do đổi khỏi
+ICDAR-IJDAR journal track ở `CHANGELOG.md` 24/08/2026.
 
-Proposal mục 13 đề xuất **ICDAR-IJDAR journal track** làm đích tốt nhất. Đã
-đổi, vì hai lý do tra được:
+**Hai ràng buộc còn hiệu lực:**
 
-**Một — hạn journal track là 15/11/2026, không đủ thời gian.** Còn khoảng 12
-tuần kể từ khi chốt, trong khi phần việc còn lại ước lượng 13–16 tuần: gán
-nhãn 60 tài liệu (45–60 giờ công người), chạy 10 baseline trên 3 tầng (2–3
-tuần wall-clock, phần lớn là chờ API), viết bài 20 trang (3–4 tuần). Ép vào
-12 tuần nghĩa là nộp bản chưa chín vào đúng venue khó nhất. Hạn ICDAR main
-cho **27 tuần**, và quan trọng hơn: nó chừa chỗ để lùi phạm vi nếu MỐC 3 ra
-kết quả xấu mà vẫn kịp cùng hạn đó.
+- **KHÔNG nộp RIVF hay SoICT** với nội dung trùng. Journal track loại bản mở
+  rộng từ hội nghị (*"Journal versions of previously published conference papers
+  ... will not be considered"*), nên chiến lược "nộp song song" của proposal vừa
+  đóng cửa journal track vừa tạo vấn đề trùng lặp với ICDAR main.
+- **Đường lên Q1 không mất.** Bài đã đăng hội nghị vẫn nộp IJDAR được qua quy
+  trình thường. Lộ trình: ICDAR 2027 main → mở rộng thành bài IJDAR sau đó.
+  IJDAR có IF 2,5, SJR 0,83, **Q1** ở Computer Vision & Pattern Recognition.
 
-**Hai — journal track loại bản mở rộng từ hội nghị, và điều đó phá chiến
-lược "nộp song song" của proposal.** Nguyên văn CFP: *"Journal versions of
-previously published conference papers or survey papers will not be
-considered for this special issue."* Nên **KHÔNG nộp RIVF hay SoICT** với
-nội dung trùng — proposal mục 13 khuyên nộp song song để lấy phản biện sớm,
-và lời khuyên đó ở đây gây hại nhiều hơn lợi: nó vừa đóng cửa journal track,
-vừa tạo vấn đề trùng lặp với ICDAR main. (Hạn tham khảo nếu sau này cần: RIVF
-2026 hết 31/08/2026, SoICT 2026 hết 16/09/2026.)
+### Related work — đối thủ đã kiểm, tra 24/08/2026
 
-**Đường lên Q1 không mất.** Chính CFP đó nói bài đã đăng hội nghị vẫn nộp
-IJDAR được qua **quy trình thường**, chỉ là không vào được special issue. Lộ
-trình: ICDAR 2027 main → mở rộng thành bài IJDAR thường sau đó. IJDAR có IF
-2,5, SJR 0,83, **Q1** ở Computer Vision & Pattern Recognition (Q2 ở CS
-Applications và Software). Cái mất là slot oral tự động và thời gian.
+Kết quả đầy đủ ở `MD file/FINAL-proposal-reread-dont-repair.md` **mục 14b**.
 
-### Đối thủ mới cần thêm vào related work
+**Đóng góp lõi vẫn chưa ai làm:** đọc lại nguồn thay vì sửa trên tập số cố
+định; H0 identifiability; ViFinKIE.
 
-**Cập nhật 24/08/2026 — đã tra lại theo yêu cầu người dùng.** Kết quả đầy đủ
-ghi ở `MD file/FINAL-proposal-reread-dont-repair.md` **mục 14b** (file đó bị
-gitignore nên chỉ có trên máy người dùng). Tóm tắt cho người đọc bàn giao:
-
-**Đóng góp lõi vẫn chưa ai làm.** Đọc lại nguồn thay vì sửa trên tập số cố
-định — chưa có. H0 identifiability — chưa có. ViFinKIE — chưa có.
-
-**Một đối thủ mới, đáng kể: arXiv 2608.14639** (đăng 08/2026), *Valid Per-Field
-Selective Risk Control for Document Extraction*, chạy trên Claude-Sonnet-5 với
-800 hoá đơn CORD. Nó **không** dùng ràng buộc miền, **không** sửa (chỉ từ chối),
-**không** sinh ứng viên từ ảnh, **không** phân tích identifiability — nên không
-chiếm chỗ đóng góp lõi. Nhưng nó **thu hẹp kết quả dự kiến số 4**: phần đường
-cong risk–coverage nay phải phát biểu là "ràng buộc miền làm bộ điểm thứ ba",
-không được phát biểu là "chúng tôi làm selective prediction".
-
-Ngược lại nó **làm mạnh thêm H1**: nó ghi nhận các chế độ hỏng của cách tiếp
-cận dựa trên confidence, gồm cả phân cụm theo tài liệu — tức có công trình độc
-lập hậu thuẫn cho việc đi tìm một tín hiệu tốt hơn confidence.
-
-**Hai cái đã kiểm và KHÔNG chiếm chỗ:** *Blueprint* (VLDB) chỉ chấm điểm các
-phương án trích xuất đã có, không đọc lại ảnh; *FinStat2SQL* (arXiv 2506.23273)
-tuy là tài chính Việt Nam nhưng lấy Excel từ FiinPro, không OCR, không PDF,
-không phát hành benchmark.
+| Công trình | Có chiếm chỗ không | Hệ quả |
+|---|---|---|
+| **arXiv 2608.14639** — *Valid Per-Field Selective Risk Control* (08/2026) | Không: không ràng buộc miền, không sửa, không sinh ứng viên từ ảnh, không identifiability | **Thu hẹp kết quả dự kiến số 4** — phần risk–coverage phải phát biểu là "ràng buộc miền làm bộ điểm thứ ba", KHÔNG được phát biểu là "chúng tôi làm selective prediction". Ngược lại nó **làm mạnh H1**: có công trình độc lập ghi nhận chế độ hỏng của cách tiếp cận dựa trên confidence |
+| **FinReporting** — arXiv 2604.05966 | Không: không định vị bằng ma trận ràng buộc, không đọc lại ảnh nguồn | Trích dẫn phải thêm |
+| **Blueprint** (VLDB) | Không: chỉ chấm điểm các phương án trích xuất đã có | — |
+| **FinStat2SQL** — arXiv 2506.23273 | Không: lấy Excel từ FiinPro, không OCR, không PDF, không benchmark | Là công trình tài chính Việt Nam gần nhất |
 
 **Một câu đáng trích dẫn nguyên văn**, từ ban tổ chức ICDAR 2026 HIPE-OCRepair:
 *"Trong thực hành hậu-xử-lý OCR chuẩn, hệ thống chỉ làm việc trên văn bản và
@@ -1299,422 +1017,221 @@ không có quyền truy cập ảnh tài liệu gốc."* Dùng ở Introduction 
 "không ai đọc lại nguồn" có người ngoài chứng thực.
 
 **Nhịp lấp của mảng này là lý do thật để đi nhanh** — đối thủ gần nhất đăng
-đúng tháng tra cứu.
-
-#### Đối thủ ghi nhận trước đó
-
-**FinReporting** — arXiv 2604.05966 (05/2026). Agentic workflow cho báo cáo
-tài chính đa quốc gia, ontology hợp nhất ba báo cáo, LLM làm *constrained
-verifier* dưới luật quyết định tường minh, có khâu anomaly logging; đánh giá
-trên hồ sơ Mỹ, Nhật, Trung.
-
-**Không chiếm chỗ:** nó không định vị lỗi bằng ma trận ràng buộc, không phân
-tích identifiability, và **không đọc lại ảnh nguồn để sinh ứng viên**. Là
-trích dẫn phải thêm, không phải lý do đổi hướng. Nhưng nó cho thấy mảng này
-đang lấp dần, nên đừng kéo dài quá hạn 28/02/2027.
-
-Luật dừng của proposal vẫn giữ: kiểm lại arXiv **một lần duy nhất** ngay
-trước khi nộp, không tra liên tục.
+đúng tháng tra cứu. Luật dừng của proposal vẫn giữ: kiểm lại arXiv **một lần
+duy nhất** ngay trước khi nộp, không tra liên tục.
 
 ---
 
-## 19. Tầng gold — công cụ, đồng hồ, trình tự, nguồn tài liệu, độ phân giải
+## 19. Tầng gold — công cụ, trình tự, nguồn tài liệu, độ phân giải
 
-Viết 25/08/2026. Đây là mục mô tả hiện trạng của tầng gold; trước mục này,
-mọi tài liệu trong repo đều giả định `data/gold/` còn trống.
+Hiện trạng của tầng gold. **Lý do và số đo của từng thay đổi ở `CHANGELOG.md`
+(26/08/2026)**; mục này giữ cách dùng, ràng buộc, và việc còn lại.
 
 ### 19.1 Công cụ gán nhãn `src/gan_nhan/`
-
-Gán nhãn tay 100 tài liệu × 27 chỉ tiêu bằng cách gõ JSON thẳng là việc vừa
-chậm vừa không kiểm chứng được, nên có một công cụ web chạy tại chỗ.
 
 ```
 python chay_gan_nhan.py          # rồi mở http://127.0.0.1:8100
 ```
 
-**Dùng launcher, ĐỪNG gọi thẳng `uvicorn`.** Gọi thẳng cần đặt biến môi
-trường `GAN_NHAN_PDF_DIR`, mà cú pháp `VAR=x lệnh` chạy trên bash và **lỗi cú
-pháp trên PowerShell** — shell chính của máy này. Đã mất thời gian vì đúng
-việc đó một lần. Launcher còn đặt biến TRƯỚC khi uvicorn nạp app (nên nó
-truyền chuỗi `"gan_nhan.app:app"` chứ không truyền đối tượng app), và kiểm
-thư mục PDF tồn tại và không rỗng trước khi mở cổng.
+**Dùng launcher, ĐỪNG gọi thẳng `uvicorn`.** Gọi thẳng cần đặt biến môi trường
+`GAN_NHAN_PDF_DIR`, mà cú pháp `VAR=x lệnh` chạy trên bash và **lỗi cú pháp
+trên PowerShell** — shell chính của máy này. Đã mất thời gian vì đúng việc đó
+một lần. Launcher còn đặt biến TRƯỚC khi uvicorn nạp app (nên truyền chuỗi
+`"gan_nhan.app:app"`), và kiểm thư mục PDF tồn tại và không rỗng trước khi mở
+cổng.
 
 | File | Việc |
 |---|---|
-| `src/gan_nhan/app.py` | FastAPI: phục vụ ảnh trang, danh sách chỉ tiêu, kiểm đẳng thức, ghi và đọc lại file gold |
+| `src/gan_nhan/app.py` | FastAPI: phục vụ ảnh trang, danh sách chỉ tiêu, kiểm đẳng thức, ghi/đọc file gold, lớp `DongHo` |
 | `src/gan_nhan/giao_dien.html` | Hai khung: PDF bên trái (PageUp/PageDown, +/− phóng to), bảng chỉ tiêu bên phải |
 | `src/gan_nhan/trang.py` | Kết xuất trang PDF bằng **pypdfium2** — KHÔNG dùng pdf2image, máy này không có `pdftoppm` |
 | `src/gan_nhan/so_viet.py` | Đọc số kiểu Việt: `1.234.567`, `(1.234)` là số âm, `-`/`–`/`—` là rỗng |
 | `src/gan_nhan/kiem.py` | Chạy 9 đẳng thức trên chính số vừa gõ, cộng danh mục kiểm của guideline |
 
-Đồng hồ nằm ở lớp `DongHo` trong `app.py` và **do người tự bấm** — xem mục
-19.5, kể cả khi chỉ định đụng vào một chỗ khác của công cụ.
-
 **Luật 1 (người gán nhãn mù với đầu ra pipeline) được chốt bằng test, không
 bằng lời hứa.** `tests/test_gan_nhan_mu_voi_pipeline.py` phân tích AST của cả
 gói và bắt đỏ nếu bất kỳ module nào import `router`, `extract_vlm`,
-`extract_baseline`, `ocr_baseline`, `layout_detection`, `repair`, hay `api`.
-Có một test riêng cho `giao_dien.html`. Test loại trừ docstring khỏi phần mã
-thực thi, nếu không thì chính những comment giải thích lệnh cấm sẽ tự làm đỏ.
+`extract_baseline`, `ocr_baseline`, `layout_detection`, `repair`, hay `api`;
+có test riêng cho `giao_dien.html`. Test loại trừ docstring khỏi phần mã thực
+thi, nếu không thì chính comment giải thích lệnh cấm sẽ tự làm đỏ.
 
 **Ghi đè được và có dấu vết.** Nút "Mở lại bản đã lưu" nạp lại toàn bộ ô từ
-file gold đã có (giá trị chia ngược về đơn vị trên báo cáo để khớp cái mắt
-đang nhìn), và mỗi lần ghi tăng `so_lan_ghi`. Phát hiện đọc nhầm một chữ số
-thì phải sửa được mà không phải gõ lại 27 ô; nhưng một bản đã sửa ba lần và
-một bản viết một lần rồi thôi là hai thứ khác nhau khi phân tích chất lượng
-gán nhãn, nên lần ghi phải đếm được. Đồng hồ **cố ý chạy lại từ đầu** khi mở
-lại chứ không cộng dồn: `thoi_gian_giay` đo tốc độ trên một tài liệu MỚI, trộn
-một lần sửa một ô vào sẽ làm hỏng chính phép đo trần người.
+file gold đã có, và mỗi lần ghi tăng `so_lan_ghi`. Đồng hồ **cố ý chạy lại từ
+đầu** khi mở lại chứ không cộng dồn: `thoi_gian_giay` đo tốc độ trên một tài
+liệu MỚI, trộn một lần sửa một ô vào sẽ làm hỏng chính phép đo trần người.
+
+**Ba quyết định thiết kế của đồng hồ, mỗi cái một lý do còn ràng buộc:**
+
+1. **Máy chủ giữ đồng hồ, trình duyệt chỉ vẽ lại.** Làm ngược lại thì một lần
+   tải lại trang xoá sạch phép đo — mà tải lại trang là chuyện thường khi đang
+   lật một PDF 40 trang.
+2. **Từ chối ghi khi đồng hồ chưa từng chạy**, thay vì cảnh báo rồi vẫn ghi số
+   0. Một tài liệu quên bấm giờ chỉ lộ ra lúc gom số, và lúc đó không bấm lại
+   cho quá khứ được nữa. Lối thoát là ô tick "không đo giờ tài liệu này".
+3. **Mở lại bản đã lưu KHÔNG tự chạy đồng hồ.**
+
+> **Một lỗi test bắt được, sẽ tái diễn ở chỗ khác.** Bản đầu của `DongHo` suy
+> trạng thái từ `tong_giay > 0`. Trên Windows `time.monotonic()` nhảy theo bước
+> ~15 ms, nên bấm chạy rồi dừng ngay cho ra đúng `0.0`, và đồng hồ đã chạy
+> trông y hệt đồng hồ chưa ai đụng vào. Đã sửa bằng khoá `da_bat_dau` riêng.
+> **Bài học: đừng suy trạng thái từ một con số bằng 0, ở bất kỳ tầng nào.**
 
 #### Trình tự một tài liệu
 
 Guideline giữ các QUY TẮC; đây là thao tác, và nó chưa nằm ở đâu khác.
 
 1. Chọn file, gõ `doc_id` — **đúng bằng tên file bỏ đuôi** (`HPG_2026Q2_TT99`).
-   Tên file trong `data/bctc/` cố ý đặt khớp `doc_id` để khỏi phải nghĩ.
 2. Bấm **▶ Bắt đầu bấm giờ**. Nghỉ giữa chừng thì ⏸ Tạm dừng.
-3. Xác định chuẩn **bằng mắt** theo guideline mục 3.7. Đừng suy từ năm báo
-   cáo — xem cảnh báo về MSN ở cuối mục 19.6.
+3. Xác định chuẩn **bằng mắt** theo guideline mục 3.7. Đừng suy từ năm báo cáo.
 4. Chép `unit_declared` **nguyên văn**. Guideline mục 3.1 cấm suy hệ số từ độ
    lớn con số.
 5. Điền, bấm **Kiểm đẳng thức**. Lệch thì **đọc lại báo cáo**, đừng sửa cho
    cân; công cụ cố ý không bao giờ gợi ý giá trị.
 6. Tick danh mục kiểm, bấm Lưu.
 
-**Thứ tự nên làm trong 10 tài liệu đầu.** Bắt đầu bằng `BMP` hoặc `DGC` — bản
-in sạch, đơn vị VND, có lãi. Để `HNG` (lỗ, `Ngàn VND`, các dòng đổi tên thành
-"Lỗ") lại sau khi đã quen tay. `SBT` và `HNG` đang vướng Câu 11 nên để cuối.
-
 > **Không có đường tắt, và đó là chuyện tốt.** Cả 10 tài liệu đều là ảnh quét
-> không lớp text (mục 19.6a), nên không `pdftotext` được, không copy-paste
-> được. Ai định "tách nội dung ra khỏi PDF" cho nhanh thì hoặc phải chạy OCR —
-> **vi phạm Luật 1** — hoặc phải đọc bằng mắt. Việc không có đường tắt khiến
-> vi phạm khó xảy ra do vô ý, và vi phạm Luật 1 là loại **không để lại dấu
-> vết**: file gold nhiễm trông y hệt file sạch.
+> không lớp text, nên không `pdftotext` được, không copy-paste được. Ai định
+> "tách nội dung ra khỏi PDF" cho nhanh thì hoặc phải chạy OCR — **vi phạm Luật
+> 1** — hoặc phải đọc bằng mắt. Vi phạm Luật 1 là loại **không để lại dấu vết**:
+> file gold nhiễm trông y hệt file sạch.
 
-### 19.2 Tài liệu gold đầu tiên
+### 19.2 `VNM_2026Q1_TT99` — tài liệu gold đầu tiên, và ca dị thường
 
-`data/gold/VNM_2026Q1_TT99.json` — Vinamilk, quý 1 năm 2026, chuẩn TT99, 27
-chỉ tiêu, đơn vị VND (`unit_multiplier: 1`), cả **9 đẳng thức cân**.
+27 chỉ tiêu, đơn vị VND, cả 9 đẳng thức cân. **Nguồn gốc chưa xác định được, và
+đã thôi truy:** file thiếu khoá `so_lan_ghi` và có `thoi_gian_giay` bằng 0,
+trong khi công cụ luôn ghi cả hai. Người dùng chọn **xử lý nguyên nhân thay vì
+chú thích triệu chứng** — công cụ nay có nút bấm giờ tường minh và từ chối ghi
+khi đồng hồ chưa chạy, nên ca này không lặp lại được.
 
-**Nguồn gốc chưa xác định được, và đã thôi truy.** File thiếu khoá
-`so_lan_ghi` và có `thoi_gian_giay` bằng 0, trong khi công cụ luôn ghi cả
-hai — dấu vết nói nó được sửa tay trong trình soạn thảo, hoặc được ghi bởi
-một bản máy chủ cũ hơn. Nội dung không sai: 9 đẳng thức cân, và chính người
-dùng đã bắt được lỗi mã 52 trên nó. Người dùng chọn **xử lý nguyên nhân thay
-vì chú thích triệu chứng**: thay vì ghi một dòng vào `notes` của một file,
-công cụ nay có nút bấm giờ tường minh và từ chối ghi khi đồng hồ chưa chạy
-(mục 19.5), nên ca này không lặp lại được nữa.
+File giữ nguyên, không sửa; nó tự đọc ra `trang_thai_dong_ho = "khong_do"`.
+**Hệ quả:** tài liệu này KHÔNG đóng góp số nào cho nhịp gán nhãn. Nó cũng
+**thiếu PDF** trong `data/bctc/` — xem mục 20.3 và 20.6.
 
-File giữ nguyên, không sửa. Với khoá `trang_thai_dong_ho` mới, nó tự đọc ra
-`"khong_do"` theo giá trị mặc định của schema — tức tự khai đúng điều duy
-nhất chắc chắn về nó, rằng không có số đo thời gian nào. **Hệ quả cho phép
-đo giữ nguyên:** tài liệu này KHÔNG đóng góp số nào cho nhịp gán nhãn; trung
-vị ở mục 19.3 phải lấy từ 10 tài liệu có đồng hồ chạy thật.
+**Một lỗi bắt được trên chính nó, đáng nhớ vì nó là ca H1 sẽ gặp:** mã 52 bị
+đọc `1` thành `0` ở hàng chục nghìn, lệch đúng 10.000 đồng trên một con số 48
+tỷ. Đẳng thức báo ĐẠT vì sai số tương đối 4·10⁻⁹ nằm dưới
+`IDENTITY_TOLERANCE_RATIO` (10⁻⁷); người dùng đọc lại báo cáo mới ra. **Không
+chỉnh ngưỡng dung sai** — dữ liệu mới có một công ty. Và cặp `1↔0` KHÔNG có
+trong ma trận nhầm chữ số đo từ EasyOCR (cặp trội của máy là `9→0`): nếu mô
+hình lỗi của người khác mô hình lỗi của máy thì đó là quan sát dùng được cho
+bài, nhưng **N = 1 chưa kết luận gì**.
 
-### 19.3 Hai thứ rút ra, cả hai ngược với dự đoán đã ghi
+### 19.3 Việc còn lại của tầng gold, theo thứ tự chặn nhau
 
-**(a) Giao thức trần người 15 phút không vỡ — nó chùng.** `ADDENDUM` mục 6,
-`PREREGISTRATION.md` và mục 17.1 của chính file này đều dự đoán rằng 27 chỉ
-tiêu rải qua ba biểu mẫu sẽ làm **vỡ** đồng hồ 15 phút. Số thật đi ngược:
-công đoạn điền hết khoảng **10 phút**. Đó không phải tin tốt. Con số 15 phút
-tồn tại để tạo **áp lực thời gian**, tức để bản dùng đo trần khác với bản gold
-đã phân xử kỹ. Nếu nhịp làm kỹ đã là 10 phút thì 15 phút là dư: hai bản thành
-cùng một người làm cùng một việc, trần người ra gần 100%, và con số đó không
-diễn giải nổi kết quả hệ thống — mất đúng công dụng mà câu đầu tiên của
-`ADDENDUM` mục 6 nêu.
+1. **Chạy đồng hồ thật trên 10 tài liệu — CÒN THIẾU 2.** `data/gold/` có 11
+   file nhưng chỉ **8** mang `trang_thai_dong_ho = da_do`: 361, 416, 433, 438,
+   446, 461, 506, 579 giây. Ba file không tính: `VNM_2026Q1_TT99` (thiếu hẳn
+   khoá), `DGC_2025Q2_TT200` và `TTF_2026Q1_TT99` (`khong_do`). Hai tài liệu bù
+   phải nằm **ngoài** 11 file đã có — gán nhãn lại một file cũ thì đo nhịp của
+   lần thứ hai.
 
-Giao thức mới: đồng hồ đặt ở **0,6 × trung vị `thoi_gian_giay` của 10 tài liệu
-gold đầu tiên**, làm tròn tới phút, **sàn 5 phút**. Chốt công thức chứ không
-chốt một con số, vì ước lượng 10 phút là cảm giác chứ không phải đồng hồ. Thứ
-duy nhất thật sự cần đăng ký trước là **hệ số 0,6** — nó phải được chọn trước
-khi nhìn thấy kết quả trần người. **Người dùng đã chốt giữ 0,6 ngày
-26/08/2026**, lúc chưa tài liệu nào có số đo thời gian; Câu 9 đóng.
+   > **Kết quả đã cố định về mặt số học, nhưng vẫn phải đo đủ 10 rồi mới
+   > tuyên.** Trung vị của 10 số chỉ chạy được trong dải 435,5–453,5 giây, nhân
+   > 0,6 ra 4,36–4,54 phút — toàn dải dưới sàn 5 phút, nên đồng hồ trần người
+   > **sẽ là 5 phút**. Tuyên sớm vì "đằng nào cũng ra 5 phút" thì con số vẫn
+   > đúng nhưng cam kết thì hỏng, và lần sau không còn cách nào phân biệt một
+   > suy luận số học với một lần tự cho phép mình bỏ bước.
 
-**(b) Bước kiểm đẳng thức bắt được lỗi mà mắt người vừa bỏ qua — ngay ở tài
-liệu đầu tiên.** Thuế thu nhập hoãn lại (mã 52) bị đọc `1` thành `0` ở hàng
-chục nghìn, lệch đúng 10.000 đồng trên một con số 48 tỷ. Đẳng thức
-`LNST + thuế hiện hành + thuế hoãn lại = LNTT` báo ĐẠT vì sai số tương đối
-4·10⁻⁹ nằm dưới `IDENTITY_TOLERANCE_RATIO` (10⁻⁷); người dùng đọc lại báo cáo
-mới ra. **Không chỉnh ngưỡng dung sai** — dữ liệu mới có một công ty, và
-chỉnh hằng số biên theo một quan sát là cách chắc chắn nhất để chốt nhầm.
+2. **Chọn mã cho mốc 60** rồi thêm vào `data/nguon_gold.json`. Lộ trình
+   10 → 60 → 100 chốt 26/08. Nay là việc chọn, không còn là việc dò nguồn.
+3. **Chốt 20 hay 33 tài liệu gán nhãn đôi — CÒN MỞ.** `ADDENDUM` mục 5 viết
+   "một phần ba tập gold", chốt khi tập là 60 nên ra 20; tập đích nay khoảng
+   100 nên cách diễn đạt đó tự thành 33. Câu hỏi thật: một phần ba của MỐC NÀO.
+   Từ 28/08/2026 số ấy phải lấy trên tài liệu **chưa chạy pipeline** (Câu 12),
+   mà hiện chưa có tài liệu nào như vậy — nên bước này chặn **sau** bước gán
+   nhãn thêm tài liệu.
+4. **Lượt gán nhãn lại** — người chủ trì tự gán, cách lần đầu **ít nhất hai
+   tuần**, không xem bản cũ. Mười tài liệu đầu gán nhãn 25–26/08/2026 nên sớm
+   nhất là **09/09/2026**, nhưng chúng đã bị loại theo Câu 12, nên mốc thật là
+   hai tuần sau khi có tài liệu mới. Hai tuần ấy là thời gian **chờ** nằm trên
+   đường găng.
+5. **Đo trần người**, 10 tài liệu, sau khi có số phút ở bước 1.
 
-Điều đáng ghi lại: **1↔0 KHÔNG có trong ma trận nhầm chữ số đo được từ
-EasyOCR** — cặp phổ biến nhất của máy là 9→0 (23 lần) rồi 5→3 (13 lần). Nếu
-mô hình lỗi của người thật sự khác mô hình lỗi của máy thì đó là một quan sát
-dùng được trong bài, và nó cũng chạm tới thiết kế bộ tiêm lỗi. Nhưng **N = 1
-chưa kết luận gì**; việc đúng là đếm dần từng lỗi người bắt gặp khi gán nhãn,
-chứ không viết kết luận bây giờ.
+### 19.4 Nguồn tài liệu và 10 tài liệu đầu
 
-### 19.4 Việc còn lại của tầng gold, theo thứ tự chặn nhau
-
-1. ~~**Nguồn của 99 tài liệu còn lại — CHẶN mọi thứ khác**~~ — **ĐÃ GỠ CHẶN
-   26/08/2026.** Nguồn là `finance.vietstock.vn`, lấy được bằng máy; mười tài
-   liệu đầu đã chọn, đã tải, đã kiểm. Xem mục 19.6. Khoản "tìm và tải" mà mục
-   16 xếp là đắt nhất nay rẻ đi hẳn: việc còn lại là chọn 90 mã, không phải đi
-   dò từng nguồn.
-2. **Chạy đồng hồ thật trên 10 tài liệu — CÒN THIẾU 2.** Không cần chờ đủ
-   100: cứ gán nhãn tới đâu đồng hồ chạy tới đó, đủ 10 thì tính trung vị và
-   chốt số phút cho giao thức trần người. Đồng hồ **không tự chạy**: bấm nút
-   "Bắt đầu bấm giờ" (mục 19.5); quên bấm thì công cụ từ chối ghi, nên không
-   mất số một cách âm thầm nữa.
-
-   Hiện `data/gold/` có 11 file nhưng chỉ **8** mang `trang_thai_dong_ho`
-   bằng `da_do`: 361, 416, 433, 438, 446, 461, 506, 579 giây. Ba file không
-   tính là `VNM_2026Q1_TT99` (thiếu hẳn khoá, mục 19.2), `DGC_2025Q2_TT200`
-   và `TTF_2026Q1_TT99` (`khong_do`). Vậy còn thiếu **2 tài liệu có đồng hồ**,
-   và hai tài liệu ấy phải nằm ngoài 11 file đã có — gán nhãn lại một file cũ
-   thì đo nhịp của lần gán nhãn thứ hai, không phải nhịp của lần đầu.
-
-   Ghi trước để khỏi tưởng kết quả còn là ẩn số: **hai tài liệu cuối không
-   đổi được kết luận nữa.** Trung vị của 10 số là trung bình số thứ 5 và thứ
-   6; tám số đã có kẹp hai vị trí đó lại, nên dù hai số mới nhỏ tuỳ ý hay lớn
-   tuỳ ý, trung vị cũng chỉ chạy trong dải 435,5–453,5 giây. Nhân 0,6 ra
-   4,36–4,54 phút — **toàn dải nằm dưới sàn 5 phút**. Đồng hồ trần người vì
-   thế sẽ là **5 phút**, và điều đó đã cố định về mặt số học.
-
-   Dù vậy **vẫn phải đo đủ 10 rồi mới tuyên**, vì công thức đăng ký là "trung
-   vị của 10 tài liệu". Tuyên sớm vì "đằng nào cũng ra 5 phút" thì con số vẫn
-   đúng nhưng cam kết thì hỏng, và lần sau không còn cách nào phân biệt một
-   suy luận số học với một lần tự cho phép mình bỏ bước.
-3. **Chốt 20 hay 33 tài liệu gán nhãn đôi — CÒN MỞ, và nay gắn với mốc.**
-   `ADDENDUM` mục 5 viết "một phần ba tập gold", chốt khi tập là 60 nên ra
-   20. Tập đích nay khoảng 100 nên cách diễn đạt đó tự nó thành 33. Với lộ
-   trình 10 → 60 → 100 thì câu hỏi thật là: một phần ba của MỐC NÀO. Phải
-   chọn một và ghi tu chính, muộn nhất là trước khi lượt gán nhãn lại đầu
-   tiên bắt đầu — vì chính lượt đó tiêu số tài liệu đã chọn.
-
-   Từ 28/08/2026 số ấy phải lấy trên tài liệu **chưa chạy pipeline** (Câu
-   12), mà hiện chưa có tài liệu nào như vậy — nên bước này chặn sau bước
-   gán nhãn thêm tài liệu, không chặn trước.
-4. **Người gán nhãn thứ hai — ĐÃ QUYẾT 26/08/2026: không có, người chủ trì
-   tự gán nhãn.** Phương án dự phòng ở `ADDENDUM` mục 5 vì thế là phương án
-   đang dùng: chính người ấy gán lại sau **ít nhất hai tuần**, không xem bản
-   cũ. Mười tài liệu đầu gán nhãn 25–26/08/2026 nên **lượt gán lại sớm nhất
-   là 09/09/2026**. Hai tuần đó là thời gian chờ nằm trên đường găng chứ
-   không phải thời gian làm — mỗi ngày bắt đầu muộn là một ngày mất trắng.
-5. **Đo trần người**, 10 tài liệu, sau khi có số phút ở bước 2.
-
-### 19.5 Đồng hồ do người tự bấm — 26/08/2026
-
-Bản đầu của công cụ tự khởi động đồng hồ lúc người gõ xong `doc_id` và lấy
-hiệu tới lúc bấm Lưu. Người dùng yêu cầu thay bằng **nút bấm giờ tường
-minh**, sau khi ca `VNM_2026Q1_TT99` cho thấy một file gold có thể ra đời với
-ô thời gian không ai đọc được nghĩa.
-
-**Vì sao đo tự động là sai chứ không chỉ là kém tiện.** Con số cần đo nuôi
-thẳng vào giao thức trần người: số phút đặt đồng hồ bằng `0,6 × trung vị của
-10 tài liệu đầu`. Với `n = 10`, một tài liệu lệch đủ sức đẩy trung vị. Mà đo
-tự động lệch theo **cả hai** chiều: gõ `doc_id` rồi mới đi tìm file PDF, hay
-để cửa sổ mở qua buổi trưa, đều cộng thêm thời gian không phải thời gian làm
-việc; ngược lại, người điền siêu dữ liệu sau cùng thì đồng hồ gần như không
-chạy.
-
-**Đã làm:**
-
-| Chỗ | Thay đổi |
-|---|---|
-| `src/gan_nhan/app.py` | Lớp `DongHo` (chạy / tạm dừng / cộng dồn), endpoint `GET` và `POST /api/dong-ho/{doc_id}/{bat-dau\|tam-dung}`, thay hẳn `POST /api/mo/{doc_id}` |
-| `src/gan_nhan/giao_dien.html` | Nút "Bắt đầu bấm giờ" ⇄ "Tạm dừng" ⇄ "Tiếp tục", đồng hồ đổi màu theo trạng thái, ô tick "không đo giờ tài liệu này" |
-| `src/eval/schema.py` | Hai khoá mới: `trang_thai_dong_ho` (`"da_do"` / `"khong_do"`) và `so_lan_tam_dung` |
-| `src/gan_nhan/kiem.py` | Danh mục kiểm thêm ô `da_bam_gio`, đánh dấu máy tự kiểm |
-| Tài liệu | Tu chính vào `PREREGISTRATION.md` và mục Sửa đổi của `ANNOTATION-GUIDELINE.md`; guideline mục 4, 6, 8 |
-
-Chín test mới trong `tests/test_gan_nhan_app.py`, dưới tiêu đề "Đồng hồ do
-người tự bấm".
-
-**Ba quyết định thiết kế, mỗi cái có một lý do đáng nhớ:**
-
-1. **Máy chủ giữ đồng hồ, trình duyệt chỉ vẽ lại.** Làm ngược lại thì một lần
-   tải lại trang xoá sạch phép đo — mà tải lại trang là chuyện thường khi
-   đang lật một PDF 40 trang.
-2. **Từ chối ghi khi đồng hồ chưa từng chạy**, thay vì cảnh báo rồi vẫn ghi
-   số 0. Một tài liệu quên bấm giờ chỉ lộ ra lúc gom số, và lúc đó không bấm
-   lại cho quá khứ được nữa. Lối thoát là ô tick "không đo giờ tài liệu này",
-   tường minh — cùng khuôn với ca để trống đơn vị tính ở guideline mục 3.1.
-   Đồng hồ đã chạy thì số đo thắng lời khai, vì vứt một số đo có thật là mất
-   mát không cứu lại được.
-3. **Mở lại bản đã lưu KHÔNG tự chạy đồng hồ.** Thời gian sửa một ô không
-   cùng đơn vị với thời gian gán nhãn một tài liệu mới, mà trung vị lấy trên
-   loại thứ hai.
-
-**Một lỗi mà test bắt được, đáng ghi vì nó sẽ tái diễn ở chỗ khác.** Bản đầu
-của `DongHo` suy trạng thái từ `tong_giay > 0` — tức phân biệt "chưa bấm" với
-"đang tạm dừng" bằng chính con số 0. Trên Windows, `time.monotonic()` nhảy
-theo bước ~15 ms, nên bấm chạy rồi bấm dừng ngay cho ra đúng `0.0`, và đồng
-hồ đã chạy trông y hệt đồng hồ chưa ai đụng vào. Đúng cái lỗi mà khoá
-`trang_thai_dong_ho` đi sửa ở tầng file, lặp lại ở tầng bộ nhớ. Đã sửa bằng
-khoá `da_bat_dau` riêng. **Bài học chung: đừng suy trạng thái từ một con số
-bằng 0, ở bất kỳ tầng nào.**
-
-### 19.6 Nguồn tài liệu đã chốt, và 10 tài liệu đầu đã tải — 26/08/2026
-
-Rào chặn lớn nhất của tầng gold — "chưa biết lấy 99 tài liệu còn lại ở đâu" —
-đã gỡ. Nguồn là **`finance.vietstock.vn`**, mục công bố thông tin của
-HOSE/HNX/UPCoM.
-
-**Cách lấy được danh mục theo mã.** Trang `/{MÃ}/tai-tai-lieu.htm` nạp danh
-sách bằng AJAX nên `curl` trang đó không thấy gì. Danh sách thật nằm sau
-`POST /data/getdocument` với thân `code={MÃ}&page={N}&__RequestVerificationToken={token}`;
-token là input ẩn trong chính trang đó, và **thuộc tính HTML không đặt trong
-dấu nháy** nên biểu thức tìm kiếm dạng `value="..."` trượt sạch. Bỏ `type` ra
-khỏi thân yêu cầu: truyền `type=0` thì máy chủ trả mảng rỗng.
-
-URL file rất đều, tiện cho việc mở rộng sau này:
-
-```
-https://static2.vietstock.vn/data/{HOSE|HNX|UPCOM}/{năm}/BCTC/VN/{QUY n}/{MÃ}_Baocaotaichinh_{Q n}_{năm}_{Congtyme|Hopnhat}.pdf
-```
-
-**Đã vào repo:** [data/nguon_gold.json](data/nguon_gold.json) là danh mục
-nguồn (chỉ URL và siêu dữ liệu, không có số liệu tài chính, nên **vào git**),
-và [src/tai_bctc.py](src/tai_bctc.py) tải chúng về `data/bctc/` (**không** vào
-git). Đây chính là phương án phát hành mà `src/eval/schema.py` đã chốt từ đầu:
-phát hành nhãn kèm URL nguồn và script tải, không phát hành file PDF gốc.
+Nguồn là **`finance.vietstock.vn`**, mục công bố thông tin HOSE/HNX/UPCoM.
+[data/nguon_gold.json](data/nguon_gold.json) là danh mục nguồn (chỉ URL và siêu
+dữ liệu, **vào git**); [src/tai_bctc.py](src/tai_bctc.py) tải về `data/bctc/`
+(**không** vào git). Đây đúng là phương án phát hành `src/eval/schema.py` chốt
+từ đầu: phát hành nhãn kèm URL nguồn và script tải, không phát hành PDF gốc.
 
 ```
 python src/tai_bctc.py                    # tải cả 10
 python chay_gan_nhan.py --pdf-dir data/bctc
 ```
 
-**Mười tài liệu, 5 TT99 + 5 TT200, mỗi tài liệu gánh một vai. Tính tới
-26/08/2026 cả mười đã gán nhãn xong**, nằm ở `data/gold/`:
+**Cách lấy danh mục, ghi lại vì hai chỗ đã mất thời gian.** Trang
+`/{MÃ}/tai-tai-lieu.htm` nạp danh sách bằng AJAX nên `curl` trang đó không thấy
+gì; danh sách thật nằm sau `POST /data/getdocument` với thân
+`code={MÃ}&page={N}&__RequestVerificationToken={token}`. Token là input ẩn
+trong chính trang đó, và **thuộc tính HTML không đặt trong dấu nháy** nên biểu
+thức dạng `value="..."` trượt sạch. Bỏ `type` ra khỏi thân yêu cầu: truyền
+`type=0` thì máy chủ trả mảng rỗng. URL file rất đều:
 
-| doc_id | Vai | Đã kiểm tận mắt |
-|---|---|---|
-| `HPG_2026Q2_TT99` | nền, VN30, thép | tiêu đề TT99, cột VND |
-| `VRE_2026Q1_TT99` | **mỏ neo scale** | `Đơn vị tính: Triệu VND` |
-| `DLG_2026Q2_TT99` | **scan kém + số âm** | tiêu đề TT99, mã 420 âm 1.988 tỷ |
-| `TTF_2026Q1_TT99` | **lỗ**, vốn hoá nhỏ | mới kiểm độ phân giải |
-| `BMP_2026Q1_TT99` | đối chứng sạch TT99 | tiêu đề TT99, `Đơn vị tính: VND` |
-| `DGC_2025Q2_TT200` | đối chứng sạch TT200 | tiêu đề TT200 |
-| `HNG_2025H1_TT200` | **lỗ + `Ngàn VND` + dòng đổi tên** | cả ba, xem dưới |
-| `SBT_2025Q2_TT200` | **niên độ lệch** | cột đầu năm là 30/6, không phải 1/1 |
-| `MWG_2025Q1_TT200` | đối cực chất lượng ảnh | quét ~432 dpi, nét nhất lô |
-| `VHC_2025Q1_TT200` | chống memorization | ngoài VN30 |
+```
+https://static2.vietstock.vn/data/{HOSE|HNX|UPCOM}/{năm}/BCTC/VN/{QUY n}/{MÃ}_Baocaotaichinh_{Q n}_{năm}_{Congtyme|Hopnhat}.pdf
+```
 
-Năm trong mười là ca biên, đúng bằng tỷ lệ tập Stress mà guideline mục 7 chốt
-(30/60). Cố ý: mười tài liệu này vừa là tập gold vừa là nguồn của **trung vị
-nhịp gán nhãn** ở mục 19.3, nên chúng phải ĐẠI DIỆN cho tập 100, không được
-dồn toàn ca dễ (trung vị tụt, đồng hồ trần người quá ngặt) cũng không được
-dồn toàn ca khó (trung vị vống, đồng hồ quá rộng — đúng lỗi mà tu chính
-25/08 vừa sửa).
+**Mười tài liệu, 5 TT99 + 5 TT200, mỗi tài liệu gánh một vai:**
 
-#### Hai phát hiện làm lung lay giả định của guideline
+| doc_id | Vai | dpi |
+|---|---|---:|
+| `HPG_2026Q2_TT99` | nền, VN30, thép | 200,0 |
+| `VRE_2026Q1_TT99` | **mỏ neo scale** (`Đơn vị tính: Triệu VND`) | 200,0 |
+| `DLG_2026Q2_TT99` | **scan kém + số âm** (mã 420 âm 1.988 tỷ) | **100,0** |
+| `TTF_2026Q1_TT99` | **lỗ**, vốn hoá nhỏ | 200,0 |
+| `BMP_2026Q1_TT99` | đối chứng sạch TT99 | 200,0 |
+| `DGC_2025Q2_TT200` | đối chứng sạch TT200 | 200,0 |
+| `HNG_2025H1_TT200` | **lỗ + `Ngàn VND` + dòng đổi tên "Lỗ"** | **143,9** |
+| `SBT_2025Q2_TT200` | **niên độ lệch** (cột đầu năm là 30/6) | **89,9** |
+| `MWG_2025Q1_TT200` | đối cực chất lượng ảnh, nét nhất lô | **295,8** |
+| `VHC_2025Q1_TT200` | chống memorization, ngoài VN30 | 200,0 |
 
-**(a) KHÔNG có báo cáo nào là PDF chữ. Tất cả đều là ảnh quét.** Đo trên 23
-tài liệu của 20 doanh nghiệp: `pdftotext` lấy ra từ 44 đến 734 byte cho cả
-tài liệu 25–65 trang, tức bằng 0. Phần "text" ít ỏi ấy là chú thích chữ ký
-số (`Reason: I am the author of this document`), không phải nội dung. Kiểm
-lại chính `VNM_2026Q1_TT99` — tài liệu gold đầu tiên: 169 byte trên 55 trang.
-Nó cũng là ảnh quét.
+Năm trong mười là ca biên, đúng bằng tỷ lệ tập Stress guideline mục 7 chốt. Cố
+ý: mười tài liệu này vừa là tập gold vừa là nguồn của **trung vị nhịp gán
+nhãn**, nên chúng phải ĐẠI DIỆN cho tập 100 — dồn toàn ca dễ thì đồng hồ trần
+người quá ngặt, dồn toàn ca khó thì quá rộng.
 
-Hệ quả cho guideline mục 7: nhóm Stress **"bản scan chất lượng thấp"** như
-viết cũ không phân biệt được gì, vì mọi tài liệu đều là bản scan. **ĐÃ SỬA
-26/08/2026** — nhóm đó nay đo bằng độ phân giải bản quét; số đo, cạm bẫy và
-hai tu chính kèm theo ở **mục 19.7**.
+**Một mã đáng thêm vào tập Stress về sau:** `MSN_2026Q2` — mục lục quý 2 **năm
+2026** ghi *Bảng cân đối kế toán (Mẫu số B01a-DN)*, tên gọi TT200 trên một kỳ
+mà TT99 đã có hiệu lực. Chưa soi tới trang biểu mẫu thật nên chưa kết luận.
+**Đừng suy chuẩn từ năm báo cáo.**
 
-Ba con số ước lượng bằng mắt từng ghi ở đây (`MWG` ~432 dpi, `SBT` ~127 dpi,
-`DGC` ~283 dpi) đều SAI và đã bỏ — chúng chia số điểm ảnh cho sai cạnh của
-trang ở những tài liệu đặt ảnh xoay 90°. Số đo đúng ở mục 19.7.
+### 19.5 Độ phân giải bản quét — cách đo và cạm bẫy
 
-Đây cũng là tin tốt cho hướng nghiên cứu: cả pipeline đi từ ảnh, nên không có
-tài liệu nào "dễ" theo kiểu đọc thẳng text layer, và luận điểm đọc lại nguồn
-áp cho **toàn bộ** tập gold chứ không riêng một nhóm.
+Nhóm Stress thứ ba đổi từ "bản scan chất lượng thấp" (100% quần thể thoả, tức
+không chia được nhóm nào) sang **độ phân giải bản quét**, ghi làm **biến liên
+tục**. Số đo ở bảng mục 19.4; dải **89,9–295,8 dpi, trung vị 200,0**.
 
-**(b) Guideline mục 3.7 tự mâu thuẫn với mục 2 về hậu tố `a`/`b`.** Mục 3.7
-xếp `Ký hiệu mẫu B 01a - DN` là dấu hiệu của **TT99**. Nhưng mục 2 của chính
-file đó viết, in đậm: *"Hậu tố `a`/`b` của ký hiệu mẫu biểu là KỲ BÁO CÁO,
-không phải Thông tư... Cả hai Thông tư đều dùng đủ ba ký hiệu"*. Hai chỗ
-không thể cùng đúng.
+**Công cụ:** `python src/do_do_phan_giai.py` in bảng, thêm `--ghi` thì ghi vào
+khoá `do_phan_giai_dpi` của `data/nguon_gold.json`. **Đừng sửa tay khoá đó.**
 
-Gặp thật khi soi: `SBT_2025Q2` mang ký hiệu `B01a-DN/HN` mà tiêu đề là *Bảng
-cân đối kế toán hợp nhất* — theo mục 3.7 thì đó là "thấy dấu hiệu của cả
-hai", tức phải ghi `UNKNOWN`, dù nó rõ ràng là TT200. `HNG_2025H1` cũng vậy
-(`B01a-DN/HN`, *Bảng cân đối kế toán hợp nhất giữa niên độ*). Nếu không sửa,
-hai tài liệu này bị gán `UNKNOWN` một cách máy móc và tỷ lệ TT99/TT200 vỡ.
-**ĐÃ SỬA 26/08/2026** — tu chính ở mục Sửa đổi của
-`ANNOTATION-GUIDELINE.md`: bảng mục 3.7 bỏ hẳn dòng ký hiệu mẫu, hai dòng số
-hiệu thông tư lên trước vì chắc chắn hơn, và thêm luật phủ định cấm suy ra
-Thông tư từ hậu tố. Cả hai file gold giữ nhãn `TT200`, không gán nhãn lại.
-Cùng lượt sửa luôn một chú thích trong `src/extract_vlm.py` vẫn chép lại quy
-tắc sai ấy — `FORM_MARKERS` trong `src/fields_config.py` thì đã đúng từ
-`023321c`, tức code đã đi trước tài liệu ở chỗ này.
+> **Cạm bẫy đã mất thời gian: `horizontal_dpi`/`vertical_dpi` của pdfium SAI ở
+> trang đặt ảnh xoay.** Hai trường đó chỉ chia cho phần đường chéo của ma trận
+> đặt ảnh; ma trận xoay 90° có đường chéo bằng 0 nên pdfium chia nhầm cạnh. SBT
+> bị báo `127,3 / 63,5` dpi — trông như bản quét bị kéo dãn — trong khi sự thật
+> là **90 dpi đều cả hai chiều**. Cách đúng: chiếu qua ma trận, cạnh ngang trải
+> theo `(a, b)` và cạnh dọc theo `(c, d)`, lấy chuẩn Euclid từng véc-tơ. Đã
+> chốt bằng `tests/test_do_do_phan_giai.py`.
 
-#### Một mã đáng thêm vào tập Stress về sau
+**Bốn giới hạn phải nêu kèm bất cứ khi nào dùng trục này:**
 
-`MSN_2026Q2` (Masan, đã tải thử): mục lục báo cáo quý 2 **năm 2026** ghi
-*Bảng cân đối kế toán (Mẫu số B01a-DN)* — tên gọi TT200 trên một kỳ mà TT99
-đã có hiệu lực. Chưa soi tới trang biểu mẫu thật nên chưa kết luận. Nếu đúng
-là doanh nghiệp giữ tên gọi cũ sau ngày TT99 hiệu lực thì đó là ca nhận diện
-chuẩn khó nhất có thể có, và **quy tắc "2026 thì là TT99" sai** — quy tắc ấy
-đang được dùng ngầm để chọn tài liệu, tuy không dùng để gán nhãn.
+1. **Sáu trong mười rơi đúng 200,0 dpi** — phân bố dồn cục, sức phân biệt nằm
+   gần hết ở hai đuôi. Đủ 100 tài liệu thì đo lại phân bố TRƯỚC khi tin vào một
+   hệ số tương quan nào.
+2. **Không ngưỡng nào được chốt**, cố ý. Ngưỡng, nếu về sau cần, phải là tu
+   chính riêng ghi trước khi nhìn bảng kết quả tương ứng.
+3. **Độ phân giải không bao trọn chữ "chất lượng".** Trang lệch, dấu mộc đỏ đè
+   lên chữ số, in mờ lệch nét là những trục riêng máy chưa đo được. Tương quan
+   bằng 0 với dpi KHÔNG cho phép kết luận chất lượng ảnh không ảnh hưởng.
+4. `HNG_2025H1_TT200` là tài liệu DUY NHẤT **trộn nhiều độ phân giải** trong
+   cùng một file (có trang tới 300).
 
-### 19.7 Độ phân giải bản quét — số đo và cạm bẫy, 26/08/2026
-
-Đây là chỗ trả lời Câu 10. Nhóm Stress thứ ba của guideline mục 7 đổi từ "bản
-scan chất lượng thấp" — tiêu chí mà 100% quần thể thoả, tức không chia được
-nhóm nào — sang **độ phân giải bản quét**, ghi làm **biến liên tục**.
-
-**Công cụ:** `python src/do_do_phan_giai.py` in bảng, thêm `--ghi` thì ghi
-vào khoá `do_phan_giai_dpi` của từng mục trong `data/nguon_gold.json`. Đừng
-sửa tay khoá đó.
-
-| doc_id | dpi (trung vị) | Ghi chú |
-|---|---:|---|
-| `SBT_2025Q2_TT200` | **89,9** | thấp nhất lô, kèm trang lệch |
-| `DLG_2026Q2_TT99` | **100,0** | kèm trang lệch và nhoè |
-| `HNG_2025H1_TT200` | **143,9** | tài liệu DUY NHẤT trộn nhiều độ phân giải: có trang tới 300 |
-| `HPG_2026Q2_TT99` | 200,0 | |
-| `VRE_2026Q1_TT99` | 200,0 | |
-| `TTF_2026Q1_TT99` | 200,0 | |
-| `BMP_2026Q1_TT99` | 200,0 | |
-| `DGC_2025Q2_TT200` | 200,0 | |
-| `VHC_2025Q1_TT200` | 200,0 | |
-| `MWG_2025Q1_TT200` | **295,8** | cao nhất lô |
-
-Dải 89,9–295,8 dpi, trung vị 200,0.
-
-**Giới hạn đọc thẳng ra khỏi bảng: sáu trong mười rơi đúng 200,0 dpi.** Phân
-bố dồn cục chứ không trải đều, nên ở quy mô mười tài liệu sức phân biệt của
-trục này nằm gần hết ở hai đuôi. Đủ 100 tài liệu thì đo lại phân bố TRƯỚC khi
-tin vào một hệ số tương quan nào.
-
-**Cạm bẫy đã mất thời gian, đừng lặp lại: `horizontal_dpi` và `vertical_dpi`
-của pdfium SAI ở trang đặt ảnh xoay.** Hai trường đó chỉ chia cho phần đường
-chéo của ma trận đặt ảnh. Ma trận xoay 90° có đường chéo bằng 0 và giá trị
-nằm ở hai ô còn lại, nên pdfium chia nhầm cạnh. `SBT_2025Q2_TT200` bị báo
-`127,3 / 63,5` dpi — trông như bản quét bị kéo dãn gấp đôi theo một chiều —
-trong khi sự thật là **90 dpi đều cả hai chiều**, chỉ thấp chứ không méo.
-
-Cách đúng là chiếu qua ma trận: cạnh ngang của ảnh trải theo véc-tơ `(a, b)`,
-cạnh dọc theo `(c, d)`, lấy chuẩn Euclid từng véc-tơ. Đúng cho cả trang xoay
-lẫn trang thẳng. Đã chốt bằng test ở `tests/test_do_do_phan_giai.py`.
-
-Cùng cái bẫy ấy giải thích ba con số ước lượng bằng mắt trước đó: `MWG` ~432
-(thật: 295,8), `DGC` ~283 (thật: 200,0), `HNG` ~204 (thật: 143,9). Cả ba đều
-là số điểm ảnh chia cho **chiều rộng** trang trong khi ảnh nằm xoay. Chúng đã
-bị bỏ khỏi `da_kiem` của `data/nguon_gold.json` để file không mang hai con số
-chỏi nhau cho cùng một thứ.
-
-**Hai tu chính đã ghi.** Guideline mục Sửa đổi ghi việc đổi tiêu chí nhóm
-Stress. `PREREGISTRATION.md` mục Sửa đổi ghi độ phân giải thành **hiệp biến
-đăng ký trước**: được dùng cho phân tích THỨ CẤP và cho việc chọn tài liệu
-theo thứ hạng, **không** được dùng để loại tài liệu khỏi phân tích chính, và
-không đổi chỉ số chính hay điều kiện phản chứng của giả thuyết nào. Lý do
-phải đăng ký: một biến giải thích mới rất dễ bị lôi ra sau khi bảng kết quả
-đã xong để giải thích một chênh lệch không mong đợi, và lúc đó không ai phân
-biệt được nó với việc đi tìm hậu nghiệm.
-
-**Không có ngưỡng nào được chốt**, cố ý — chốt "thấp là dưới X dpi" trên một
-phân bố dồn cục của mười tài liệu là chọn tham số trên mẫu mỏng. Ngưỡng, nếu
-về sau cần, phải là tu chính riêng ghi trước khi nhìn bảng kết quả tương ứng.
-
-**Độ phân giải không bao trọn chữ "chất lượng".** Trang lệch, dấu mộc đỏ đè
-lên chữ số, in mờ lệch nét là những trục riêng mà máy chưa đo được —
-`VHC_2025Q1_TT200` ghi đúng mấy thứ đó trong `notes`. Hệ quả phải nêu trong
-bài: tương quan bằng 0 với dpi KHÔNG cho phép kết luận chất lượng ảnh không
-ảnh hưởng.
+`PREREGISTRATION.md` đăng ký nó làm **hiệp biến cho phân tích THỨ CẤP**: dùng
+cho việc chọn tài liệu theo thứ hạng, **không** được dùng để loại tài liệu khỏi
+phân tích chính. Lý do phải đăng ký: một biến giải thích mới rất dễ bị lôi ra
+sau khi bảng kết quả đã xong để giải thích một chênh lệch không mong đợi, và
+lúc đó không ai phân biệt được nó với việc đi tìm hậu nghiệm.
 
 ---
 
@@ -1722,12 +1239,11 @@ bài: tương quan bằng 0 với dpi KHÔNG cho phép kết luận chất lư�
 
 Trước mục này, **mọi con số chất lượng của dự án đều lấy trên tầng XBRL Mỹ
 hoặc trên đúng một báo cáo VNM**. Đây là chỗ đầu tiên pipeline bị chấm trên
-bộ tài liệu Việt Nam có nhãn tay.
+bộ tài liệu Việt Nam có nhãn tay. **Số đo trước/sau của hai bản vá kèm theo
+nằm ở `CHANGELOG.md` mục 27/08/2026** — mục này giữ cách chạy, cạm bẫy, và
+những gì chưa làm.
 
 ### 20.1 Công cụ `src/eval/chay_tap_gold.py`
-
-Repo đã có `src/eval/metrics.py` chấm điểm nhưng **không module nào gọi
-pipeline rồi so với nhãn**. Đây là D2 phiên bản tối thiểu.
 
 ```
 PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/chay_tap_gold.py --chuan-tu-gold
@@ -1736,51 +1252,41 @@ PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/chay_tap_gold.py --tiep-tu
 ```
 
 **Hai chế độ, và khoảng cách giữa chúng CHÍNH LÀ phép đo.** `router.chon_chuan`
-hiện không có nguồn `nhan_dien`, nên không ai chỉ định thì nó lùi về
-`DEFAULT_STANDARD` là TT99. Tập gold có 5 tài liệu TT200, mà mã 270 của
-TT200 là mã 280 của TT99 — chạy sai bảng thì kết quả hỏng vì lý do chẳng
-liên quan gì tới phương pháp. `--chuan-tu-gold` là điều kiện **oracle**, đo
-trích xuất tách khỏi nhận diện; chế độ mặc định là hiện trạng đầu-cuối. Hiệu
-số đo đúng một thứ: **bước D của phương án C đáng giá bao nhiêu.**
+chưa có nguồn `nhan_dien` nên không ai chỉ định thì nó lùi về `DEFAULT_STANDARD`
+là TT99; tập gold có 5 tài liệu TT200, mà mã 270 của TT200 là mã 280 của TT99.
+`--chuan-tu-gold` là điều kiện **oracle**, đo trích xuất tách khỏi nhận diện.
+Hiệu số hai chế độ đo đúng một thứ: **bước D của phương án C đáng giá bao nhiêu.**
 
-Chấm ở mức TRƯỜNG, **gộp tử và mẫu** qua các tài liệu chứ không lấy trung
-bình của các tỷ lệ — TT200 có 26 chỉ tiêu còn TT99 có 27 nên hai cách cho
-hai con số khác nhau, và chỉ cách đầu cộng dồn được cho bootstrap theo cụm.
+Chấm ở mức TRƯỜNG, **gộp tử và mẫu** qua các tài liệu chứ không lấy trung bình
+của các tỷ lệ — TT200 có 26 chỉ tiêu còn TT99 có 27 nên hai cách cho hai con số
+khác nhau, và chỉ cách đầu cộng dồn được cho bootstrap theo cụm.
 
-### 20.2 Hai cái bẫy đã trả giá, đừng lặp lại
+### 20.2 Ba cạm bẫy đã trả giá
 
-**(a) Ghi kết quả một lần ở cuối = mất sạch khi tiến trình bị giết.** Lượt
-chạy đêm 26/08 chết lúc đang ở tài liệu 7/11; **sáu tài liệu đã chấm xong
-biến mất** cùng ba tiếng gọi API. Bài học này đã có sẵn trong docstring —
-dẫn chính lượt Mốc 3 ngày 25/08 — nhưng chỉ được áp một nửa: *"ghi TRƯỚC khi
-in"* chống được lỗi định dạng trong hàm in, **không** chống được tiến trình
-bị giết, mà đó mới là thứ xảy ra. Nay ghi sau **mỗi** tài liệu, và
-`--tiep-tuc` bỏ qua doc_id đã có để không trả tiền API hai lần.
+1. **Ghi kết quả một lần ở cuối = mất sạch khi tiến trình bị giết.** Bài học
+   có sẵn trong docstring nhưng chỉ được áp một nửa: *ghi TRƯỚC khi in* chống
+   được lỗi định dạng, **không** chống được tiến trình bị giết. Nay ghi sau
+   **mỗi** tài liệu, và `--tiep-tuc` bỏ qua doc_id đã có.
+2. **Pipeline tự in giá trị từng ô ra cùng stdout.** Nay `redirect_stdout` đổ
+   chúng vào `data/output/tap_gold_<chế độ>_pipeline.log`.
+3. **`--chi BMP SBT` mà KHÔNG kèm `--tiep-tuc` sẽ ghi đè
+   `tap_gold_chuan_tu_gold.json` bằng đúng 2 tài liệu**, xoá sạch kết quả 10
+   tài liệu. Bản sao mốc so sánh giữ ở `..._TRUOC-VA-2026-08-27.json` —
+   **đừng xoá**, nó là mốc duy nhất cho hai bản vá 27/08.
 
-**(b) Bảng gộp sạch nhưng pipeline tự in giá trị từng ô ra CÙNG stdout.**
-`route_document` in một bản kết xuất theo trang; `> file.txt` gom cả chúng
-lẫn bảng vào một chỗ (79 khối trong lượt đầu). Biện pháp phòng vệ khi đó chỉ
-tồn tại trong docstring chứ không tồn tại trong hành vi. Nay `redirect_stdout`
-đổ chúng vào `data/output/tap_gold_<chế độ>_pipeline.log`.
+> **Hệ quả cho Luật 1, đã gỡ tận gốc 28/08/2026 (Câu 12).** `tap_gold_*.json`
+> và `tap_gold_*_pipeline.log` có giá trị từng ô, nên 10 tài liệu này cùng
+> `VNM_2026Q1_TT99` bị **loại vĩnh viễn khỏi tập gán nhãn đôi**. Khai báo ở
+> khoá `gan_nhan_doi` của `data/nguon_gold.json`, đối chiếu bằng
+> `src/eval/tap_dong_thuan.py`.
 
-> **LUẬT 1 — ĐÃ GỠ TẬN GỐC 28/08/2026 (Câu 12).** Hai file `tap_gold_*.json`
-> và `tap_gold_*_pipeline.log` **có giá trị từng ô**, nên 10 tài liệu này —
-> cùng `VNM_2026Q1_TT99` — bị **loại vĩnh viễn khỏi tập gán nhãn đôi** thay
-> vì trông vào kỷ luật không mở file. Khai báo ở khoá `gan_nhan_doi` của
-> `data/nguon_gold.json`, đối chiếu bằng `src/eval/tap_dong_thuan.py`.
+### 20.3 Kết quả — 10 tài liệu, chế độ `--chuan-tu-gold`, 27/08/2026
 
-### 20.3 Kết quả đầy đủ — 10 tài liệu, lượt chạy xong 13:31 ngày 27/08/2026
-
-Chế độ `--chuan-tu-gold` (oracle chuẩn mẫu biểu). Kết quả ở
-`data/output/tap_gold_chuan_tu_gold.json`. **Bản sao trước khi vá** giữ ở
-`tap_gold_chuan_tu_gold_TRUOC-VA-2026-08-27.json` — đừng xoá, nó là mốc so
-sánh duy nhất cho hai bản vá dưới đây.
-
-**Là 10 tài liệu chứ không phải 11.** `VNM_2026Q1_TT99` có nhãn gold nhưng
-**không có PDF** trong `data/bctc/`, nên runner ghi nó vào `thieu_pdf` rồi
-bỏ qua. Đây là chỗ lệch sổ sách cần vá: `data/gold/` có 11 file còn
-`data/nguon_gold.json` khai 10, và VNM không có `do_phan_giai_dpi`, nên mọi
-phân tích theo độ phân giải sẽ **lặng lẽ** bỏ sót nó.
+**Là 10 chứ không phải 11.** `VNM_2026Q1_TT99` có nhãn gold nhưng **không có
+PDF** trong `data/bctc/`, nên runner ghi vào `thieu_pdf` rồi bỏ qua. Đây là
+chỗ lệch sổ sách chưa vá: `data/gold/` có 11 file, `data/nguon_gold.json` khai
+10, và VNM không có `do_phan_giai_dpi` nên mọi phân tích theo độ phân giải sẽ
+**lặng lẽ** bỏ sót nó.
 
 | doc_id | Trường đúng | Lỗi câm | Đơn vị | Cảnh báo |
 |---|---:|---:|---|---:|
@@ -1796,188 +1302,196 @@ phân tích theo độ phân giải sẽ **lặng lẽ** bỏ sót nó.
 | `VHC_2025Q1_TT200` | 18/26 = 0,692 | 0,053 | ok | 0 |
 
 **Tổng: 216/265 = 81,5% trường đúng · lỗi câm 24/240 = 10,0% · đơn vị đúng
-8/10 · nhận diện chuẩn 10/10 (oracle, đương nhiên) · tài liệu đúng trọn vẹn
-0/10.**
+8/10 · tài liệu đúng trọn vẹn 0/10.** Sau bản vá dấu `a0cd5ab`: 83,8% và 7,5%.
 
-Nhịp chạy **17–33 phút một tài liệu**, phần lớn là bước dò mã số dòng bằng
-OCR — 864 giây trên 1161 giây của tài liệu cuối, tức **74%**. Bộ nhớ tiến
-trình dao động 1,4–4,7 GB theo trang; nó KHÔNG rò rỉ tuyến tính, đã theo dõi
-suốt lượt chạy và ba lần báo động đều là báo động sai.
+Nhịp chạy **17–33 phút một tài liệu**, phần lớn là bước dò mã số dòng bằng OCR
+— 864 trên 1161 giây của tài liệu cuối, tức **74%**. Bộ nhớ dao động 1,4–4,7 GB
+theo trang, **không** rò rỉ tuyến tính (ba lần báo động đều là báo động sai).
+
+> **CẢNH BÁO CẤU HÌNH, phát hiện 28/08/2026.** Lượt chạy này chạy với
+> `USE_OCR_FIRST=true` trong `.env`, trong khi docstring `router.py` nói nhánh
+> OCR tắt mặc định. Một số giá trị có thể đến từ nhánh regex chứ không từ VLM.
+> Xem mục 12 — cấu hình phải chốt trước khi chạy lại trọn bộ.
 
 ### 20.4 Phân bố chế độ lỗi — kết quả quan trọng nhất của lượt chạy
 
-49 trường lệch, phân loại bằng script đối chiếu dự đoán với gold (chỉ so
-cấu trúc, không in giá trị ô):
+49 trường lệch, phân loại bằng script đối chiếu dự đoán với gold:
 
 | Chế độ lỗi | Số trường | Nguồn gốc |
 |---|---:|---|
 | Bỏ trống | 25 | không đọc được — **vô hại**, hệ biết mình thất bại |
-| **Đảo dấu** | **11** | quy tắc ngoại lệ guideline mục 3.3 chưa cài — đã vá |
-| **Khác (toàn bộ của SBT)** | **10** | định vị nhầm bảng B02 — CHƯA vá |
+| **Đảo dấu** | **11** | quy tắc ngoại lệ guideline 3.3 chưa cài — **đã vá** |
+| **Khác (toàn bộ của SBT)** | **10** | định vị nhầm bảng B02 — **CHƯA vá** |
 | Nhầm ô | 2 | `row_shift` thật |
 | Nhầm chữ số | 1 | lỗi OCR thật |
 
-**Kết luận đáng giá nhất: 21 trong 24 lỗi câm là hai con bug, không phải
-giới hạn của mô hình.** Bỏ trống không tính vào lỗi câm. Trong 24 lỗi câm có
-11 đảo dấu và 10 của SBT, cả hai đều truy được về một chỗ hỏng cụ thể trong
-code. Chỉ còn **3 lỗi câm là lỗi thật của mô hình** — hai ca nhầm ô, một ca
-nhầm chữ số. **Tỷ lệ lỗi câm không quy giản được là 3/240 = 1,25%**; con số
-10,0% đang bị hai lỗi cài đặt kéo lên gấp tám lần.
+**Kết luận đáng giá nhất: 21 trong 24 lỗi câm là hai con bug, không phải giới
+hạn của mô hình.** Chỉ còn **3 lỗi câm là lỗi thật** — hai ca nhầm ô, một ca
+nhầm chữ số. **Tỷ lệ lỗi câm không quy giản được là 3/240 = 1,25%.**
 
-**Hai chế độ lỗi trội đi theo hai nguyên nhân tách bạch:**
+**Hai chế độ trội đi theo hai nguyên nhân tách bạch:** *bỏ trống ↔ độ phân
+giải* (DLG 100 dpi bỏ trống 3, lỗi câm 0; MWG 296 dpi bỏ trống 0 — ảnh xấu thì
+hệ không đọc được và nó **biết** mình không đọc được), còn *đảo dấu ↔ lỗi cài
+đặt*, không phụ thuộc dpi chút nào.
 
-- **Bỏ trống ↔ độ phân giải.** DLG (100 dpi) bỏ trống 3, lỗi câm 0. MWG
-  (296 dpi) bỏ trống 0. Ảnh xấu thì hệ **không đọc được**, và nó **biết**
-  mình không đọc được.
-- **Đảo dấu ↔ lỗi cài đặt.** Không phụ thuộc dpi chút nào, và là nguồn của
-  gần như toàn bộ lỗi câm.
+**Trường hay sai nhất:** `thue_tndn_hien_hanh` 9 lần, `thue_tndn_hoan_lai` 7,
+`tai_san_sinh_hoc_ngan_han` 5 (đều bỏ trống), `anh_huong_ty_gia` 4 (đều bỏ
+trống), `gia_von_hang_ban` 4. Chỗ hụt nằm ở **vài chỉ tiêu cụ thể**, không rải
+đều.
 
-**Trường hay sai nhất**, đếm trên 10 tài liệu: `thue_tndn_hien_hanh` 9 lần,
-`thue_tndn_hoan_lai` 7, `tai_san_sinh_hoc_ngan_han` 5 (đều bỏ trống),
-`anh_huong_ty_gia` 4 (đều bỏ trống), `gia_von_hang_ban` 4. Chỗ hụt nằm ở
-**vài chỉ tiêu cụ thể**, không rải đều.
+**SBT và VHC là ca đối chứng tự nhiên đẹp nhất lượt chạy cho ra.** Cả hai hỏng
+ở cùng một khâu — định vị bảng — mà kết cục ngược nhau:
 
-**SBT và VHC là ca đối chứng tự nhiên đẹp nhất lượt chạy cho ra.** Cả hai
-hỏng ở cùng một khâu — định vị bảng — mà kết cục ngược nhau:
+- **SBT** không tìm đúng B02 → **điền số của bảng khác vào**, 8 lỗi câm, B01
+  đúng sạch. Sáu trong tám trường có nhiều hơn đúng một chữ số so với gold.
+  Giả thuyết dẫn đầu: hồ sơ 62 trang chứa **hai bộ báo cáo**, pipeline lấy B01
+  từ bộ này và B02 từ bộ kia. **Chưa kiểm được** vì nhật ký chỉ ghi tóm tắt,
+  không giữ text.
+- **VHC** không tìm được B03 → **để trống**, 6 trường lưu chuyển tiền bỏ trống,
+  không một lỗi câm nào từ B03.
 
-- **SBT** không tìm đúng B02 → **điền số của bảng khác vào**. Tám lỗi câm.
-  Toàn bộ B02 sai với những con số không liên quan (Levenshtein 8–13 vị trí
-  trên chuỗi 10–14 chữ số), trong khi B01 đúng sạch. Sáu trong tám trường có
-  nhiều hơn đúng một chữ số so với gold, tức lớn hơn cỡ 10 lần. Giả thuyết
-  dẫn đầu: hồ sơ 62 trang chứa **hai bộ báo cáo**, pipeline lấy B01 từ bộ
-  này và B02 từ bộ kia. **Chưa kiểm được** vì nhật ký chỉ ghi tóm tắt
-  ("OCR page N: X characters"), không giữ text. Muốn dứt điểm phải mở PDF
-  của SBT xem nó có mấy bộ báo cáo.
-- **VHC** không tìm được B03 → **để trống**. Sáu trường lưu chuyển tiền tệ
-  bỏ trống, không một lỗi câm nào từ B03; lỗi câm duy nhất của VHC là dòng
-  thuế đảo dấu.
+Cùng một hỏng hóc, một bên **thú nhận**, một bên **bịa**. Đây là chế độ lỗi
+**nguy hiểm nhất** lượt chạy lộ ra — lỗi **chọn nguồn**, xảy ra trước khi trích
+xuất, và không đẳng thức nào bắt được vì bộ số kia **tự nó cũng cân**
+(`residual = 0` tuyệt đối).
 
-Cùng một hỏng hóc, một bên **thú nhận**, một bên **bịa**. Nếu giả thuyết SBT
-đúng thì đây là chế độ lỗi **nguy hiểm nhất** lượt chạy lộ ra — lỗi **chọn
-nguồn**, xảy ra trước khi trích xuất, và không đẳng thức nào trong B02 bắt
-được vì bộ số kia **tự nó cũng cân**.
+> **Phân bố lỗi thật KHÁC HẲN thứ đang bơm ở tầng XBRL:** 1 lỗi chữ số trên 49
+> trường lệch. Chế độ trội là dấu, định vị bảng, và bỏ trống.
+> `src/nham_chu_so.py` bơm lỗi theo ma trận nhầm chữ số, tức đang mô phỏng một
+> thế giới không phải thế giới này. Tu chính đã ghi ở `PREREGISTRATION.md`.
 
-> **Phân bố lỗi thật KHÁC HẲN thứ đang bơm ở tầng XBRL.** Trên dữ liệu thật:
-> **1 lỗi chữ số trên 49 trường lệch**. Chế độ trội là dấu, định vị bảng, và
-> bỏ trống. `src/nham_chu_so.py` bơm lỗi theo ma trận nhầm chữ số, tức đang
-> mô phỏng một thế giới không phải thế giới này. Đã ghi tu chính vào
-> `PREREGISTRATION.md`.
+### 20.4b Giải phẫu 16 lỗi câm CÒN LẠI — sau cả hai cơ chế, 28/08/2026
 
-### 20.5 Hai bản vá đã thi công 27/08/2026
+Sau `chuan_hoa_dau()` và tầng repair: **224/265 = 84,5% trường đúng, lỗi câm
+16/240 = 6,7%**. Đếm lại bằng
+`PYTHONPATH=src python src/eval/do_luat_dau.py`.
 
-**(a) Quy tắc dấu — `a0cd5ab`.** Trên trang B02 dấu ngoặc mang hai nghĩa: ở
-mã 40 là số liệu (lợi nhuận khác âm thật), ở mã 11 chỉ là cách trình bày
-"dòng này bị trừ đi", vì văn bản viết `Mã 20 = Mã 10 − Mã 11`.
-`parse_number()` không biết mình đang đọc chỉ tiêu nào nên áp "ngoặc là âm"
-cho cả hai nghĩa. Bằng chứng: MWG và VRE mỗi tài liệu sai **đúng ba dòng
-ngoại lệ** của guideline mục 3.3, không thừa không thiếu — và MWG là bản
-quét nét nhất lô (295,8 dpi), nên chuyện này không liên quan gì tới ảnh.
+**Chúng dồn cục vào hai tài liệu, không rải đều:**
 
-Hàm `chuan_hoa_dau()` ở `src/fields_config.py`, gọi trong `validate_result()`
-ngay sau bước ép kiểu. **Không đặt ở router**: trước bước ép kiểu, giá trị
-VLM còn có thể là chuỗi, và một hàm kiểm dấu chạy trên chuỗi sẽ lặng lẽ
-không làm gì — bản nháp đầu mắc đúng lỗi đó, nay có test hồi quy khoá lại.
-Đặt trước các phép kiểm vì để giá vốn âm đi tiếp thì cảnh báo "âm bất
-thường" và đẳng thức mã 20 đều báo một lỗi không có thật.
-
-Đo lại trên kết quả đã lưu, **không tốn một lệnh gọi API nào**:
-
-| | Trước | Sau |
-|---|---:|---:|
-| Trường đúng | 216/265 = 81,5% | **222/265 = 83,8%** |
-| Lỗi câm | 24/240 = 10,0% | **18/240 = 7,5%** |
-
-MWG 23/26 → 25/26 · VRE 22/27 → 24/27 · VHC lỗi câm 0,053 → **0,000** ·
-HNG 0,250 → 0,208.
-
-> **CỐ Ý không giải đẳng thức `Mã 60 = Mã 50 − Mã 51 − Mã 52` để chọn dấu.**
-> Giải nó thì mọi kết quả đều thoả nó, và phép đo H1 — so vi phạm ràng buộc
-> với confidence của model — mất sạch nghĩa vì tín hiệu bị chính bước trích
-> xuất làm phẳng. Chỉ dùng **chiều** của mã 50 so với mã 60; độ lớn vẫn tự
-> do sai nên đẳng thức vẫn còn là phép kiểm độc lập. Có test khoá tính chất
-> này (`tests/test_chuan_hoa_dau.py`) — đừng "hoàn thiện" nó.
-
-**(b) Nới mép trên vùng cắt — `05d00d0`.** `get_table_regions()` lọc
-`!= "table"` rồi `continue`, nên box chứa dòng "Đơn vị tính" bị vứt ngay tại
-đó và không chỗ nào phía sau biết nó từng tồn tại. Trên BMP trang 4,
-DocLayout-YOLO nhận ra dòng ấy với **conf 0,86** ở y 416..471, trong khi
-vùng bảng bắt đầu ở y 516 — hụt **45 pixel**. Trên VNM trang 8 hụt 27. VLM
-không đọc sai dòng ấy, **nó chưa từng được đưa cho xem**.
-
-Vì sao chỗ này nặng hơn mọi con số accuracy: với lỗi sai đơn vị toàn cục thì
-`Aδ = (c−1)Ax* = 0`, tức **mọi đẳng thức kế toán đều mù với nó**. Bảng vẫn
-cân hoàn hảo, mọi phép kiểm vẫn báo ĐẠT, trong khi mọi con số sai 1000 lần.
-Lượt gold mất dòng này ở **2/10 tài liệu** (BMP và SBT, cả hai
-`don_vi_tinh_raw = None`).
-
-Cách vá, theo ràng buộc người chủ trì đặt ra là **không dùng pixel cố định**:
-nới tới **đỉnh của box gần nhất phía trên có chồng ngang với bảng**, chặn
-bằng `TY_LE_NOI_TREN = 0,05` nhân chiều cao trang. Lấy **trọn** box chứ
-không dừng ở mép dưới của nó, vì thứ cần lấy nằm bên trong nó. Điều kiện
-chồng ngang là để một box ở lề trang không kéo được vùng cắt lên tận đầu
-trang. 0,05 lấy từ số đo: trên BMP, nới trọn dòng đơn vị cần 2,9% chiều cao
-trang, còn khối tiêu đề công ty bắt đầu ở 8,8% phía trên.
-
-Kiểm trên hai trang từng hỏng:
-
-| Trang | Vùng cắt CŨ | Vùng cắt MỚI | Box lọt thêm vào |
+| doc_id | Lỗi câm | Đẳng thức lệch | Ràng buộc nói được gì |
 |---|---:|---:|---|
-| BMP tr.4 (3504 px) | y 508 | **y 416** | `plain text` conf **0,86** — đúng dòng đơn vị |
-| SBT tr.5 (3508 px) | y 531 | **y 440** | `abandon` conf 0,62 ở góc phải |
+| `SBT_2025Q2_TT200` | **8** | 2 | phát hiện được, chưa định vị được |
+| `HNG_2025H1_TT200` | **5** | 1 | phát hiện được, chưa định vị được |
+| `DGC`, `HPG` | 1 mỗi tài liệu | 1 | phát hiện được |
+| `BMP_2026Q1_TT99` | 1 | **0** | **VÔ HÌNH** |
+| 5 tài liệu còn lại | 0 | 0 | — |
 
-Cả hai dừng ở đỉnh box gần nhất, **chưa chạm trần 5%**.
+**13 trong 16 nằm ở SBT và HNG.** Hai tài liệu này không hỏng vì mô hình đọc
+kém — chúng hỏng ở khâu TRƯỚC khi đọc số.
 
-> **ĐÂY MỚI LÀ KIỂM HÌNH HỌC.** Dòng đơn vị nay nằm trong ảnh đưa cho VLM,
-> nhưng **nó có đọc ra đúng hay không thì phải chạy lại pipeline mới biết**.
-> Đừng ghi vào bài báo rằng chỗ này đã sửa xong.
+#### SBT — lấy B02 của một bộ báo cáo khác, và bộ số ấy TỰ CÂN
 
-### 20.6 Chỗ vênh giữa guideline và gold — ĐANG CHỜ NGƯỜI CHỦ TRÌ
+Bằng chứng đanh nhất lượt chạy cho ra, đo được chứ không suy đoán: **7 trên 9
+đẳng thức khớp residual = 0 TUYỆT ĐỐI trên bộ số sai**. Riêng đẳng thức
+`Giá vốn + Lợi nhuận gộp = Doanh thu thuần` cân tới từng đồng với cả ba con số
+đều sai — 12.105.315.641.553 − 11.082.990.821.520 = 1.022.324.820.033.
 
-Bản vá dấu **cố ý bỏ mã 52 ra ngoài** dù `ANNOTATION-GUIDELINE.md` mục 3.3
-liệt kê nó cùng mã 51. Xem Câu 13 ở mục 0.
+Tỷ lệ máy/gold không phải số nguyên (1,798 · 1,785 · 1,955), nên **không phải**
+ca đọc nhầm cột luỹ kế — cột luỹ kế cho tỷ lệ khác hẳn. Giả thuyết dẫn đầu:
+hồ sơ 62 trang chứa cả bản **Riêng** lẫn bản **Hợp nhất**, pipeline lấy B01 từ
+bản này và B02 từ bản kia. Chưa kiểm được vì nhật ký không giữ text.
 
-Với MWG và VRE, `thue_tndn_hoan_lai` có **dự đoán dương, gold âm** — ngược
-chiều hai dòng kia. Mà cả hai tài liệu đều có mã 60 < mã 50, tức theo chữ
-nghĩa guideline thì mã 52 phải dương. **Nhãn gold mâu thuẫn với guideline.**
+**Vì sao không ràng buộc nào cứu được:** chênh lệch nằm trọn trong không gian
+null. Một bộ số hợp lệ của doanh nghiệp KHÁC vẫn là một bộ số hợp lệ. Đây
+không phải giới hạn của thuật toán mà là giới hạn của thông tin, và
+`tests/test_luat_dau.py::test_chon_nham_bang_KHONG_bat_duoc_va_do_la_gioi_han_that`
+chốt nó lại để đừng ai hứa quá tay trong bài.
 
-Về kế toán thì gold hợp lý hơn: `Mã 60 = Mã 50 − Mã 51 − Mã 52`, nên một
-khoản **thu nhập** thuế hoãn lại (mã 52 âm) sống chung được với mã 60 < mã
-50 miễn mã 51 đủ lớn. Câu "dương khi mã 60 < mã 50" đúng cho **tổng** thuế,
-sai khi áp riêng từng dòng. Áp nguyên văn thì bản vá sẽ lật một mã 52 âm hợp
-lệ thành dương và **đẻ ra lỗi câm mới**.
+#### HNG — dấu nằm ở NHÃN DÒNG, không nằm ở con số
 
-Bỏ mã 52 ra cho **đúng 6 trường sửa được như bản rộng hơn**, mà không mang
-rủi ro đó. Nhưng câu chữ guideline vẫn cần sửa, và đó là quyết định của
-người chủ trì.
+HNG lỗ. Báo cáo đổi tên dòng thành *"Lỗ thuần từ hoạt động kinh doanh"* rồi in
+số **dương**; nhãn mang dấu, con số chỉ mang độ lớn. Người gán nhãn chép đúng
+như in theo guideline mục 3.3, nên gold ghi `ln_thuan_hdkd = +154.594.725.000`
+cho một khoản LỖ. Pipeline đọc dấu ngoặc/dấu trừ và ghi âm.
 
-### 20.7 Việc lượt chạy này lộ ra, CHƯA làm
+Ba "lỗi đảo dấu" của HNG vì thế **không phải lỗi đọc số** — chúng là bất đồng
+về quy ước, và cả hai bên đều tự nhất quán: bộ gold cân mọi đẳng thức, bộ máy
+cũng gần cân.
 
-1. **Chẩn đoán SBT** — toàn bộ B02 sai với số không liên quan trong khi B01
-   đúng sạch. Xem 20.4. Cần mở PDF xem hồ sơ có mấy bộ báo cáo. **10 trong
-   24 lỗi câm nằm ở đây**, và nếu là lỗi chọn nguồn thì không đẳng thức nào
-   bắt được.
-2. **Chạy lại để đo hiệu quả bản vá nới mép.** Hiệu quả bản vá dấu đã đo
-   được offline; bản vá nới mép thì **không**, vì nó đổi ảnh đầu vào. Rẻ
-   nhất là `--chi BMP SBT` (~25 phút) để biết đơn vị đã đọc được chưa, rồi
-   mới quyết chạy lại trọn bộ (~3,5 giờ).
-   > **BẪY:** `--chi BMP SBT` mà **không** kèm `--tiep-tuc` sẽ ghi đè
-   > `tap_gold_chuan_tu_gold.json` bằng đúng 2 tài liệu, xoá sạch kết quả 10
-   > tài liệu. Bản sao đã giữ ở `..._TRUOC-VA-2026-08-27.json`.
+> **CÂU 14 — MỚI, cần người chủ trì quyết.** Cùng một chỉ tiêu
+> `ln_thuan_hdkd` mang dấu ngược nhau giữa HNG và các tài liệu khác của tập
+> gold, mà không khoá nào trong file gold khai ra chuyện đó. Mọi phân tích
+> gộp qua tài liệu — kể cả bảng kết quả của bài — sẽ cộng một khoản lỗ vào
+> một khoản lãi. Hai đường: *(a)* chuẩn hoá gold về quy ước "số âm là lỗ" và
+> gán nhãn lại B02 của HNG; *(b)* giữ nguyên và thêm một khoá khai quy ước
+> dấu cho từng tài liệu. Đường (a) mất tính "chép, đừng diễn giải"; đường (b)
+> đẩy việc diễn giải xuống mọi nơi tiêu thụ dữ liệu.
+>
+> **Ràng buộc kế toán KHÔNG phân xử được câu này**, và đó là hệ quả trực tiếp
+> của H0: hệ thuần nhất nên lật dấu TRỌN một hệ con nhất quán vẫn cân — cùng
+> một lập luận `Aδ = (c−1)Ax* = 0`, với `c = −1`.
+
+#### BMP — lỗi thật, nhưng nằm DƯỚI dung sai
+
+`thue_tndn_hien_hanh`: máy đọc 71.249.**595**.744, gold 71.249.**959**.744 —
+đảo hai chữ số. Sai **364.000 đồng**, mà `‖x‖ = 7,0 · 10¹²`, nên residual
+tương đối là **5,2 · 10⁻⁸** — dưới `IDENTITY_TOLERANCE_RATIO = 10⁻⁷`. Mọi phép
+kiểm báo ĐẠT.
+
+**Đây là lần thứ HAI cùng một chế độ lỗi được ghi nhận** — lần đầu là mã 52
+của `VNM_2026Q1_TT99` (mục 19.2), lệch 10.000 đồng trên một con số 48 tỷ. Cơ
+chế: dung sai tính theo tỷ lệ trên chuẩn của CẢ vector, nên một sai số tuyệt
+đối nhỏ ở một chỉ tiêu nhỏ luôn bị nuốt bởi độ lớn của tổng tài sản.
+
+**Đừng chỉnh `IDENTITY_TOLERANCE_RATIO`** — chỉ thị của người dùng về hằng số
+ngưỡng khi dữ liệu còn mỏng vẫn áp. Hướng đúng nếu về sau muốn đóng: dung sai
+theo độ lớn của **từng đẳng thức** thay vì của cả vector. Đó là thay đổi thiết
+kế phép đo, nên phải vào mục Sửa đổi của `PREREGISTRATION.md` trước.
+
+#### Đọc lại con số 1,25% cho đúng
+
+Mục 20.4 kết luận "lỗi câm không quy giản được là 3/240 = 1,25%". Hai cơ chế
+đã thi công đưa 24 xuống 16, tức **chưa chạm tới 13 lỗi của SBT và HNG** —
+đúng như dự đoán, vì cả hai đều không phải lỗi đọc số. Con số 1,25% vẫn là
+đích, nhưng đường tới nó đi qua **khâu chọn nguồn** và **quy ước dấu**, không
+đi qua bộ sửa lỗi.
+
+### 20.5 Hai bản vá 27/08/2026 — tính chất phải giữ
+
+Chẩn đoán, cơ chế và số đo trước/sau ở `CHANGELOG.md` 27/08/2026. Hai điều
+ràng buộc việc sau:
+
+> **(a) `chuan_hoa_dau()` CỐ Ý không giải đẳng thức `Mã 60 = Mã 50 − Mã 51 −
+> Mã 52` để chọn dấu.** Giải nó thì mọi kết quả đều thoả nó, và phép đo H1 —
+> so vi phạm ràng buộc với confidence — mất sạch nghĩa vì tín hiệu bị chính
+> bước trích xuất làm phẳng. Chỉ dùng **chiều** của mã 50 so với mã 60; độ lớn
+> vẫn tự do sai nên đẳng thức vẫn là phép kiểm độc lập. Có test khoá tính chất
+> này (`tests/test_chuan_hoa_dau.py`) — **đừng hoàn thiện nó.** Hàm đặt trong
+> `validate_result()` ngay **sau** bước ép kiểu, không đặt ở router: trước ép
+> kiểu giá trị VLM còn có thể là chuỗi và hàm sẽ lặng lẽ không làm gì.
+
+> **(b) Nới mép trên vùng cắt MỚI LÀ KIỂM HÌNH HỌC.** Dòng "Đơn vị tính" nay
+> nằm trong ảnh đưa cho VLM, nhưng **nó có đọc ra đúng hay không thì phải chạy
+> lại pipeline mới biết**. Đừng ghi vào bài rằng chỗ này đã sửa xong. Ngưỡng
+> `TY_LE_NOI_TREN = 0,05` theo **tỷ lệ chiều cao trang**, không theo pixel cố
+> định, vì tập gold trải 89,9–295,8 dpi; nới tới **đỉnh** của box gần nhất phía
+> trên có chồng ngang với bảng.
+
+Vì sao chỗ (b) nặng hơn mọi con số accuracy: với sai đơn vị toàn cục thì
+`Aδ = (c−1)Ax* = 0`, tức **mọi đẳng thức kế toán đều mù với nó**. Bảng vẫn cân
+hoàn hảo, mọi phép kiểm vẫn báo ĐẠT, trong khi mọi con số sai 1000 lần. Đây là
+chế độ lỗi DUY NHẤT cả tầng ràng buộc không nhìn thấy.
+
+### 20.6 Việc lượt chạy này lộ ra, CHƯA làm
+
+1. **Chẩn đoán SBT** — **10 trong 24 lỗi câm nằm ở đây**, và nếu là lỗi chọn
+   nguồn thì không đẳng thức nào bắt được. Cần mở PDF xem hồ sơ có mấy bộ báo
+   cáo, và phân biệt "Riêng" với "Hợp nhất".
+2. **Chạy lại để đo hiệu quả bản vá nới mép.** Rẻ nhất là `--chi BMP SBT`
+   (~25 phút) rồi mới quyết chạy trọn bộ (~3,5 giờ). Xem bẫy 3 ở mục 20.2.
 3. **H1 CHƯA CHẠY ĐƯỢC ở cấu hình hiện tại.** `n_samples=1, temperature=0.0`
    cho confidence 1,0 ở mọi trường, mà `FieldResult.khong_do()` ghi rõ 1,0 ở
-   đó nghĩa là **"không đo được"** chứ không phải "chắc chắn". H1 so vi phạm
-   ràng buộc với confidence của model — cột confidence hằng số thì phép so
-   vô nghĩa. Muốn đo H1 phải bật `n_samples > 1`, chi phí API nhân đúng k lần.
-4. **Mới có MỘT model, và là bản `:free`.** `OPENROUTER_MODEL` hiện là
-   `google/gemma-4-31b-it:free`. Proposal baseline 2 đòi **ít nhất ba** —
-   một open-weight, một closed, một model tiếng Việt.
-5. **Chế độ đầu-cuối chưa chạy.** Chỉ mới chạy `--chuan-tu-gold`. Chế độ mặc
-   định chỉ khác ở 5 tài liệu TT200 (5 tài liệu TT99 lùi về TT99 nên trùng
-   với oracle), nên chạy `--chi` trên đúng 5 mã đó là đủ và rẻ hơn một nửa.
-6. **`VNM_2026Q1_TT99` thiếu PDF.** Hoặc bổ sung file vào `data/bctc/`, hoặc
-   rút nhãn khỏi `data/gold/`. Để nguyên thì mọi lượt chạy sau đều lặng lẽ
-   bỏ qua nó, và `data/gold/` (11) với `data/nguon_gold.json` (10) tiếp tục
-   lệch nhau.
+   đó nghĩa là **không đo được**. Cột confidence hằng số thì phép so vô nghĩa.
+   Bật `n_samples > 1` thì chi phí API nhân đúng k lần.
+4. **Mới có MỘT model, và là bản `:free`** (`google/gemma-4-31b-it:free`).
+   Proposal baseline 2 đòi **ít nhất ba** — một open-weight, một closed, một
+   model tiếng Việt.
+5. **Chế độ đầu-cuối chưa chạy.** Chỉ khác ở 5 tài liệu TT200, nên `--chi`
+   trên đúng 5 mã đó là đủ.
+6. **`VNM_2026Q1_TT99` thiếu PDF.** Hoặc bổ sung vào `data/bctc/`, hoặc rút
+   nhãn khỏi `data/gold/`.
+
+---
 
 ## Phụ lục A — MỐC 1: hồ sơ đối chiếu ma trận ràng buộc với Thông tư
 
@@ -2106,166 +1620,90 @@ chỗ khác đã giải rồi.
 > `B 01a - DN` là dấu hiệu TT99 — cùng lỗi này, chưa sửa, và nay đã chặn hai
 > tài liệu thật. Xem Câu 11 ở mục 0.
 
-
-## Phụ lục B — Sổ thi công phương án C
-
-Viết cuốn chiếu trong lúc sửa, để phiên sau nối tiếp được nếu phiên trước hết
-quota giữa chừng. Ban đầu là file riêng `NOTES-PHUONG-AN-C.md`, đã gộp vào đây
-ngày 24/08/2026.
-
-- **Bắt đầu:** 24/08/2026, từ commit `5810ea2`
-- **Nhánh:** `research`
-
 ---
 
-### Quyết định của người dùng, 24/08/2026
+## Phụ lục B — Phương án C: quyết định, ràng buộc, và bước D còn lại
 
-Người dùng chọn **phương án C** cho câu hỏi treo ở `HANDOFF.md` mục 12
-(`None` hay `0` khi một thành phần đẳng thức không đọc được), cộng hai lựa
-chọn con:
+Phương án C phân biệt *dòng vắng mặt trên biểu mẫu* với *dòng đọc hỏng*, để
+`validate_result()` thôi bỏ qua cả đẳng thức khi một thành phần là `None`.
+Quyết định của người dùng 24/08/2026, thi công xong bước A–C; **bước D chưa
+làm**. Số đo và hiệu quả ở `CHANGELOG.md` mục 24/08/2026.
 
-1. **Nhánh VLM phân biệt "vắng mặt" với "đọc hỏng" bằng cách dò trên OCR
-   text**, không hỏi thẳng model. Lý do chọn: việc model tự khai "dòng này
-   không có" là một phán đoán của model, và phán đoán sai sẽ lặng lẽ thành
-   số 0 đi vào đẳng thức — đúng chỗ nhạy cảm nhất với việc bịa. Dò trên text
-   thì tất định, kiểm lại được, và truy được về một chỗ cụ thể trên tài liệu,
-   khớp với luận điểm chống bịa của cả nghiên cứu.
-2. **Số 0 của dòng vắng mặt được ghi vào cả `data` đầu ra**, kèm khoá trạng
-   thái tường minh, chứ không chỉ tồn tại bên trong bước kiểm đẳng thức. Lý
-   do: guideline mục 3.4 đã quy định gold ghi `0` cho dòng vắng mặt, mà
-   `eval/metrics.py` quy định `None` chỉ khớp với `None`. Nếu pipeline vẫn
-   trả `None` thì `field_accuracy` và `document_fully_correct` bị trừ điểm
-   oan trên mọi tài liệu có dòng vắng mặt — tức hai trong ba chỉ số đầu bảng
-   bị bóp méo một cách hệ thống.
+### Hai lựa chọn con, và lý do — cả hai còn ràng buộc bước D
 
-### Ràng buộc phát hiện lúc bắt tay vào làm
+1. **Phân biệt bằng cách dò trên OCR text, không hỏi thẳng model.** Để model
+   tự khai "dòng này không có" là một phán đoán của model, và phán đoán sai
+   sẽ lặng lẽ thành số 0 đi vào đẳng thức — đúng chỗ nhạy cảm nhất với việc
+   bịa. Dò trên text thì tất định, kiểm lại được, truy được về một chỗ cụ thể
+   trên tài liệu.
+2. **Số 0 của dòng vắng mặt ghi vào cả `data` đầu ra**, kèm khoá trạng thái
+   tường minh. Guideline mục 3.4 buộc gold ghi `0`, mà `eval/metrics.py` quy
+   định `None` chỉ khớp `None` — pipeline trả `None` thì `field_accuracy` và
+   `document_fully_correct` bị trừ điểm oan một cách hệ thống.
 
-**Báo cáo mẫu là bản scan.** `pdftotext -layout` trên
-`data/samples/20260429_VNM_...pdf` chỉ ra 152 ký tự cho 12 trang. Nên đường
-rẻ nhất — đọc text layer của PDF, miễn phí và chính xác tuyệt đối — **không
-dùng được** cho loại tài liệu dự án nhắm tới. Poppler có sẵn trên máy nên
-`pdftotext` vẫn đáng thử trước ở mỗi tài liệu, nhưng không được coi nó là
-đường chính.
-
-**`USE_OCR_FIRST=false` trong `.env`.** Nhánh OCR đang tắt, nên đường chạy
-thường (VLM) hiện **không sinh ra một chữ OCR text nào**. Phương án C vì vậy
-bắt buộc phải chạy OCR trên đường VLM — đúng thứ cấu hình mặc định cố ý tắt
-vì nó chậm (EasyOCR chạy CPU).
-
-Hai thứ làm chi phí đó chịu được, và thiết kế dựa vào cả hai:
-
-- **Probe dò theo MÃ SỐ DÒNG, không theo tên chỉ tiêu.** Mã số là chữ số, và
-  `data/output/ocr_engine_easyocr.md` đo được EasyOCR đạt 0,999 Levenshtein
-  trên ô số. Chỗ nó yếu (0,934, và chỉ 0,467 đúng con số ở độ phân giải
-  thấp) là tên tiếng Việt có dấu — thứ probe không dùng tới.
-- **Probe chạy một lần cho mỗi MẪU BIỂU, không phải mỗi trang.** "Báo cáo
-  này có dòng mã 150 không" là tính chất của trang bảng cân đối, không phải
-  của cả tài liệu. Probe tái dùng vùng bảng đã cắt sẵn cho VLM nên không tốn
-  thêm convert PDF hay YOLO — hai khâu đắt nhất đều đã chạy rồi.
-
----
-
-### Bốn bước đã thi công — tra hash khi cần chi tiết
-
-| Bước | Việc | Commit |
-|---|---|---|
-| A | Đưa `standard` đi tới nơi cần dùng: `router.py` gọi `validate_result()` ở ba chỗ mà không truyền `standard`, nên mọi tài liệu bị kiểm bằng đẳng thức TT99. Sửa kèm việc `router.py` đè `meta` thật, làm đầu ra khai sai chuẩn và đánh rơi `early_stop` với `prompt_hash` | `fa5c6d2` |
-| B | Ghi `0` của dòng vắng mặt vào cả `data` đầu ra kèm khoá trạng thái tường minh, thay vì chỉ tồn tại trong bước kiểm đẳng thức | `88a77f5` |
-| C1 | Hợp đồng của probe: trả ba trạng thái — có dòng, không có dòng, không kết luận được | `19fe938` |
-| C2 | Probe dò theo mã số dòng trên text OCR của vùng bảng đã cắt | `ada6f75` |
-
-Bước A phải đi trước vì C cần biết "dòng này có trên biểu mẫu của chuẩn này
-không", mà câu đó chỉ trả lời được khi `standard` đã tới nơi.
-
-
-### Bước D — việc còn lại, CHƯA làm
-
-`chon_chuan()` vẫn chỉ có hai nguồn `tham_so` và `mac_dinh`. Trên cấu hình mặc
-định (không ai truyền `standard`), mọi tài liệu vẫn được xử như **TT99** —
-đúng, nhưng vì lùi mặc định chứ không vì nhận diện. Khác biệt so với trước
-bước A: việc lùi nay **kêu ra log và ghi vào `meta["standard_nguon"]`** thay vì
-im lặng.
-
-Với báo cáo TT200 thật, hậu quả vẫn còn: prompt dùng bảng mã TT99 (mã 280 thay
-vì 270) và bộ đẳng thức TT99.
-
-#### Hai vướng mắc của bước D, đã khảo sát — ĐỌC TRƯỚC KHI THI CÔNG
-
-**Vướng mắc 1 — thứ tự.** Chuẩn phải biết **trước** khi dựng prompt, còn probe
-của C2 chạy **sau** khi trích xuất. Cách gỡ: kéo vài trang đầu ra khỏi
-generator, OCR, gọi `detect_standard()`, rồi mới chạy trích xuất.
-`cached_pages` và `_remaining_pages()` vốn đã hỗ trợ đúng kiểu tiêu thụ đó nên
-trang đã kéo ra không bị convert hay chạy YOLO lần hai. Nên thêm một cache text
-theo số trang để probe của C2 khỏi OCR lại chính những trang đó.
-
-**Vướng mắc 2 — nghiêm trọng hơn, và nó bác bỏ cách làm hiển nhiên.** Dấu hiệu
-duy nhất `detect_standard()` dùng là **TÊN BÁO CÁO** ở tiêu đề trang ("Bảng cân
-đối kế toán" của TT200 so với "Báo cáo tình hình tài chính" của TT99). Nhưng
-`iter_table_regions()` chỉ yield **vùng bảng đã cắt**, và `PADDING` trong
-`src/layout_detection.py` chỉ có **8 pixel**. Tiêu đề báo cáo nằm phía trên
-bảng, nên nó gần như chắc chắn **nằm ngoài** vùng đã cắt.
-
-Hệ quả: OCR trên vùng bảng — thứ mà C2 đang làm — **không đủ** để nhận diện
-chuẩn.
-
-**ĐÃ ĐO, và tiền đề ĐÚNG** — `data/output/tieu_de_trong_vung_cat.md`, chạy
-trên 12 trang đầu báo cáo VNM. Trang mang bảng thật: 2/12 (phần còn lại YOLO
-không thấy bảng nên `ca_trang()` trả nguyên trang, và câu hỏi vùng cắt không
-đặt ra ở đó). Trang mang bảng mà **TÊN báo cáo lọt vào vùng cắt: 0/2**. Cả
-hai lần `detect_standard()` kết luận được đều **nhờ SỐ HIỆU thông tư**, một
-dấu hiệu khác hẳn — mà số hiệu chỉ có trên báo cáo còn nhắc văn bản ban hành
-nên có thể vắng hoàn toàn ở tài liệu khác, và mẫu `99\s*/\s*2025` cho `\s*`
-nuốt cả xuống dòng nên còn khớp oan được.
-
-Phép đo ấy đo trên **một** tài liệu nên đủ để loại một hướng sai, chưa đủ để
-chốt hướng đúng. Nay đã có 10 tài liệu ở `data/bctc/` (mục 19.6) nên **đo lại
-trên nhiều công ty là việc rẻ và nên làm trước khi chọn hướng**.
-
-Ba hướng, chưa chọn:
-
-1. **Cho `iter_table_regions()` yield kèm ảnh cả trang**, rồi OCR cả trang chỉ
-   để nhận diện, chỉ tới khi nhận ra thì thôi. Đúng đắn nhất, nhưng OCR cả
-   trang đắt hơn OCR vùng bảng và EasyOCR chạy CPU.
-2. **Nới `PADDING` riêng cho bước nhận diện** — cắt rộng lên phía trên vùng
-   bảng đầu tiên để ôm lấy tiêu đề. Rẻ hơn, nhưng thành một hằng số nữa cần
-   hiệu chỉnh mà chưa có dữ liệu để hiệu chỉnh.
-3. **Nhận diện bằng bộ MÃ SỐ thay vì bằng tên.** Hấp dẫn vì mã số là chữ số,
-   đúng chỗ EasyOCR mạnh, và mã số thì nằm trong vùng bảng. Nhưng phải rất cẩn
-   thận: mã 270 tồn tại ở CẢ HAI chuẩn với nghĩa khác nhau (Tổng cộng tài sản ở
-   TT200, Tài sản dài hạn khác ở TT99), nên dấu hiệu phải là *sự có mặt của mã
-   280* chứ không phải sự có mặt của 270. Cần đối chiếu lại Phụ lục IV trước
-   khi tin.
-
-Dù chọn hướng nào cũng phải giữ nguyên tắc của `detect_standard()`: không đủ
-dấu hiệu thì trả `None` và lùi mặc định **có ghi lại**, không đoán bừa. Và thêm
-nguồn `nhan_dien` vào tập đóng của `chon_chuan()`.
-
-#### Bước A — vì sao đi trước
-
-C cần biết "dòng này có trên biểu mẫu của chuẩn này không", mà câu đó chỉ
-trả lời được khi `standard` đã đi tới nơi cần dùng. Hiện `router.py` gọi
-`validate_result()` ở ba chỗ (dòng 233, 303, 372) mà không truyền `standard`,
-nên mọi tài liệu bị kiểm bằng đẳng thức TT99. Ngoài ra `router.py:327` gán
-`meta=da_kiem["meta"]`, tức **đè** lên meta thật và làm đầu ra khai sai chuẩn
-đã nhận diện, đồng thời đánh rơi `early_stop` và `prompt_hash`.
-
-#### Bước C — hợp đồng của probe
-
-Ba trạng thái, ghi tường minh, không suy ra từ sự vắng mặt của khoá khác:
+### Hợp đồng của probe — ba trạng thái, đừng gộp
 
 - `co_gia_tri` — đọc được số.
 - `vang_mat` — probe khẳng định biểu mẫu **không có** dòng đó → giá trị `0`.
-- `khong_doc_duoc` — probe thấy dòng nhưng không ra số, hoặc probe không
-  chạy được → giá trị `None`, nghĩa là *chưa biết*.
+- `khong_doc_duoc` — probe thấy dòng nhưng không ra số, hoặc probe không chạy
+  được → `None`, nghĩa là *chưa biết*.
 
-Ca thứ ba phải giữ `None` chứ không được nhập vào `vang_mat`: gộp lại là
-quay về đúng cái nhập nhằng mà phương án C sinh ra để gỡ.
+Ca thứ ba phải giữ `None`; nhập nó vào `vang_mat` là quay lại đúng cái nhập
+nhằng mà phương án C sinh ra để gỡ.
 
-**Cạm bẫy đã biết, đừng lặp lại.** `extract_field_by_code()` hiện trả `None`
-trần cho BA nguyên nhân khác nhau (field không có trong bảng mã của chuẩn;
-không thấy marker mẫu biểu; không khớp được số). Muốn phân biệt thì phải cho
-nó nói ra lý do, chứ không đọc được từ giá trị trả về.
+### Vì sao probe rẻ được — hai tính chất thiết kế dựa vào
 
-Và nhánh OCR ở `router.py:147-151` đang **lọc bỏ hẳn** field `None`
-(`if gia_tri is not None`), nên hiện không còn dấu vết field nào đã thử mà
-trượt. Chỗ này phải sửa thì probe mới có cái để ghi.
+- **Dò theo MÃ SỐ DÒNG, không theo tên chỉ tiêu.** Mã số là chữ số, và
+  EasyOCR đạt 0,999 Levenshtein trên ô số. Chỗ nó yếu là tên tiếng Việt có
+  dấu — thứ probe không dùng tới.
+- **Probe chạy một lần cho mỗi MẪU BIỂU, không phải mỗi trang**, và tái dùng
+  vùng bảng đã cắt sẵn cho VLM nên không tốn thêm convert PDF hay YOLO.
+
+### Bước D — nhận diện chuẩn mẫu biểu, CHƯA làm
+
+`chon_chuan()` vẫn chỉ có hai nguồn `tham_so` và `mac_dinh`, nên không ai
+truyền `standard` thì mọi tài liệu bị xử như **TT99** — đúng vì lùi mặc định
+chứ không vì nhận diện. Với báo cáo TT200 thật thì prompt dùng bảng mã TT99
+(mã 280 thay vì 270) và bộ đẳng thức TT99. Việc lùi nay có kêu ra log và ghi
+vào `meta["standard_nguon"]`.
+
+**Vướng mắc 1 — thứ tự.** Chuẩn phải biết **trước** khi dựng prompt, còn
+probe chạy **sau** khi trích xuất. Cách gỡ: kéo vài trang đầu ra khỏi
+generator, OCR, gọi `detect_standard()`, rồi mới trích xuất. `cached_pages`
+và `_remaining_pages()` đã hỗ trợ đúng kiểu tiêu thụ đó. Nên thêm cache text
+theo số trang để probe khỏi OCR lại chính những trang ấy.
+
+**Vướng mắc 2 — đã đo, và nó bác bỏ cách làm hiển nhiên.** Dấu hiệu duy nhất
+`detect_standard()` dùng là TÊN BÁO CÁO ở tiêu đề trang, nhưng
+`iter_table_regions()` chỉ yield vùng bảng đã cắt. Đo trên 12 trang đầu báo
+cáo VNM (`data/output/tieu_de_trong_vung_cat.md`): trang mang bảng 2/12,
+trang có TÊN báo cáo lọt vào vùng cắt **0/2**. Cả hai lần `detect_standard()`
+kết luận được đều **nhờ SỐ HIỆU thông tư** — dấu hiệu khác hẳn, chỉ có trên
+báo cáo còn nhắc văn bản ban hành, và mẫu `99\s*/\s*2025` cho `\s*` nuốt cả
+xuống dòng nên còn khớp oan được.
+
+Phép đo ấy trên **một** tài liệu: đủ để loại một hướng sai, chưa đủ để chốt
+hướng đúng. Nay có 10 tài liệu ở `data/bctc/` nên **đo lại trên nhiều công ty
+là việc rẻ và phải làm trước khi chọn hướng**.
+
+Ba hướng, chưa chọn:
+
+1. **Yield kèm ảnh cả trang** rồi OCR cả trang chỉ để nhận diện. Đúng đắn
+   nhất, nhưng đắt hơn và EasyOCR chạy CPU.
+2. **Nới `PADDING` riêng cho bước nhận diện.** Rẻ hơn, nhưng thành một hằng
+   số nữa cần hiệu chỉnh mà chưa có dữ liệu để hiệu chỉnh. *(Lưu ý: bản vá
+   `05d00d0` đã nới mép trên vùng cắt theo tỷ lệ cho việc khác — đọc lại
+   `tran_noi_tren()` trước khi thêm hằng số mới.)*
+3. **Nhận diện bằng bộ MÃ SỐ thay vì bằng tên.** Mã số là chữ số, đúng chỗ
+   EasyOCR mạnh, và nằm trong vùng bảng. Nhưng mã 270 tồn tại ở CẢ HAI chuẩn
+   với nghĩa khác nhau, nên dấu hiệu phải là *sự có mặt của mã 280*. Đối
+   chiếu lại Phụ lục IV trước khi tin.
+
+Dù chọn hướng nào cũng giữ nguyên tắc của `detect_standard()`: không đủ dấu
+hiệu thì trả `None` và lùi mặc định **có ghi lại**, không đoán bừa. Và thêm
+nguồn `nhan_dien` vào tập đóng của `chon_chuan()`.
+
+**Cạm bẫy còn nguyên:** `extract_field_by_code()` trả `None` trần cho BA
+nguyên nhân khác nhau (field không có trong bảng mã của chuẩn; không thấy
+marker mẫu biểu; không khớp được số). Muốn phân biệt thì phải cho nó nói ra
+lý do, không đọc được từ giá trị trả về.

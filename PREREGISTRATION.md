@@ -307,7 +307,7 @@ giống nhau đến mức nếu một trang vào train và một trang vào test
 
 ## Sửa đổi
 
-**Mười bốn tu chính, không cái nào được rút gọn hay viết đè.** Đó là điều kiện
+**Mười lăm tu chính, không cái nào được rút gọn hay viết đè.** Đó là điều kiện
 để việc đăng ký trước còn giá trị: một bản ghi sửa được sau khi thấy kết quả
 thì không chứng minh được gì. **Mục này vì thế cố ý nằm ngoài mọi đợt dọn dẹp
 tài liệu của repo** — nén nó lại là phá đúng thứ nó tồn tại để bảo vệ. Mục lục
@@ -335,8 +335,44 @@ chính ghi *ta cam kết đo khác đi*, changelog ghi *con số đã đổi bao
 | 26/08 | Độ phân giải bản quét thành hiệp biến ghi trước, phân tích thứ cấp | H1, H2, giới hạn |
 | 27/08 | Phân bố lỗi thật ở tầng gold khác hẳn phân bố bơm ở tầng XBRL | giới hạn H2, H3 |
 | 28/08 | Tài liệu đã chạy pipeline bị loại khỏi tập gán nhãn đôi | đo đồng thuận |
+| 28/08 | **HOÃN Mốc 2, chạy Mốc 3 trước** — kèm ngoại lệ cho ca hoà | thứ tự mốc dừng |
 
 Mọi sửa đổi ghi vào đây kèm ngày và lý do, không sửa đè lên trên.
+
+### 28/08/2026 (muộn hơn) — HOÃN Mốc 2, chạy Mốc 3 trước
+
+**Sửa đổi.** Thứ tự ba mốc dừng ở mục 4 đảo lại: **Mốc 3 chạy trước, Mốc 2
+làm sau**. Quyết định của người chủ trì, 28/08/2026, nguyên văn: *"kệ mốc 2
+đi, đo hết mốc 3 rồi quay lại"*.
+
+**Mốc 2 nói gì và vì sao nó vốn đứng trước.** Mục 4 đặt Mốc 2 sau pilot 20 tài
+liệu: đo tỷ lệ lỗi thật, từ đó **tính lại power** và quyết quy mô tầng XBRL.
+Nó đứng trước Mốc 3 vì chính nó nói cho biết cần bao nhiêu tài liệu thì phép
+so ở Mốc 3 mới đủ sức phân biệt thắng thua với may rủi.
+
+**Rủi ro của việc đảo thứ tự, ghi ra trước khi có kết quả.** Chạy Mốc 3 mà
+chưa tính lại power nghĩa là **không biết trước phép so có đủ sức hay không**.
+Hệ quả cụ thể: một kết quả HOÀ ở Mốc 3 sẽ không phân biệt được hai khả năng
+khác hẳn nhau — *phương pháp thật sự ngang nhau*, hay *mẫu quá mỏng nên không
+thấy được khác biệt có thật*. Mà theo mục 4, hoà ở tầng gold thì **kích hoạt
+điều kiện dừng**. Tức đảo thứ tự làm tăng nguy cơ dừng dự án vì một kết quả âm
+tính giả.
+
+**Ràng buộc kèm theo, để rủi ro đó không thành mất mát:**
+
+1. Lượt chạy Mốc 3 trên tầng gold phải báo cáo **số lượt lỗi thực tế** đã dùng
+   để so, kèm khoảng tin cậy bootstrap theo cụm tài liệu. Không được báo cáo
+   một tỷ lệ trần trụi.
+2. Nếu kết quả là HOÀ **và** số lượt lỗi dưới ngưỡng power tính được về sau ở
+   Mốc 2, thì kết quả đó **KHÔNG kích hoạt điều kiện dừng** — nó được ghi là
+   *chưa kết luận được*, và phải chạy lại sau khi đủ tài liệu. Ngoại lệ này
+   ghi ở đây, TRƯỚC khi chạy, chứ không được viện ra sau khi thấy kết quả xấu.
+3. Kết quả THUA vẫn kích hoạt điều kiện dừng như cũ. Mẫu mỏng làm khó thấy
+   khác biệt, nó không tạo ra một chiều thua giả.
+4. Mốc 2 **không bị bỏ**, chỉ bị hoãn. Nó vẫn phải chạy trước khi bất kỳ con
+   số nào của Mốc 3 đi vào bài báo.
+
+**Không tài liệu nào phải gán nhãn lại.**
 
 ### 28/08/2026 — Tài liệu đã chạy pipeline bị loại khỏi tập gán nhãn đôi
 

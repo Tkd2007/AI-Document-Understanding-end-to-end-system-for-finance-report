@@ -64,7 +64,7 @@ Xem khung ở đầu file.
 | Loại doanh nghiệp | **Phi tài chính** | Tổ chức tín dụng và chi nhánh ngân hàng nước ngoài theo chế độ kế toán riêng của Ngân hàng Nhà nước — mẫu biểu và mã số khác hẳn |
 | Loại báo cáo | Báo cáo **riêng** hoặc **hợp nhất**, nhưng phải ghi rõ | Hai loại có số khác nhau trên cùng một doanh nghiệp cùng một kỳ. Không ghi rõ là trộn hai tổng thể |
 | Biểu mẫu | B01, B02 **và B03** (mọi biến thể kỳ: không hậu tố, `a`, `b`) | **Sửa 25/08/2026:** bộ chỉ tiêu chuyển sang kịch bản E nên B03 nay CÓ gán nhãn — 6 chỉ tiêu. Xem mục Sửa đổi |
-| Cột | **Cột kỳ báo cáo**, tức cột đầu | **Chốt 23/08/2026:** cột kỳ so sánh KHÔNG gán nhãn. Nó nhân đôi công mà không thêm một điểm nào cho trần định vị — lý do đầy đủ ở `PREREGISTRATION.md` mục Sửa đổi |
+| Cột | **Kỳ NGẮN NHẤT và MỚI NHẤT**: bảng cân đối lấy cột có ngày mới nhất; bảng kết quả kinh doanh lấy nhóm **Quý**, kỳ này — **KHÔNG lấy cột luỹ kế** | **Chốt 23/08/2026:** cột kỳ so sánh KHÔNG gán nhãn — lý do ở `PREREGISTRATION.md` mục Sửa đổi. **Nói rõ 28/08/2026:** B02 có BỐN cột và hai nhóm kết thúc cùng ngày, nên đừng chọn bằng ngày kết thúc, cũng đừng chọn bằng vị trí (trang có thể xoay 90°) |
 
 **Bộ chỉ tiêu: 27 với TT99, 26 với TT200.** Danh sách chính thức là
 `FIELD_MAP` trong `src/fields_config.py`; đừng chép lại vào đây kẻo hai bản
@@ -529,6 +529,9 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
       bằng đẳng thức mã 60 — mục 3.3
 - [ ] Ô trống, dấu gạch, và dòng vắng mặt đều ghi `0`; `null` **chỉ** dùng
       khi có dòng mà đọc không ra (mục 3.4)
+- [ ] **Đúng cột**: bảng cân đối lấy cột có ngày mới nhất; bảng kết quả kinh
+      doanh lấy nhóm **Quý**, kỳ này — KHÔNG lấy cột luỹ kế. Hai nhóm cột của
+      B02 kết thúc cùng ngày nên đừng chọn bằng ngày (mục 2)
 - [ ] Đã đối chiếu **mã số**, không chỉ tên chỉ tiêu
 - [ ] Đã kiểm riêng các cặp dễ nhầm ở mục 3.6
 - [ ] Không sửa số cho cân đẳng thức; lệch đáng kể thì ghi `notes`
@@ -542,6 +545,40 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 
 > Mọi thay đổi guideline ghi vào đây kèm **ngày** và **lý do**, và ghi rõ
 > **những tài liệu nào phải gán nhãn lại**. Không sửa đè lên nội dung trên.
+
+### 28/08/2026 (muộn hơn) — "Cột đầu" nói rõ thành "cột QUÝ, không phải luỹ kế"
+
+**Chỗ sửa:** mục 2, dòng "Cột". **Không tài liệu nào phải gán nhãn lại** — quy
+tắc mới nói rõ đúng thứ các nhãn hiện có đã làm, chứ không đổi thứ phải làm.
+
+**Vì sao phải nói rõ.** Bản cũ ghi *"Cột kỳ báo cáo, tức cột đầu"*. Chữ "cột
+đầu" hỏng ở hai chỗ. Một, **trang có thể xoay 90 độ** — bảng kết quả kinh
+doanh của `SBT_2025Q2` và `DGC_2025Q2` đều xoay ngang, và ở đó "đầu" không còn
+nghĩa hình học nào chắc chắn. Hai, nó mô tả VỊ TRÍ chứ không mô tả THỨ CẦN
+LẤY, nên không dùng để phân xử khi bảng có nhiều nhóm cột.
+
+**Bố cục thật, soi trên hai tài liệu ngày 28/08/2026:**
+
+| Biểu mẫu | Số cột số liệu | Lấy cột nào |
+|---|---|---|
+| Cân đối kế toán (B01) | 2 — hai THỜI ĐIỂM, vd "Ngày 31 tháng 12 năm 2025" và "Ngày 30 tháng 6 năm 2025" | cột có ngày **mới nhất** |
+| Kết quả kinh doanh (B02) | **4** — nhóm "Quý N" và nhóm luỹ kế, mỗi nhóm có kỳ này và kỳ trước | **nhóm QUÝ, kỳ này** |
+
+**Cạm bẫy chính, và nó đã cắn thật:** hai nhóm cột của B02 **kết thúc cùng một
+ngày**. Trên `SBT_2025Q2`, cột "Quý II / Kỳ này" và cột "Kỳ kế toán 6 tháng
+kết thúc ngày 31 tháng 12 / Kỳ này" đều kết thúc 31/12/2025. Nên **so ngày kết
+thúc KHÔNG phân biệt được hai nhóm**. Phân biệt bằng ĐỘ DÀI kỳ: lấy kỳ ngắn
+hơn.
+
+Đây đúng chỗ pipeline đọc sai: nó lấy `12.105.315.641.553` (luỹ kế 6 tháng)
+trong khi nhãn gold ghi `6.733.581.463.563` (quý II) — chênh lệch chiếm **8
+trong 16 lỗi câm** còn lại của lượt chấm 27/08. Prompt của model đã sửa cùng
+ngày.
+
+**Số cột KHÔNG phụ thuộc báo cáo riêng hay hợp nhất.** `DGC_2025Q2` là báo cáo
+**riêng** (`Mẫu số B 02 – DN`) và vẫn có đủ bốn cột; `SBT_2025Q2` là **hợp
+nhất** (`B02a-DN/HN`) cũng bốn cột. Riêng/hợp nhất nói về PHẠM VI doanh nghiệp
+được gộp, không nói gì về số cột kỳ.
 
 ### 28/08/2026 — Mã 51 và 52 giữ nguyên dấu như in; quy tắc cũ đã SAI
 

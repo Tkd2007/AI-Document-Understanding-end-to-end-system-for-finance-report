@@ -133,10 +133,24 @@ PROMPT_RULES = [
     'ở khoá "don_vi_tinh", ví dụ "triệu đồng". Nếu ảnh không có dòng đó, trả null cho khoá này — '
     'không được suy đoán đơn vị từ độ lớn của các con số.',
 
-    '7. Chỉ lấy số liệu của kỳ báo cáo gần nhất. Xác định cột này dựa vào NHÃN/TIÊU ĐỀ cột '
-    '(ngày, quý, năm — kỳ có ngày gần hiện tại nhất), KHÔNG mặc định dựa vào vị trí cột đầu '
-    'tiên bên trái, vì thứ tự cột có thể khác nhau giữa các mẫu báo cáo. Không lấy số liệu của '
-    'kỳ so sánh.',
+    '7. Chỉ lấy số liệu của KỲ BÁO CÁO NGẮN NHẤT VÀ MỚI NHẤT. Xác định cột bằng NHÃN/TIÊU ĐỀ '
+    'cột, KHÔNG dựa vào vị trí cột đầu tiên bên trái, vì trang có thể bị xoay 90 độ và thứ tự '
+    'cột khác nhau giữa các mẫu báo cáo.',
+
+    '7b. Bảng kết quả kinh doanh quý thường có BỐN cột số liệu, chia làm hai nhóm: nhóm "Quý '
+    '<số>" và nhóm LUỸ KẾ (nhãn ghi "Luỹ kế từ đầu năm...", "Kỳ kế toán <N> tháng...", "6 '
+    'tháng", "9 tháng"). Mỗi nhóm lại có cột kỳ này và cột kỳ trước. LUÔN LẤY CỘT CỦA NHÓM QUÝ, '
+    'kỳ này. TUYỆT ĐỐI KHÔNG lấy cột luỹ kế.',
+
+    '7c. Hai nhóm cột đó THƯỜNG KẾT THÚC CÙNG MỘT NGÀY (ví dụ quý IV và luỹ kế cả năm cùng kết '
+    'thúc ngày 31 tháng 12), nên KHÔNG được chọn cột bằng cách so ngày kết thúc — cách đó không '
+    'phân biệt được hai nhóm. Phân biệt bằng ĐỘ DÀI KỲ: cột quý gộp khoảng 3 tháng, cột luỹ kế '
+    'gộp từ đầu năm tài chính. Chọn cột có kỳ NGẮN hơn.',
+
+    '7d. Bảng cân đối kế toán (tình hình tài chính) thì khác: nó có HAI cột, đều là số dư tại '
+    'một THỜI ĐIỂM chứ không phải một kỳ (ví dụ "Ngày 31 tháng 12 năm 2025" và "Ngày 30 tháng 6 '
+    'năm 2025", hoặc "Số cuối kỳ" và "Số đầu năm"). Ở bảng này lấy cột có ngày MỚI NHẤT, tức số '
+    'cuối kỳ. Không có cột luỹ kế nào ở đây.',
 
     '8. Bảng BCTC Việt Nam có cột "Mã số" (số nhỏ 2-3 chữ số như 10, 60, 280) và cột '
     '"Thuyết minh" (ký hiệu như V.5, VI.1) nằm giữa tên chỉ tiêu và giá trị. TUYỆT ĐỐI KHÔNG '

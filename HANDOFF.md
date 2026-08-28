@@ -1386,10 +1386,33 @@ Bằng chứng đanh nhất lượt chạy cho ra, đo được chứ không suy
 `Giá vốn + Lợi nhuận gộp = Doanh thu thuần` cân tới từng đồng với cả ba con số
 đều sai — 12.105.315.641.553 − 11.082.990.821.520 = 1.022.324.820.033.
 
-Tỷ lệ máy/gold không phải số nguyên (1,798 · 1,785 · 1,955), nên **không phải**
-ca đọc nhầm cột luỹ kế — cột luỹ kế cho tỷ lệ khác hẳn. Giả thuyết dẫn đầu:
-hồ sơ 62 trang chứa cả bản **Riêng** lẫn bản **Hợp nhất**, pipeline lấy B01 từ
-bản này và B02 từ bản kia. Chưa kiểm được vì nhật ký không giữ text.
+**Giả thuyết "Riêng vs Hợp nhất" đã BỊ BÁC, 28/08/2026.** File nguồn của SBT là
+bản `Hopnhat`, và `da_kiem` của nó ghi rõ nhãn gold lấy từ *"BẢNG CÂN ĐỐI KẾ
+TOÁN HỢP NHẤT"*, ký hiệu `B01a-DN/HN` — tức gold ĐÃ là bản hợp nhất, nên máy
+không thể lấy nhầm sang bản riêng mà ra số LỚN HƠN.
+
+**Bằng chứng chỉ sang hướng khác: nhầm CỘT.** Lấy hiệu (máy − gold) của từng ô
+rồi kiểm xem hiệu ấy có tự thoả đẳng thức không:
+
+| | Hiệu (máy − gold) |
+|---|---:|
+| Doanh thu thuần | 5.371.734.177.990 |
+| Giá vốn hàng bán | 4.872.249.382.154 |
+| Lợi nhuận gộp | 499.484.795.836 |
+
+Ba hiệu này **tự cân đẳng thức `giá vốn + lãi gộp = doanh thu`, residual 0 tuyệt
+đối**. Một hiệu tự cân nghĩa là bản thân nó là số liệu của một KỲ hợp lệ — đúng
+chữ ký của ca đọc nhầm cột *luỹ kế* thay vì cột *quý*. SBT lại là tài liệu niên
+độ lệch (năm tài chính kết thúc 30/6), nên bố cục cột của nó khác mọi tài liệu
+còn lại của tập gold.
+
+**Nhưng KHÔNG phải nhầm cột trọn bảng.** Xuống phía dưới B02 thì hiệu vỡ:
+`ln_khac` hiệu bằng **0** (máy đọc đúng), `loi_nhuan_sau_thue` hiệu **âm**, và
+hai đẳng thức còn lại lệch. Nên ít nhất có hai chuyện xảy ra cùng lúc, và chẩn
+đoán hiện chỉ vững cho ba dòng đầu B02.
+
+**Việc phải làm để dứt điểm:** mở PDF của SBT, xem B02 có mấy cột và nhãn cột là
+gì. Rẻ, và không đoán thêm được nữa nếu không làm.
 
 **Vì sao không ràng buộc nào cứu được:** chênh lệch nằm trọn trong không gian
 null. Một bộ số hợp lệ của doanh nghiệp KHÁC vẫn là một bộ số hợp lệ. Đây

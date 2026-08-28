@@ -4,20 +4,29 @@ Document Classifier & Router
 Điều phối giữa OCR Pipeline (rẻ, nhanh) và VLM Pipeline (đắt, chậm hơn
 nhưng đáng tin hơn).
 
-TRẠNG THÁI HIỆN TẠI: nhánh OCR đang TẮT mặc định (USE_OCR_FIRST=false).
+MẶC ĐỊNH CỦA CODE: nhánh OCR TẮT (USE_OCR_FIRST không đặt -> false).
+Nhưng .env đè được lên mặc định đó, và trên máy phát triển nó ĐANG BẬT —
+kiểm bằng dòng "--- Nhánh OCR: ... ---" in ra lúc chạy, đừng tin mặc định.
 
-Lý do tắt — đo trên báo cáo VNM Q1/2026:
-  * EasyOCR đọc số rất chuẩn nhưng đọc chữ tiếng Việt có dấu thì hỏng
-    ("TỔNG TÀI SẢN" -> "TỖNG TÀISẢN"), trong khi regex lại phải khớp
-    đúng tên chỉ tiêu để tìm được dòng.
-  * Hệ quả: nhánh OCR quét hết 55 trang (chậm, EasyOCR chạy CPU) rồi vẫn
-    thiếu field, sau đó mới gọi VLM — tức người dùng phải chờ trọn một
-    nhánh vô ích trước khi nhận kết quả.
-  * Nhánh VLM một mình trả đúng cả 11/11 field và dừng ở trang 10.
+Lý do mặc định là tắt — EasyOCR đọc số rất chuẩn nhưng đọc chữ tiếng Việt
+có dấu thì hỏng ("TỔNG TÀI SẢN" -> "TỖNG TÀISẢN"), trong khi regex phải
+khớp đúng tên chỉ tiêu mới tìm được dòng. Trên báo cáo VNM Q1/2026, nhánh
+VLM một mình trả đúng cả 11 field lúc đó và dừng ở trang 10, còn nhánh OCR
+quét hết 55 trang rồi vẫn thiếu field.
 
-Code nhánh OCR được GIỮ NGUYÊN, không xoá: bật lại bằng một dòng trong
-.env khi regex đủ tin cậy (hướng đang làm dở là dò theo mã số dòng thay
-vì theo tên chỉ tiêu — xem extract_baseline.extract_field_by_code).
+CÁI GIÁ KHI BẬT, đo trên lượt chấm tập gold 27/08/2026: OCR chiếm 77% tổng
+thời gian chạy (~27,6 giây một trang) và quét 100% số trang của mọi tài
+liệu. Nguyên nhân nằm ở run_ocr_first(): nó chỉ dừng khi is_acceptable()
+đúng — mà điều đó gần như không bao giờ xảy ra vì chính lý do đọc hỏng chữ
+có dấu ở trên. Đo được 0/9 lần dừng sớm.
+
+ĐÃ CHẶN 28/08/2026 bằng PATIENCE_PAGES_OCR — xem hằng số đó. Con số giờ
+tiết kiệm được thì CHƯA đo; phải chạy lại tập gold mới biết.
+
+Code nhánh OCR được GIỮ NGUYÊN, không xoá: hướng làm cho nó đáng tin là dò
+theo MÃ SỐ DÒNG thay vì theo tên chỉ tiêu — xem
+extract_baseline.extract_field_by_code, và probe của phương án C vốn đã
+dùng đúng cách đó.
 """
 
 import json
@@ -30,7 +39,13 @@ from dotenv import load_dotenv
 from extract_baseline import extract_all_fields, tim_theo_ma_so, tong_hop_dau_vet
 from extract_vlm import extract_fields_from_regions, require_config
 from extraction_types import ExtractionResult, FieldResult
-from fields_config import DEFAULT_STANDARD, UNIT_KEY, Standard, empty_result, fields_for
+from fields_config import (
+    DEFAULT_STANDARD,
+    UNIT_KEY,
+    Standard,
+    empty_result,
+    fields_for,
+)
 from metrics import RunMetrics, merge_into_totals, thong_tin_tai_lap, timer
 from ocr_baseline import iter_table_regions, ocr_page_regions
 from validation import has_required_fields, validate_result
@@ -44,6 +59,42 @@ def _co_bat(ten_bien: str, mac_dinh: str = "false") -> bool:
 
 # Bật lại nhánh OCR bằng USE_OCR_FIRST=true trong .env
 USE_OCR_FIRST = _co_bat("USE_OCR_FIRST")
+
+# Số trang liên tiếp nhánh OCR không trích thêm được chỉ tiêu nào thì dừng.
+#
+# VÌ SAO PHẢI CÓ, đo trên lượt chấm tập gold 27/08/2026: trước khi có bộ đếm
+# này, `run_ocr_first()` chỉ dừng khi `is_acceptable()` đúng — mà điều kiện ấy
+# đòi regex khớp đủ field bắt buộc, tức khớp TÊN chỉ tiêu tiếng Việt có dấu,
+# đúng chỗ EasyOCR đọc hỏng. Kết quả: 0/9 lần dừng sớm, quét 100% số trang của
+# mọi tài liệu, và OCR chiếm 77% tổng thời gian chạy (~27,6 giây một trang).
+#
+# KHÔNG gác điều kiện dừng sau `has_required_fields()` như nhánh VLM đang làm.
+# Ở nhánh VLM cái gác đó hợp lý vì VLM thường lấp đủ field bắt buộc; ở nhánh
+# regex thì nó gần như không bao giờ đúng, nên gác vào là dựng lại đúng cái
+# vòng lặp không có trần mà bộ đếm này sinh ra để cắt.
+#
+# ĐỂ 10, RỘNG HƠN HẲN `PATIENCE_PAGES = 3` của nhánh VLM. Hai nhánh đếm cùng
+# một thứ nhưng xuất phát từ hai chỗ khác nhau, và đó là lý do con số khác nhau:
+#
+#   * Nhánh VLM chỉ bắt đầu đếm SAU khi đã đủ field bắt buộc, tức sau khi đã
+#     vào tới phần bảng. Ba trang liên tiếp không có gì mới ở đó thật sự nghĩa
+#     là hết bảng để đọc.
+#   * Nhánh này KHÔNG có cái gác ấy, nên bộ đếm chạy ngay từ trang 1 — mà
+#     trang đầu báo cáo niêm yết là bìa, rồi tới trang ký, mục lục, phần giới
+#     thiệu. Để 3 thì nó dừng ở trang 3, TRƯỚC khi tới bảng nào, và nhánh OCR
+#     thành vô dụng một cách IM LẶNG: không gì nổ, chỉ là regex không bao giờ
+#     được đưa cho xem một trang có số.
+#
+# Nói cách khác, ngưỡng này phải đủ lớn để vượt qua phần mở đầu tài liệu — nó
+# không phải tham số tinh chỉnh tốc độ mà là điều kiện để nhánh OCR còn chạy.
+# Trên tập gold, bảng B01 sớm nhất ở trang 4 (BMP) và muộn nhất ở trang 5
+# (SBT); 10 chừa biên rộng cho hồ sơ có phần mở đầu dài hơn.
+#
+# CÁI GIÁ, phải đo chứ không được đoán: probe dò dòng chỉ đọc `cached_pages`,
+# nên nhánh OCR dừng sớm hơn thì probe thấy ít trang hơn và kết luận "dòng
+# vắng mặt trên biểu mẫu" có thể đổi. Số trang probe thật sự đọc được ghi vào
+# metrics dưới khoá `probe_so_trang` để so được giữa các lượt chạy.
+PATIENCE_PAGES_OCR = int(os.getenv("PATIENCE_PAGES_OCR", "10"))
 
 # Tắt HOÀN TOÀN cổng ràng buộc. CHỈ DÙNG KHI ĐO, không dùng khi phục vụ.
 #
@@ -335,7 +386,7 @@ def run_ocr_first(
     bo_nho_text: dict, metrics=None,
 ) -> dict:
     """
-    Quét OCR theo từng trang, merge dần, dừng khi kết quả đã đáng tin.
+    Quét OCR theo từng trang, merge dần, dừng theo một trong hai điều kiện.
 
     Nhận generator chứ không nhận list: YOLO chỉ chạy cho trang nào thực
     sự được duyệt tới, nên dừng sớm ở trang 10 nghĩa là 45 trang còn lại
@@ -343,16 +394,48 @@ def run_ocr_first(
 
     cached_pages được bồi vào tại chỗ để nhánh VLM dùng lại kết quả YOLO,
     khỏi phải convert PDF và chạy detect lần hai.
+
+    HAI ĐIỀU KIỆN DỪNG, và cái thứ hai mới là cái thật sự chặn được vòng lặp:
+
+    1. `is_acceptable()` đúng — kết quả đã đủ và hợp lệ. Đo được **0/9 lần**
+       trên tập gold 27/08/2026, vì điều kiện này đòi regex khớp tên chỉ tiêu
+       tiếng Việt có dấu, đúng chỗ EasyOCR đọc hỏng. Trước khi có điều kiện 2,
+       hàm này vì thế chạy như một vòng lặp không có trần và quét tới trang
+       cuối của mọi tài liệu.
+    2. `PATIENCE_PAGES_OCR` trang liên tiếp không trích thêm được chỉ tiêu nào.
+       Không gác sau `has_required_fields()`, nên bộ đếm chạy ngay từ trang 1 —
+       và vì mấy trang đầu báo cáo niêm yết là bìa với mục lục, ngưỡng phải đủ
+       rộng để không dừng TRƯỚC khi tới bảng đầu tiên. Xem ghi chú ở hằng số.
+
+    Trả về `(result, thông tin dừng)`. Thông tin dừng đi ra TƯỜNG MINH thay vì
+    để người đọc suy từ `len(cached_pages)`: một lượt dừng vì kiên nhẫn và một
+    lượt quét hết tài liệu 8 trang cho ra cùng con số trang, mà hai chuyện đó
+    khác hẳn nhau khi đối chiếu chi phí giữa các lượt chạy.
     """
+    trang_khong_co_field_moi = 0
+    dung_som = {"da_dung_som": False, "ly_do": "het_trang", "trang_cuoi": None}
+
     for page in pages_iter:
         cached_pages.append(page)
-        _lap_cho_trong(result, _ocr_mot_trang(page, bo_nho_text, metrics))
+        co_field_moi = _lap_cho_trong(result, _ocr_mot_trang(page, bo_nho_text, metrics))
+        dung_som["trang_cuoi"] = page["page"]
 
         if is_acceptable(gia_tri_tran(result), standard):
             print(f"--- OCR đã đủ và hợp lệ, dừng ở trang {page['page']} ---")
+            dung_som.update(da_dung_som=True, ly_do="du_va_hop_le")
             break
 
-    return result
+        trang_khong_co_field_moi = 0 if co_field_moi else trang_khong_co_field_moi + 1
+
+        if trang_khong_co_field_moi >= PATIENCE_PAGES_OCR:
+            print(
+                f"--- OCR: {PATIENCE_PAGES_OCR} trang liên tiếp không có chỉ tiêu "
+                f"mới -> dừng ở trang {page['page']}. Nhánh VLM đọc tiếp từ đây ---"
+            )
+            dung_som.update(da_dung_som=True, ly_do="het_bang_de_doc")
+            break
+
+    return result, dung_som
 
 
 def _remaining_pages(pages_iter, cached_pages: list):
@@ -379,14 +462,23 @@ def run_unconstrained(
     vậy chưa từng bị ràng buộc kế toán chạm vào, và đó là điều kiện để
     con số AUROC ở H1 có nghĩa.
 
-    Kể cả điều kiện dừng sớm của run_ocr_first() cũng phải bỏ: nó gọi
-    is_acceptable(), nên nó quyết định đọc tới trang nào dựa trên chính
-    tín hiệu đang được đem đi đánh giá.
+    run_ocr_first() có HAI điều kiện dừng và đường này bỏ CẢ HAI, nhưng vì
+    hai lý do khác nhau — đừng gộp lại:
+
+      * `is_acceptable()` phải bỏ vì nó quyết định đọc tới trang nào dựa
+        trên chính tín hiệu đang được đem đi đánh giá. Đây là lý do bắt buộc.
+      * `PATIENCE_PAGES_OCR` thì KHÔNG dính vào ràng buộc — nó đếm chỉ tiêu
+        mới, tức tính đầy đủ. Bỏ nó ở đây là một lựa chọn THẬN TRỌNG, không
+        phải một tất yếu: đường đo đọc trọn tài liệu nên không chỉ tiêu nào
+        vắng mặt vì chưa được quét tới.
+
+    Cái giá của lựa chọn đó là đường đo CHẬM HƠN hẳn đường phục vụ, và con
+    số thời gian của hai đường vì thế không so với nhau được.
 
     KHÔNG bỏ điều kiện dừng sớm theo PATIENCE_PAGES bên trong nhánh VLM:
-    cái đó dựa trên "đã đủ field bắt buộc chưa", tức là tính đầy đủ chứ
-    không phải tính hợp lệ theo ràng buộc. Nó là một nguồn thiên lệch
-    khác và được xử lý riêng trong danh mục dọn dẹp.
+    cái đó cũng dựa trên tính đầy đủ chứ không phải tính hợp lệ theo ràng
+    buộc. Nó là một nguồn thiên lệch khác và được xử lý riêng trong danh
+    mục dọn dẹp.
     """
     if USE_OCR_FIRST:
         for page in pages_iter:
@@ -481,6 +573,10 @@ def route_document(
         # không bị đọc hai lần khi USE_OCR_FIRST bật.
         bo_nho_text: dict = {}
         thong_tin_vlm: dict = {}
+        # Khai trước, tường minh: một lượt chạy KHÔNG bật nhánh OCR phải khác
+        # được với một lượt bật mà quét hết tài liệu. Để khoá này vắng mặt ở ca
+        # đầu thì người đọc metrics.jsonl phải suy từ ocr_first, và suy thì sai.
+        dung_som_ocr = {"da_dung_som": False, "ly_do": "khong_chay", "trang_cuoi": None}
 
         if DISABLE_CONSTRAINT_GATE:
             print("--- CỔNG RÀNG BUỘC ĐANG TẮT: chế độ ĐO, không dùng để phục vụ ---")
@@ -489,7 +585,7 @@ def route_document(
             )
         else:
             if USE_OCR_FIRST:
-                result = run_ocr_first(
+                result, dung_som_ocr = run_ocr_first(
                     pages_iter, cached_pages, result, standard, bo_nho_text, metrics
                 )
 
@@ -574,6 +670,13 @@ def route_document(
         metrics.set_info(
             pages_processed=len(cached_pages),
             ocr_first=USE_OCR_FIRST,
+            # Vì sao ba khoá này phải tường minh: chúng là ba cách khác nhau để
+            # một lượt chạy đọc ít trang hơn lượt khác, và gộp lại thì không
+            # đối chiếu được chi phí giữa hai lượt. `probe_so_trang` đo đúng
+            # cái giá mà bộ đếm kiên nhẫn của nhánh OCR đánh đổi lấy tốc độ —
+            # probe chỉ đọc cached_pages, nên dừng sớm hơn là thấy ít hơn.
+            ocr_dung_som=dung_som_ocr,
+            probe_so_trang=0 if DISABLE_LINE_PROBE else len(cached_pages),
             constraint_gate=not DISABLE_CONSTRAINT_GATE,
             **thong_tin_tai_lap(**thong_tin_vlm),
         )

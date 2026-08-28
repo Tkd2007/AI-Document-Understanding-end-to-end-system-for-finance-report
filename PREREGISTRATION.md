@@ -265,6 +265,12 @@ bất đồng. Nếu không tìm được người thứ hai: gán nhãn lại 2
 nhất hai tuần, bởi chính mình, không xem bản cũ — nói rõ trong paper đây là
 bản thay thế và nêu giới hạn.
 
+**Tài liệu đã chạy pipeline không được vào tập gán nhãn đôi** (tu chính
+28/08/2026). Với phương án tự gán nhãn lại thì người gán lại chính là người
+đã chạy pipeline, nên đầu ra máy đoán cho từng ô là một mỏ neo có thật.
+Trạng thái ở khoá `gan_nhan_doi` của `data/nguon_gold.json`, đối chiếu bằng
+`src/eval/tap_dong_thuan.py`.
+
 **Trần người:** 10 tài liệu, gán nhãn dưới áp lực thời gian thực tế (15
 phút một tài liệu), so với bản gold đã phân xử kỹ. Không có số này thì
 không diễn giải được kết quả hệ thống: 83% là gần trần hay còn xa?
@@ -301,7 +307,7 @@ giống nhau đến mức nếu một trang vào train và một trang vào test
 
 ## Sửa đổi
 
-**Mười lăm tu chính, không cái nào được rút gọn hay viết đè.** Đó là điều kiện
+**Mười sáu tu chính, không cái nào được rút gọn hay viết đè.** Đó là điều kiện
 để việc đăng ký trước còn giá trị: một bản ghi sửa được sau khi thấy kết quả
 thì không chứng minh được gì. Mục lục dưới đây thêm ngày 26/08/2026 để tìm
 nhanh, và nó là thứ DUY NHẤT được thêm vào phần này ngoài các tu chính.
@@ -321,8 +327,44 @@ nhanh, và nó là thứ DUY NHẤT được thêm vào phần này ngoài các 
 | 26/08 | Hệ số 0,6 được chốt; `thoi_gian_giay` đổi định nghĩa | diễn giải kết quả |
 | 26/08 | Độ phân giải bản quét thành hiệp biến ghi trước, phân tích thứ cấp | H1, H2, giới hạn |
 | 27/08 | Phân bố lỗi thật ở tầng gold khác hẳn phân bố bơm ở tầng XBRL | giới hạn H2, H3 |
+| 28/08 | Tài liệu đã chạy pipeline bị loại khỏi tập gán nhãn đôi | đo đồng thuận |
 
 Mọi sửa đổi ghi vào đây kèm ngày và lý do, không sửa đè lên trên.
+
+### 28/08/2026 — Tài liệu đã chạy pipeline bị loại khỏi tập gán nhãn đôi
+
+**Thu hẹp tập được chọn cho phép đo đồng thuận. Không đổi giả thuyết, không
+đổi chỉ số, không tài liệu nào phải gán nhãn lại.**
+
+Bối cảnh: quyết định 26/08/2026 bỏ người gán nhãn thứ hai và kích hoạt phương
+án tự gán nhãn lại sau ít nhất hai tuần. Phương án ấy làm một ràng buộc vốn
+nhẹ trở thành nặng — người gán lại chính là người đã chạy pipeline, và
+`data/output/tap_gold_*.json` cùng `..._pipeline.log` giữ giá trị máy đoán
+cho **từng ô** của mười tài liệu gold đầu tiên (lượt chạy 26–27/08/2026).
+
+Vì sao phải là tu chính chứ không phải chi tiết thi công: nếu lượt gán nhãn
+lại bị neo vào giá trị máy đoán thì Krippendorff alpha và tỷ lệ khớp tuyệt
+đối **vẫn tính ra bình thường**, chỉ là chúng đo trí nhớ của người gán nhãn
+chứ không đo tính nhất quán của quy tắc. Không có phép kiểm hậu nghiệm nào
+phân biệt được hai chuyện đó từ dữ liệu, nên ràng buộc phải nằm ở khâu CHỌN
+tài liệu, tức trước khi đo.
+
+Hai đường ra đã cân nhắc. (a) Giữ kỷ luật không mở hai file kia: rẻ, nhưng là
+một lời hứa không kiểm chứng được, và vi phạm nó không để lại dấu vết.
+(b) Loại hẳn những tài liệu ấy khỏi tập gán nhãn đôi: kiểm được bằng máy, giá
+phải trả là chỗ trong một tập ~100 tài liệu vốn thừa chỗ cho 20–33 tài liệu.
+Chọn (b).
+
+Hệ quả về lịch, ghi ra vì nó nằm trên đường găng: mười tài liệu gold đầu và
+`VNM_2026Q1_TT99` đều đã chạy pipeline, nên tính tới 28/08/2026 **không tài
+liệu nào đủ điều kiện gán nhãn đôi**. Mốc hai tuần 09/09/2026 là điều kiện
+cần chứ không đủ; lượt gán nhãn đôi chỉ bắt đầu được sau khi tập gold có
+thêm tài liệu mới.
+
+Thi công: khoá `gan_nhan_doi` trong `data/nguon_gold.json`,
+`src/eval/tap_dong_thuan.py` đối chiếu khai báo với hiện trạng
+`data/output/`, `tests/test_tap_dong_thuan.py` khoá ràng buộc, và
+`ANNOTATION-GUIDELINE.md` mục 5 kèm một dòng trong danh mục kiểm mục 8.
 
 ### 27/08/2026 — phân bố lỗi thật khác hẳn phân bố đang bơm ở tầng XBRL
 

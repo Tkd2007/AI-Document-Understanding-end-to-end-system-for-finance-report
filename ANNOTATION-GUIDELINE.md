@@ -358,6 +358,38 @@ intra-annotator agreement. **Nói rõ trong bài đây là bản thay thế và 
 giới hạn** — nó đo được tính nhất quán của một người, không đo được tính
 khách quan của quy tắc.
 
+### Tài liệu đã chạy pipeline bị LOẠI khỏi tập gán nhãn đôi
+
+Phương án tự gán nhãn lại làm Luật 1 nặng hơn hẳn trường hợp hai người:
+người gán lại chính là người đã chạy pipeline, và `data/output/tap_gold_*.json`
+cùng `..._pipeline.log` giữ giá trị máy đoán cho **từng ô** của những tài
+liệu đã chạy. Mở nhầm một trong hai file là lượt gán lại bị neo, mà không có
+cách nào phát hiện ngược từ dữ liệu — con số đồng thuận vẫn tính ra, chỉ là
+nó đo trí nhớ chứ không đo tính nhất quán của quy tắc.
+
+**Quy tắc: tài liệu nào đã có đầu ra pipeline thì vĩnh viễn không được vào
+tập gán nhãn đôi.** Không rút lại được bằng cách xoá file — việc người ấy đã
+nhìn thấy máy đoán gì thì đã xảy ra rồi. Tập gán nhãn đôi vì thế phải lấy từ
+những tài liệu gán nhãn **sau** lượt chạy pipeline, và tập đích ~100 tài liệu
+thừa chỗ cho 20–33 tài liệu ấy.
+
+Trạng thái ghi ở khoá `gan_nhan_doi` trong `data/nguon_gold.json`, ba giá
+trị: `loai_da_chay_pipeline`, `du_dieu_kien`, `chua_xet`. Đối chiếu khai báo
+với hiện trạng `data/output/` bằng
+
+```
+PYTHONPATH=src python src/eval/tap_dong_thuan.py
+```
+
+và `tests/test_tap_dong_thuan.py` đỏ nếu một tài liệu có đầu ra pipeline mà
+danh mục chưa đánh dấu.
+
+**Hệ quả về lịch, không phải chi tiết vặt:** mười tài liệu gold đầu tiên đều
+đã chạy pipeline ngày 26–27/08/2026, và `VNM_2026Q1_TT99` cũng vậy, nên tính
+tới 28/08/2026 **không tài liệu nào đủ điều kiện**. Lượt gán nhãn đôi không
+bắt đầu được cho tới khi tập gold vượt mốc 11 tài liệu — mốc hai tuần
+09/09/2026 chỉ là điều kiện cần.
+
 ---
 
 ## 6. Trần người — 10 tài liệu
@@ -475,6 +507,9 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 ## 8. Danh mục kiểm trước khi coi một tài liệu là xong
 
 - [ ] Chưa từng mở đầu ra pipeline của tài liệu này (Luật 1)
+- [ ] Nếu đây là lượt gán nhãn **đôi**: tài liệu chưa từng chạy pipeline —
+      `PYTHONPATH=src python src/eval/tap_dong_thuan.py` phải xếp nó vào
+      nhóm đủ điều kiện (mục 5)
 - [ ] Đã xác định chuẩn mẫu biểu, hoặc ghi `UNKNOWN` kèm lý do — theo
       bảng dấu hiệu ở mục 3.7, và **không** theo hậu tố `a`/`b`
 - [ ] `unit_declared` chép **nguyên văn**; `unit_multiplier` khớp
@@ -496,6 +531,30 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 
 > Mọi thay đổi guideline ghi vào đây kèm **ngày** và **lý do**, và ghi rõ
 > **những tài liệu nào phải gán nhãn lại**. Không sửa đè lên nội dung trên.
+
+### 28/08/2026 — Tài liệu đã chạy pipeline bị loại khỏi tập gán nhãn đôi
+
+**Trả lời Câu 12 của `HANDOFF.md` mục 0.** Mục 5 có thêm một tiểu mục, mục 8
+có thêm một dòng danh mục kiểm. **Chưa tài liệu nào phải gán nhãn lại** —
+thay đổi này chỉ thu hẹp tập được chọn cho phép đo đồng thuận, không đụng
+tới quy tắc đọc số nên nhãn đã có vẫn dùng nguyên.
+
+Lý do chọn loại hẳn thay vì "giữ kỷ luật không mở hai file kia": phương án
+đo đồng thuận đang dùng là chính người chủ trì gán nhãn lại (chốt
+26/08/2026), nên người gán lại đúng là người đã chạy pipeline. Kỷ luật ở đây
+là một lời hứa không kiểm chứng được — nếu nó bị vi phạm thì con số đồng
+thuận vẫn ra bình thường, không dấu vết. Loại tài liệu ra thì ràng buộc trở
+thành kiểm được bằng máy, và cái giá phải trả chỉ là chỗ trong một tập ~100
+tài liệu vốn thừa chỗ cho 20–33 tài liệu gán nhãn đôi.
+
+Thi công kèm theo: khoá `gan_nhan_doi` trong `data/nguon_gold.json` (mười
+tài liệu hiện có đều mang `loai_da_chay_pipeline`),
+`src/eval/tap_dong_thuan.py` đối chiếu khai báo với hiện trạng
+`data/output/`, và `tests/test_tap_dong_thuan.py` khoá chiều nguy hiểm — có
+đầu ra pipeline mà danh mục chưa đánh dấu.
+
+`VNM_2026Q1_TT99` cũng bị loại dù không nằm trong danh mục nguồn: nó có nhãn
+gold và có đầu ra pipeline từ những lượt chạy trên tài liệu mẫu.
 
 ### 27/08/2026 — mã 52 của mục 3.3: quy tắc và nhãn gold đang mâu thuẫn
 

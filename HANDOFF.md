@@ -75,9 +75,8 @@ chứ không phải chi tiết cài đặt.
 Người dùng trả lời được bằng một tin nhắn duy nhất, dạng "Câu 4 chọn ...".
 
 **Đang chờ:** Câu 3 (nội dung đã mất), Câu 8 (chỉ chặn lượt chạy Mốc 3 kế
-tiếp), Câu 12 (loại 10 tài liệu đã chạy pipeline khỏi tập gán nhãn đôi hay
-không), **Câu 13 (MỚI 27/08 — mã 52: guideline và gold đang mâu thuẫn
-nhau)**. Không câu nào đang chặn việc gán nhãn.
+tiếp), **Câu 13 (MỚI 27/08 — mã 52: guideline và gold đang mâu thuẫn nhau)**.
+Không câu nào đang chặn việc gán nhãn.
 
 **Câu 13 — MỚI, không chặn code nhưng chặn câu chữ guideline.**
 `ANNOTATION-GUIDELINE.md` mục 3.3 xếp mã 52 (chi phí thuế TNDN hoãn lại) vào
@@ -92,14 +91,18 @@ ngoài** — áp nguyên văn sẽ lật một mã 52 âm hợp lệ thành dư�
 lỗi câm mới**. Cần người chủ trì quyết: sửa câu chữ guideline cho mã 52, hay
 gán nhãn lại MWG và VRE? Chi tiết ở mục 20.6.
 
-**Câu 12 — MỚI, không chặn ngay nhưng có hạn.** Pipeline đã chạy trên 10 tài
-liệu gold đầu (mục 20), nên `data/output/tap_gold_*.json` và
-`..._pipeline.log` chứa giá trị máy đoán cho **từng ô** của chúng. Người chủ
-trì đã chốt sẽ **tự gán nhãn lại** để đo đồng thuận (sớm nhất 09/09/2026) —
-mà Luật 1 buộc người gán nhãn mù với đầu ra pipeline. Cách gỡ triệt để:
-**loại 10 tài liệu này khỏi tập gán nhãn đôi**; tập đích ~100 mà chỉ cần
-20–33 nên thừa chỗ. Cách còn lại là giữ kỷ luật không mở hai file kia. Hạn:
-trước lượt gán nhãn lại đầu tiên. Đổi thì phải ghi tu chính guideline.
+**Câu 12 — ĐÃ TRẢ LỜI 28/08/2026: loại hẳn, không dựa vào kỷ luật.** Tài
+liệu đã chạy pipeline vĩnh viễn không được vào tập gán nhãn đôi, vì phương án
+tự gán nhãn lại khiến người gán lại chính là người đã xem đầu ra máy — và một
+lượt gán nhãn bị neo thì vẫn cho ra alpha bình thường, không dấu vết. Trạng
+thái ở khoá `gan_nhan_doi` của `data/nguon_gold.json`; đối chiếu bằng
+`PYTHONPATH=src python src/eval/tap_dong_thuan.py`;
+`tests/test_tap_dong_thuan.py` đỏ khi có đầu ra pipeline mà danh mục chưa
+đánh dấu. **Hệ quả lịch:** cả 10 tài liệu gold đầu lẫn `VNM_2026Q1_TT99` đều
+đã chạy, nên hiện **không tài liệu nào đủ điều kiện** — lượt gán nhãn đôi
+phải chờ tập gold có thêm tài liệu mới, mốc hai tuần 09/09/2026 chỉ là điều
+kiện cần. Tu chính đã ghi ở `ANNOTATION-GUIDELINE.md` mục 5 và mục Sửa đổi,
+`PREREGISTRATION.md` mục 7 và mục Sửa đổi.
 
 **Mốc 3 đã chạy xong lúc 16:05 ngày 25/08/2026 — điều kiện dừng KHÔNG kích
 hoạt.** Xem mục 13c. Việc kế tiếp không còn bị chặn: gán nhãn `data/gold/`
@@ -1046,6 +1049,10 @@ PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/chay_tap_gold.py --tiep-tu
 python chay_gan_nhan.py --pdf-dir data/bctc
 python chay_gan_nhan.py --pdf-dir D:/bctc --port 8200
 
+# AI CÒN ĐƯỢC VÀO TẬP GÁN NHÃN ĐÔI (Câu 12). Chạy TRƯỚC khi chọn tài liệu
+# cho lượt gán nhãn lại: tài liệu đã chạy pipeline thì đáp án đã lộ.
+PYTHONPATH=src python src/eval/tap_dong_thuan.py
+
 # Đo xem đẳng thức nào đáng mua (Mốc 1)
 PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/constraints_scenarios.py
 
@@ -1476,6 +1483,10 @@ chứ không viết kết luận bây giờ.
    trình 10 → 60 → 100 thì câu hỏi thật là: một phần ba của MỐC NÀO. Phải
    chọn một và ghi tu chính, muộn nhất là trước khi lượt gán nhãn lại đầu
    tiên bắt đầu — vì chính lượt đó tiêu số tài liệu đã chọn.
+
+   Từ 28/08/2026 số ấy phải lấy trên tài liệu **chưa chạy pipeline** (Câu
+   12), mà hiện chưa có tài liệu nào như vậy — nên bước này chặn sau bước
+   gán nhãn thêm tài liệu, không chặn trước.
 4. **Người gán nhãn thứ hai — ĐÃ QUYẾT 26/08/2026: không có, người chủ trì
    tự gán nhãn.** Phương án dự phòng ở `ADDENDUM` mục 5 vì thế là phương án
    đang dùng: chính người ấy gán lại sau **ít nhất hai tuần**, không xem bản
@@ -1752,15 +1763,11 @@ lẫn bảng vào một chỗ (79 khối trong lượt đầu). Biện pháp ph�
 tồn tại trong docstring chứ không tồn tại trong hành vi. Nay `redirect_stdout`
 đổ chúng vào `data/output/tap_gold_<chế độ>_pipeline.log`.
 
-> **LUẬT 1 — chỗ này phải giữ kỷ luật.** Người chủ trì sẽ **tự gán nhãn lại**
-> tập này sau ít nhất hai tuần để đo đồng thuận (quyết định 26/08). Hai file
-> `tap_gold_*.json` và `tap_gold_*_pipeline.log` **có giá trị từng ô** —
-> người sẽ gán nhãn lại đọc chúng là lượt gán lại bị neo và phép đo đồng
-> thuận mất giá trị.
->
-> **Cách gỡ triệt để, ĐANG CHỜ NGƯỜI CHỦ TRÌ xác nhận:** loại 10 tài liệu
-> này khỏi tập gán nhãn đôi. Tập đích ~100 mà chỉ cần 20–33, nên thừa chỗ, và
-> nó gỡ rủi ro tận gốc thay vì phải giữ kỷ luật không mở file.
+> **LUẬT 1 — ĐÃ GỠ TẬN GỐC 28/08/2026 (Câu 12).** Hai file `tap_gold_*.json`
+> và `tap_gold_*_pipeline.log` **có giá trị từng ô**, nên 10 tài liệu này —
+> cùng `VNM_2026Q1_TT99` — bị **loại vĩnh viễn khỏi tập gán nhãn đôi** thay
+> vì trông vào kỷ luật không mở file. Khai báo ở khoá `gan_nhan_doi` của
+> `data/nguon_gold.json`, đối chiếu bằng `src/eval/tap_dong_thuan.py`.
 
 ### 20.3 Kết quả đầy đủ — 10 tài liệu, lượt chạy xong 13:31 ngày 27/08/2026
 

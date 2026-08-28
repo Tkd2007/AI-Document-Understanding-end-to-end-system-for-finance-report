@@ -15,7 +15,14 @@
     "sửa tay. trung_vi lấy theo trang, và mỗi trang lấy chiều THƯA HƠN trong hai",
     "chiều vì đó là chiều quyết định nét chữ. Ghi làm biến LIÊN TỤC, không chia",
     "nhóm theo ngưỡng: chốt một ngưỡng lúc mới có 10 tài liệu là chọn tham số",
-    "trên mẫu mỏng. Lý do đầy đủ ở tu chính 26/08/2026 của ANNOTATION-GUIDELINE.md."
+    "trên mẫu mỏng. Lý do đầy đủ ở tu chính 26/08/2026 của ANNOTATION-GUIDELINE.md.",
+    "",
+    "gan_nhan_doi nói tài liệu có còn được vào TẬP GÁN NHÃN ĐÔI không, theo",
+    "quyết định Câu 12 ngày 28/08/2026: tài liệu đã chạy pipeline thì bị LOẠI,",
+    "vì data/output/ giữ giá trị máy đoán cho từng ô của nó và người gán nhãn",
+    "lại chính là người đã chạy pipeline. Ba giá trị: loai_da_chay_pipeline,",
+    "du_dieu_kien, chua_xet. Đối chiếu khai báo này với hiện trạng data/output/",
+    "bằng `PYTHONPATH=src python src/eval/tap_dong_thuan.py`."
   ],
   "nguon": "finance.vietstock.vn — công bố thông tin của HOSE/HNX/UPCoM",
   "ngay_lap": "2026-08-26",
@@ -29,6 +36,7 @@
       "nganh": "Thép",
       "quy_mo": "VN30",
       "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
       "vai_tro": "Tài liệu nền: doanh nghiệp lớn, bản in sạch, đơn vị VND.",
       "da_kiem": [
         "tiêu đề 'BÁO CÁO TÌNH HÌNH TÀI CHÍNH CÔNG TY MẸ' — dấu hiệu TT99",
@@ -53,6 +61,7 @@
       "nganh": "Bất động sản bán lẻ",
       "quy_mo": "VN30",
       "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
       "vai_tro": "Ca biên MỎ NEO SCALE: báo cáo không ghi bằng đồng.",
       "da_kiem": [
         "tiêu đề 'BÁO CÁO TÌNH HÌNH TÀI CHÍNH RIÊNG' — dấu hiệu TT99",
@@ -77,6 +86,7 @@
       "nganh": "Đa ngành / hạ tầng",
       "quy_mo": "vốn hoá nhỏ",
       "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
       "vai_tro": "Ca biên SỐ ÂM và BẢN SCAN KÉM: lỗ luỹ kế ghi trong ngoặc.",
       "da_kiem": [
         "tiêu đề 'BÁO CÁO TÌNH HÌNH TÀI CHÍNH' — dấu hiệu TT99",
@@ -102,6 +112,7 @@
       "nganh": "Gỗ và nội thất",
       "quy_mo": "vốn hoá nhỏ",
       "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
       "vai_tro": "Ca biên DOANH NGHIỆP LỖ: lỗ luỹ kế ăn mòn phần lớn vốn điều lệ.",
       "da_kiem": [
         "không có lớp text"
@@ -128,6 +139,7 @@
       "nganh": "Nhựa xây dựng",
       "quy_mo": "vốn hoá vừa",
       "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
       "vai_tro": "Đối chứng sạch cho TT99: bản in rõ, đơn vị VND, có lãi.",
       "da_kiem": [
         "tiêu đề 'tình hình tài chính' ở trang 4 — dấu hiệu TT99",
@@ -151,6 +163,7 @@
       "nganh": "Hoá chất",
       "quy_mo": "vốn hoá lớn",
       "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
       "vai_tro": "Đối chứng sạch cho TT200.",
       "da_kiem": [
         "tiêu đề 'Bảng cân đối kế toán' ở trang 2 — dấu hiệu TT200"
@@ -173,6 +186,7 @@
       "nganh": "Nông nghiệp",
       "quy_mo": "vốn hoá nhỏ",
       "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
       "vai_tro": "Ba ca biên chồng nhau: LỖ, đơn vị NGÀN VND, và các dòng đổi tên từ 'Lợi nhuận' thành 'Lỗ'.",
       "da_kiem": [
         "tiêu đề 'BẢNG CÂN ĐỐI KẾ TOÁN HỢP NHẤT GIỮA NIÊN ĐỘ' — dấu hiệu TT200",
@@ -198,6 +212,7 @@
       "nganh": "Mía đường",
       "quy_mo": "vốn hoá vừa",
       "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
       "vai_tro": "Ca biên NIÊN ĐỘ LỆCH: năm tài chính kết thúc 30/6 nên cột 'số đầu năm' là 30/6/2025 chứ không phải 1/1.",
       "da_kiem": [
         "tiêu đề 'BẢNG CÂN ĐỐI KẾ TOÁN HỢP NHẤT' — dấu hiệu TT200",
@@ -224,6 +239,7 @@
       "nganh": "Bán lẻ",
       "quy_mo": "VN30",
       "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
       "vai_tro": "Đối cực CHẤT LƯỢNG ẢNH: bản quét dày điểm ảnh nhất trong mười tài liệu (295,8 dpi), để đo chênh lệch so với SBT và DLG ở đầu kia của dải.",
       "da_kiem": [
         "không có lớp text"
@@ -249,6 +265,7 @@
       "nganh": "Thuỷ sản",
       "quy_mo": "vốn hoá vừa, ngoài VN30",
       "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
       "vai_tro": "Chống memorization: doanh nghiệp ngoài VN30, ít được nhắc trong dữ liệu huấn luyện.",
       "da_kiem": [
         "40 trang, chỉ 1,3 MB"

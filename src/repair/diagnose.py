@@ -41,6 +41,7 @@ import numpy as np
 from scipy.optimize import linprog
 
 from repair.candidates import Candidate
+from repair.luat_dau import KetQuaLuatDau, luat_dau_residual
 
 # Dung sai residual, tính theo tỷ lệ trên độ lớn của vector giá trị.
 #
@@ -124,6 +125,20 @@ class Diagnosis:
     solve_time_s: float = 0.0
     ma_ly_do: LyDoAbstain = ""
     ly_do_abstain: str = ""
+    # Cơ chế nào định vị được lỗi. Tập ĐÓNG: "" (chưa định vị được),
+    # "luat_dau" (luật residual của repair.luat_dau), "tim_kiem_to_hop"
+    # (duyệt tổ hợp trong _tim_to_hop_nho_nhat).
+    #
+    # Vì sao phải ghi tường minh thay vì suy từ n_changed == 1: hai cơ chế
+    # cho cùng một kết quả nhưng KHÔNG cùng sức nặng khi viết vào bài. Luật
+    # dấu là hệ quả đại số chứng minh được, còn duyệt tổ hợp là tìm kiếm
+    # trong một tập ứng viên hữu hạn — gộp chúng lại là đánh mất đúng thứ
+    # phân biệt một định lý với một phép thử.
+    nguon_dinh_vi: str = ""
+    # Kết quả luật dấu, LUÔN được ghi kể cả khi nó im lặng. Một luật im lặng
+    # ở 6/8 đẳng thức lệch là số liệu về phạm vi áp dụng của nó, và số đó chỉ
+    # có nếu ca im lặng cũng được ghi lại.
+    luat_dau: KetQuaLuatDau | None = None
 
     def gia_tri_sau_sua(self, values: dict) -> dict:
         """Bộ giá trị sau khi áp các thay đổi đã chọn."""
@@ -220,6 +235,7 @@ def diagnose(
     tolerance_ratio: float = RESIDUAL_TOL,
     max_changes: int | None = MAX_CHANGES_MAC_DINH,
     time_limit_s: float = TIME_LIMIT_S,
+    dung_luat_dau: bool = True,
 ) -> Diagnosis:
     """
     Tìm tổ hợp ứng viên nhỏ nhất làm residual về 0.
@@ -250,6 +266,18 @@ def diagnose(
     Thiếu trường thì cũng ABSTAIN: không dựng được vector thì không kiểm
     được ràng buộc, và đoán bừa giá trị thiếu chính là việc module này
     sinh ra để chống.
+
+    dung_luat_dau — chạy `repair.luat_dau.luat_dau_residual()` trước bước
+    duyệt tổ hợp. Luật ấy định vị được lỗi ĐẢO DẤU bằng một lập luận đại số
+    thay vì bằng tìm kiếm, nên khi nó ra tay thì `nguon_dinh_vi` ghi
+    "luat_dau" và kết quả mang sức nặng khác hẳn một lần duyệt trúng. Nó chỉ
+    được phép ÁP giá trị khi giá trị lật dấu đã nằm sẵn trong `candidates` —
+    tập ứng viên vẫn đóng. Tắt cờ này để đo riêng phần đóng góp của nó.
+
+    `Diagnosis.luat_dau` được ghi ở MỌI đường ra có chạy luật, kể cả khi luật
+    im lặng, vì tỷ lệ im lặng chính là số đo phạm vi áp dụng của nó. Hai
+    đường ra sớm — VERIFIED và `thieu_gia_tri` — trả None ở đó, đúng nghĩa
+    "luật chưa từng chạy" chứ không phải "luật đã chạy và không nói gì".
     """
     bat_dau = time.perf_counter()
     trong_so = confidences or {}
@@ -275,6 +303,44 @@ def diagnose(
             solve_time_s=time.perf_counter() - bat_dau,
         )
 
+    # LUẬT DẤU chạy trước tìm kiếm tổ hợp, và kết quả được ghi lại DÙ CÓ
+    # dùng được hay không. Nó rẻ (một phép nhân ma trận-vector cho mỗi cột)
+    # so với tìm kiếm tổ hợp vốn đi theo C(n,k).
+    kq_luat_dau = (
+        luat_dau_residual(values, A, field_order, tolerance_ratio)
+        if dung_luat_dau
+        else None
+    )
+
+    # TẬP ỨNG VIÊN VẪN LÀ TẬP ĐÓNG, kể cả ở đường tắt này. Luật dấu chỉ được
+    # phép ÁP giá trị lật dấu khi giá trị ấy đã có sẵn trong tập ứng viên
+    # sinh từ tài liệu. Nếu có bất kỳ đường nào để một con số ngoài tập lọt
+    # vào kết quả thì hệ ép số được, và toàn bộ lập luận chống bịa của
+    # nghiên cứu sụp — đó là lý do khối này kiểm tra rồi mới dùng, chứ không
+    # tự dựng một Candidate mới từ con số nó vừa tính ra. Bình thường
+    # candidates.tu_dau() đã sinh sẵn −x cho mọi chỉ tiêu nên nhánh này
+    # trúng; ca trượt là khi người gọi truyền vào một tập ứng viên bị hạn
+    # chế, và khi đó luật lui về vai trò CHẨN ĐOÁN, không sửa.
+    if kq_luat_dau is not None and kq_luat_dau.dinh_vi_duoc:
+        ten = kq_luat_dau.truong
+        khop = [
+            uv for uv in candidates.get(ten, [])
+            if uv.value == kq_luat_dau.gia_tri_sau
+        ]
+        if khop:
+            x_moi = x.copy()
+            x_moi[field_order.index(ten)] = kq_luat_dau.gia_tri_sau
+            return Diagnosis(
+                verdict="REPAIRED",
+                changed_fields={ten: khop[0]},
+                residual_before=residual_truoc,
+                residual_after=A @ x_moi,
+                n_changed=1,
+                solve_time_s=time.perf_counter() - bat_dau,
+                nguon_dinh_vi="luat_dau",
+                luat_dau=kq_luat_dau,
+            )
+
     to_hop, ly_do = _tim_to_hop_nho_nhat(
         A, x, field_order, candidates, trong_so,
         tolerance_ratio, max_changes, time_limit_s, bat_dau,
@@ -295,6 +361,7 @@ def diagnose(
             solve_time_s=time.perf_counter() - bat_dau,
             ma_ly_do=ly_do,
             ly_do_abstain=giai_thich,
+            luat_dau=kq_luat_dau,
         )
 
     x_moi = x.copy()
@@ -308,6 +375,8 @@ def diagnose(
         residual_after=A @ x_moi,
         n_changed=len(to_hop),
         solve_time_s=time.perf_counter() - bat_dau,
+        nguon_dinh_vi="tim_kiem_to_hop",
+        luat_dau=kq_luat_dau,
     )
 
 

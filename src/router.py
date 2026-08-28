@@ -36,6 +36,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from constraints import build_matrix
 from extract_baseline import extract_all_fields, tim_theo_ma_so, tong_hop_dau_vet
 from extract_vlm import extract_fields_from_regions, require_config
 from extraction_types import ExtractionResult, FieldResult
@@ -45,9 +46,12 @@ from fields_config import (
     Standard,
     empty_result,
     fields_for,
+    identities_for,
 )
 from metrics import RunMetrics, merge_into_totals, thong_tin_tai_lap, timer
 from ocr_baseline import iter_table_regions, ocr_page_regions
+from repair.candidates import generate as sinh_ung_vien
+from repair.diagnose import diagnose
 from validation import has_required_fields, validate_result
 
 load_dotenv()
@@ -95,6 +99,24 @@ USE_OCR_FIRST = _co_bat("USE_OCR_FIRST")
 # vắng mặt trên biểu mẫu" có thể đổi. Số trang probe thật sự đọc được ghi vào
 # metrics dưới khoá `probe_so_trang` để so được giữa các lượt chạy.
 PATIENCE_PAGES_OCR = int(os.getenv("PATIENCE_PAGES_OCR", "10"))
+
+# Bật TẦNG REPAIR trên đường chạy tài liệu Việt Nam. MẶC ĐỊNH TẮT, có chủ đích.
+#
+# Vì sao mặc định phải là TẮT. H1 so "vi phạm ràng buộc" với "confidence của
+# model" như hai bộ dự báo lỗi, và phép so đó chỉ có nghĩa trên đầu ra mà tầng
+# ràng buộc CHƯA đụng vào. Tầng repair thì sửa giá trị cho tới khi residual về
+# 0 — bật nó mặc định là làm phẳng đúng tín hiệu H1 đang đem đi đánh giá, và
+# làm phẳng một cách không nhìn thấy được từ bảng kết quả.
+#
+# Cùng họ với DISABLE_CONSTRAINT_GATE, nhưng ngược chiều: cái kia TẮT một thứ
+# đang bật để đo, cái này BẬT một thứ đang tắt để phục vụ. Cả hai đều được ghi
+# thành khoá tường minh trong metrics vì hai lượt chạy khác cấu hình cho ra dữ
+# liệu không so với nhau được.
+#
+# Đây là tầng H2/H3 — nó CHẠY SAU khi validate_result() đã chấm xong, nên bật
+# nó không xoá dấu vết của lần chấm đó: `warnings` giữ nguyên, và certificate
+# ghi lại đúng những gì đã bị đổi.
+BAT_TANG_REPAIR = _co_bat("BAT_TANG_REPAIR")
 
 # Tắt HOÀN TOÀN cổng ràng buộc. CHỈ DÙNG KHI ĐO, không dùng khi phục vụ.
 #
@@ -527,6 +549,87 @@ def run_vlm(
     return result
 
 
+def chay_tang_repair(data: dict, result: dict, standard: Standard) -> tuple[dict, dict]:
+    """
+    Chạy tầng định vị/sửa lỗi trên bộ giá trị ĐÃ ép kiểu và quy đổi.
+
+    Trả về `(giá trị sau sửa, certificate)`. Certificate luôn được trả, kể cả
+    khi không sửa gì — nó là bản khai những gì tầng này đã làm, và một tầng sửa
+    số mà không khai ra thì không kiểm toán lại được.
+
+    ỨNG VIÊN SINH TỪ TÀI LIỆU, không từ donor. Đây là mệnh đề trung tâm của cả
+    nghiên cứu, nên nguồn ứng viên ở đây phải là những gì ĐỌC ĐƯỢC từ trang
+    giấy: phiếu bầu của VLM (`votes`), biến thể nhầm chữ số, biến thể dấu, biến
+    thể bậc đơn vị. Không có nguồn nào lấy số từ tài liệu KHÁC.
+
+    `o_lan_can` hiện là None — nguồn ứng viên giá trị nhất đang TẮT ở đường
+    này. Nó cần các ô số đã OCR trong cùng vùng bảng, mà đường VLM không sinh
+    ra chúng. Ghi ra đây thành một dòng trong certificate (`o_lan_can`) chứ
+    không để im lặng: đo trên tầng XBRL, đó là nguồn duy nhất từng lấy lại được
+    giá trị thật ở những ca các nguồn khác chịu thua, nên một lượt chạy thiếu
+    nó phải tự khai là thiếu.
+    """
+    co_gia_tri = [k for k, v in data.items() if v is not None and k != UNIT_KEY]
+    A, field_order = build_matrix(co_gia_tri, identities_for(standard))
+
+    if A.shape[0] == 0:
+        return data, {"da_chay": True, "verdict": "ABSTAIN", "ma_ly_do": "thieu_gia_tri",
+                      "ly_do": "không dựng được đẳng thức nào từ các chỉ tiêu đọc được"}
+
+    gia_tri = {k: data[k] for k in field_order}
+    ung_vien = {
+        k: sinh_ung_vien(k, gia_tri[k], o_lan_can=None, votes=getattr(result.get(k), "votes", {}))
+        for k in field_order
+    }
+    do = diagnose(
+        gia_tri,
+        ung_vien,
+        A,
+        field_order,
+        confidences={k: result[k].confidence for k in field_order if k in result},
+    )
+
+    chung_chi = {
+        "da_chay": True,
+        "verdict": do.verdict,
+        "nguon_dinh_vi": do.nguon_dinh_vi,
+        "ma_ly_do": do.ma_ly_do,
+        "ly_do": do.ly_do_abstain,
+        "so_dang_thuc": int(A.shape[0]),
+        "so_chi_tieu": len(field_order),
+        "solve_time_s": round(do.solve_time_s, 4),
+        "o_lan_can": False,
+        # Luật dấu khai riêng, kể cả khi nó im lặng: tỷ lệ im lặng là số đo
+        # phạm vi áp dụng của nó, và số đó chỉ có nếu ca im lặng cũng được ghi.
+        "luat_dau": (
+            None
+            if do.luat_dau is None
+            else {
+                "trang_thai": do.luat_dau.trang_thai,
+                "truong": do.luat_dau.truong,
+                "cac_ung_vien": do.luat_dau.cac_ung_vien,
+                "so_dang_thuc_con_lech": do.luat_dau.so_dang_thuc_con_lech,
+            }
+        ),
+        # Ghi CẢ giá trị trước và sau. Chỉ ghi tên chỉ tiêu bị đổi thì về sau
+        # không dựng lại được đầu ra chưa sửa, mà đó chính là bộ số H1 cần.
+        "da_doi": {
+            ten: {
+                "truoc": gia_tri[ten],
+                "sau": uv.value,
+                "nguon_ung_vien": uv.source,
+                "cost": uv.cost,
+            }
+            for ten, uv in do.changed_fields.items()
+        },
+    }
+
+    if do.verdict != "REPAIRED":
+        return data, chung_chi
+
+    return {**data, **{ten: uv.value for ten, uv in do.changed_fields.items()}}, chung_chi
+
+
 def route_document(
     file_path: str, save: bool = True, standard: Standard | None = None
 ) -> ExtractionResult:
@@ -617,6 +720,19 @@ def route_document(
         da_kiem = validate_result(gia_tri_da_dien, standard)
         data = da_kiem["data"]
 
+        # TẦNG REPAIR chạy SAU khi validate_result() đã chấm xong, không phải
+        # trước. Thứ tự này là điều kiện để H1 còn đo được: `warnings` ở đây
+        # ghi lại tình trạng vi phạm ràng buộc của đầu ra CHƯA sửa, và đó đúng
+        # là biến mà H1 đem so với confidence. Chạy repair trước rồi mới chấm
+        # thì cột warnings gần như phẳng, và phép so mất nghĩa.
+        #
+        # Cũng vì thế tầng này không chạy ở chế độ đo: DISABLE_CONSTRAINT_GATE
+        # bật nghĩa là lượt chạy đang phục vụ phép đo H1, và ở đó mọi thứ đọc
+        # ràng buộc đều phải im.
+        chung_chi_repair = {"da_chay": False, "ly_do": "tang_repair_dang_tat"}
+        if BAT_TANG_REPAIR and not DISABLE_CONSTRAINT_GATE:
+            data, chung_chi_repair = chay_tang_repair(data, result, standard)
+
         # Ghi giá trị đã ép kiểu và quy đổi NGƯỢC vào FieldResult, giữ
         # nguyên confidence và votes. Nếu bỏ qua bước này thì .values() trả
         # về số thô chưa quy đổi trong khi .data lại nói đã quy đổi — hai
@@ -656,6 +772,10 @@ def route_document(
                 # phân tích, và không suy ra được từ chính con số 0.
                 "trang_thai_chi_tieu": trang_thai_chi_tieu,
                 "line_probe": not DISABLE_LINE_PROBE,
+                # Certificate của tầng repair đi ra CÙNG kết quả, không nằm
+                # riêng ở log: một con số đã bị sửa mà người đọc kết quả không
+                # thấy dấu vết thì đúng bằng một con số bịa.
+                "chung_chi_repair": chung_chi_repair,
             },
             warnings=da_kiem["warnings"],
         )
@@ -678,6 +798,7 @@ def route_document(
             ocr_dung_som=dung_som_ocr,
             probe_so_trang=0 if DISABLE_LINE_PROBE else len(cached_pages),
             constraint_gate=not DISABLE_CONSTRAINT_GATE,
+            tang_repair=chung_chi_repair.get("da_chay", False),
             **thong_tin_tai_lap(**thong_tin_vlm),
         )
         metrics.status = "ok"

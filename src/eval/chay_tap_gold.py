@@ -133,6 +133,14 @@ def chay_mot_tai_lieu(gold: dict, pdf: Path, chuan_tu_gold: bool, nhat_ky) -> di
     diem["he_so_don_vi_da_dung"] = ket_qua.meta.get("don_vi_tinh_he_so")
     diem["don_vi_tinh_raw"] = ket_qua.meta.get("don_vi_tinh_raw")
     diem["so_canh_bao"] = len(ket_qua.warnings)
+    # Certificate của tầng repair và kết luận lan ký hiệu mẫu đi CÙNG điểm số.
+    # Bản trước chỉ giữ phần chấm điểm, nên một lượt chạy bật tầng repair không
+    # để lại dấu vết nào về việc tầng ấy đã làm gì: không biết nguồn ô lân cận
+    # có bật không, neo được bao nhiêu chỉ tiêu, hay verdict là gì. Bảng số khi
+    # đó nói được kết quả nhưng không nói được vì sao — mà lượt chạy bật repair
+    # sinh ra chính là để trả lời câu "vì sao".
+    diem["chung_chi_repair"] = ket_qua.meta.get("chung_chi_repair")
+    diem["ky_hieu_mau"] = ket_qua.meta.get("ky_hieu_mau")
     diem["gia_tri_du_doan"] = du_doan
     return diem
 

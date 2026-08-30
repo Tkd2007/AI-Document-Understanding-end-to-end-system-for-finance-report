@@ -12,7 +12,7 @@ Ba thứ phải khoá, và cả ba đều là điều kiện để con số củ
 """
 
 import router
-from extraction_types import FieldResult
+from extraction_types import FieldResult, Provenance
 from fields_config import Standard
 
 
@@ -91,15 +91,66 @@ def test_abstain_thi_KHONG_dong_vao_gia_tri():
 
 def test_certificate_khai_rang_o_lan_can_dang_TAT():
     """
-    Nguồn ứng viên giá trị nhất đang tắt ở đường này vì đường VLM không sinh ra
-    các ô số đã OCR. Một lượt chạy thiếu nó phải TỰ KHAI là thiếu — không thì
-    kết quả của nó bị đọc như kết quả của phiên bản đầy đủ.
+    Không truyền vùng bảng đã OCR thì nguồn ứng viên giá trị nhất tắt. Một lượt
+    chạy thiếu nó phải TỰ KHAI là thiếu — không thì kết quả của nó bị đọc như
+    kết quả của phiên bản đầy đủ.
     """
     gia_tri = _bo_so_can()
 
     _, cc = router.chay_tang_repair(gia_tri, _ket_qua(gia_tri), Standard.TT200)
 
     assert cc["o_lan_can"] is False
+
+
+def test_co_vung_thi_NEO_khai_theo_tung_chi_tieu():
+    """
+    `o_lan_can` bật mới là nửa câu chuyện. Nửa còn lại là neo: không neo được
+    thì mọi ô trong vùng cùng cost và trần cắt bằng bốc thăm, tức nguồn bật mà
+    vô dụng. Hai ca đó phải phân biệt được từ certificate, nên neo khai theo
+    TỪNG chỉ tiêu chứ không gộp thành một cờ.
+    """
+    gia_tri = _bo_so_can()
+    o_so = [
+        (750, (1200, 900, 1600, 940)),      # đúng giá trị loi_nhuan_sau_thue
+        (1_000, (1200, 700, 1600, 740)),
+    ]
+    vung = {"region_index": 0, "text": "", "o": [], "o_so": o_so}
+
+    result = {
+        k: FieldResult(
+            value=v,
+            confidence=0.0,
+            provenance=Provenance(page=5, region_index=0, bbox=(100, 200, 2000, 1800)),
+        )
+        for k, v in gia_tri.items()
+    }
+
+    _, cc = router.chay_tang_repair(gia_tri, result, Standard.TT200, {(5, 0): vung})
+
+    assert cc["o_lan_can"] is True
+    assert cc["neo"]["loi_nhuan_sau_thue"] == "khop_gia_tri"
+    # Giá trị không có trên giấy và cũng không dò được mã số: khai thẳng là
+    # không neo, thay vì lặng lẽ lấy bbox vùng làm tâm như bản trước.
+    assert cc["neo"]["thue_tndn_hoan_lai"] == "khong_neo"
+
+
+def test_chi_tieu_o_VUNG_KHAC_thi_khong_lay_duoc_o_lan_can():
+    """Ô của bảng khác không phải lân cận theo bất kỳ nghĩa nào."""
+    gia_tri = _bo_so_can()
+    result = {
+        k: FieldResult(
+            value=v,
+            confidence=0.0,
+            provenance=Provenance(page=5, region_index=1, bbox=(0, 0, 10, 10)),
+        )
+        for k, v in gia_tri.items()
+    }
+
+    _, cc = router.chay_tang_repair(
+        gia_tri, result, Standard.TT200, {(5, 0): {"o": [], "o_so": [(750, (0, 0, 1, 1))]}}
+    )
+
+    assert set(cc["neo"].values()) == {"khong_co_vung"}
 
 
 def test_certificate_khai_ca_khi_luat_dau_im_lang():

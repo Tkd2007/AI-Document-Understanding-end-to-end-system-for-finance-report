@@ -11,6 +11,7 @@ Usage:
 """
 
 import os
+import re
 import sys
 from collections.abc import Iterable, Iterator
 from pathlib import Path
@@ -19,6 +20,7 @@ import numpy as np
 from dotenv import load_dotenv
 from PIL import Image
 
+from extract_baseline import parse_number
 from layout_detection import ca_trang, get_table_regions
 from metrics import timer
 
@@ -151,30 +153,138 @@ def iter_table_regions(file_path: str, metrics=None) -> Iterator[dict]:
         yield {"page": i, "regions": regions}
 
 
+def ocr_image_chi_tiet(image: Image.Image) -> list[tuple[str, tuple[int, int, int, int]]]:
+    """
+    OCR một ảnh, trả về [(chữ đọc được, bbox trong ảnh ĐÓ)].
+
+    VÌ SAO PHẢI CÓ HÀM NÀY. `readtext(detail=0)` bảo EasyOCR chỉ trả chữ, bỏ
+    toạ độ — mà toạ độ thì nó ĐÃ tính rồi, vì phải khoanh được ô mới đọc được
+    chữ trong ô. Vứt chúng đi ngay tại cửa nghĩa là công đã trả mà không nhận
+    hàng, và bước đọc lại tài liệu sau đó không còn gì để tra: nó biết ô nào
+    sai nhưng không biết trên giấy chỗ đó ghi số mấy.
+
+    EasyOCR trả bbox dạng bốn ĐỈNH (để đỡ được ô nghiêng). Ở đây quy về hình
+    chữ nhật thẳng trục, vì mọi thứ hạ nguồn — Provenance, cắt lại vùng ảnh,
+    phép đo chồng lấn — đều nói bằng (x1, y1, x2, y2).
+    """
+    ket_qua = get_reader().readtext(np.array(image), detail=1)
+
+    o = []
+    for da_giac, chu, _conf in ket_qua:
+        xs = [int(diem[0]) for diem in da_giac]
+        ys = [int(diem[1]) for diem in da_giac]
+        o.append((chu, (min(xs), min(ys), max(xs), max(ys))))
+    return o
+
+
 def ocr_image(image: Image.Image) -> str:
-    image_array = np.array(image)
-    results = get_reader().readtext(image_array, detail=0)
-    return "\n".join(results)
+    return "\n".join(chu for chu, _ in ocr_image_chi_tiet(image))
+
+
+# Một Ô GIÁ TRỊ trên báo cáo tài chính Việt Nam luôn có dấu phân cách nghìn:
+# 1.234.567, hoặc (1.234) khi âm. Mẫu này đòi đúng cấu trúc đó.
+#
+# VÌ SAO PHẢI LỌC BẰNG CẤU TRÚC chứ không dùng thẳng parse_number(). Hàm ấy
+# cố ý dễ dãi — nó chạy SAU khi regex đã định vị được con số trên một dòng,
+# nên chỉ cần vét chữ số là đủ. Đem nó lọc ô thì nó nuốt luôn hai cột mà
+# chính prompt của VLM đang phải dặn tránh: cột Mã số (01 -> 1, 10 -> 10) và
+# cột Thuyết minh (26.1 -> 261, V.5 -> 5), cộng thêm số trang và năm.
+#
+# Những con số rác ấy nguy hiểm hơn vẻ ngoài của chúng: chúng vào thẳng tập
+# ứng viên sửa lỗi, chiếm chỗ của ô thật trong trần MAX_MOI_NGUON, và mỗi
+# con số thừa lại thêm một cơ hội để tổ hợp nào đó TÌNH CỜ làm bảng cân.
+#
+# Cái giá đã biết: ô giá trị nhỏ viết không có dấu phân cách (0, hay 5) bị
+# bỏ qua. Chấp nhận được — ở thang đồng thì chúng hiếm, và một ứng viên 0
+# gần như không bao giờ là phép sửa đúng.
+MAU_O_GIA_TRI = re.compile(r"^[(\-\u2013\u2014]?\s*\d{1,3}(?:\.\d{3})+\s*\)?$")
+
+
+def o_trong_vung(region, chi_tiet: list) -> list[tuple[str, tuple[int, int, int, int]]]:
+    """
+    Mọi ô của một vùng, toạ độ đã dời về hệ của TRANG.
+
+    Dời toạ độ ngay tại đây chứ không để người gọi tự cộng: `region.bbox` là
+    toạ độ vùng trên trang, còn bbox EasyOCR trả về là toạ độ trong ảnh vùng
+    ĐÃ CẮT. Trộn hai hệ là loại lỗi không làm gì nổ — nó chỉ khiến bước đọc
+    lại nhìn sang một ô khác rồi trả về một con số hoàn toàn hợp lệ của ô đó.
+
+    Giữ cả ô CHỮ chứ không chỉ ô số, vì hai người dùng cần chúng: bước neo
+    toạ độ chỉ tiêu dò theo ô MÃ SỐ khi không khớp được giá trị, và bước lan
+    ký hiệu mẫu đọc chuỗi "B01a-DN/HN" nằm phía trên bảng.
+    """
+    goc_x, goc_y = region.bbox[0], region.bbox[1]
+    return [
+        (chu, (x1 + goc_x, y1 + goc_y, x2 + goc_x, y2 + goc_y))
+        for chu, (x1, y1, x2, y2) in chi_tiet
+    ]
+
+
+def loc_o_so(o: list) -> list[tuple[int, tuple[int, int, int, int]]]:
+    """
+    Lọc lấy các ô GIÁ TRỊ trong danh sách ô đã dời toạ độ.
+
+    Chỉ nhận ô khớp `MAU_O_GIA_TRI` — xem ghi chú ở hằng số đó.
+    """
+    o_so = []
+    for chu, bbox in o:
+        if not MAU_O_GIA_TRI.match(chu.strip()):
+            continue   # ô chữ, mã số, thuyết minh, số trang — không phải giá trị
+        try:
+            o_so.append((parse_number(chu), bbox))
+        except ValueError:
+            continue
+    return o_so
+
+
+def o_so_trong_vung(region, chi_tiet: list) -> list[tuple[int, tuple[int, int, int, int]]]:
+    """Các ô GIÁ TRỊ của một vùng, toạ độ theo hệ của TRANG."""
+    return loc_o_so(o_trong_vung(region, chi_tiet))
 
 
 def ocr_page_regions(page: dict) -> dict:
     """
     OCR các vùng bảng của MỘT trang.
+
     Nhận {"page": 1, "regions": [TableRegion, ...]}, trả
-    {"page": 1, "text": "..."}.
+    {"page": 1, "text": "...", "vung": [{"region_index", "text", "o", "o_so"}]}.
 
     Tách ra khỏi ocr_regions() để router.py gọi được theo từng trang khi
     duyệt generator, thay vì phải gom hết mọi trang lại rồi mới OCR.
+
+    KẾT QUẢ CHIA THEO VÙNG, KHÔNG GỘP CẢ TRANG. Một trang có thể mang nhiều
+    bảng, và ô của bảng khác không phải "lân cận" theo bất kỳ nghĩa nào —
+    lấy nó làm ứng viên sửa lỗi là mở đường cho đúng kiểu lỗi nhầm cột đã
+    thấy ở `SBT_2025Q2_TT200`: một con số hợp lệ của bảng khác thì vẫn hợp
+    lệ, và không đẳng thức nào bắt được. Khoá `text` gộp cả trang vẫn giữ vì
+    probe dò mã số dòng làm việc trên toàn trang.
+
+    Mọi thứ ở đây đến từ ĐÚNG MỘT lượt OCR, mà OCR là khâu đắt nhất còn lại
+    sau khi convert PDF và YOLO đã được cache.
     """
-    text = "\n".join(ocr_image(region.image) for region in page["regions"])
-    print(f"--- OCR page {page['page']}: {len(text)} characters ---")
-    return {"page": page["page"], "text": text}
+    vung = []
+    for region_index, region in enumerate(page["regions"]):
+        chi_tiet = ocr_image_chi_tiet(region.image)
+        o = o_trong_vung(region, chi_tiet)
+        vung.append(
+            {
+                "region_index": region_index,
+                "text": "\n".join(chu for chu, _ in chi_tiet),
+                "o": o,
+                "o_so": loc_o_so(o),
+            }
+        )
+
+    text = "\n".join(v["text"] for v in vung)
+    tong_o_so = sum(len(v["o_so"]) for v in vung)
+    print(f"--- OCR page {page['page']}: {len(text)} ký tự, {tong_o_so} ô số ---")
+    return {"page": page["page"], "text": text, "vung": vung}
 
 
 def ocr_regions(pages: Iterable[dict]) -> list[dict]:
     """
     OCR nhiều trang đã cắt sẵn bởi iter_table_regions().
-    Format: [{"page": 1, "text": "..."}, ...]
+    Format: [{"page": 1, "text": "...", "vung": [...]}, ...]
     """
     return [ocr_page_regions(page) for page in pages]
 
@@ -182,7 +292,7 @@ def ocr_regions(pages: Iterable[dict]) -> list[dict]:
 def ocr_document(file_path: str) -> list[dict]:
     """
     Run layout detection + OCR on the whole document, return results per page.
-    Format: [{"page": 1, "text": "..."}, ...]
+    Format: [{"page": 1, "text": "...", "vung": [...]}, ...]
     """
     return ocr_regions(iter_table_regions(file_path))
 

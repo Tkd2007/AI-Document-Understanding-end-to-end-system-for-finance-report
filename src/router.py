@@ -52,6 +52,7 @@ from metrics import RunMetrics, merge_into_totals, thong_tin_tai_lap, timer
 from ocr_baseline import iter_table_regions, ocr_page_regions
 from repair.candidates import generate as sinh_ung_vien
 from repair.diagnose import diagnose
+from repair.neo import neo_bbox
 from validation import has_required_fields, validate_result
 
 load_dotenv()
@@ -188,6 +189,23 @@ def chon_chuan(standard: Standard | None) -> tuple[Standard, str]:
     return DEFAULT_STANDARD, "mac_dinh"
 
 
+def _ocr_mot_lan(page, bo_nho: dict, metrics=None) -> dict:
+    """
+    OCR một trang ĐÚNG MỘT LẦN, mọi lần hỏi sau đọc lại từ bộ nhớ.
+
+    Cả text lẫn các ô số đều nằm trong CÙNG một kết quả, nên hai người gọi
+    (`text_ocr_cua_trang` và `o_so_cua_trang`) dùng chung một lượt đọc. Tách
+    ra thành hàm riêng để cái tính chất đó chỉ được viết ở MỘT chỗ: chép đôi
+    thân hàm cache là cách quen thuộc nhất để một nhánh quên mất bộ nhớ rồi
+    âm thầm nhân đôi khâu đắt nhất của pipeline.
+    """
+    so_trang = page["page"]
+    if so_trang not in bo_nho:
+        with timer(metrics, "ocr"):
+            bo_nho[so_trang] = ocr_page_regions(page)
+    return bo_nho[so_trang]
+
+
 def text_ocr_cua_trang(page, bo_nho: dict, metrics=None) -> str:
     """
     Text OCR của một trang, đọc một lần rồi nhớ lại theo số trang.
@@ -202,11 +220,23 @@ def text_ocr_cua_trang(page, bo_nho: dict, metrics=None) -> str:
     lại chính các dict trong cached_pages nên so sánh đồng nhất cũng chạy,
     nhưng số trang là khoá ổn định và đọc log ra hiểu ngay.
     """
-    so_trang = page["page"]
-    if so_trang not in bo_nho:
-        with timer(metrics, "ocr"):
-            bo_nho[so_trang] = ocr_page_regions(page)["text"]
-    return bo_nho[so_trang]
+    return _ocr_mot_lan(page, bo_nho, metrics)["text"]
+
+
+def vung_cua_trang(page, bo_nho: dict, metrics=None) -> list:
+    """
+    Kết quả OCR của một trang, CHIA THEO VÙNG BẢNG.
+
+    Mỗi phần tử là {"region_index", "text", "o", "o_so"} với toạ độ ô đã quy
+    về hệ của trang. Dùng CHUNG bộ nhớ với `text_ocr_cua_trang()` nên không
+    tốn thêm một lượt OCR nào: lượt OCR phục vụ probe dò dòng đã phải chạy
+    sẵn rồi, lấy thêm các ô chỉ là thôi vứt đi một thứ đã có trong tay.
+
+    Đây là nguồn ứng viên ĐỌC LẠI TỜ GIẤY — thứ phân biệt nghiên cứu này với
+    mọi paradigm sửa lỗi trước đó — và cũng là nguồn của việc neo toạ độ chỉ
+    tiêu lẫn việc lan ký hiệu mẫu biểu.
+    """
+    return _ocr_mot_lan(page, bo_nho, metrics).get("vung", [])
 
 
 def do_dau_vet_dong(
@@ -252,6 +282,43 @@ def do_dau_vet_dong(
         khoa: tong_hop_dau_vet(cac_dau_vet)
         for khoa, cac_dau_vet in dau_vet_tung_trang.items()
     }
+
+
+def gom_vung(cached_pages: list, bo_nho_text: dict, metrics=None) -> dict:
+    """
+    {(số trang, chỉ số vùng): kết quả OCR của vùng đó} cho mọi trang đã duyệt.
+
+    Khoá theo CẶP trang-vùng chứ không theo trang: `Provenance` ghi cả hai, và
+    một trang có thể mang nhiều bảng. Gom cả trang lại thì ô của bảng khác lọt
+    vào tập ứng viên — một con số hợp lệ của bảng khác thì vẫn hợp lệ, và
+    không đẳng thức nào bắt được.
+
+    Chỉ chạy trên `cached_pages` — những trang pipeline THẬT SỰ đã đọc — nên
+    nó không mua lại convert PDF hay YOLO, và nhánh OCR dừng sớm ở trang 10
+    thì nó cũng chỉ soi 10 trang.
+    """
+    return {
+        (page["page"], vung["region_index"]): vung
+        for page in cached_pages
+        for vung in vung_cua_trang(page, bo_nho_text, metrics)
+    }
+
+
+def _vung_cua(ket_qua, vung_theo_khoa: dict | None) -> dict | None:
+    """
+    Vùng bảng mà một chỉ tiêu được đọc ra, theo Provenance. None nếu không rõ.
+
+    Không biết chỉ tiêu đến từ vùng nào thì KHÔNG đoán: thà không có ứng viên
+    còn hơn có ứng viên lấy từ nhầm bảng.
+    """
+    if not vung_theo_khoa or ket_qua is None:
+        return None
+
+    prov = getattr(ket_qua, "provenance", None)
+    if prov is None:
+        return None
+
+    return vung_theo_khoa.get((prov.page, prov.region_index))
 
 
 def dien_dong_vang_mat(gia_tri: dict, dau_vet: dict) -> tuple[dict, dict]:
@@ -549,7 +616,9 @@ def run_vlm(
     return result
 
 
-def chay_tang_repair(data: dict, result: dict, standard: Standard) -> tuple[dict, dict]:
+def chay_tang_repair(
+    data: dict, result: dict, standard: Standard, vung_theo_khoa: dict | None = None
+) -> tuple[dict, dict]:
     """
     Chạy tầng định vị/sửa lỗi trên bộ giá trị ĐÃ ép kiểu và quy đổi.
 
@@ -562,12 +631,18 @@ def chay_tang_repair(data: dict, result: dict, standard: Standard) -> tuple[dict
     giấy: phiếu bầu của VLM (`votes`), biến thể nhầm chữ số, biến thể dấu, biến
     thể bậc đơn vị. Không có nguồn nào lấy số từ tài liệu KHÁC.
 
-    `o_lan_can` hiện là None — nguồn ứng viên giá trị nhất đang TẮT ở đường
-    này. Nó cần các ô số đã OCR trong cùng vùng bảng, mà đường VLM không sinh
-    ra chúng. Ghi ra đây thành một dòng trong certificate (`o_lan_can`) chứ
-    không để im lặng: đo trên tầng XBRL, đó là nguồn duy nhất từng lấy lại được
-    giá trị thật ở những ca các nguồn khác chịu thua, nên một lượt chạy thiếu
-    nó phải tự khai là thiếu.
+    `vung_theo_khoa` là {(trang, vùng): kết quả OCR của vùng} do `gom_vung()`
+    dựng từ chính lượt OCR đã chạy cho probe dò dòng. Có nó thì nguồn ĐỌC LẠI
+    TỜ GIẤY bật; không có thì nó tắt, và certificate tự khai là tắt
+    (`o_lan_can`) chứ không im lặng — đo trên tầng XBRL, đó là nguồn duy nhất
+    từng lấy lại được giá trị thật ở những ca các nguồn khác chịu thua, nên
+    một lượt chạy thiếu nó KHÔNG được đọc như một lượt đầy đủ.
+
+    Ô lân cận chỉ lấy trong ĐÚNG VÙNG BẢNG mà chỉ tiêu đó được đọc ra, và tâm
+    của hình chữ thập là bbox do `neo_bbox()` dò ra — KHÔNG phải
+    `Provenance.bbox`, vốn là bbox của cả vùng nên mọi ô đều tương đương và
+    trần cắt thành bốc thăm. Cách neo được ghi vào certificate (`neo`) vì ba
+    cách neo cho ba mức tin cậy khác hẳn nhau.
     """
     co_gia_tri = [k for k, v in data.items() if v is not None and k != UNIT_KEY]
     A, field_order = build_matrix(co_gia_tri, identities_for(standard))
@@ -577,10 +652,22 @@ def chay_tang_repair(data: dict, result: dict, standard: Standard) -> tuple[dict
                       "ly_do": "không dựng được đẳng thức nào từ các chỉ tiêu đọc được"}
 
     gia_tri = {k: data[k] for k in field_order}
-    ung_vien = {
-        k: sinh_ung_vien(k, gia_tri[k], o_lan_can=None, votes=getattr(result.get(k), "votes", {}))
-        for k in field_order
-    }
+    neo: dict[str, str] = {}
+    ung_vien = {}
+    for k in field_order:
+        vung = _vung_cua(result.get(k), vung_theo_khoa)
+        if vung is None:
+            neo[k] = "khong_co_vung"
+            bbox = None
+        else:
+            bbox, neo[k] = neo_bbox(k, gia_tri[k], vung, standard)
+        ung_vien[k] = sinh_ung_vien(
+            k,
+            gia_tri[k],
+            o_lan_can=[] if vung is None else vung["o_so"],
+            votes=getattr(result.get(k), "votes", {}),
+            bbox_dang_xet=bbox,
+        )
     do = diagnose(
         gia_tri,
         ung_vien,
@@ -598,7 +685,12 @@ def chay_tang_repair(data: dict, result: dict, standard: Standard) -> tuple[dict
         "so_dang_thuc": int(A.shape[0]),
         "so_chi_tieu": len(field_order),
         "solve_time_s": round(do.solve_time_s, 4),
-        "o_lan_can": False,
+        "o_lan_can": bool(vung_theo_khoa),
+        # Neo khai THEO TỪNG CHỈ TIÊU, không gộp thành một cờ. Một lượt chạy
+        # neo được mọi chỉ tiêu bằng khớp giá trị và một lượt toàn `khong_neo`
+        # cho ra cùng một câu 'đã bật nguồn ô lân cận', trong khi lượt sau thực
+        # chất đang cắt ứng viên bằng bốc thăm.
+        "neo": neo,
         # Luật dấu khai riêng, kể cả khi nó im lặng: tỷ lệ im lặng là số đo
         # phạm vi áp dụng của nó, và số đó chỉ có nếu ca im lặng cũng được ghi.
         "luat_dau": (
@@ -731,7 +823,9 @@ def route_document(
         # ràng buộc đều phải im.
         chung_chi_repair = {"da_chay": False, "ly_do": "tang_repair_dang_tat"}
         if BAT_TANG_REPAIR and not DISABLE_CONSTRAINT_GATE:
-            data, chung_chi_repair = chay_tang_repair(data, result, standard)
+            data, chung_chi_repair = chay_tang_repair(
+                data, result, standard, gom_vung(cached_pages, bo_nho_text, metrics)
+            )
 
         # Ghi giá trị đã ép kiểu và quy đổi NGƯỢC vào FieldResult, giữ
         # nguyên confidence và votes. Nếu bỏ qua bước này thì .values() trả

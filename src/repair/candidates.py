@@ -100,6 +100,22 @@ MAX_UNG_VIEN = 20
 # giờ tìm — nên bảng kết quả phải đếm nó riêng, và `bao_cao()` đã làm vậy.
 MAX_MOI_NGUON = 10
 
+# Phạt cost theo HẠNG của ô lân cận. Cộng thẳng vào cost, tức nhân thêm một
+# hệ số khả năng vào xác suất tiên nghiệm của nguồn — vẫn nhất quán với nghĩa
+# `cost = −log(xác suất)`, không phải một thang điểm bịa ra.
+#
+# VÌ SAO BẮT BUỘC PHẢI CÓ. Nếu mọi ô lân cận cùng cost thì phép cắt theo trần
+# `MAX_MOI_NGUON` thành BỐC THĂM: đổ vào 200 ô của một vùng bảng thì 10 ô sống
+# sót là 10 ô tuỳ ý, và ô đúng gần như chắc chắn không nằm trong đó. Dự án đã
+# trả giá đúng chỗ này một lần: ở trần 12, bộ sinh sinh trung vị 14 ứng viên
+# nhầm chữ số mà chỉ 6 sống, độ phủ rơi 0,831 → 0,369 — ĐÚNG tỷ lệ 6/14 của
+# phép chọn ngẫu nhiên. Trần chỉ có nghĩa khi thứ tự có nghĩa.
+#
+# 1.0 là một lựa chọn MÔ HÌNH, chưa hiệu chỉnh trên dữ liệu — nó chỉ nói "hạng
+# sau đắt hơn hạng trước", chưa nói đắt hơn bao nhiêu là đúng. Đo bằng
+# `src/eval/do_phu_ung_vien.py` rồi mới chốt.
+PHAT_HANG_LAN_CAN = 1.0
+
 
 @dataclass(frozen=True)
 class Candidate:
@@ -207,10 +223,54 @@ def tu_nham_chu_so(gia_tri, n_cap: int | None = None) -> list[Candidate]:
     return ung_vien
 
 
-def tu_o_lan_can(o_lan_can) -> list[Candidate]:
+def _chong_nhau(a1: int, a2: int, b1: int, b2: int) -> bool:
+    """Hai đoạn [a1,a2] và [b1,b2] có phần chung không."""
+    return min(a2, b2) > max(a1, b1)
+
+
+def hang_lan_can(bbox_o, bbox_dang_xet) -> tuple[int, float] | None:
     """
-    Ứng viên lệch dòng / lệch cột: lấy thẳng giá trị của các ô lân cận
-    trong cùng vùng bảng.
+    Xếp một ô lân cận vào HẠNG, kèm khoảng cách trong hạng đó.
+
+    Trả `(hạng, khoảng cách)`, hoặc None nếu ô không thuộc hạng nào.
+
+    VÙNG LÂN CẬN CÓ HÌNH CHỮ THẬP, KHÔNG PHẢI HÌNH TRÒN — và đó là chỗ đáng
+    nhớ nhất của hàm này. Ba hạng ứng với ba chế độ lỗi khác nhau, xếp theo
+    đúng thứ tự đáng tin:
+
+      0 — CHÍNH Ô ĐÓ, đọc lại bằng engine khác. Ô chồng lên bbox của chỉ tiêu
+          đang xét. Đây là ứng viên giá trị nhất và ít nhiễu nhất: VLM đọc ảnh
+          bảng theo kiểu hiểu ngữ cảnh, EasyOCR đọc từng ô theo kiểu nhận dạng
+          ký tự và đo được 0,999 trên ô số. Ca `BMP_2026Q1_TT99` — máy đọc
+          ...595... trong khi giấy ghi ...959..., tức ĐẢO CHỖ hai chữ số — chỉ
+          cứu được bằng hạng này, vì nguồn nhầm chữ số chỉ biết đổi MỘT chữ số
+          thành chữ khác, không biết kiểu đảo chỗ.
+      1 — CÙNG CỘT, lệch dòng. Chế độ lỗi `row_shift`.
+      2 — CÙNG DÒNG, lệch cột. Chế độ lỗi `col_shift` — đúng thứ vừa cắn ở
+          `SBT_2025Q2_TT200`, nơi máy lấy cột luỹ kế thay cột quý.
+
+    Ô nằm CHÉO — vừa lệch dòng vừa lệch cột — bị loại hẳn: nó không ứng với
+    chế độ lỗi nào cả, và nhận nó vào chỉ làm tập ứng viên phình ra bằng những
+    con số chỉ tình cờ ở gần.
+    """
+    x1, y1, x2, y2 = bbox_o
+    dx1, dy1, dx2, dy2 = bbox_dang_xet
+
+    cung_dong = _chong_nhau(y1, y2, dy1, dy2)
+    cung_cot = _chong_nhau(x1, x2, dx1, dx2)
+
+    if cung_dong and cung_cot:
+        return 0, 0.0
+    if cung_cot:
+        return 1, abs((y1 + y2) / 2 - (dy1 + dy2) / 2)
+    if cung_dong:
+        return 2, abs((x1 + x2) / 2 - (dx1 + dx2) / 2)
+    return None
+
+
+def tu_o_lan_can(o_lan_can, bbox_dang_xet=None) -> list[Candidate]:
+    """
+    Ứng viên đọc lại từ tờ giấy: giá trị các ô trong cùng vùng bảng.
 
     Đây là nguồn GIÁ TRỊ NHẤT và cũng tốn nhất — nó đòi OCR toàn vùng bảng
     chứ không chỉ đọc một con số. Và nó là thứ KHÔNG PARADIGM NÀO trước
@@ -220,15 +280,42 @@ def tu_o_lan_can(o_lan_can) -> list[Candidate]:
 
     o_lan_can là danh sách (giá trị, bbox) đã OCR sẵn — truyền vào chứ
     không tự OCR ở đây, để module này test được mà không cần EasyOCR.
+
+    bbox_dang_xet là bbox của chính chỉ tiêu đang sửa, lấy từ Provenance.
+    Có nó thì ứng viên được XẾP HẠNG theo hình chữ thập (xem `hang_lan_can`)
+    và cost tăng dần theo hạng, nên phép cắt theo trần giữ lại đúng những ô
+    đáng tin nhất. KHÔNG có nó thì mọi ô cùng cost, và lúc ấy trần cắt tuỳ
+    tiện — chấp nhận được cho baseline chạy trên giá trị trần, KHÔNG chấp
+    nhận được cho đường chạy thật.
     """
     ung_vien = []
     for gia_tri, bbox in o_lan_can:
+        if bbox_dang_xet is None:
+            ung_vien.append(
+                Candidate(
+                    value=gia_tri,
+                    source="neighbor_cell",
+                    cost=_cost("neighbor_cell"),
+                    evidence={"bbox": bbox},
+                )
+            )
+            continue
+
+        xep = hang_lan_can(bbox, bbox_dang_xet)
+        if xep is None:
+            continue
+
+        hang, khoang_cach = xep
         ung_vien.append(
             Candidate(
                 value=gia_tri,
                 source="neighbor_cell",
-                cost=_cost("neighbor_cell"),
-                evidence={"bbox": bbox},
+                # Khoảng cách chỉ dùng để phân xử TRONG một hạng, nên nó phải
+                # nhỏ hơn khoảng cách giữa hai hạng. Chuẩn hoá bằng 1e-6 chứ
+                # không chia cho chiều cao trang: ở đây chỉ cần thứ tự đúng,
+                # và một phép chia nữa là thêm một chỗ để sai đơn vị.
+                cost=_cost("neighbor_cell") + hang * PHAT_HANG_LAN_CAN + khoang_cach * 1e-6,
+                evidence={"bbox": bbox, "hang": hang, "khoang_cach": round(khoang_cach, 1)},
             )
         )
     return ung_vien
@@ -308,6 +395,7 @@ def generate(
     current,
     o_lan_can=None,
     votes: dict | None = None,
+    bbox_dang_xet=None,
 ) -> list[Candidate]:
     """
     Sinh tập ứng viên cho MỘT chỉ tiêu, đã khử trùng và cắt theo trần.
@@ -320,6 +408,10 @@ def generate(
     và đó là một quyết định về chi phí cần ghi lại chứ không phải mặc định
     êm ái.
 
+    bbox_dang_xet: bbox của chính chỉ tiêu này trên trang, lấy từ Provenance.
+    Thiếu nó thì các ô lân cận không xếp hạng được và trần sẽ cắt tuỳ tiện —
+    xem `tu_o_lan_can`.
+
     Trả về danh sách xếp theo cost tăng dần.
     """
     gia_tri = getattr(current, "value", current)
@@ -330,7 +422,7 @@ def generate(
 
     ung_vien = [
         *tu_nham_chu_so(gia_tri),
-        *tu_o_lan_can(o_lan_can or []),
+        *tu_o_lan_can(o_lan_can or [], bbox_dang_xet),
         *tu_dau(gia_tri),
         *tu_scale(gia_tri),
         *tu_phieu_vlm(phieu or {}, gia_tri),

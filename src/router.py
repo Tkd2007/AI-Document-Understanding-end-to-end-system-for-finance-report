@@ -48,6 +48,7 @@ from fields_config import (
     fields_for,
     identities_for,
 )
+from ky_hieu_mau import lan_ky_hieu
 from metrics import RunMetrics, merge_into_totals, thong_tin_tai_lap, timer
 from ocr_baseline import iter_table_regions, ocr_page_regions
 from repair.candidates import generate as sinh_ung_vien
@@ -282,6 +283,23 @@ def do_dau_vet_dong(
         khoa: tong_hop_dau_vet(cac_dau_vet)
         for khoa, cac_dau_vet in dau_vet_tung_trang.items()
     }
+
+
+def lan_ky_hieu_mau(cached_pages: list, bo_nho_text: dict, metrics=None) -> dict:
+    """
+    Đọc ký hiệu mẫu trên từng vùng bảng đã duyệt rồi lan hậu tố hợp nhất/riêng.
+
+    Duyệt theo ĐÚNG thứ tự trang rồi tới thứ tự vùng trong trang, vì phép lan
+    có hướng: vùng không đọc được thừa hưởng của vùng đọc được TRƯỚC nó. Đảo
+    thứ tự thì cùng một tài liệu cho hai kết luận khác nhau.
+
+    Dùng chung bộ nhớ OCR với probe dò dòng nên không mua thêm lượt OCR nào.
+    """
+    return lan_ky_hieu(
+        (page["page"], vung["region_index"], vung["text"])
+        for page in cached_pages
+        for vung in vung_cua_trang(page, bo_nho_text, metrics)
+    )
 
 
 def gom_vung(cached_pages: list, bo_nho_text: dict, metrics=None) -> dict:
@@ -802,6 +820,17 @@ def route_document(
             if DISABLE_LINE_PROBE
             else do_dau_vet_dong(cached_pages, standard, bo_nho_text, metrics)
         )
+
+        # Lan ký hiệu mẫu đi CÙNG probe dò dòng, và tắt cùng nó. Cả hai sống
+        # nhờ đúng một lượt OCR, nên khi người dùng tắt probe để khỏi mua OCR
+        # thì chạy cái này là mua lại đúng thứ vừa từ chối. Trạng thái
+        # 'không chạy' ghi tường minh, để nó không lẫn với 'chạy mà không đọc
+        # được ký hiệu nào' — hai chuyện khác hẳn nhau.
+        ky_hieu = (
+            {"loai": None, "nguon": "khong_chay", "theo_vung": {}, "mau_thuan": []}
+            if DISABLE_LINE_PROBE
+            else lan_ky_hieu_mau(cached_pages, bo_nho_text, metrics)
+        )
         gia_tri_da_dien, trang_thai_chi_tieu = dien_dong_vang_mat(
             gia_tri_tran(result), dau_vet
         )
@@ -866,6 +895,11 @@ def route_document(
                 # phân tích, và không suy ra được từ chính con số 0.
                 "trang_thai_chi_tieu": trang_thai_chi_tieu,
                 "line_probe": not DISABLE_LINE_PROBE,
+                # Bộ báo cáo là hợp nhất hay riêng, đọc từ ký hiệu mẫu và lan
+                # sang các bảng không đọc được. Đi kèm cả nguồn lẫn danh sách
+                # mâu thuẫn: một kết luận lan từ trang khác và một kết luận đọc
+                # được tại chỗ không cùng độ tin cậy.
+                "ky_hieu_mau": ky_hieu,
                 # Certificate của tầng repair đi ra CÙNG kết quả, không nằm
                 # riêng ở log: một con số đã bị sửa mà người đọc kết quả không
                 # thấy dấu vết thì đúng bằng một con số bịa.

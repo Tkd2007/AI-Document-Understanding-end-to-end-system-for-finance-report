@@ -421,6 +421,48 @@ dính.
 
 ---
 
+### 5.8 Đọc lại tờ giấy — neo, chữ thập, lan ký hiệu mẫu (30/08/2026)
+
+Nguồn ứng viên `o_lan_can` nay chạy trên đường tài liệu thật, không chỉ ở tầng
+XBRL. Ba ràng buộc đi kèm, cả ba đều là chỗ đã hoặc suýt trả giá.
+
+**Trần chỉ có nghĩa khi thứ tự có nghĩa.** `MAX_MOI_NGUON = 10` cắt theo cost;
+cost bằng nhau thì phép cắt là bốc thăm. Vì thế ô lân cận xếp theo hình CHỮ
+THẬP: hạng 0 đọc lại chính ô đó bằng EasyOCR, hạng 1 cùng cột lệch dòng
+(`row_shift`), hạng 2 cùng dòng lệch cột (`col_shift`); ô nằm chéo bị loại vì
+không ứng với chế độ lỗi nào. Không lọc hình học trước — không có số đo nào về
+việc lệch dòng đi xa bao nhiêu, nên để trần cắt phần đuôi.
+
+**`Provenance.bbox` KHÔNG dùng làm tâm chữ thập được.** Nó là bbox của cả VÙNG
+BẢNG, nên mọi ô đều chồng lên nó theo hai trục và tất cả rơi vào hạng 0 với
+cost bằng nhau — xếp hạng nằm im mà không ai thấy. Tâm thật do
+[src/repair/neo.py](src/repair/neo.py) dò: khớp giá trị trước, dòng của mã số
+sau. Tầng hai không phải dự phòng cho vui — VLM đọc sai thì không ô nào mang
+con số sai ấy, tức tầng một trượt đúng vào những lượt cần sửa. Trượt cả hai
+thì trả `None`, và certificate khai `neo` THEO TỪNG CHỈ TIÊU: `o_lan_can: true`
+mà toàn `khong_neo` nghĩa là nguồn bật nhưng vô dụng.
+
+**Ô lân cận lấy trong VÙNG BẢNG, không phải trong trang.** Một trang có thể
+mang nhiều bảng, và một con số hợp lệ của bảng khác thì vẫn hợp lệ — không
+đẳng thức nào bắt được, đúng kiểu lỗi đã thấy ở `SBT_2025Q2_TT200`. Kết quả OCR
+vì thế chia theo vùng: `{"region_index", "text", "o", "o_so"}`.
+
+**Lan ký hiệu mẫu** ([src/ky_hieu_mau.py](src/ky_hieu_mau.py)): đọc `B01a-DN/HN`
+phía trên bảng để biết bộ báo cáo là hợp nhất hay riêng, lan sang bảng không
+đọc được (trang xoay ngang thì ký hiệu nằm ngoài vùng cắt). **Chỉ lan hậu tố** —
+phần `B01/B02/B03` nói bảng nào, lan nó đi là gán nhãn bảng cân đối cho trang
+kết quả kinh doanh. Mâu thuẫn giữa các vùng được GHI LẠI chứ không đè lên kết
+luận đã chốt: nó nghĩa là hoặc file đóng gói cả hai bộ, hoặc khâu cắt/đọc hỏng.
+Cơ chế này **không sửa được lỗi câm nào hiện có**; giá trị của nó nằm ở bước D
+(nhận diện chuẩn) và ở độ bền khi gặp hồ sơ lạ. Chạy cùng probe dò dòng và tắt
+cùng nó, vì cả hai sống nhờ đúng một lượt OCR. Kết quả ở `meta["ky_hieu_mau"]`.
+
+*Giới hạn của tiền đề "mỗi hồ sơ thuần một bộ":* mới kiểm trên 10 tài liệu từ
+MỘT nguồn phát hành. Hồ sơ tải từ website công ty hoặc cổng HOSE đôi khi đóng
+gói cả hai bộ trong một file.
+
+---
+
 ## 10. MỐC 1 — ĐÃ ĐÓNG, và định luật rút ra từ nó
 
 Đối chiếu ma trận ràng buộc với năm file Công báo (`data/legal/`, đã gitignore).
@@ -638,6 +680,11 @@ không chạm nhánh chiếm 77% chi phí.
    `C(n,2)` nên **ràng buộc thật khi mở rộng bộ chỉ tiêu là chi phí gán nhãn
    tay, không phải chi phí tính toán**.
 5. `MAX_UPLOAD_BYTES = 50 MB` trong `api.py` — chọn theo đúng một tài liệu.
+6. `PHAT_HANG_LAN_CAN = 1.0` trong `repair/candidates.py` — phạt cost mỗi hạng
+   của ô lân cận. Là lựa chọn MÔ HÌNH: nó chỉ nói "hạng sau đắt hơn hạng
+   trước", chưa nói đắt hơn bao nhiêu là đúng. `do_phu_ung_vien.py` KHÔNG đo
+   được nó — tầng XBRL truyền `bbox=None` nên không chạm tới nhánh xếp hạng.
+   Muốn số cho nó thì phải chạy đường ảnh, tức tốn API.
 
 ---
 
@@ -661,6 +708,7 @@ có thể cho.
 |---|---|---|
 | Rò rỉ đáp án | Donor tính trung vị trên cả hồ sơ đang xét nên 32% chỉ tiêu có donor trùng khít giá trị thật — baseline 9 khi đó là **oracle** | `e6c286c` loại cả công ty đang xét |
 | Tắt mất nguồn ứng viên chính | Gọi `generate()` không truyền `o_lan_can`, tức bỏ hẳn việc đọc lại ô lân cận — đúng cơ chế cần chứng minh | đã sửa |
+| Xếp hạng ô lân cận nằm im | Lấy `Provenance.bbox` (bbox cả VÙNG) làm tâm chữ thập nên mọi ô cùng hạng 0, cost bằng nhau, trần cắt bằng bốc thăm — nguồn bật mà vô dụng, và certificate cũ không phân biệt được | `repair/neo.py`; certificate khai `neo` theo từng chỉ tiêu |
 | Cột kỳ so sánh rỗng | 0/158 chỉ tiêu có giá trị ở kỳ thứ hai nên `col_shift` bỏ 120/130 lượt | `f80a53d` chọn kỳ theo **độ phủ chỉ tiêu** |
 | Ma trận nhầm chữ số chưa đo từ dữ liệu thật | Bộ tiêm và bộ sinh dùng hai mô hình lỗi khác nhau nên chỉ số `digit_sub` không mang thông tin về phương pháp | `90b271a`; độ phủ 0,046 → 0,615 |
 

@@ -1319,8 +1319,10 @@ khác nhau, và chỉ cách đầu cộng dồn được cho bootstrap theo cụ
    chúng vào `data/output/tap_gold_<chế độ>_pipeline.log`.
 3. **`--chi BMP SBT` mà KHÔNG kèm `--tiep-tuc` sẽ ghi đè
    `tap_gold_chuan_tu_gold.json` bằng đúng 2 tài liệu**, xoá sạch kết quả 10
-   tài liệu. Bản sao mốc so sánh giữ ở `..._TRUOC-VA-2026-08-27.json` —
-   **đừng xoá**, nó là mốc duy nhất cho hai bản vá 27/08.
+   tài liệu. Mỗi lượt chạy trọn bộ vì thế phải được sao lưu NGAY khi xong, và
+   ba mốc so sánh hiện có — `..._TRUOC-VA-2026-08-27.json` (hai bản vá 27/08),
+   `..._2026-08-29.json` (mốc repair TẮT), `..._2026-08-30.json` (mốc repair
+   BẬT, mục 20.7) — **đừng xoá cái nào**.
 
 > **Hệ quả cho Luật 1, đã gỡ tận gốc 28/08/2026 (Câu 12).** `tap_gold_*.json`
 > và `tap_gold_*_pipeline.log` có giá trị từng ô, nên 10 tài liệu này cùng
@@ -1561,6 +1563,59 @@ chế độ lỗi DUY NHẤT cả tầng ràng buộc không nhìn thấy.
    trên đúng 5 mã đó là đủ.
 6. **`VNM_2026Q1_TT99` thiếu PDF.** Hoặc bổ sung vào `data/bctc/`, hoặc rút
    nhãn khỏi `data/gold/`.
+
+---
+
+### 20.7 Lượt chạy 30/08/2026 — BẬT tầng repair, có neo và ô lân cận
+
+**Con số của lượt này KHÔNG dùng được cho H1.** Tầng repair sửa giá trị cho tới
+khi residual về 0, tức làm phẳng đúng tín hiệu mà H1 đem so với confidence.
+Lượt chạy sinh ra để xem cơ chế đọc lại tờ giấy có hoạt động trên tài liệu
+thật, không phải để sinh số cho bài.
+
+Chế độ `--chuan-tu-gold`, `BAT_TANG_REPAIR=true`, `USE_OCR_FIRST=true`,
+`n_samples=1`, `temperature=0.0`, model `google/gemma-4-31b-it:free`. 10 tài
+liệu (VNM vẫn thiếu PDF). Kết quả đầy đủ: `data/output/tap_gold_chuan_tu_gold_2026-08-30.json`;
+mốc so sánh 29/08 ở `..._2026-08-29.json` — **đừng xoá cả hai**.
+
+| | 30/08 repair BẬT | 29/08 repair TẮT |
+|---|---:|---:|
+| Trường đúng | **0,804** (213/265) | 0,728 (193/265) |
+| Lỗi câm | **0,148** (37/250) | 0,215 |
+| Đúng trọn vẹn | **2/10** | 0/10 |
+| Nhận diện chuẩn | 10/10 | 10/10 |
+| Hệ số đơn vị | 9/10 | 9/10 |
+
+| doc_id | 30/08 | 29/08 | Đổi |
+|---|---:|---:|---:|
+| `MWG_2025Q1_TT200` | 26/26, câm 0 | 25/26, câm 1 | +1 |
+| `VRE_2026Q1_TT99` | 27/27, câm 0 | 24/27, câm 1 | +3 |
+| `DLG_2026Q2_TT99` | 24/27, câm 0 | 17/27, câm 7 | **+7** |
+| `SBT_2025Q2_TT200` | 23/26, câm 2 | 17/26, câm 8 | **+6** |
+| `VHC_2025Q1_TT200` | 17/26, câm 8 | 15/26, câm 10 | +2 |
+| `HNG_2025H1_TT200` | 2/26, câm 24 | 0/26, câm 24 | +2 |
+| `BMP` · `TTF` · `HPG` | không đổi | | 0 |
+| `DGC_2025Q2_TT200` | 23/26, câm 2 | 24/26, câm 1 | **−1** |
+
+**BA THAY ĐỔI CÙNG LÚC, nên bảng này KHÔNG quy được nhân quả.** Lượt 30/08
+khác lượt 29/08 ở: bật tầng repair, thêm nguồn ô lân cận có neo (mục 5.8), và
+thêm lan ký hiệu mẫu. Hai bước nhảy lớn nhất nằm đúng chỗ hợp lý — SBT là ca
+nhầm cột mà hạng 2 của hình chữ thập sinh ra để cứu, và nó là **việc số 1 của
+mục 20.6** — nhưng "hợp lý" không phải bằng chứng.
+
+**Vì sao không tách được ngay tại chỗ:** file kết quả của lượt này không giữ
+`chung_chi_repair` lẫn `ky_hieu_mau`. Đã vá (`8056b33`) nhưng quá muộn cho
+chính nó — bản vá không tác động lên tiến trình đã nạp code cũ. Rút ra: **lượt
+chạy bật một cơ chế mới mà không lưu certificate của cơ chế đó thì cho ra số
+không quy được về nguyên nhân**, và cái giá là chạy lại.
+
+**`DGC` là ca duy nhất tệ đi**, mất một trường và thêm một lỗi câm. Đúng cái
+giá đã lường: mọi ứng viên vẫn truy được về một chỗ trên tờ giấy nên hệ không
+bịa số, nhưng tập ứng viên rộng ra thì xác suất một ô tình cờ làm bảng cân
+cũng tăng. Đây là chỉ số phải theo dõi mỗi lần nới nguồn ứng viên.
+
+**`HNG` vẫn hỏng vì lý do cũ** — quy ước dấu ngược (Câu 14), và là tài liệu duy
+nhất sai hệ số đơn vị. Không liên quan gì tới lượt này.
 
 ---
 

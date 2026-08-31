@@ -1079,10 +1079,14 @@ dự đoán.
 vẫn đang chờ người chủ trì. Riêng `loi_nhuan_sau_thue` lệch cả độ lớn 0,00065%,
 nằm sâu trong biên 0,1%, nên nếu Câu 14 được giải thì ô này tự đúng.
 
-**Ô thứ năm là bất đồng THẬT, chưa lý giải được.** Gold ghi `thue_tndn_hien_hanh
-= 0`, pipeline đọc `233.893.000`. Hoặc gold bỏ sót một dòng có số, hoặc pipeline
-bắt trúng một con số của dòng khác. **Phải mở PDF kiểm bằng mắt trước khi kết
-luận bên nào sai** — đừng sửa gold theo pipeline.
+**Ô thứ năm: đẳng thức mã 60 phân xử, và nó chỉ về phía GOLD.** Gold ghi
+`thue_tndn_hien_hanh = 0`, pipeline đọc `233.893.000`. Cho trước ba giá trị kia
+— mã 50, mã 52 và mã 60, trong đó mã 52 pipeline đọc trùng khít gold — đẳng
+thức **bắt buộc** mã 51 phải bằng 0; gold cân tới từng đồng còn pipeline lệch
+`630.785.000`. Certificate cũng loại trừ khả năng tầng repair đẻ ra con số đó:
+verdict là `ABSTAIN` (`vuot_tran_thay_doi`), tức `233.893.000` đến thẳng từ VLM.
+Mở PDF giờ chỉ còn để biết VLM bắt trúng con số của dòng nào — hữu ích cho chẩn
+đoán, không còn cần để phân xử.
 
 #### Chỗ lượt chạy này KHÔNG kết luận được
 
@@ -1100,6 +1104,23 @@ và **sao lưu `tap_gold_chuan_tu_gold.json` trước khi chạy** (bẫy 3, m�
 > **File `tap_gold_chuan_tu_gold.json` hiện đang giữ kết quả của ĐÚNG MỘT tài
 > liệu** vì lượt `--chi HNG` này. Bản 10 tài liệu của lượt 30/08 vẫn còn ở
 > `..._2026-08-30.json`.
+
+#### Điểm số 21/26 đo dưới quy ước dấu CŨ — không so thẳng với lượt sau
+
+Cùng ngày 31/08/2026, quy ước lưu dấu mã 51/52 đổi sang **dấu có hướng** (chi
+phí âm, thu nhập thuế dương) và đẳng thức thành `Mã 60 = Mã 50 + Mã 51 + Mã 52`
+— xem `ANNOTATION-GUIDELINE.md` mục Sửa đổi. Mười một file gold đã lật dấu hai
+ô ấy.
+
+Lượt chạy HNG ở trên được chấm **trước** khi lật, nên con số 21/26 thuộc quy
+ước cũ. Chấm lại chính bộ dự đoán đã lưu với gold mới cho **20/26**: ô
+`thue_tndn_hoan_lai` (pipeline đọc `−431.500.000`) trước khớp gold, nay lệch
+dấu với gold mới `+431.500.000`.
+
+**Con số dùng khi so với lượt sau là 20/26**, không phải 21/26. Chênh lệch một
+ô này thuần tuý do đổi quy ước, không phải do cơ chế đơn vị theo bảng — và cũng
+chưa nói được pipeline sẽ đọc ra gì sau khi `chuan_hoa_dau()` đảo chiều lật, vì
+việc đó phải chạy lại mới biết.
 
 ## Phụ lục A — MỐC 1: hồ sơ đối chiếu ma trận ràng buộc với Thông tư
 

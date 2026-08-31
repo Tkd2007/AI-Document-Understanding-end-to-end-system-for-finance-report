@@ -63,6 +63,39 @@ suy giả định chúng không đổi, **không được viết vào bài như 
 Bốn trong năm ô còn sai của HNG chỉ lệch **dấu** (Câu 14, đang chờ người chủ
 trì), không liên quan tới đơn vị.
 
+### Mã 51/52 lưu theo dấu có hướng; đẳng thức mã 60 thành tổng thuần
+
+Quy tắc cũ ghi mã 51/52 "giữ nguyên dấu như in" — dựa vào cách trình bày, mà
+cách trình bày **không nhất quán ngay trong một báo cáo**. `VRE_2026Q1_TT99`
+in mã 51 trong ngoặc đơn còn mã 52 ngoài ngoặc, ngược với nghĩa của hai dòng;
+người gán nhãn đã ghi chỗ vênh đó vào `notes` ngày 26/08/2026. Quy tắc mới ghi
+theo **nghĩa kinh tế** — tiền đi ra khỏi lợi nhuận thì âm — nên đẳng thức thành
+`Mã 60 = Mã 50 + Mã 51 + Mã 52`.
+
+Dạng này cố ý khác chữ trong TT200 Điều 113 mục 3.18
+(`Mã số 60 = Mã số 50 - (Mã số 51 + Mã số 52)`). **Hai dạng là cùng một phương
+trình**, chỉ khác chỗ dấu nằm ở dữ liệu hay ở công thức.
+
+Mười một file gold lật dấu bằng script; cả mười một cân tới từng đồng sau khi
+lật. Không tài liệu nào phải gán nhãn lại — phép biến đổi là song ánh và cơ
+học, lý do ghi ở `ANNOTATION-GUIDELINE.md` mục Sửa đổi 31/08/2026.
+
+*Không đo được* trên chất lượng trích xuất, và đây là chỗ dễ tưởng nhầm:
+
+- **Identifiability KHÔNG đổi**, đã sinh lại `data/output/identifiability_*.md`
+  trước và sau — cùng 7/26 chỉ tiêu định vị được, cùng `dim null(A)`, cùng danh
+  sách cặp không phân biệt được. Đổi vế chỉ lật dấu hai cột, mà quan hệ tỷ lệ
+  giữa các cột bất biến với phép lật ấy. **Đừng viết vào bài như một cải thiện
+  định vị.**
+- Cái được là ở khâu gán nhãn (quy tắc phát biểu được thành một câu không phụ
+  thuộc cách in) và ở hình dạng bộ ràng buộc (cả chín đẳng thức cùng dạng tổng
+  thuần, bỏ được ngoại lệ xử lý dấu).
+
+**Mốc so sánh bị cắt tại đây.** Mọi kết quả chấm trước 31/08/2026 dùng gold quy
+ước cũ nên **không so thẳng** với lượt sau ở hai ô 51/52. Cụ thể, lượt HNG cùng
+ngày được ghi 21/26 dưới quy ước cũ; chấm lại chính bộ dự đoán ấy với gold mới
+ra **20/26**.
+
 ### Cắt chi phí đọc tài liệu lúc mở phiên
 
 *Không đo được* — thay đổi thuộc loại tài liệu và quy ước.

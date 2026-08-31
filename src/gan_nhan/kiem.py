@@ -29,7 +29,8 @@ khuyên:
 
 `kiem_dau_khau_tru` phục vụ cùng mục đích nhưng cho một chế độ lỗi khác:
 người gán nhãn chép đúng từng chữ số mà vẫn thấy đẳng thức lệch, vì ba dòng
-khấu trừ in trong ngoặc đơn đã bị ghi thành số âm. Nó cũng chỉ BÁO chứ không
+khấu trừ bị ghi sai DẤU — giá vốn in trong ngoặc đơn nên thành âm, còn hai
+dòng thuế ghi theo con số in thay vì theo nghĩa kinh tế. Nó cũng chỉ BÁO chứ không
 sửa hộ — đảo dấu giúp một giá trị người vừa gõ là đúng loại can thiệp âm
 thầm mà cả module này được viết ra để chặn.
 """
@@ -88,8 +89,9 @@ def kiem_dang_thuc(values: dict, standard: Standard) -> list[KetQuaMotDangThuc]:
     return ket
 
 
-# Ba chỉ tiêu mà guideline mục 3.3 bắt ghi DƯƠNG dù báo cáo in trong ngoặc
-# đơn. Để dưới dạng dữ liệu ở đây vì quy tắc phải có đúng một nơi định nghĩa.
+# Ba chỉ tiêu mà guideline mục 3.3 tách khỏi luật "ngoặc là âm": giá vốn luôn
+# dương, còn hai dòng thuế ghi theo NGHĨA KINH TẾ chứ không theo con số in. Để
+# dưới dạng dữ liệu ở đây vì quy tắc phải có đúng một nơi định nghĩa.
 GIA_VON = "gia_von_hang_ban"
 TRUONG_THUE = ("thue_tndn_hien_hanh", "thue_tndn_hoan_lai")
 
@@ -118,8 +120,9 @@ def _dao_dau_lam_can(values: dict, ten: str, identities) -> bool | None:
     Đây là tiêu chí thay cho phép so mã 50 với mã 60 mà bản đầu dùng. Bản đầu
     xét dấu từng chỉ tiêu thuế bằng dấu của TỔNG số thuế, nên nó báo oan ca
     hoàn toàn hợp lệ: thuế hiện hành là chi phí lớn còn thuế hoãn lại là một
-    khoản hoàn nhập âm. `MWG_2025Q1_TT200` đúng là ca đó — mã 52 bằng
-    -10.894.797.039 mà đẳng thức B02 vẫn cân chính xác đến từng đồng.
+    khoản hoàn nhập ngược chiều. `MWG_2025Q1_TT200` đúng là ca đó — mã 51 bằng
+    -397.722.415.583 còn mã 52 bằng +10.894.797.039, mà đẳng thức B02 vẫn cân
+    chính xác đến từng đồng.
 
     Tiêu chí mới không có chỗ cho ca ấy: nếu bộ số đã cân thì không có gì để
     báo. Nó cũng chính là chữ ký "lệch đúng gấp đôi" mà guideline mục 3.3 mô
@@ -156,9 +159,10 @@ def kiem_dau_khau_tru(values: dict, standard: Standard) -> list[KetQuaMotDau]:
     tuyệt đối không được sửa mà phải ghi `notes`. Đoán nhầm ca là cách nhanh
     nhất để một tài liệu sạch bị chữa hỏng.
 
-    Hai chỉ tiêu thuế xét theo `_dao_dau_lam_can`, KHÔNG theo dấu của tổng số
-    thuế: mã 51 và mã 52 có dấu độc lập với nhau, nên một khoản hoàn nhập
-    thuế hoãn lại ghi âm là hợp lệ ngay cả khi tổng số thuế là chi phí.
+    Hai chỉ tiêu thuế xét theo `_dao_dau_lam_can`, KHÔNG theo dấu của chính
+    nó và cũng không theo dấu của tổng số thuế: mã 51 và mã 52 có dấu độc lập
+    với nhau, nên một khoản hoàn nhập thuế hoãn lại ghi dương là hợp lệ ngay
+    cả khi tổng số thuế là chi phí.
 
     Giá vốn hàng bán thì xét thẳng theo dấu, không cần đẳng thức:
     `FIELD_RULES` đặt `allow_negative` là False cho nó, tức âm là sai bất kể
@@ -187,18 +191,27 @@ def kiem_dau_khau_tru(values: dict, standard: Standard) -> list[KetQuaMotDau]:
         if gia_tri is None:
             ket.append(KetQuaMotDau(ten, CHUA_GO, "chưa gõ hoặc đọc không ra"))
             continue
-        if gia_tri >= 0:
+        # Số không thì không có dấu để mà sai: đảo dấu một số không cho lại
+        # đúng số không, nên đẳng thức không nói được gì và cũng không cần nói.
+        if gia_tri == 0:
             ket.append(KetQuaMotDau(ten, DAU_DAT, ""))
             continue
 
+        # KHÔNG có lối tắt theo dấu. Bản trước cho qua ngay mọi giá trị không
+        # âm, vì quy ước cũ lưu mã 51/52 theo ĐỘ LỚN nên dương là dạng bình
+        # thường và chỉ số âm mới đáng ngờ. Quy ước dấu có hướng (31/08/2026)
+        # xoá tiền đề đó: chi phí thuế lưu âm, thu nhập thuế lưu dương, nên CẢ
+        # HAI dấu đều có thể hợp lệ và cũng đều có thể sai. Giữ lối tắt ấy thì
+        # phép kiểm mù hẳn với ca mã 51 ghi dương nhầm — đúng ca `DGC` đã trả
+        # giá mười một lần kiểm.
         theo_dang_thuc = _dao_dau_lam_can(values, ten, identities)
         if theo_dang_thuc is None:
             ket.append(
                 KetQuaMotDau(
                     ten,
                     CHUA_QUYET_DINH_DUOC,
-                    "ghi âm, nhưng đẳng thức chứa nó chưa chạy được vì thiếu "
-                    "thành phần, nên chưa kết luận được gì về dấu",
+                    "đẳng thức chứa nó chưa chạy được vì thiếu thành phần, "
+                    "nên chưa kết luận được gì về dấu",
                 )
             )
         elif theo_dang_thuc:
@@ -206,8 +219,8 @@ def kiem_dau_khau_tru(values: dict, standard: Standard) -> list[KetQuaMotDau]:
                 KetQuaMotDau(
                     ten,
                     NGHI_SAI_DAU,
-                    "ghi âm, và đảo dấu riêng trường này làm đẳng thức đang "
-                    "lệch trở nên cân — guideline mục 3.3",
+                    "đảo dấu riêng trường này làm đẳng thức đang lệch trở nên "
+                    "cân — guideline mục 3.3",
                 )
             )
         else:

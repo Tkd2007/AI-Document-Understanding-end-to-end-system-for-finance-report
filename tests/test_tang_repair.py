@@ -17,11 +17,11 @@ from fields_config import Standard
 
 
 def _bo_so_can():
-    """Bốn dòng của đẳng thức mã 60, đã cân: 750 + 300 + (−50) = 1000."""
+    """Bốn dòng của đẳng thức mã 60, đã cân: 1000 + (−300) + 50 = 750."""
     return {
         "loi_nhuan_truoc_thue": 1_000.0,
-        "thue_tndn_hien_hanh": 300.0,
-        "thue_tndn_hoan_lai": -50.0,
+        "thue_tndn_hien_hanh": -300.0,
+        "thue_tndn_hoan_lai": 50.0,
         "loi_nhuan_sau_thue": 750.0,
     }
 
@@ -40,13 +40,13 @@ def test_mac_dinh_tat():
 
 
 def test_sua_duoc_loi_dau_va_khai_ra_nguon_dinh_vi():
-    gia_tri = {**_bo_so_can(), "thue_tndn_hoan_lai": 50.0}
+    gia_tri = {**_bo_so_can(), "thue_tndn_hoan_lai": -50.0}
 
     sau, cc = router.chay_tang_repair(gia_tri, _ket_qua(gia_tri), Standard.TT200)
 
     assert cc["verdict"] == "REPAIRED"
     assert cc["nguon_dinh_vi"] == "luat_dau"
-    assert sau["thue_tndn_hoan_lai"] == -50.0
+    assert sau["thue_tndn_hoan_lai"] == 50.0
 
 
 def test_certificate_ghi_ca_gia_tri_truoc_va_sau():
@@ -54,13 +54,13 @@ def test_certificate_ghi_ca_gia_tri_truoc_va_sau():
     Chỉ ghi tên chỉ tiêu bị đổi thì về sau không dựng lại được đầu ra CHƯA sửa,
     mà đó chính là bộ số H1 cần. Certificate phải đủ để đảo ngược phép sửa.
     """
-    gia_tri = {**_bo_so_can(), "thue_tndn_hoan_lai": 50.0}
+    gia_tri = {**_bo_so_can(), "thue_tndn_hoan_lai": -50.0}
 
     _, cc = router.chay_tang_repair(gia_tri, _ket_qua(gia_tri), Standard.TT200)
 
     doi = cc["da_doi"]["thue_tndn_hoan_lai"]
-    assert doi["truoc"] == 50.0
-    assert doi["sau"] == -50.0
+    assert doi["truoc"] == -50.0
+    assert doi["sau"] == 50.0
     assert doi["nguon_ung_vien"] == "sign"
 
 

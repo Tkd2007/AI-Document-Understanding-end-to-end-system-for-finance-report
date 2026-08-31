@@ -125,8 +125,8 @@ Báo cáo tài chính in số âm **trong ngoặc đơn**: `(1.234.567)`. Ghi gi
 | Chỉ tiêu | Mã | Quy tắc |
 |---|---|---|
 | Giá vốn hàng bán | 11 | **Luôn dương.** Giá vốn âm là dấu hiệu đọc sai, không phải số liệu |
-| Chi phí thuế TNDN hiện hành | 51 | **Giữ nguyên dấu như in**, rồi kiểm bằng đẳng thức mã 60 |
-| Chi phí thuế TNDN hoãn lại | 52 | **Giữ nguyên dấu như in**, rồi kiểm bằng đẳng thức mã 60 |
+| Chi phí thuế TNDN hiện hành | 51 | **Ghi theo NGHĨA KINH TẾ, không theo con số in:** chi phí ghi **âm**, thu nhập thuế ghi **dương**. Rồi kiểm bằng đẳng thức mã 60 |
+| Chi phí thuế TNDN hoãn lại | 52 | như mã 51 |
 
 *Vì sao cần ngoại lệ:* trên cùng một trang B02, dấu ngoặc mang **hai nghĩa
 khác nhau**, và quy tắc "ngoặc là âm" gộp chúng làm một.
@@ -140,22 +140,35 @@ Ghi mã 11 thành số âm làm đẳng thức `giá vốn + lãi gộp = doanh 
 lệch đúng **gấp đôi** giá vốn, và người gán nhãn sẽ đi tìm một lỗi không tồn
 tại trên báo cáo.
 
-*Vì sao mã 51 và 52 phải kiểm bằng đẳng thức, không bằng chiều của mã 50 so
-với mã 60:* Thông tư dành riêng dấu âm ở hai chỉ tiêu này cho một nghĩa hẹp.
-TT200 Điều 113 mục 3.16–3.17 (TT99 mục 3.17–3.18) nói số liệu "được ghi vào
-chỉ tiêu này bằng số âm dưới hình thức ghi trong ngoặc đơn" **khi phát sinh
-bên Nợ**, tức khi thuế là *thu nhập* chứ không phải chi phí. Một mã 52 âm vì
-thế là một trạng thái kế toán CÓ THẬT, không phải lỗi trình bày.
+*Vì sao mã 51 và 52 ghi theo nghĩa kinh tế chứ không chép dấu như in:* **cách
+in không nhất quán ngay trong cùng một báo cáo.** `VRE_2026Q1_TT99` là ca đã
+gặp — người gán nhãn ghi lại nguyên văn ngày 26/08/2026: *"chi phí thuế (51)
+dương nhưng lại để trong () trong báo cáo, 52 cần âm thì lại để bên ngoài
+()"*. Chép dấu như in ở đó cho ra hai ô ngược nhau về quy ước, và không phép
+kiểm nào gỡ được vì cả hai đều "đúng như in".
 
-Chiều của mã 50 so với mã 60 không tách được hai trạng thái ấy, vì
-`Mã 60 = Mã 50 − Mã 51 − Mã 52` chỉ ràng buộc **tổng** hai dòng thuế: mã 51
-đủ lớn thì mã 60 < mã 50 vẫn đúng trong khi mã 52 âm hợp lệ. Phép kiểm dùng
-được là chính đẳng thức đó:
+Ghi theo nghĩa kinh tế thì quy tắc phát biểu được thành một câu không phụ
+thuộc cách trình bày: **tiền đi ra khỏi lợi nhuận thì âm**. Chi phí thuế làm
+lợi nhuận giảm nên âm; hoàn nhập thuế hoãn lại làm lợi nhuận tăng nên dương.
 
-- Bộ số **đã cân** → dấu âm là số liệu thật, giữ nguyên, không sửa gì.
-- Đẳng thức **lệch đúng gấp đôi** một trong hai dòng thuế → dòng đó ghi
-  ngược dấu. Đọc lại đúng ô ấy trên báo cáo. Nếu đọc lại vẫn ra dấu cũ thì
-  giữ nguyên và ghi `notes`, đừng lật dấu cho cân.
+*Hệ quả — đẳng thức mã 60 thành một tổng thuần:*
+
+```
+Mã 60 = Mã 50 + Mã 51 + Mã 52
+```
+
+**Dạng này cố ý khác chữ trong Thông tư.** TT200 Điều 113 mục 3.18 viết
+`Mã số 60 = Mã số 50 - (Mã số 51 + Mã số 52)`, tức 51/52 vào công thức như độ
+lớn dương. **Hai dạng là cùng một phương trình**, chỉ khác chỗ dấu nằm ở dữ
+liệu hay nằm ở công thức. Đừng "sửa lại cho đúng Thông tư": sửa công thức mà
+không lật dấu dữ liệu là làm vỡ đẳng thức trên toàn bộ tập gold.
+
+*Phép kiểm khi nghi ngờ:*
+
+- Bộ số **đã cân** → dấu đang ghi là đúng, không sửa gì.
+- Đẳng thức **lệch đúng gấp đôi** một trong hai dòng thuế → dòng đó ghi ngược
+  dấu. Đọc lại đúng ô ấy trên báo cáo. Nếu đọc lại vẫn thấy nghĩa kinh tế
+  ngược với dấu đang ghi thì giữ nguyên và ghi `notes`, đừng lật cho cân.
 
 Công cụ gán nhãn chạy sẵn phép kiểm này (`kiem_dau_khau_tru`), nên không
 phải tính tay.
@@ -545,6 +558,52 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 
 > Mọi thay đổi guideline ghi vào đây kèm **ngày** và **lý do**, và ghi rõ
 > **những tài liệu nào phải gán nhãn lại**. Không sửa đè lên nội dung trên.
+
+### 31/08/2026 — Mã 51 và 52 ghi theo NGHĨA KINH TẾ; đẳng thức mã 60 thành tổng thuần
+
+**Chỗ sửa:** mục 3.3, bảng ba dòng khấu trừ và phần lý giải kèm theo.
+
+**Quy tắc cũ:** mã 51 và 52 *"giữ nguyên dấu như in"*, rồi kiểm bằng đẳng thức
+`Mã 60 = Mã 50 − Mã 51 − Mã 52`. **Quy tắc mới:** ghi theo nghĩa kinh tế — chi
+phí thuế **âm**, thu nhập thuế **dương** — và đẳng thức thành
+`Mã 60 = Mã 50 + Mã 51 + Mã 52`.
+
+**Vì sao đổi.** Quy tắc cũ dựa vào cách trình bày, mà cách trình bày **không
+nhất quán ngay trong một báo cáo**. `VRE_2026Q1_TT99` in mã 51 trong ngoặc
+đơn còn mã 52 ngoài ngoặc, đúng ngược với nghĩa của hai dòng; người gán nhãn
+đã ghi chỗ vênh đó vào `notes` ngày 26/08/2026, tức bốn ngày trước tu chính
+này, nhưng lúc ấy guideline không có chỗ nào chứa nó ngoài một dòng ghi chú.
+Quy tắc mới phát biểu được thành một câu không phụ thuộc cách in: **tiền đi ra
+khỏi lợi nhuận thì âm.**
+
+Kèm theo, bộ ràng buộc thành đồng nhất về dạng — cả chín đẳng thức nay đều là
+tổng thuần — nên bỏ được ngoại lệ xử lý dấu vốn phải viết riêng cho hai dòng
+thuế.
+
+**Không được gì về khả năng định vị lỗi, và đã đo chứ không đoán.** Sinh lại
+`data/output/identifiability_*.md` trước và sau tu chính cho ra cùng 7/26 chỉ
+tiêu định vị được, cùng số chiều không gian null, cùng danh sách cặp không
+phân biệt được. Đổi vế chỉ lật dấu hai cột của ma trận, mà quan hệ tỷ lệ giữa
+các cột thì bất biến với phép lật ấy. Đừng viết tu chính này vào bài như một
+cải thiện định vị.
+
+**KHÔNG tài liệu nào phải gán nhãn lại, và đây là một ngoại lệ có lý do phải
+nêu rõ.** Luật mở đầu guideline nói sửa quy tắc giữa chừng thì phải gán nhãn
+lại toàn bộ phần đã làm. Ngoại lệ ở đây được phép vì phép biến đổi là **song
+ánh và cơ học**: quy ước mới bằng đúng quy ước cũ nhân `−1` trên hai ô, không
+cần nhìn lại tờ giấy để biết giá trị mới, và không có ca nào mà hai quy ước
+cho cùng một con số. Mười một file gold đã được lật dấu bằng script ngày
+31/08/2026 và cả mười một đều cân `50 + 51 + 52 = 60` tới từng đồng sau khi
+lật.
+
+Vì đây **không** phải gán nhãn lại, `notes` của cả mười một file ghi rõ giá
+trị hai ô ấy đến từ một phép lật cơ học chứ không từ một lượt đọc mới — hai
+thứ có độ tin cậy khác hẳn nhau, và người đọc file gold phải thấy được ngay
+tại file.
+
+**Việc còn lại:** lượt gán nhãn tiếp theo phải theo quy tắc mới. Mọi kết quả
+chấm pipeline trước 31/08/2026 so với quy ước cũ, nên **không so trực tiếp**
+với lượt chạy sau mốc này ở hai ô 51/52.
 
 ### 28/08/2026 (muộn hơn) — "Cột đầu" nói rõ thành "cột QUÝ, không phải luỹ kế"
 

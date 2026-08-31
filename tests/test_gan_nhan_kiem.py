@@ -55,8 +55,8 @@ def _bo_can_bang() -> dict:
             "ln_thuan_hdkd": 200,
             "ln_khac": 20,
             "loi_nhuan_truoc_thue": 220,
-            "thue_tndn_hien_hanh": 40,
-            "thue_tndn_hoan_lai": 5,
+            "thue_tndn_hien_hanh": -40,
+            "thue_tndn_hoan_lai": -5,
             "loi_nhuan_sau_thue": 175,
             # B03: 50 = 20+30+40, và 110 = 50+60+61
             "lctt_hdkd": 400,
@@ -172,14 +172,14 @@ def test_gia_von_am_bi_bao_la_nghi_sai_dau():
     assert _dau({**v, "gia_von_hang_ban": -100})["gia_von_hang_ban"] == NGHI_SAI_DAU
 
 
-def test_thue_hoan_lai_am_HOP_LE_khi_dang_thuc_da_can():
+def test_thue_hoan_lai_duong_HOP_LE_khi_dang_thuc_da_can():
     """
     Hồi quy trên ca dương tính giả đã xảy ra thật, chép từ `MWG_2025Q1_TT200`.
 
     Bản đầu của phép kiểm này xét dấu từng chỉ tiêu thuế bằng dấu của TỔNG số
     thuế — tức so mã 60 với mã 50 — nên nó báo oan mã 52 ở đây. Mã 51 là chi
-    phí thuế lớn, mã 52 là khoản hoàn nhập âm, tổng lại vẫn làm giảm lợi
-    nhuận, và đẳng thức B02 cân chính xác đến từng đồng.
+    phí thuế lớn (âm), mã 52 là khoản hoàn nhập (dương), tổng lại vẫn làm
+    giảm lợi nhuận, và đẳng thức B02 cân chính xác đến từng đồng.
 
     Báo oan ở đây tốn hơn bỏ sót: giao diện nói "sửa DẤU, đây không phải lỗi
     của báo cáo", nên một cảnh báo sai sẽ đẩy người gán nhãn đi hỏng một giá
@@ -189,8 +189,8 @@ def test_thue_hoan_lai_am_HOP_LE_khi_dang_thuc_da_can():
     v.update(
         {
             "loi_nhuan_truoc_thue": 1_934_661_387_220,
-            "thue_tndn_hien_hanh": 397_722_415_583,
-            "thue_tndn_hoan_lai": -10_894_797_039,
+            "thue_tndn_hien_hanh": -397_722_415_583,
+            "thue_tndn_hoan_lai": 10_894_797_039,
             "loi_nhuan_sau_thue": 1_547_833_768_676,
         }
     )
@@ -232,8 +232,8 @@ def test_bo_so_DGC_that_da_tung_lot_qua_muoi_mot_lan_kiem_dang_thuc():
     """
     Hồi quy trên ca đã xảy ra thật, chép từ B02 của `DGC_2025Q2_TT200`.
 
-    Bộ số này chép đúng từng chữ số trên báo cáo nhưng ghi mã 11 và mã 51
-    theo dấu ngoặc, nên hai đẳng thức B02 lệch. File gold khi đó có
+    Bộ số này chép đúng từng chữ số trên báo cáo nhưng sai dấu ở mã 11 và
+    mã 51, nên hai đẳng thức B02 lệch. File gold khi đó có
     `so_lan_kiem_dang_thuc` bằng 11: người gán nhãn kiểm mười một lần mà
     không tìm ra, vì không có lỗi đọc nào để tìm. Phép kiểm dấu tồn tại để
     lần sau câu trả lời hiện ra ngay lần kiểm đầu.
@@ -247,7 +247,7 @@ def test_bo_so_DGC_that_da_tung_lot_qua_muoi_mot_lan_kiem_dang_thuc():
             "ln_thuan_hdkd": 628_952_962_840,
             "ln_khac": -83_660_312,
             "loi_nhuan_truoc_thue": 628_869_302_528,
-            "thue_tndn_hien_hanh": -23_554_373_035,
+            "thue_tndn_hien_hanh": 23_554_373_035,
             "thue_tndn_hoan_lai": 0,
             "loi_nhuan_sau_thue": 605_314_929_493,
         }
@@ -260,10 +260,10 @@ def test_bo_so_DGC_that_da_tung_lot_qua_muoi_mot_lan_kiem_dang_thuc():
     # Mức lệch đúng bằng GẤP ĐÔI trường bị đảo dấu — chữ ký số học của lỗi
     # dấu, thứ tách nó khỏi ca báo cáo tự mâu thuẫn.
     lech = {r.mo_ta: r.lech for r in kiem_dang_thuc(v, Standard.TT200) if r.trang_thai == LECH}
-    assert set(lech.values()) == {-2 * 107_515_846_476, -2 * 23_554_373_035}
+    assert set(lech.values()) == {-2 * 107_515_846_476, 2 * 23_554_373_035}
 
     # Đảo dấu theo mục 3.3 thì mọi đẳng thức cân, không phải đổi chữ số nào.
     v["gia_von_hang_ban"] = 107_515_846_476
-    v["thue_tndn_hien_hanh"] = 23_554_373_035
+    v["thue_tndn_hien_hanh"] = -23_554_373_035
     assert all(r.trang_thai == DAT for r in kiem_dang_thuc(v, Standard.TT200))
     assert all(t == DAU_DAT for t in _dau(v).values())

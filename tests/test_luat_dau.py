@@ -280,22 +280,22 @@ def test_dinh_vi_duoc_ma_52_tren_dang_thuc_that():
     A, field_order = build_matrix(bon_dong, identities_for(standard))
     assert A.shape[0] == 1
 
-    # Mã 60 = 1000 − 300 − (−50) = 750. Mã 52 âm là thu nhập thuế hoãn lại,
-    # đúng ca của MWG và VRE mà Câu 13 phân xử là hợp lệ.
+    # Mã 60 = 1000 + (−300) + 50 = 750. Mã 52 DƯƠNG là thu nhập thuế hoãn
+    # lại, đúng ca của MWG và VRE mà Câu 13 phân xử là hợp lệ.
     values = {
         "loi_nhuan_truoc_thue": 1_000.0,
-        "thue_tndn_hien_hanh": 300.0,
-        "thue_tndn_hoan_lai": -50.0,
+        "thue_tndn_hien_hanh": -300.0,
+        "thue_tndn_hoan_lai": 50.0,
         "loi_nhuan_sau_thue": 750.0,
     }
     assert luat_dau_residual(values, A, field_order).trang_thai == "khong_co_lech"
 
-    values["thue_tndn_hoan_lai"] = 50.0  # lộn dấu
+    values["thue_tndn_hoan_lai"] = -50.0  # lộn dấu
     kq = luat_dau_residual(values, A, field_order)
 
     assert kq.trang_thai == "dinh_vi_duoc"
     assert kq.truong == "thue_tndn_hoan_lai"
-    assert kq.gia_tri_sau == -50.0
+    assert kq.gia_tri_sau == 50.0
 
 
 # ---------------------------------------------------------------------------

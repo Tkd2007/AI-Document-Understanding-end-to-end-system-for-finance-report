@@ -21,64 +21,71 @@ def test_gia_von_da_duong_thi_khong_dong_vao():
     assert da_doi == []
 
 
-def test_thue_hien_hanh_thanh_duong_khi_thue_lam_giam_loi_nhuan():
-    """Mã 60 < mã 50 nghĩa là thuế là chi phí, nên mã 51 phải dương."""
+def test_thue_hien_hanh_thanh_am_khi_thue_lam_giam_loi_nhuan():
+    """
+    Mã 60 < mã 50 nghĩa là thuế là chi phí, nên mã 51 phải ÂM.
+
+    Chiều lật đổi ngày 31/08/2026 cùng quy ước dấu có hướng. Trước đó mã 51
+    lưu theo độ lớn nên ca này lật về dương; nay nó lưu theo nghĩa kinh tế
+    nên tiền đi ra khỏi lợi nhuận phải mang dấu âm.
+    """
     ra, da_doi = chuan_hoa_dau(
         {
             "loi_nhuan_truoc_thue": 1_000,
             "loi_nhuan_sau_thue": 800,
-            "thue_tndn_hien_hanh": -150,
+            "thue_tndn_hien_hanh": 150,
         }
     )
-    assert ra["thue_tndn_hien_hanh"] == 150
+    assert ra["thue_tndn_hien_hanh"] == -150
     assert da_doi == ["thue_tndn_hien_hanh"]
 
 
 def test_ma_52_khong_bi_dong_vao():
     """
-    Mã 52 âm là THU NHẬP thuế hoãn lại, và nó hợp lệ ngay cả khi mã 60 < mã 50.
+    Mã 52 DƯƠNG là THU NHẬP thuế hoãn lại, và nó hợp lệ ngay cả khi mã 60 < mã 50.
 
-    `Mã 60 = Mã 50 − Mã 51 − Mã 52`, nên mã 52 âm sống chung được với mã 60
-    < mã 50 miễn mã 51 đủ lớn. Gold của MWG và VRE ghi đúng như vậy. Áp chữ
-    nghĩa guideline cho mã 52 sẽ lật nó thành dương và đẻ ra lỗi câm mới —
+    `Mã 60 = Mã 50 + Mã 51 + Mã 52`, nên một mã 52 dương sống chung được với
+    mã 60 < mã 50 miễn mã 51 đủ âm. Gold của MWG và VRE ghi đúng như vậy. Áp
+    chữ nghĩa guideline cho mã 52 sẽ lật nó thành âm và đẻ ra lỗi câm mới —
     đây là hàng rào chặn ai đó "hoàn thiện" quy tắc theo bảng trong mục 3.3.
     """
     ra, da_doi = chuan_hoa_dau(
         {
             "loi_nhuan_truoc_thue": 1_000,
             "loi_nhuan_sau_thue": 800,
-            "thue_tndn_hien_hanh": -250,
-            "thue_tndn_hoan_lai": -50,
+            "thue_tndn_hien_hanh": 250,
+            "thue_tndn_hoan_lai": 50,
         }
     )
-    assert ra["thue_tndn_hoan_lai"] == -50
+    assert ra["thue_tndn_hoan_lai"] == 50
     assert da_doi == ["thue_tndn_hien_hanh"]
 
 
 def test_thue_giu_nguyen_dau_khi_thue_la_thu_nhap():
     """
-    Mã 60 > mã 50 là ca hẹp mà Thông tư dành dấu âm cho: thuế là THU NHẬP.
+    Mã 60 > mã 50 là ca hẹp mà Thông tư dành cho: thuế là THU NHẬP, nên mã
+    51 DƯƠNG ở đây là số liệu thật.
 
-    Ở đây dấu ngoặc mang đúng nghĩa số âm, nên lật nó là xoá mất số liệu
-    thật — đây là chỗ phân biệt quy tắc này với một lệnh abs() mù.
+    Lật nó là xoá mất số liệu — đây là chỗ phân biệt quy tắc này với một
+    lệnh `-abs()` mù.
     """
     ra, da_doi = chuan_hoa_dau(
         {
             "loi_nhuan_truoc_thue": 800,
             "loi_nhuan_sau_thue": 1_000,
-            "thue_tndn_hien_hanh": -200,
+            "thue_tndn_hien_hanh": 200,
         }
     )
-    assert ra["thue_tndn_hien_hanh"] == -200
+    assert ra["thue_tndn_hien_hanh"] == 200
     assert da_doi == []
 
 
 def test_thieu_moc_50_hoac_60_thi_khong_doan():
     """Guideline buộc quyết định bằng mã 50 và 60; vắng chúng thì không sửa."""
     ra, da_doi = chuan_hoa_dau(
-        {"loi_nhuan_truoc_thue": 1_000, "thue_tndn_hien_hanh": -150}
+        {"loi_nhuan_truoc_thue": 1_000, "thue_tndn_hien_hanh": 150}
     )
-    assert ra["thue_tndn_hien_hanh"] == -150
+    assert ra["thue_tndn_hien_hanh"] == 150
     assert da_doi == []
 
 
@@ -87,7 +94,7 @@ def test_khong_dung_dang_thuc_de_chon_dau():
     Sau khi sửa dấu, đẳng thức mã 60 VẪN có thể vỡ.
 
     Đây là tính chất phải giữ, không phải thiếu sót: nếu bước sửa dấu giải
-    đẳng thức `Mã 60 = Mã 50 − Mã 51 − Mã 52` ra dấu thì mọi kết quả đều
+    đẳng thức `Mã 60 = Mã 50 + Mã 51 + Mã 52` ra dấu thì mọi kết quả đều
     thoả nó, và phép đo H1 mất nghĩa vì tín hiệu vi phạm ràng buộc bị chính
     bước trích xuất làm phẳng. Ở đây độ lớn sai thì đẳng thức vẫn phải vỡ.
     """
@@ -95,13 +102,13 @@ def test_khong_dung_dang_thuc_de_chon_dau():
         {
             "loi_nhuan_truoc_thue": 1_000,
             "loi_nhuan_sau_thue": 800,
-            "thue_tndn_hien_hanh": -999,
+            "thue_tndn_hien_hanh": 999,
             "thue_tndn_hoan_lai": 0,
         }
     )
-    assert ra["thue_tndn_hien_hanh"] == 999  # noqa: PLR2004
+    assert ra["thue_tndn_hien_hanh"] == -999  # noqa: PLR2004
     assert ra["loi_nhuan_sau_thue"] != (
-        ra["loi_nhuan_truoc_thue"] - ra["thue_tndn_hien_hanh"] - ra["thue_tndn_hoan_lai"]
+        ra["loi_nhuan_truoc_thue"] + ra["thue_tndn_hien_hanh"] + ra["thue_tndn_hoan_lai"]
     )
 
 

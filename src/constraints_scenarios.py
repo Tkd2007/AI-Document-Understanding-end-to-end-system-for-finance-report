@@ -176,7 +176,8 @@ _B_IDENT = [
 # 0: sai bao nhiêu cũng không ràng buộc nào thấy.
 #
 #     Mã số 50 = Mã số 30 + Mã số 40
-#     Mã số 60 = Mã số 50 - (Mã số 51 + Mã số 52)
+#     Mã số 60 = Mã số 50 + Mã số 51 + Mã số 52  (51/52 lưu CÓ DẤU, xem
+#     `fields_config` — Thông tư viết `50 - (51 + 52)` với 51/52 là độ lớn)
 _C_FIELDS = [
     *_B_FIELDS,
     "ln_thuan_hdkd",          # B02 mã 30
@@ -187,8 +188,8 @@ _C_FIELDS = [
 _C_IDENT = [
     *_B_IDENT,
     (["ln_thuan_hdkd", "ln_khac"], "loi_nhuan_truoc_thue", "B02: Mã số 50 = 30 + 40"),
-    (["loi_nhuan_sau_thue", "thue_tndn_hien_hanh", "thue_tndn_hoan_lai"],
-     "loi_nhuan_truoc_thue", "B02: Mã số 60 = 50 - (51 + 52)"),
+    (["loi_nhuan_truoc_thue", "thue_tndn_hien_hanh", "thue_tndn_hoan_lai"],
+     "loi_nhuan_sau_thue", "B02: Mã số 60 = 50 + 51 + 52 (51/52 có dấu)"),
 ]
 
 # D — phân rã Tài sản ngắn hạn, nhằm đưa `hang_ton_kho` vào một đẳng thức.

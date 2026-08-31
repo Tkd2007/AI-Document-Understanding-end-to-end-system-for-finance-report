@@ -192,21 +192,27 @@ def chuan_hoa_dau(gia_tri: dict) -> tuple[dict, list[str]]:
 
     MÃ 52 KHÔNG BAO GIỜ BỊ ĐỤNG TỚI, và đó nay là kết luận đã chốt chứ không
     còn là phòng xa. Câu 13 (28/08/2026) phân xử: nhãn gold đúng, guideline
-    sai. `Mã 60 = Mã 50 − Mã 51 − Mã 52` chỉ ràng buộc TỔNG hai dòng thuế,
-    nên mã 52 âm — thu nhập thuế hoãn lại — sống chung được với mã 60 < mã
-    50 miễn mã 51 đủ lớn. Ba tài liệu gold (HNG, MWG, VRE) có mã 52 âm và cả
-    ba đều cân đẳng thức tới từng đồng. Lật chúng là ĐẺ RA lỗi câm mới.
+    sai. Đẳng thức mã 60 chỉ ràng buộc TỔNG hai dòng thuế, nên một mã 52
+    ngược chiều mã 51 — thu nhập thuế hoãn lại đi cùng chi phí thuế hiện
+    hành — là trạng thái kế toán có thật. Ba tài liệu gold (HNG, MWG, VRE)
+    rơi đúng vào đó và cả ba đều cân đẳng thức tới từng đồng. Lật chúng là
+    ĐẺ RA lỗi câm mới.
 
-    MÃ 51 VẪN XÉT THEO CHIỀU MÃ 50/60, TỨC CHẶT HƠN GUIDELINE HIỆN HÀNH.
-    Sau tu chính 28/08/2026, guideline nói mã 51 giữ nguyên dấu như in rồi
-    kiểm bằng đẳng thức — tiêu chí mà `gan_nhan.kiem.kiem_dau_khau_tru()`
-    dùng cho người gán nhãn. Hàm này KHÔNG dùng tiêu chí đó, vì nó sẽ giải
-    đẳng thức ra dấu (xem đoạn dưới). Chỗ vênh là có thật và đã biết: nó vô
-    hại trên dữ liệu hiện có (mã 51 dương ở cả 11 file gold) nhưng sẽ lật
-    nhầm một mã 51 âm hợp lệ nếu gặp. Đường đóng nó là chuyển quyết định dấu
-    của cả hai dòng thuế sang tầng repair, nơi được phép dùng ràng buộc.
+    MÃ 51 XÉT THEO CHIỀU MÃ 50/60, TỨC CHẶT HƠN GUIDELINE HIỆN HÀNH.
+    Guideline nói mã 51 ghi theo nghĩa kinh tế rồi kiểm bằng đẳng thức —
+    tiêu chí mà `gan_nhan.kiem.kiem_dau_khau_tru()` dùng cho người gán nhãn.
+    Hàm này KHÔNG dùng tiêu chí đó, vì nó sẽ giải đẳng thức ra dấu (xem đoạn
+    dưới). Chỗ vênh là có thật và đã biết: nó vô hại trên dữ liệu hiện có
+    (mã 51 âm ở mọi file gold có chi phí thuế) nhưng sẽ lật nhầm một mã 51
+    dương hợp lệ nếu gặp. Đường đóng nó là chuyển quyết định dấu của cả hai
+    dòng thuế sang tầng repair, nơi được phép dùng ràng buộc.
 
-    CỐ Ý KHÔNG giải đẳng thức `Mã 60 = Mã 50 − Mã 51 − Mã 52` để chọn dấu.
+    CHIỀU LẬT ĐÃ ĐỔI 31/08/2026 CÙNG QUY ƯỚC DẤU CÓ HƯỚNG. Mã 51 nay lưu ÂM
+    khi là chi phí, nên `60 < 50` cộng một mã 51 DƯƠNG mới là dấu hiệu sai —
+    trước đây là cộng một mã 51 ÂM. Đọc kỹ chỗ này trước khi sửa: đảo nhầm
+    chiều thì hàm lật đúng những ô đang đúng, và đẳng thức vỡ trên toàn tập.
+
+    CỐ Ý KHÔNG giải đẳng thức mã 60 để chọn dấu.
     Giải nó ra dấu thì mọi kết quả đều thoả nó, và phép đo H1 — so vi phạm
     ràng buộc với confidence của model — mất sạch nghĩa vì tín hiệu bị chính
     bước trích xuất làm phẳng. Ở đây chỉ dùng CHIỀU của mã 50 so với mã 60;
@@ -228,7 +234,7 @@ def chuan_hoa_dau(gia_tri: dict) -> tuple[dict, list[str]]:
     # vắng luôn căn cứ — đoán tiếp là tự cho mình một quyền không có.
     if isinstance(truoc_thue, (int, float)) and isinstance(sau_thue, (int, float)):
         thue = ra.get("thue_tndn_hien_hanh")
-        if sau_thue < truoc_thue and isinstance(thue, (int, float)) and thue < 0:
+        if sau_thue < truoc_thue and isinstance(thue, (int, float)) and thue > 0:
             ra["thue_tndn_hien_hanh"] = -thue
             da_doi.append("thue_tndn_hien_hanh")
 
@@ -380,14 +386,34 @@ _DANG_THUC_CHUNG = [
         "loi_nhuan_truoc_thue",
         "Lợi nhuận thuần từ HĐKD + Lợi nhuận khác phải bằng Lợi nhuận trước thuế",
     ),
-    # Văn bản viết `Mã số 60 = Mã số 50 - (Mã số 51 + Mã số 52)`. Chuyển vế
-    # thành dạng cộng để khớp cấu trúc (danh sách cộng, tổng) mà ma trận A
-    # dựng trên đó.
+    # QUY ƯỚC DẤU CÓ HƯỚNG cho hai dòng thuế, đổi 31/08/2026 theo quyết định
+    # của người chủ trì. Mã 51 và 52 lưu theo NGHĨA KINH TẾ chứ không theo con
+    # số in trên giấy: chi phí thuế lưu ÂM, thu nhập thuế lưu DƯƠNG. Nhờ vậy
+    # đẳng thức thành một tổng thuần `50 + 51 + 52 = 60`, cùng dạng với tám
+    # đẳng thức còn lại.
+    #
+    # Văn bản gốc viết ở quy ước khác — TT200 Điều 113 mục 3.18 ghi
+    # `Mã số 60 = Mã số 50 - (Mã số 51 + Mã số 52)`, tức 51/52 vào công thức
+    # như độ lớn dương. HAI DẠNG LÀ CÙNG MỘT PHƯƠNG TRÌNH, chỉ khác chỗ dấu
+    # nằm ở dữ liệu hay nằm ở công thức. Đừng "sửa lại cho đúng Thông tư" —
+    # sửa mà không lật dấu dữ liệu là làm vỡ đẳng thức trên toàn tập gold.
+    #
+    # Cái được của quy ước này là ở khâu GÁN NHÃN và ở hình dạng bộ ràng buộc:
+    # quy tắc ghi dấu phát biểu được thành một câu không phụ thuộc cách in
+    # ("tiền đi ra khỏi lợi nhuận thì âm"), và cả chín đẳng thức nay cùng dạng
+    # tổng thuần nên bỏ được ngoại lệ xử lý dấu.
+    #
+    # KHÔNG được gì về identifiability, đã đo chứ không đoán: sinh lại
+    # `data/output/identifiability_*.md` trước và sau cho ra cùng 7/26 chỉ tiêu
+    # định vị được, cùng `dim null(A)`, và cùng danh sách cặp không phân biệt
+    # được. Đổi vế chỉ lật dấu hai cột, mà quan hệ tỷ lệ giữa các cột thì bất
+    # biến với phép lật ấy. Đừng viết thay đổi này vào bài như một cải thiện
+    # định vị.
     (
-        ["loi_nhuan_sau_thue", "thue_tndn_hien_hanh", "thue_tndn_hoan_lai"],
-        "loi_nhuan_truoc_thue",
-        "Lợi nhuận sau thuế + chi phí thuế hiện hành + hoãn lại "
-        "phải bằng Lợi nhuận trước thuế",
+        ["loi_nhuan_truoc_thue", "thue_tndn_hien_hanh", "thue_tndn_hoan_lai"],
+        "loi_nhuan_sau_thue",
+        "Lợi nhuận trước thuế + thuế hiện hành + thuế hoãn lại (đều có dấu) "
+        "phải bằng Lợi nhuận sau thuế",
     ),
     # Hai đẳng thức B03 — kịch bản E. Cả hai chuẩn khai báo GIỐNG HỆT nhau,
     # đã đối chiếu Công báo và chép nguyên văn ở Phụ lục A mục 3.4 của

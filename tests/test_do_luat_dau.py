@@ -46,8 +46,8 @@ def _bon_dong_thue(standard=Standard.TT200):
     """Bộ giá trị chỉ gồm bốn dòng của đẳng thức mã 60, đã cân."""
     gold = {
         "loi_nhuan_truoc_thue": 1_000.0,
-        "thue_tndn_hien_hanh": 300.0,
-        "thue_tndn_hoan_lai": -50.0,
+        "thue_tndn_hien_hanh": -300.0,
+        "thue_tndn_hoan_lai": 50.0,
         "loi_nhuan_sau_thue": 750.0,
     }
     return gold, standard
@@ -55,7 +55,7 @@ def _bon_dong_thue(standard=Standard.TT200):
 
 def test_ra_tay_dung_ten_thi_tinh_la_dinh_vi_dung():
     gold, standard = _bon_dong_thue()
-    du_doan = {**gold, "thue_tndn_hoan_lai": 50.0}
+    du_doan = {**gold, "thue_tndn_hoan_lai": -50.0}
 
     r = _chay_mot_dieu_kien(du_doan, gold, standard)
 

@@ -121,8 +121,11 @@ VNM_Q1_2026 = {
     "ln_thuan_hdkd": 2498569420889,
     "ln_khac": 25317726196,
     "loi_nhuan_truoc_thue": 2523887147085,
-    "thue_tndn_hien_hanh": -426210619002,
-    "thue_tndn_hoan_lai": -48429318301,
+    # VNM là TT99, và TT99 giữ quy ước ĐỘ LỚN cho mã 51/52 — xem
+    # `fields_config._MA_60_TT99`. Đừng lật dấu hai ô này cho giống gold
+    # TT200: bộ số ở đây phải thoả đẳng thức của ĐÚNG chuẩn của nó.
+    "thue_tndn_hien_hanh": 426210619002,
+    "thue_tndn_hoan_lai": 48429318301,
     "loi_nhuan_sau_thue": 2049247209782,
 }
 

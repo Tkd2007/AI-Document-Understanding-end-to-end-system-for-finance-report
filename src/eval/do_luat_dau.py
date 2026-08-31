@@ -170,7 +170,7 @@ def chay() -> dict:
         standard = Standard(muc["chuan_that"])
 
         # chuan_hoa_dau() trả (giá trị, danh sách khoá đã lật) — chỉ cần cái đầu.
-        da_chuan_hoa, _ = chuan_hoa_dau(dict(du_doan))
+        da_chuan_hoa, _ = chuan_hoa_dau(dict(du_doan), standard)
         sau_repair, da_doi = _ap_tang_repair(da_chuan_hoa, standard)
 
         dong.append(

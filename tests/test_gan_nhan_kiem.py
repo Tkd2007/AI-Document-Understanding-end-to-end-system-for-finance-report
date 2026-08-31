@@ -55,8 +55,11 @@ def _bo_can_bang() -> dict:
             "ln_thuan_hdkd": 200,
             "ln_khac": 20,
             "loi_nhuan_truoc_thue": 220,
-            "thue_tndn_hien_hanh": -40,
-            "thue_tndn_hoan_lai": -5,
+            # TT99 — quy ước ĐỘ LỚN, chưa xác minh nên giữ như cũ. Bộ số
+            # này chạy dưới Standard.TT99 nên đừng đồng bộ dấu với các ca
+            # TT200 bên dưới; hai chuẩn đang cố ý khác nhau (31/08/2026).
+            "thue_tndn_hien_hanh": 40,
+            "thue_tndn_hoan_lai": 5,
             "loi_nhuan_sau_thue": 175,
             # B03: 50 = 20+30+40, và 110 = 50+60+61
             "lctt_hdkd": 400,

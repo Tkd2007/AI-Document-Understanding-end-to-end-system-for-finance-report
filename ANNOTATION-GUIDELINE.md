@@ -125,8 +125,15 @@ Báo cáo tài chính in số âm **trong ngoặc đơn**: `(1.234.567)`. Ghi gi
 | Chỉ tiêu | Mã | Quy tắc |
 |---|---|---|
 | Giá vốn hàng bán | 11 | **Luôn dương.** Giá vốn âm là dấu hiệu đọc sai, không phải số liệu |
-| Chi phí thuế TNDN hiện hành | 51 | **Ghi theo NGHĨA KINH TẾ, không theo con số in:** chi phí ghi **âm**, thu nhập thuế ghi **dương**. Rồi kiểm bằng đẳng thức mã 60 |
+| Chi phí thuế TNDN hiện hành | 51 | **TT200:** ghi theo NGHĨA KINH TẾ, không theo con số in — chi phí ghi **âm**, thu nhập thuế ghi **dương**. **TT99:** giữ nguyên dấu như in, quy ước cũ. Cả hai rồi kiểm bằng đẳng thức mã 60 |
 | Chi phí thuế TNDN hoãn lại | 52 | như mã 51 |
+
+> **HAI CHUẨN ĐANG DÙNG HAI QUY ƯỚC KHÁC NHAU, có chủ đích và tạm thời.** Quy
+> ước dấu có hướng mới chỉ xác minh trên TT200; TT99 chờ thêm tài liệu, yêu cầu
+> thu thập ở `docs/yeu-cau-tai-lieu-bctc.md`. **Đừng đồng bộ hai chuẩn cho
+> giống nhau khi chưa có tài liệu** — TT200 và TT99 đã khác nhau thật ở phân rã
+> Tài sản ngắn hạn, nên "chắc là giống" không phải căn cứ dùng được. Gán nhãn
+> tài liệu nào thì theo đúng cột của chuẩn ấy.
 
 *Vì sao cần ngoại lệ:* trên cùng một trang B02, dấu ngoặc mang **hai nghĩa
 khác nhau**, và quy tắc "ngoặc là âm" gộp chúng làm một.
@@ -151,10 +158,11 @@ Ghi theo nghĩa kinh tế thì quy tắc phát biểu được thành một câu
 thuộc cách trình bày: **tiền đi ra khỏi lợi nhuận thì âm**. Chi phí thuế làm
 lợi nhuận giảm nên âm; hoàn nhập thuế hoãn lại làm lợi nhuận tăng nên dương.
 
-*Hệ quả — đẳng thức mã 60 thành một tổng thuần:*
+*Hệ quả — đẳng thức mã 60 của **TT200** thành một tổng thuần:*
 
 ```
-Mã 60 = Mã 50 + Mã 51 + Mã 52
+TT200:  Mã 60 = Mã 50 + Mã 51 + Mã 52     (51/52 có dấu)
+TT99:   Mã 60 = Mã 50 − Mã 51 − Mã 52     (51/52 độ lớn, như Thông tư)
 ```
 
 **Dạng này cố ý khác chữ trong Thông tư.** TT200 Điều 113 mục 3.18 viết
@@ -559,9 +567,15 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 > Mọi thay đổi guideline ghi vào đây kèm **ngày** và **lý do**, và ghi rõ
 > **những tài liệu nào phải gán nhãn lại**. Không sửa đè lên nội dung trên.
 
-### 31/08/2026 — Mã 51 và 52 ghi theo NGHĨA KINH TẾ; đẳng thức mã 60 thành tổng thuần
+### 31/08/2026 — Mã 51 và 52 ghi theo NGHĨA KINH TẾ — **CHỈ ÁP CHO TT200**
 
 **Chỗ sửa:** mục 3.3, bảng ba dòng khấu trừ và phần lý giải kèm theo.
+
+**PHẠM VI: TT200 và chỉ TT200.** TT99 giữ nguyên quy ước cũ vì chưa xác minh
+được trên tài liệu — quyết định của người chủ trì, cùng ngày. Hệ quả là hai
+chuẩn tạm thời dùng hai quy ước dấu khác nhau, và cả `fields_config` lẫn
+`chuan_hoa_dau()` đều tách nhánh theo chuẩn. Yêu cầu về bộ tài liệu cần thu
+thập để xác minh TT99 ở `docs/yeu-cau-tai-lieu-bctc.md`.
 
 **Quy tắc cũ:** mã 51 và 52 *"giữ nguyên dấu như in"*, rồi kiểm bằng đẳng thức
 `Mã 60 = Mã 50 − Mã 51 − Mã 52`. **Quy tắc mới:** ghi theo nghĩa kinh tế — chi
@@ -588,22 +602,23 @@ các cột thì bất biến với phép lật ấy. Đừng viết tu chính n�
 cải thiện định vị.
 
 **KHÔNG tài liệu nào phải gán nhãn lại, và đây là một ngoại lệ có lý do phải
-nêu rõ.** Luật mở đầu guideline nói sửa quy tắc giữa chừng thì phải gán nhãn
+nêu rõ.** (Áp cho 5 tài liệu TT200; 6 tài liệu TT99 không đổi gì.) Luật mở đầu guideline nói sửa quy tắc giữa chừng thì phải gán nhãn
 lại toàn bộ phần đã làm. Ngoại lệ ở đây được phép vì phép biến đổi là **song
 ánh và cơ học**: quy ước mới bằng đúng quy ước cũ nhân `−1` trên hai ô, không
 cần nhìn lại tờ giấy để biết giá trị mới, và không có ca nào mà hai quy ước
-cho cùng một con số. Mười một file gold đã được lật dấu bằng script ngày
-31/08/2026 và cả mười một đều cân `50 + 51 + 52 = 60` tới từng đồng sau khi
-lật.
+cho cùng một con số. **Năm file gold TT200** đã được lật dấu bằng script ngày
+31/08/2026 và cả năm đều cân `50 + 51 + 52 = 60` tới từng đồng sau khi lật.
+Sáu file TT99 giữ nguyên và vẫn cân đẳng thức cũ của chúng.
 
-Vì đây **không** phải gán nhãn lại, `notes` của cả mười một file ghi rõ giá
+Vì đây **không** phải gán nhãn lại, `notes` của năm file TT200 ghi rõ giá
 trị hai ô ấy đến từ một phép lật cơ học chứ không từ một lượt đọc mới — hai
 thứ có độ tin cậy khác hẳn nhau, và người đọc file gold phải thấy được ngay
 tại file.
 
-**Việc còn lại:** lượt gán nhãn tiếp theo phải theo quy tắc mới. Mọi kết quả
-chấm pipeline trước 31/08/2026 so với quy ước cũ, nên **không so trực tiếp**
-với lượt chạy sau mốc này ở hai ô 51/52.
+**Việc còn lại:** lượt gán nhãn tài liệu **TT200** tiếp theo phải theo quy tắc
+mới; tài liệu TT99 giữ quy tắc cũ cho tới khi xác minh xong. Mọi kết quả chấm
+pipeline trên tài liệu TT200 trước 31/08/2026 dùng quy ước cũ, nên **không so
+trực tiếp** với lượt chạy sau mốc này ở hai ô 51/52.
 
 ### 28/08/2026 (muộn hơn) — "Cột đầu" nói rõ thành "cột QUÝ, không phải luỹ kế"
 

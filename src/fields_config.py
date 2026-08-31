@@ -172,7 +172,7 @@ FIELD_RULES = {
 }
 
 
-def chuan_hoa_dau(gia_tri: dict) -> tuple[dict, list[str]]:
+def chuan_hoa_dau(gia_tri: dict, standard: Standard) -> tuple[dict, list[str]]:
     """
     Sửa dấu ba dòng khấu trừ mà dấu ngoặc KHÔNG mang nghĩa số âm.
 
@@ -207,10 +207,16 @@ def chuan_hoa_dau(gia_tri: dict) -> tuple[dict, list[str]]:
     dương hợp lệ nếu gặp. Đường đóng nó là chuyển quyết định dấu của cả hai
     dòng thuế sang tầng repair, nơi được phép dùng ràng buộc.
 
-    CHIỀU LẬT ĐÃ ĐỔI 31/08/2026 CÙNG QUY ƯỚC DẤU CÓ HƯỚNG. Mã 51 nay lưu ÂM
-    khi là chi phí, nên `60 < 50` cộng một mã 51 DƯƠNG mới là dấu hiệu sai —
-    trước đây là cộng một mã 51 ÂM. Đọc kỹ chỗ này trước khi sửa: đảo nhầm
-    chiều thì hàm lật đúng những ô đang đúng, và đẳng thức vỡ trên toàn tập.
+    CHIỀU LẬT PHỤ THUỘC CHUẨN, và đó là lý do `standard` BẮT BUỘC ở đây.
+    TT200 dùng quy ước dấu có hướng từ 31/08/2026 nên mã 51 lưu ÂM khi là chi
+    phí, tức `60 < 50` cộng một mã 51 DƯƠNG mới là dấu hiệu sai. TT99 vẫn ở
+    quy ước độ lớn — chưa xác minh, xem `_MA_60_TT99` — nên chiều lật của nó
+    giữ nguyên như cũ: `60 < 50` cộng một mã 51 ÂM mới là sai.
+
+    Đọc kỹ chỗ này trước khi sửa: đảo nhầm chiều thì hàm lật đúng những ô
+    đang đúng, và đẳng thức vỡ trên toàn bộ tài liệu của chuẩn ấy. Cũng đừng
+    cho `standard` một mặc định — một chuẩn đoán sai ở đây hỏng im lặng, cùng
+    lý do `validate_result()` đã bỏ mặc định của nó.
 
     CỐ Ý KHÔNG giải đẳng thức mã 60 để chọn dấu.
     Giải nó ra dấu thì mọi kết quả đều thoả nó, và phép đo H1 — so vi phạm
@@ -234,9 +240,14 @@ def chuan_hoa_dau(gia_tri: dict) -> tuple[dict, list[str]]:
     # vắng luôn căn cứ — đoán tiếp là tự cho mình một quyền không có.
     if isinstance(truoc_thue, (int, float)) and isinstance(sau_thue, (int, float)):
         thue = ra.get("thue_tndn_hien_hanh")
-        if sau_thue < truoc_thue and isinstance(thue, (int, float)) and thue > 0:
-            ra["thue_tndn_hien_hanh"] = -thue
-            da_doi.append("thue_tndn_hien_hanh")
+        # Kiểm kiểu TRƯỚC khi so dấu: mã 51 vắng mặt là chuyện thường (không
+        # bắt buộc trong FIELD_RULES), và so `None > 0` thì nổ TypeError giữa
+        # bước validate — hỏng cả lượt chạy vì một ô không đọc được.
+        if sau_thue < truoc_thue and isinstance(thue, (int, float)):
+            dau_sai = (thue > 0) if standard is Standard.TT200 else (thue < 0)
+            if dau_sai:
+                ra["thue_tndn_hien_hanh"] = -thue
+                da_doi.append("thue_tndn_hien_hanh")
 
     return ra, da_doi
 
@@ -386,35 +397,9 @@ _DANG_THUC_CHUNG = [
         "loi_nhuan_truoc_thue",
         "Lợi nhuận thuần từ HĐKD + Lợi nhuận khác phải bằng Lợi nhuận trước thuế",
     ),
-    # QUY ƯỚC DẤU CÓ HƯỚNG cho hai dòng thuế, đổi 31/08/2026 theo quyết định
-    # của người chủ trì. Mã 51 và 52 lưu theo NGHĨA KINH TẾ chứ không theo con
-    # số in trên giấy: chi phí thuế lưu ÂM, thu nhập thuế lưu DƯƠNG. Nhờ vậy
-    # đẳng thức thành một tổng thuần `50 + 51 + 52 = 60`, cùng dạng với tám
-    # đẳng thức còn lại.
-    #
-    # Văn bản gốc viết ở quy ước khác — TT200 Điều 113 mục 3.18 ghi
-    # `Mã số 60 = Mã số 50 - (Mã số 51 + Mã số 52)`, tức 51/52 vào công thức
-    # như độ lớn dương. HAI DẠNG LÀ CÙNG MỘT PHƯƠNG TRÌNH, chỉ khác chỗ dấu
-    # nằm ở dữ liệu hay nằm ở công thức. Đừng "sửa lại cho đúng Thông tư" —
-    # sửa mà không lật dấu dữ liệu là làm vỡ đẳng thức trên toàn tập gold.
-    #
-    # Cái được của quy ước này là ở khâu GÁN NHÃN và ở hình dạng bộ ràng buộc:
-    # quy tắc ghi dấu phát biểu được thành một câu không phụ thuộc cách in
-    # ("tiền đi ra khỏi lợi nhuận thì âm"), và cả chín đẳng thức nay cùng dạng
-    # tổng thuần nên bỏ được ngoại lệ xử lý dấu.
-    #
-    # KHÔNG được gì về identifiability, đã đo chứ không đoán: sinh lại
-    # `data/output/identifiability_*.md` trước và sau cho ra cùng 7/26 chỉ tiêu
-    # định vị được, cùng `dim null(A)`, và cùng danh sách cặp không phân biệt
-    # được. Đổi vế chỉ lật dấu hai cột, mà quan hệ tỷ lệ giữa các cột thì bất
-    # biến với phép lật ấy. Đừng viết thay đổi này vào bài như một cải thiện
-    # định vị.
-    (
-        ["loi_nhuan_truoc_thue", "thue_tndn_hien_hanh", "thue_tndn_hoan_lai"],
-        "loi_nhuan_sau_thue",
-        "Lợi nhuận trước thuế + thuế hiện hành + thuế hoãn lại (đều có dấu) "
-        "phải bằng Lợi nhuận sau thuế",
-    ),
+    # ĐẲNG THỨC MÃ 60 TÁCH THEO CHUẨN — xem `_MA_60_TT200` / `_MA_60_TT99`
+    # ngay dưới khối này. Đây là chỗ thứ hai hai chuẩn khác nhau về hình dạng
+    # đẳng thức, cùng loại với phân rã Tài sản ngắn hạn.
     # Hai đẳng thức B03 — kịch bản E. Cả hai chuẩn khai báo GIỐNG HỆT nhau,
     # đã đối chiếu Công báo và chép nguyên văn ở Phụ lục A mục 3.4 của
     # HANDOFF.md: `data/legal/2015_289 + 290-200_2014_TT-BTC.pdf` Điều 114
@@ -442,6 +427,49 @@ _DANG_THUC_CHUNG = [
         "và mã 70 ≡ mã 110 trên B01 — LIÊN KẾT CHÉO GIỮA HAI BIỂU MẪU",
     ),
 ]
+
+# Đẳng thức mã 60 — HAI CHUẨN ĐANG DÙNG HAI QUY ƯỚC DẤU KHÁC NHAU.
+#
+# Trạng thái này là CÓ CHỦ ĐÍCH và TẠM THỜI, chốt 31/08/2026: quy ước dấu có
+# hướng mới chỉ được xác minh trên TT200, còn TT99 phải chờ thêm tài liệu.
+# Người chủ trì quyết giữ TT99 nguyên như cũ thay vì suy diễn từ TT200 sang —
+# hai Thông tư đã khác nhau thật ở phân rã Tài sản ngắn hạn, nên "chắc là
+# giống" không phải căn cứ dùng được.
+#
+# TT200 — quy ước DẤU CÓ HƯỚNG. Mã 51 và 52 lưu theo NGHĨA KINH TẾ chứ không
+# theo con số in trên giấy: chi phí thuế lưu ÂM, thu nhập thuế lưu DƯƠNG. Nhờ
+# vậy đẳng thức thành một tổng thuần.
+#
+# Văn bản gốc viết ở quy ước khác — TT200 Điều 113 mục 3.18 ghi
+# `Mã số 60 = Mã số 50 - (Mã số 51 + Mã số 52)`, tức 51/52 vào công thức như
+# độ lớn dương. HAI DẠNG LÀ CÙNG MỘT PHƯƠNG TRÌNH, chỉ khác chỗ dấu nằm ở dữ
+# liệu hay nằm ở công thức. Đừng "sửa lại cho đúng Thông tư" — sửa mà không
+# lật dấu dữ liệu là làm vỡ đẳng thức trên toàn bộ gold TT200.
+#
+# KHÔNG được gì về identifiability, đã đo chứ không đoán: sinh lại
+# `data/output/identifiability_*.md` trước và sau cho ra cùng số chỉ tiêu định
+# vị được, cùng `dim null(A)`, và cùng danh sách cặp không phân biệt được. Đổi
+# vế chỉ lật dấu hai cột, mà quan hệ tỷ lệ giữa các cột thì bất biến với phép
+# lật ấy. Đừng viết thay đổi này vào bài như một cải thiện định vị.
+_MA_60_TT200 = (
+    ["loi_nhuan_truoc_thue", "thue_tndn_hien_hanh", "thue_tndn_hoan_lai"],
+    "loi_nhuan_sau_thue",
+    "Lợi nhuận trước thuế + thuế hiện hành + thuế hoãn lại (đều có dấu) "
+    "phải bằng Lợi nhuận sau thuế",
+)
+
+# TT99 — quy ước ĐỘ LỚN, giữ nguyên như trước 31/08/2026. Mã 51 và 52 lưu
+# theo độ lớn dương, đúng chữ trong Thông tư, và đẳng thức chuyển vế thành
+# dạng cộng để khớp cấu trúc (danh sách cộng, tổng) mà ma trận A dựng trên đó.
+#
+# CHƯA XÁC MINH, đừng đồng bộ sang cho giống TT200 khi chưa có tài liệu. Yêu
+# cầu về bộ tài liệu cần thu thập để xác minh nằm ở `docs/yeu-cau-tai-lieu-bctc.md`.
+_MA_60_TT99 = (
+    ["loi_nhuan_sau_thue", "thue_tndn_hien_hanh", "thue_tndn_hoan_lai"],
+    "loi_nhuan_truoc_thue",
+    "Lợi nhuận sau thuế + chi phí thuế hiện hành + hoãn lại "
+    "phải bằng Lợi nhuận trước thuế",
+)
 
 # Phân rã Tài sản ngắn hạn — CHỖ HAI CHUẨN KHÁC NHAU THẬT.
 #
@@ -480,8 +508,8 @@ _PHAN_RA_TSNH_TT99 = (
 # 1577+1578, 1579+1580, 1581+1582 (TT99). Bảng đối chiếu từng dòng ở
 # HANDOFF.md, Phụ lục A mục 3.
 FIELD_IDENTITIES: dict[Standard, list] = {
-    Standard.TT200: [*_DANG_THUC_CHUNG, _PHAN_RA_TSNH_TT200],
-    Standard.TT99: [*_DANG_THUC_CHUNG, _PHAN_RA_TSNH_TT99],
+    Standard.TT200: [*_DANG_THUC_CHUNG, _MA_60_TT200, _PHAN_RA_TSNH_TT200],
+    Standard.TT99: [*_DANG_THUC_CHUNG, _MA_60_TT99, _PHAN_RA_TSNH_TT99],
 }
 
 # Dung sai cho đẳng thức, tính theo tỷ lệ trên giá trị tổng.

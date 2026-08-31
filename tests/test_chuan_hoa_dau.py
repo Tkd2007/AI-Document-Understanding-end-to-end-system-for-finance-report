@@ -10,13 +10,13 @@ from validation import validate_result
 
 
 def test_gia_von_am_thanh_duong():
-    ra, da_doi = chuan_hoa_dau({"gia_von_hang_ban": -107_515_846_476})
+    ra, da_doi = chuan_hoa_dau({"gia_von_hang_ban": -107_515_846_476}, Standard.TT200)
     assert ra["gia_von_hang_ban"] == 107_515_846_476
     assert da_doi == ["gia_von_hang_ban"]
 
 
 def test_gia_von_da_duong_thi_khong_dong_vao():
-    ra, da_doi = chuan_hoa_dau({"gia_von_hang_ban": 107_515_846_476})
+    ra, da_doi = chuan_hoa_dau({"gia_von_hang_ban": 107_515_846_476}, Standard.TT200)
     assert ra["gia_von_hang_ban"] == 107_515_846_476
     assert da_doi == []
 
@@ -34,7 +34,8 @@ def test_thue_hien_hanh_thanh_am_khi_thue_lam_giam_loi_nhuan():
             "loi_nhuan_truoc_thue": 1_000,
             "loi_nhuan_sau_thue": 800,
             "thue_tndn_hien_hanh": 150,
-        }
+        },
+        Standard.TT200,
     )
     assert ra["thue_tndn_hien_hanh"] == -150
     assert da_doi == ["thue_tndn_hien_hanh"]
@@ -55,7 +56,8 @@ def test_ma_52_khong_bi_dong_vao():
             "loi_nhuan_sau_thue": 800,
             "thue_tndn_hien_hanh": 250,
             "thue_tndn_hoan_lai": 50,
-        }
+        },
+        Standard.TT200,
     )
     assert ra["thue_tndn_hoan_lai"] == 50
     assert da_doi == ["thue_tndn_hien_hanh"]
@@ -74,7 +76,8 @@ def test_thue_giu_nguyen_dau_khi_thue_la_thu_nhap():
             "loi_nhuan_truoc_thue": 800,
             "loi_nhuan_sau_thue": 1_000,
             "thue_tndn_hien_hanh": 200,
-        }
+        },
+        Standard.TT200,
     )
     assert ra["thue_tndn_hien_hanh"] == 200
     assert da_doi == []
@@ -83,7 +86,8 @@ def test_thue_giu_nguyen_dau_khi_thue_la_thu_nhap():
 def test_thieu_moc_50_hoac_60_thi_khong_doan():
     """Guideline buộc quyết định bằng mã 50 và 60; vắng chúng thì không sửa."""
     ra, da_doi = chuan_hoa_dau(
-        {"loi_nhuan_truoc_thue": 1_000, "thue_tndn_hien_hanh": 150}
+        {"loi_nhuan_truoc_thue": 1_000, "thue_tndn_hien_hanh": 150},
+        Standard.TT200,
     )
     assert ra["thue_tndn_hien_hanh"] == 150
     assert da_doi == []
@@ -104,7 +108,8 @@ def test_khong_dung_dang_thuc_de_chon_dau():
             "loi_nhuan_sau_thue": 800,
             "thue_tndn_hien_hanh": 999,
             "thue_tndn_hoan_lai": 0,
-        }
+        },
+        Standard.TT200,
     )
     assert ra["thue_tndn_hien_hanh"] == -999  # noqa: PLR2004
     assert ra["loi_nhuan_sau_thue"] != (
@@ -116,7 +121,7 @@ def test_gia_tri_chuoi_van_duoc_sua_qua_validate_result():
     """
     Ca hồi quy: VLM đôi khi trả số dưới dạng CHUỖI.
 
-    Bản nháp đầu gọi chuan_hoa_dau() trong router trước bước ép kiểu, nên
+    Bản nháp đầu gọi chuan_hoa_dau(, Standard.TT200) trong router trước bước ép kiểu, nên
     isinstance(value, (int, float)) là False và hàm lặng lẽ không làm gì —
     hỏng đúng kiểu không ai thấy. Nay nó chạy trong validate_result() ngay
     sau bước ép kiểu, nên chuỗi cũng phải được sửa.
@@ -142,3 +147,30 @@ def test_khong_con_canh_bao_gia_von_am():
         Standard.TT200,
     )
     assert not any("âm bất thường" in canh_bao for canh_bao in da_kiem["warnings"])
+
+
+def test_TT99_van_lat_theo_chieu_CU_vi_chua_xac_minh():
+    """
+    Hai chuẩn đang dùng hai quy ước dấu khác nhau, có chủ đích (31/08/2026).
+
+    TT200 đã chuyển sang dấu có hướng nên mã 51 dương là sai; TT99 chưa xác
+    minh nên giữ quy ước độ lớn, và ở đó mã 51 ÂM mới là sai. Cùng một bộ số
+    vì thế phải cho hai kết quả khác nhau tuỳ chuẩn — đây là hàng rào chặn ai
+    đó "đồng bộ cho giống nhau" khi chưa có tài liệu xác minh TT99.
+    """
+    bo_so = {
+        "loi_nhuan_truoc_thue": 1_000,
+        "loi_nhuan_sau_thue": 800,
+        "thue_tndn_hien_hanh": -150,
+    }
+
+    ra_200, doi_200 = chuan_hoa_dau(dict(bo_so), Standard.TT200)
+    ra_99, doi_99 = chuan_hoa_dau(dict(bo_so), Standard.TT99)
+
+    # TT200: âm là đúng quy ước, không đụng vào.
+    assert ra_200["thue_tndn_hien_hanh"] == -150
+    assert doi_200 == []
+
+    # TT99: âm là sai quy ước, lật về dương.
+    assert ra_99["thue_tndn_hien_hanh"] == 150
+    assert doi_99 == ["thue_tndn_hien_hanh"]

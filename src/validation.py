@@ -168,7 +168,7 @@ def validate_result(
     #     nhất. Đặt trước bước 2 và 4 vì để giá vốn âm đi tiếp thì cả cảnh
     #     báo "âm bất thường" lẫn đẳng thức mã 20 đều báo một lỗi không có
     #     thật, và tầng ràng buộc sẽ đi sửa chỗ không hỏng.
-    data, dau_da_sua = chuan_hoa_dau(data)
+    data, dau_da_sua = chuan_hoa_dau(data, standard)
 
     # 2. Số âm ở những chỉ tiêu không được phép âm
     for key, value in data.items():

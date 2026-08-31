@@ -79,3 +79,8 @@ data/bctc/*
 # OS/editor junk
 .DS_Store
 .vscode/
+
+# Cấu hình Claude Code: kỹ năng dùng chung thì theo repo, còn settings.local.json
+# và file lock là của MÁY người dùng — commit vào là ép cấu hình cá nhân lên repo.
+.claude/settings.local.json
+.claude/scheduled_tasks.lock

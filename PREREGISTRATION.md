@@ -17,6 +17,33 @@ giá trị của việc đăng ký trước.
 
 ---
 
+## Mục lục — THÊM 31/08/2026, không thuộc nội dung đã đăng ký
+
+> Bảng này là **phụ trợ tra cứu**, thêm vào sau ngày đăng ký và không sửa một
+> chữ nào của nội dung gốc. Nó có mặt vì file này dài và không bao giờ nên đọc
+> trọn: mở đúng mục cần rồi đóng lại. Mục "Sửa đổi" ở cuối là nơi DUY NHẤT
+> được ghi thay đổi, và nó vẫn nguyên vẹn.
+
+| Mục | Nội dung | Đọc khi |
+|---|---|---|
+| 0 | Bối cảnh, ký hiệu `x*`, `A`, `δ` | lần đầu đọc file này |
+| **1** | **Bốn giả thuyết H0–H3** | trước mọi phép đo, và khi dựng bảng kết quả |
+| 2 | Đối chứng trung tâm: baseline 9 | so phương pháp đề xuất với bộ giải liên tục |
+| **3** | **Điều kiện phản chứng** — viết trước, không giấu | khi kết quả ra ngược mong đợi |
+| 4 | Ba mốc dừng | quyết định đóng một mốc |
+| 5 | Nguồn phương sai và cách xử lý | thiết kế lượt chạy nhiều model / nhiều tài liệu |
+| **6** | **Quy tắc bootstrap** | trước khi báo bất kỳ khoảng tin cậy nào |
+| 7 | Quy trình gán nhãn — cam kết | tổ chức gán nhãn, gán nhãn đôi |
+| 8 | Tái lập được | đóng gói kết quả, viết phần Reproducibility |
+| **9** | **Danh mục kiểm cho mọi bảng kết quả** | mỗi lần dựng một bảng |
+| **Sửa đổi** | Mọi tu chính kèm ngày và lý do | **trước khi đổi bất cứ thứ gì ở trên** |
+
+**Chỗ hay phải tra nhất:** lập luận `Aδ = (c−1)Ax* = 0` — sai đơn vị toàn cục
+luôn vô hình với mọi đẳng thức — nằm ở mục 0. Đây là **nhà duy nhất** của mệnh
+đề đó; các file khác trong repo chỉ được trỏ về đây, đừng chép lại lần nữa.
+
+---
+
 ## 0. Bối cảnh tối thiểu
 
 Báo cáo tài chính dư thừa về mặt số học: cùng một thông tin xuất hiện lại

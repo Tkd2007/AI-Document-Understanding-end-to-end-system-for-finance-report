@@ -482,6 +482,34 @@ def _tu_extraction(extraction: ExtractionResult) -> dict[str, FieldResult]:
     return phang
 
 
+def _he_so_cua_o_da_giu(
+    tich_luy: dict[str, FieldResult], he_so_theo_truong: dict[str, int] | None
+) -> dict[str, int] | None:
+    """
+    Lọc bản đồ hệ số đơn vị xuống còn những ô THẬT SỰ do nhánh VLM giữ.
+
+    VÌ SAO KHÔNG DÙNG THẲNG BẢN ĐỒ CỦA NHÁNH VLM. Nhánh VLM đọc ra một chỉ
+    tiêu không có nghĩa là giá trị cuối cùng của chỉ tiêu ấy đến từ đó:
+    `run_vlm()` chỉ cho VLM ghi đè khi ô còn trống hoặc khi validate đã báo
+    warning, nên với `USE_OCR_FIRST=true` một ô do regex điền vẫn có thể ở
+    lại trong khi VLM cũng đọc được nó. Dùng bản đồ thô thì con số của OCR bị
+    nhân bằng hệ số của một vùng mà nó chưa từng được đọc ra — một xuất xứ
+    bịa, và bịa theo kiểu không có gì báo vì kết quả vẫn là một con số hợp lệ.
+
+    Phân biệt bằng `provenance`: giá trị của nhánh VLM luôn mang nó, giá trị
+    của nhánh OCR đi qua `FieldResult.khong_do()` nên không. Đó cũng đúng
+    định nghĩa của provenance — biết được con số này đọc từ đâu trên tờ giấy.
+    """
+    if not he_so_theo_truong:
+        return None
+
+    return {
+        khoa: he_so
+        for khoa, he_so in he_so_theo_truong.items()
+        if getattr(tich_luy.get(khoa), "provenance", None) is not None
+    }
+
+
 def _ocr_mot_trang(page, bo_nho_text: dict, metrics=None) -> dict[str, FieldResult]:
     """
     OCR một trang rồi trích bằng regex, trả về dạng FieldResult.
@@ -856,10 +884,10 @@ def route_document(
         # giá trị VLM còn có thể là chuỗi.
         #
         # Ô nào nhánh VLM đọc ra thì quy đổi bằng hệ số của ĐÚNG bảng đã sinh
-        # ra nó; ô do nhánh OCR điền không có trong ánh xạ nên lùi về hệ số
-        # mức tài liệu. Đó là hành vi đúng chứ không phải chỗ hụt: nhánh OCR
-        # không ghi lại nó đọc ô ấy từ vùng nào, nên gán cho nó hệ số của một
-        # vùng cụ thể sẽ là bịa ra một xuất xứ không ai kiểm được.
+        # ra nó; ô do nhánh OCR điền lùi về hệ số mức tài liệu. Đó là hành vi
+        # đúng chứ không phải chỗ hụt: nhánh OCR không ghi lại nó đọc ô ấy từ
+        # vùng nào, nên gán cho nó hệ số của một vùng cụ thể sẽ là bịa ra một
+        # xuất xứ không ai kiểm được.
         #
         # Bản đồ hệ số ĐI VÀO chấm điểm được rút khỏi meta_vlm ngay sau khi
         # dùng, vì validate_result() trả ra một khoá cùng tên mang bản đồ hệ
@@ -868,7 +896,9 @@ def route_document(
         # và để cả hai cùng tên trong một dict là mời người đọc sau này lấy
         # nhầm cái không nói lên điều đã xảy ra với con số.
         da_kiem = validate_result(
-            gia_tri_da_dien, standard, meta_vlm.pop("he_so_don_vi_theo_truong", None)
+            gia_tri_da_dien,
+            standard,
+            _he_so_cua_o_da_giu(result, meta_vlm.pop("he_so_don_vi_theo_truong", None)),
         )
         data = da_kiem["data"]
 

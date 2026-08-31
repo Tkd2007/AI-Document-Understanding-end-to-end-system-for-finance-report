@@ -24,8 +24,10 @@ from PIL import Image
 
 import extract_vlm
 from extract_vlm import extract_fields_from_regions
+from extraction_types import FieldResult, Provenance
 from fields_config import Standard
 from layout_detection import TableRegion
+from router import _he_so_cua_o_da_giu
 from validation import validate_result
 
 
@@ -135,3 +137,25 @@ def test_ca_hai_bang_cung_ra_dung_so_VND(monkeypatch):
     # kia không có chuyện đó. Sai số 3e-5 đồng nằm sâu dưới biên 0,1% mà
     # `eval/metrics.py` dùng để chấm đúng/sai.
     assert data["loi_nhuan_sau_thue"] == pytest.approx(-258_900_000_000)
+
+
+def test_o_do_nhanh_OCR_giu_thi_khong_muon_he_so_cua_vung_VLM():
+    """
+    Nhánh VLM đọc ra một chỉ tiêu KHÔNG có nghĩa là giá trị cuối cùng của chỉ
+    tiêu ấy đến từ đó. Với `USE_OCR_FIRST=true` — cấu hình đang chạy thật —
+    `run_vlm()` chỉ cho VLM ghi đè khi ô còn trống hoặc validate đã báo
+    warning, nên một ô do regex điền vẫn có thể ở lại.
+
+    Nếu bản đồ hệ số không lọc theo đó thì con số của OCR bị nhân bằng hệ số
+    của một vùng nó chưa từng được đọc ra. Hỏng theo kiểu tệ nhất: kết quả
+    vẫn là một con số hợp lệ và không có gì báo.
+    """
+    tu_vlm = FieldResult(value=1, confidence=1.0, provenance=Provenance(5, 0, (0, 0, 1, 1)))
+    tu_ocr = FieldResult.khong_do(2)
+
+    loc = _he_so_cua_o_da_giu(
+        {"tong_tai_san": tu_vlm, "doanh_thu_thuan": tu_ocr},
+        {"tong_tai_san": 1_000, "doanh_thu_thuan": 1_000},
+    )
+
+    assert loc == {"tong_tai_san": 1_000}

@@ -993,6 +993,114 @@ những gì chưa làm.
 > lực: **lượt chạy bật một cơ chế mới mà không lưu certificate của cơ chế
 > đó thì cho ra số không quy được về nguyên nhân**, và cái giá là chạy lại.
 
+---
+
+### 20.8 Đơn vị tính buộc theo BẢNG — thi công và chạy lại HNG, 31/08/2026
+
+**Tiền đề "mỗi tài liệu một đơn vị tính" đã bị bác bỏ trên hồ sơ thật.**
+`HNG_2025H1_TT200` là công văn giải trình gửi HNX kèm BCTC soát xét bán niên:
+trang 1 khai `ĐVT: tỷ đồng` cho một bảng hai dòng, các trang sau là BCTC khai
+`Ngàn VND`. Pipeline cũ đối xử với đơn vị như một chỉ tiêu bình thường — vùng
+đầu tiên đọc được thì chốt cho cả tài liệu và không bao giờ đọc lại — nên công
+văn trang 1 thắng bảng cân đối trang 10.
+
+**Mọi chữ số đọc ra đều đúng tuyệt đối; 24/26 ô sai đúng 1e6 lần.** Hai ô đúng
+ở lượt 30/08 là hai ô bằng `0`, tức hai ô bất biến với phép nhân. Đây là ca
+sách giáo khoa của mệnh đề `Aδ = (c−1)Ax* = 0`.
+
+**Mỏ neo biên độ lớn có báo nhưng KHÔNG phân xử được.** Với tổng tài sản thô
+`18.281.308.818`, `×1e9` cho `1,8e19` (ngoài biên, bắt được) nhưng cả `×1e3`
+(`1,8e13`) lẫn `×1` (`1,8e10`) đều nằm trong `[1e10; 1e15]`. Mỏ neo thu bốn ứng
+viên xuống hai — nó là **bộ lọc, không phải bộ sửa**. Đừng trông vào nó để tự
+chữa ca sai đơn vị.
+
+**Và không hệ số toàn cục nào ĐÚNG được cho tài liệu này.** `loi_nhuan_sau_thue`
+được đọc ra từ đúng bảng trang 1, nên chọn `nghìn đồng` sẽ làm ô đó sai 1e6 lần
+theo chiều ngược lại. Đó là lập luận quyết định: hệ số phải buộc theo **bảng**
+đã sinh ra con số.
+
+#### Cơ chế (`e28b9db`, `b35fdd7`, `fed96af`)
+
+- `extract_vlm` bỏ phiếu đơn vị ở **mọi** vùng. **Đọc được thắng kế thừa**; chỉ
+  vùng không tự khai mới lấy đơn vị của vùng trước. Không mua thêm lời gọi VLM
+  nào — prompt vốn đã bắt model trả `don_vi_tinh` cho mọi vùng, bản trước chỉ
+  vứt nó đi từ vùng thứ hai.
+- Ngưỡng quá bán (`NGUONG_DON_VI_VUNG`) chặn ghi đè bằng phiếu yếu. **Ở
+  `n_samples=1` nó không có tác dụng** — đừng đọc `0,5` như tham số đã hiệu chỉnh.
+- `validate_result(..., he_so_theo_truong)` quy đổi theo từng ô; mỏ neo biên độ
+  lớn gác theo hệ số đã dùng cho **chính** `tong_tai_san`.
+- Kết luận mức tài liệu = hệ số áp cho **đa số** chỉ tiêu. Định nghĩa này đổi vì
+  gold chỉ có một `unit_multiplier`/tài liệu; lấy vùng đầu tiên sẽ báo sai đơn vị
+  trong khi 25/26 con số đã quy đổi đúng.
+- `meta["don_vi_theo_vung"]` là certificate: mỗi vùng khai đọc ra gì, tin bao
+  nhiêu, áp hệ số nào, nguồn là `doc_duoc` / `ke_thua` / `chua_biet`.
+
+**KHÔNG sao chép ba ràng buộc của `ky_hieu_mau.py`** dù khuôn mẫu trông giống
+hệt. Ký hiệu mẫu thật sự thuần nhất trong một hồ sơ nên ở đó "chốt một lần" là
+đúng và "vùng sau khác vùng trước" là dấu hiệu hỏng; đơn vị tính thì không, nên
+cùng một sự kiện lại là chuyện bình thường và phải được phép ghi đè.
+
+**Một lỗi đã sửa trước khi chạy (`fed96af`).** Nhánh VLM đọc được một chỉ tiêu
+không có nghĩa là giá trị cuối cùng đến từ đó: với `USE_OCR_FIRST=true`,
+`run_vlm()` chỉ ghi đè khi ô còn trống hoặc validate đã báo warning. Dùng thẳng
+bản đồ hệ số thì con số của OCR bị nhân bằng hệ số của một vùng nó chưa từng
+được đọc ra — bịa xuất xứ, và bịa theo kiểu vẫn ra một con số hợp lệ nên không
+gì báo. Lọc bằng `provenance`.
+
+#### Lượt chạy HNG 31/08/2026
+
+Chế độ `--chuan-tu-gold --chi HNG`, `BAT_TANG_REPAIR=true`, `USE_OCR_FIRST=true`,
+`n_samples=1`, `temperature=0.0`, model `google/gemma-4-31b-it:free`. Kết quả:
+`data/output/tap_gold_chuan_tu_gold_HNG_2026-08-31.json`.
+
+| | 30/08 | 31/08 |
+|---|---:|---:|
+| Trường đúng | 2/26 = 0,077 | **21/26 = 0,808** |
+| Lỗi câm | 24/26 | **5/26** |
+| Hệ số đơn vị | ✗ (1e9) | **✓ (1e3)** |
+| Số cảnh báo | 2 | 1 |
+
+Certificate: **18 vùng, 8 đọc được đơn vị, 10 kế thừa.** Trang 1 vùng 0 đọc
+`tỷ đồng`; trang 10, 11, 12, 13, 14, 15, 17 đọc `Ngàn VND`. Hệ số theo trường:
+25 ô mang `1000`, một ô (`loi_nhuan_sau_thue`) mang `1e9`. Đúng hình dạng đã
+dự đoán.
+
+#### Năm ô còn sai — KHÔNG ô nào do đơn vị
+
+| Chỉ tiêu | Dự đoán | Gold |
+|---|---:|---:|
+| `ln_thuan_hdkd` | −154.594.725.000 | +154.594.725.000 |
+| `ln_khac` | −103.872.097.000 | +103.872.097.000 |
+| `loi_nhuan_truoc_thue` | −258.466.822.000 | +258.466.822.000 |
+| `loi_nhuan_sau_thue` | −258.900.000.000 | +258.898.322.000 |
+| `thue_tndn_hien_hanh` | 233.893.000 | 0 |
+
+**Bốn ô đầu chỉ lệch DẤU** — đúng Câu 14, quy ước dấu ngược của HNG, và Câu 14
+vẫn đang chờ người chủ trì. Riêng `loi_nhuan_sau_thue` lệch cả độ lớn 0,00065%,
+nằm sâu trong biên 0,1%, nên nếu Câu 14 được giải thì ô này tự đúng.
+
+**Ô thứ năm là bất đồng THẬT, chưa lý giải được.** Gold ghi `thue_tndn_hien_hanh
+= 0`, pipeline đọc `233.893.000`. Hoặc gold bỏ sót một dòng có số, hoặc pipeline
+bắt trúng một con số của dòng khác. **Phải mở PDF kiểm bằng mắt trước khi kết
+luận bên nào sai** — đừng sửa gold theo pipeline.
+
+#### Chỗ lượt chạy này KHÔNG kết luận được
+
+**Mới chạy MỘT tài liệu, nên chưa biết cơ chế có làm hỏng 9 tài liệu kia
+không.** Buộc đơn vị theo bảng mở ra một chế độ lỗi mới: trước đây cả tài liệu
+chỉ có một lần đọc đơn vị có thể sai, giờ mỗi bảng là một cơ hội, và một đơn vị
+bịa trên trang tiếp nối làm hỏng trọn bảng đó mà không đẳng thức nào bắt được.
+Chín tài liệu kia đều khai `VND` (×1) và đều đúng đơn vị ở lượt 30/08, nên
+chúng là phép thử hồi quy đúng nghĩa.
+
+Nếu chúng không đổi thì gộp sẽ là **232/265 = 0,875** so với 0,804 — nhưng đó
+là **phép ngoại suy, chưa phải số đo**. Việc kế tiếp: chạy trọn bộ 10 tài liệu,
+và **sao lưu `tap_gold_chuan_tu_gold.json` trước khi chạy** (bẫy 3, mục 20.2).
+
+> **File `tap_gold_chuan_tu_gold.json` hiện đang giữ kết quả của ĐÚNG MỘT tài
+> liệu** vì lượt `--chi HNG` này. Bản 10 tài liệu của lượt 30/08 vẫn còn ở
+> `..._2026-08-30.json`.
+
 ## Phụ lục A — MỐC 1: hồ sơ đối chiếu ma trận ràng buộc với Thông tư
 
 > **Đã chuyển sang `docs/lich-su/HANDOFF-da-dong.md`, giữ nguyên văn và

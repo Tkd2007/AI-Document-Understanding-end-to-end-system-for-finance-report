@@ -18,6 +18,63 @@ mục Sửa đổi.
 
 ---
 
+## 31/08/2026
+
+### Đơn vị tính buộc theo BẢNG, không buộc theo tài liệu
+
+Tiền đề "mỗi tài liệu một đơn vị tính" sai trên hồ sơ thật.
+`HNG_2025H1_TT200` là công văn giải trình gửi HNX kèm BCTC: trang 1 khai
+`ĐVT: tỷ đồng` cho một bảng hai dòng, các trang sau là BCTC khai `Ngàn VND`.
+Pipeline đối xử với đơn vị như một chỉ tiêu bình thường nên **vùng đầu tiên
+đọc được chốt cho cả tài liệu và không bao giờ được đọc lại** — công văn thắng
+bảng cân đối, và 24/26 chỉ tiêu sai đúng `1e6` lần dù mọi chữ số đọc ra đều
+đúng tuyệt đối.
+
+Không đẳng thức nào bắt được (`Aδ = (c−1)Ax* = 0`, `PREREGISTRATION.md` mục 0),
+và mỏ neo biên độ lớn chỉ **lọc** chứ không **sửa**: với tổng tài sản thô
+`18.281.308.818` thì cả `×1e3` lẫn `×1` đều nằm trong biên. Quan trọng hơn,
+**không hệ số toàn cục nào đúng được** cho tài liệu này — `loi_nhuan_sau_thue`
+đọc từ đúng bảng `tỷ đồng` nên chọn `nghìn đồng` sẽ làm ô đó sai `1e6` lần theo
+chiều ngược lại.
+
+Thi công ở `extract_vlm._he_so_vung()` (đọc được thắng kế thừa, ngưỡng quá bán
+chặn ghi đè bằng phiếu yếu) và tham số `he_so_theo_truong` của
+`validate_result()`. Không mua thêm lời gọi VLM nào: prompt vốn đã bắt model
+trả `don_vi_tinh` cho mọi vùng. Certificate ở `meta["don_vi_theo_vung"]`.
+
+*Đã đo* — `--chuan-tu-gold --chi HNG`, `BAT_TANG_REPAIR=true`, cùng cấu hình
+lượt 30/08. Kết quả: `data/output/tap_gold_chuan_tu_gold_HNG_2026-08-31.json`.
+
+| `HNG_2025H1_TT200` | 30/08 | 31/08 |
+|---|---:|---:|
+| Trường đúng | 2/26 = 0,077 | **21/26 = 0,808** |
+| Lỗi câm | 24/26 | **5/26** |
+| Hệ số đơn vị | ✗ `1e9` | **✓ `1e3`** |
+
+Certificate: 18 vùng, 8 đọc được đơn vị, 10 kế thừa; 25 ô mang hệ số `1000`,
+một ô mang `1e9`.
+
+**CHƯA đo trên 9 tài liệu còn lại.** Cơ chế mở ra một chế độ lỗi mới — mỗi bảng
+là một cơ hội đọc sai đơn vị thay vì một lần cho cả tài liệu — nên chín tài
+liệu kia là phép thử hồi quy bắt buộc. Con số gộp **232/265 = 0,875** là ngoại
+suy giả định chúng không đổi, **không được viết vào bài như một cải thiện đã
+đo**. Chi tiết ở `HANDOFF.md` mục 20.8.
+
+Bốn trong năm ô còn sai của HNG chỉ lệch **dấu** (Câu 14, đang chờ người chủ
+trì), không liên quan tới đơn vị.
+
+### Cắt chi phí đọc tài liệu lúc mở phiên
+
+*Không đo được* — thay đổi thuộc loại tài liệu và quy ước.
+
+Repo không có `CLAUDE.md`, nên mỗi phiên Claude mới nạp trọn `HANDOFF.md`
+(~32.500 token) để lấy về vài nghìn token thật sự dùng. Chia lại theo **tần
+suất đọc**: `CLAUDE.md` (~2.500 token, tự nạp, có bảng định tuyến theo việc),
+`HANDOFF.md` còn trạng thái sống, `docs/lich-su/HANDOFF-da-dong.md` giữ hồ sơ
+đã đóng **nguyên văn và nguyên số mục**, kỹ năng `chay-tap-gold` cho quy trình
+chỉ dùng khi chạy tập gold. `PREREGISTRATION.md` chỉ được **thêm** mục lục,
+nội dung gốc không sửa một chữ.
+
 ## 28/08/2026
 
 ### Luật dấu bằng residual — một luật định vị chứng minh được (Ý tưởng 1)

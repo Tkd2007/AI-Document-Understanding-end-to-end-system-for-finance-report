@@ -194,3 +194,145 @@ def test_bien_tong_tai_san_phu_duoc_doanh_nghiep_niem_yet_that():
     # Nhưng vẫn phải chặn được lệch cả bậc độ lớn ở hai đầu.
     assert 1_000_000 < can_duoi                         # 1 triệu đồng: đọc nhầm đơn vị
     assert 2_000_000_000_000_000 > can_tren             # 2 triệu tỷ: không doanh nghiệp nào
+
+
+# ---------------------------------------------------------------------------
+# ĐƠN VỊ BUỘC THEO BẢNG
+#
+# Vì sao cả nhóm test này tồn tại, đo được trên `HNG_2025H1_TT200`: trang 1 của
+# hồ sơ là công văn giải trình gửi HNX, khai `ĐVT: tỷ đồng`, và pipeline đọc
+# `loi_nhuan_sau_thue` ra từ đúng bảng hai dòng ấy. 25 chỉ tiêu còn lại đọc từ
+# các bảng BCTC khai `nghìn đồng`. Với một hệ số duy nhất cho cả tài liệu thì
+# KHÔNG lựa chọn nào đúng: tỷ đồng làm 24 ô sai gấp 1e6, nghìn đồng làm ô kia
+# sai gấp 1e6 theo chiều ngược lại. Lượt chạy 30/08 chọn tỷ đồng và HNG được
+# 2/26 — hai ô đúng là hai ô bằng 0, tức hai ô bất biến với phép nhân.
+# ---------------------------------------------------------------------------
+
+from extract_vlm import _don_vi_tai_lieu, _he_so_vung  # noqa: E402
+from extraction_types import FieldResult  # noqa: E402
+
+
+def _doc_ra(raw, confidence=1.0):
+    """Kết quả bỏ phiếu đơn vị của một vùng, như _bo_phieu() trả về."""
+    return FieldResult(value=raw, confidence=confidence)
+
+
+def test_vung_tu_khai_don_vi_thi_de_don_vi_dang_ke_thua():
+    """
+    Đây là chỗ đảo ngược hành vi cũ, và là chỗ ca HNG được cứu. Bản trước đối
+    xử với đơn vị như một chỉ tiêu bình thường nên vùng ĐẦU TIÊN đọc được sẽ
+    chốt cho cả tài liệu; công văn trang 1 vì thế thắng bảng cân đối trang 5.
+    """
+    assert _he_so_vung(_doc_ra("nghìn đồng"), 1_000_000_000) == (1_000, "doc_duoc")
+
+
+def test_vung_khong_khai_thi_ke_thua_vung_truoc():
+    """Phần lan của cơ chế: trang tiếp nối của một bảng không in lại dòng đơn vị."""
+    assert _he_so_vung(_doc_ra(None), 1_000) == (1_000, "ke_thua")
+
+
+def test_chua_vung_nao_doc_duoc_thi_khong_doan_bua():
+    """
+    Không có gì để kế thừa thì trả None, KHÔNG lùi về "đồng" — cùng nguyên tắc
+    parse_unit() giữ. Một tài liệu chưa biết bậc độ lớn mà bị đối xử như đã
+    biết thì mọi con số accuracy đo trên nó đều vô nghĩa.
+    """
+    assert _he_so_vung(_doc_ra(None), None) == (None, "chua_biet")
+
+
+def test_chuoi_khong_ra_don_vi_thi_ke_thua_chu_khong_pha_don_vi_dang_co():
+    """
+    Vùng đọc ra một chuỗi rác vẫn phải kế thừa, không được coi là "đã khai".
+    Nếu không thì mỗi bảng có tiêu đề lạ là một lần đơn vị đang đúng bị xoá.
+    """
+    assert _he_so_vung(_doc_ra("Tài sản ngắn hạn"), 1_000) == (1_000, "ke_thua")
+
+
+def test_phieu_yeu_khong_duoc_ghi_de_don_vi_dang_ke_thua():
+    """
+    Buộc đơn vị theo bảng mở ra một chế độ lỗi mới: một đơn vị BỊA trên trang
+    tiếp nối làm hỏng mọi chỉ tiêu của bảng đó, và không đẳng thức nào bắt
+    được vì hệ ràng buộc thuần nhất. Ngưỡng quá bán là cái chặn nó.
+    """
+    assert _he_so_vung(_doc_ra("tỷ đồng", confidence=0.2), 1_000) == (1_000, "ke_thua")
+
+
+def test_don_vi_muc_tai_lieu_lay_theo_da_so_chi_tieu():
+    """
+    Đúng hình dạng của HNG: một chỉ tiêu đọc từ bảng tỷ đồng, 25 chỉ tiêu đọc
+    từ bảng nghìn đồng. Kết luận mức tài liệu phải là nghìn đồng — khớp
+    `unit_multiplier` của gold. Lấy vùng đọc được đầu tiên sẽ trả về tỷ đồng,
+    và bảng chấm điểm báo sai đơn vị trong khi 25/26 con số đã quy đổi đúng.
+    """
+    he_so_theo_truong = {"loi_nhuan_sau_thue": 1_000_000_000}
+    he_so_theo_truong.update({f"chi_tieu_{i}": 1_000 for i in range(25)})
+
+    raw, he_so = _don_vi_tai_lieu(
+        he_so_theo_truong, [(1_000_000_000, "tỷ đồng"), (1_000, "nghìn đồng")]
+    )
+
+    assert (raw, he_so) == ("nghìn đồng", 1_000)
+
+
+def test_hoa_thi_lay_don_vi_doc_duoc_som_nhat_cho_tat_dinh():
+    """
+    Điều kiện phá hoà không mang ý nghĩa nghiệp vụ, nó chỉ để cùng đầu vào
+    cho cùng đầu ra — không có nó thì lượt chạy không tái lập được.
+    """
+    raw, he_so = _don_vi_tai_lieu(
+        {"a": 1_000, "b": 1_000_000},
+        [(1_000_000, "triệu đồng"), (1_000, "nghìn đồng")],
+    )
+
+    assert (raw, he_so) == ("triệu đồng", 1_000_000)
+
+
+def test_khong_vung_nao_doc_duoc_thi_don_vi_tai_lieu_la_none():
+    assert _don_vi_tai_lieu({}, []) == (None, None)
+
+
+def test_quy_doi_tung_o_theo_he_so_cua_bang_da_sinh_ra_no():
+    """
+    TEST TRUNG TÂM CỦA CƠ CHẾ, dựng lại đúng ca HNG ở quy mô nhỏ.
+
+    `loi_nhuan_sau_thue` đọc từ bảng tỷ đồng, mọi ô còn lại từ bảng nghìn
+    đồng. Cả hai phải ra đúng con số VND cùng lúc — điều mà không hệ số toàn
+    cục nào làm được.
+    """
+    tron_don_vi = dict(BAO_CAO_TRIEU_DONG)
+    tron_don_vi["don_vi_tinh"] = "nghìn đồng"
+    tron_don_vi["loi_nhuan_sau_thue"] = 80
+
+    ket_qua = validate_result(
+        tron_don_vi, Standard.TT99, {"loi_nhuan_sau_thue": 1_000_000_000}
+    )
+
+    assert ket_qua["data"]["loi_nhuan_sau_thue"] == 80_000_000_000
+    assert ket_qua["data"]["tong_tai_san"] == 1_000_000_000
+    assert ket_qua["meta"]["he_so_don_vi_theo_truong"]["loi_nhuan_sau_thue"] == 1_000_000_000
+    assert ket_qua["meta"]["he_so_don_vi_theo_truong"]["tong_tai_san"] == 1_000
+
+
+def test_o_khong_co_trong_anh_xa_thi_lui_ve_he_so_muc_tai_lieu():
+    """
+    Ô do nhánh OCR điền không có xuất xứ vùng, nên phải lùi về hệ số mức tài
+    liệu chứ không phải bị bỏ quên không quy đổi.
+    """
+    ket_qua = validate_result(
+        BAO_CAO_TRIEU_DONG, Standard.TT99, {"tong_tai_san": 1_000}
+    )
+
+    assert ket_qua["data"]["tong_tai_san"] == 1_000_000_000
+    assert ket_qua["data"]["hang_ton_kho"] == 100_000 * 1_000_000
+
+
+def test_mo_neo_bien_do_lon_gac_theo_he_so_cua_chinh_tong_tai_san():
+    """
+    Mỏ neo phải đọc hệ số ĐÃ DÙNG CHO tong_tai_san, không phải hệ số mức tài
+    liệu. Ở đây tài liệu khai triệu đồng nhưng riêng ô tổng tài sản đọc từ
+    một bảng khai đồng — con số quy đổi ra 1 triệu đồng, ngoài biên, và mỏ
+    neo là thứ duy nhất bắt được vì mọi đẳng thức vẫn khớp.
+    """
+    ket_qua = validate_result(BAO_CAO_TRIEU_DONG, Standard.TT99, {"tong_tai_san": 1})
+
+    assert [w for w in ket_qua["warnings"] if "ngoài biên hợp lý" in w]

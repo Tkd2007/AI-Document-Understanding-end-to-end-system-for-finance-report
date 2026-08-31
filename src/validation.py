@@ -74,12 +74,29 @@ def has_required_fields(data: dict) -> bool:
     return True
 
 
-def validate_result(result: dict, standard: Standard) -> dict:
+def validate_result(
+    result: dict, standard: Standard, he_so_theo_truong: dict[str, int] | None = None
+) -> dict:
     """
     Trả về {"data": <đã ép kiểu số>, "warnings": [...]}.
 
     warnings rỗng nghĩa là không phát hiện bất thường. Không chặn kết
     quả — chỉ gắn cờ để người dùng (và router) biết chỗ nào cần xem lại.
+
+    VÌ SAO CÓ `he_so_theo_truong`: một tài liệu KHÔNG nhất thiết chỉ có một
+    đơn vị tính. Đo được trên `HNG_2025H1_TT200`: trang 1 là công văn giải
+    trình gửi HNX, khai `ĐVT: tỷ đồng`, và `loi_nhuan_sau_thue` được đọc ra
+    từ đúng bảng ấy; 25 chỉ tiêu còn lại đọc từ các bảng BCTC khai `nghìn
+    đồng`. Không hệ số toàn cục nào đúng cho cả hai — chọn tỷ đồng thì 24 ô
+    sai gấp 1e6, chọn nghìn đồng thì ô kia sai gấp 1e6 theo chiều ngược lại.
+
+    Nên hệ số phải buộc theo BẢNG mà con số được đọc ra, không buộc theo tài
+    liệu. Tham số này là ánh xạ {chỉ tiêu -> hệ số của bảng đã sinh ra nó},
+    do `extract_vlm.extract_fields_from_regions()` dựng từ provenance của
+    từng ô. Chỉ tiêu nào không có trong ánh xạ — ví dụ ô do nhánh OCR điền —
+    thì lùi về hệ số mức tài liệu, đúng hành vi cũ.
+
+    Để None thì hàm hoạt động y hệt bản trước: một hệ số cho tất cả.
 
     standard quyết định dùng bộ đẳng thức của chuẩn mẫu biểu nào, và là
     THAM SỐ BẮT BUỘC — không có mặc định.
@@ -119,6 +136,16 @@ def validate_result(result: dict, standard: Standard) -> dict:
         warnings.append(f"{thieu} — không xác minh được bậc độ lớn của các con số")
 
     # 1. Ép kiểu số, rồi quy đổi về đồng
+    #
+    #    Hệ số lấy theo TỪNG CHỈ TIÊU khi người gọi biết chỉ tiêu ấy đọc ra
+    #    từ bảng nào; lùi về hệ số mức tài liệu khi không biết. Ghi lại hệ số
+    #    ĐÃ THẬT SỰ DÙNG cho từng ô chứ không chỉ ghi ánh xạ đầu vào: hai ô
+    #    cùng nhận hệ số 1000 vì một ô đọc được đơn vị tại chỗ còn ô kia lùi
+    #    về mức tài liệu là hai mức tin cậy khác nhau, và về sau không ai
+    #    dựng lại được con số nếu bảng kết quả không nói nó đã nhân với gì.
+    he_so_theo_truong = he_so_theo_truong or {}
+    he_so_da_dung: dict[str, int] = {}
+
     for key, value in result.items():
         if key == UNIT_KEY:
             continue
@@ -127,8 +154,10 @@ def validate_result(result: dict, standard: Standard) -> dict:
         if value is not None and number is None:
             warnings.append(f"{field_label(key)}: không đọc được giá trị {value!r} thành số")
 
-        if number is not None and he_so is not None:
-            number *= he_so
+        he_so_o = he_so_theo_truong.get(key, he_so)
+        if number is not None and he_so_o is not None:
+            number *= he_so_o
+            he_so_da_dung[key] = he_so_o
 
         data[key] = number
 
@@ -242,8 +271,14 @@ def validate_result(result: dict, standard: Standard) -> dict:
     #    số chưa biết bậc độ lớn thì không phân biệt được "doanh nghiệp
     #    nhỏ" với "đọc nhầm đơn vị" — báo ra sẽ là một phỏng đoán khoác áo
     #    kết luận. Cảnh báo ở mục 0 đã nói đúng cái đang thật sự sai.
+    #
+    #    Gác bằng hệ số ĐÃ DÙNG CHO CHÍNH tong_tai_san, không phải hệ số mức
+    #    tài liệu: với đơn vị buộc theo bảng, hai con số đó có thể khác nhau,
+    #    và lấy nhầm cái kia thì mỏ neo hoặc bỏ qua một ô đã quy đổi được,
+    #    hoặc áp biên tuyệt đối lên một ô chưa quy đổi — đúng hai chế độ hỏng
+    #    mà cái gác này sinh ra để tránh.
     tong_tai_san_quy_doi = data.get("tong_tai_san")
-    if he_so is not None and tong_tai_san_quy_doi is not None:
+    if he_so_da_dung.get("tong_tai_san") is not None and tong_tai_san_quy_doi is not None:
         can_duoi, can_tren = TOTAL_ASSETS_BOUNDS
         if not can_duoi <= abs(tong_tai_san_quy_doi) <= can_tren:
             warnings.append(
@@ -258,6 +293,12 @@ def validate_result(result: dict, standard: Standard) -> dict:
             "don_vi_tinh_raw": don_vi_raw,
             "don_vi_tinh_chuan": don_vi_chuan or None,
             "don_vi_tinh_he_so": he_so,
+            # Hệ số đã nhân cho từng ô. LUÔN có mặt, kể cả khi rỗng: để khoá
+            # này vắng mặt ở lượt chạy không buộc đơn vị theo bảng thì người
+            # đọc phải suy từ sự vắng mặt, mà suy thì sai. Rỗng nghĩa là không
+            # ô nào quy đổi được; một hệ số duy nhất cho mọi ô nghĩa là tài
+            # liệu thuần một đơn vị.
+            "he_so_don_vi_theo_truong": he_so_da_dung,
             "standard": standard.value,
             # Khoá nào đã bị lật dấu. Không ghi lại thì về sau không ai phân
             # biệt được "báo cáo in dương" với "ta đã sửa", và một bước sửa

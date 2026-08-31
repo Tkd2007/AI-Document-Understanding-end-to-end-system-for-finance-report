@@ -452,7 +452,17 @@ def _ghi_lai_luot_vlm(ghi_lai, extraction: ExtractionResult) -> None:
     # đường chạy thật — API và CLI — không ai thấy được lượt chạy đã dừng ở
     # trang nào và còn thiếu field gì, đúng thứ mà cờ dừng sớm sinh ra để
     # không giấu.
-    ghi_lai[META_VLM] = {"early_stop": extraction.meta.get("early_stop")}
+    #
+    # Hệ số đơn vị theo từng chỉ tiêu đi cùng đường này vì cùng một lý do: nó
+    # là thứ nhánh trích xuất biết mà validate_result() không tự biết được.
+    # route_document() phải lấy được nó TRƯỚC khi gọi validate_result(), nếu
+    # không thì mọi ô lại bị nhân bằng đúng một hệ số mức tài liệu và cả cơ
+    # chế buộc đơn vị theo bảng không có đường nào chạm tới con số.
+    ghi_lai[META_VLM] = {
+        "early_stop": extraction.meta.get("early_stop"),
+        "he_so_don_vi_theo_truong": extraction.meta.get("he_so_don_vi_theo_truong", {}),
+        "don_vi_theo_vung": extraction.meta.get("don_vi_theo_vung", []),
+    }
 
 
 def _tu_extraction(extraction: ExtractionResult) -> dict[str, FieldResult]:
@@ -835,10 +845,31 @@ def route_document(
             gia_tri_tran(result), dau_vet
         )
 
+        # Lấy meta của nhánh VLM ra Ở ĐÂY, trước validate_result(), vì trong
+        # đó có hệ số đơn vị theo từng chỉ tiêu mà bước quy đổi cần. Bản trước
+        # lấy sau khi đã chấm xong — đủ cho early_stop vốn chỉ để ghi lại,
+        # nhưng không đủ cho một dữ kiện tham gia vào chính phép tính.
+        meta_vlm = thong_tin_vlm.pop(META_VLM, {})
+
         # validate_result() sửa dấu ba dòng khấu trừ ngay sau bước ép kiểu —
         # xem mục 1b trong đó. Ở đây không đụng vào dấu: trước khi ép kiểu,
         # giá trị VLM còn có thể là chuỗi.
-        da_kiem = validate_result(gia_tri_da_dien, standard)
+        #
+        # Ô nào nhánh VLM đọc ra thì quy đổi bằng hệ số của ĐÚNG bảng đã sinh
+        # ra nó; ô do nhánh OCR điền không có trong ánh xạ nên lùi về hệ số
+        # mức tài liệu. Đó là hành vi đúng chứ không phải chỗ hụt: nhánh OCR
+        # không ghi lại nó đọc ô ấy từ vùng nào, nên gán cho nó hệ số của một
+        # vùng cụ thể sẽ là bịa ra một xuất xứ không ai kiểm được.
+        #
+        # Bản đồ hệ số ĐI VÀO chấm điểm được rút khỏi meta_vlm ngay sau khi
+        # dùng, vì validate_result() trả ra một khoá cùng tên mang bản đồ hệ
+        # số ĐÃ THẬT SỰ NHÂN. Hai bản đồ gần giống nhau nhưng không bằng nhau
+        # — ô nhánh VLM đọc được rồi bị bước sau bỏ đi chỉ có trong bản đầu —
+        # và để cả hai cùng tên trong một dict là mời người đọc sau này lấy
+        # nhầm cái không nói lên điều đã xảy ra với con số.
+        da_kiem = validate_result(
+            gia_tri_da_dien, standard, meta_vlm.pop("he_so_don_vi_theo_truong", None)
+        )
         data = da_kiem["data"]
 
         # TẦNG REPAIR chạy SAU khi validate_result() đã chấm xong, không phải
@@ -870,10 +901,6 @@ def route_document(
             for khoa in result
             if khoa != UNIT_KEY
         }
-
-        # Lấy meta của nhánh VLM ra TRƯỚC khi thong_tin_tai_lap() nhận dict
-        # này — hàm đó có chữ ký cố định nên khoá lạ sẽ làm nó nổ.
-        meta_vlm = thong_tin_vlm.pop(META_VLM, {})
 
         # HỢP NHẤT meta, không đè. Bản trước gán thẳng meta = da_kiem["meta"]
         # nên mọi thứ nhánh trích xuất biết mà validate_result không biết —

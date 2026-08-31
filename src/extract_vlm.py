@@ -33,6 +33,7 @@ from fields_config import (
     empty_result,
     fields_for,
     line_codes_for,
+    parse_unit,
 )
 from metrics import bam_prompt, timer
 from ocr_baseline import iter_table_regions
@@ -496,6 +497,107 @@ def _bo_phieu(cac_mau: list[dict], khoa: str, n_samples: int) -> tuple[FieldResu
     )
 
 
+# Tỷ lệ đồng thuận tối thiểu để một vùng được quyền GHI ĐÈ đơn vị đang kế
+# thừa từ vùng trước.
+#
+# Vì sao phải có ngưỡng chứ không đè vô điều kiện: buộc đơn vị theo bảng mở
+# ra một chế độ lỗi mới. Trước đây cả tài liệu chỉ có MỘT lần đọc đơn vị có
+# thể sai; giờ mỗi bảng là một cơ hội sai, và một đơn vị bịa ra trên trang
+# tiếp nối vốn không in dòng khai báo sẽ làm hỏng mọi chỉ tiêu của bảng đó.
+# Không đẳng thức nào bắt được — hệ ràng buộc thuần nhất nên bất biến với
+# phép nhân vô hướng (PREREGISTRATION mục 4.2).
+#
+# Để QUÁ BÁN, tính cả ca hoà phiếu với null: model đọc ra đơn vị ở một nửa
+# số mẫu và không thấy gì ở nửa kia thì khả năng cao là dòng khai báo có
+# thật nhưng mờ, chứ không phải model bịa. Null là "không nhìn thấy", không
+# phải "đơn vị khác".
+#
+# Ở cấu hình đang chạy thật (n_samples=1) ngưỡng này KHÔNG có tác dụng:
+# _bo_phieu() trên một mẫu luôn cho confidence 1,0. Nó chỉ bắt đầu chặn khi
+# bật self-consistency, và đó là chủ ý — đừng đọc con số 0,5 như một tham số
+# đã hiệu chỉnh trên dữ liệu.
+NGUONG_DON_VI_VUNG = 0.5
+
+
+def _he_so_vung(ket_qua_don_vi: FieldResult, he_so_truoc: int | None) -> tuple[int | None, str]:
+    """
+    Hệ số quy đổi áp cho MỘT vùng bảng, kèm nguồn của kết luận đó.
+
+    Ba nguồn, và chúng phải phân biệt được nhau trong kết quả ghi ra vì
+    chúng là ba mức tin cậy khác hẳn nhau:
+
+      doc_duoc   vùng tự khai đơn vị và phiếu đủ mạnh -> dùng của chính nó
+      ke_thua    vùng không khai (hoặc khai không đọc được) -> lấy của vùng trước
+      chua_biet  chưa vùng nào đọc được đơn vị -> không quy đổi, không đoán
+
+    ĐỌC ĐƯỢC THẮNG KẾ THỪA, đây là chỗ đảo ngược hành vi cũ. Bản trước đối
+    xử với đơn vị như một chỉ tiêu bình thường, nên vùng ĐẦU TIÊN đọc được
+    sẽ chốt cho cả tài liệu và không bao giờ được đọc lại. Trên
+    `HNG_2025H1_TT200` vùng đầu tiên ấy là công văn giải trình ở trang 1
+    khai `tỷ đồng`, và nó chốt trước khi bảng cân đối kịp khai `nghìn đồng`
+    — 24/26 chỉ tiêu sai gấp 1e6 lần.
+
+    KHÔNG sao chép ba ràng buộc của `ky_hieu_mau.py` sang đây dù khuôn mẫu
+    trông giống hệt ("đọc ở đâu đọc được, lan sang chỗ không đọc được"). Ký
+    hiệu mẫu THẬT SỰ thuần nhất trong một hồ sơ, nên ở đó "chốt một lần" là
+    đúng và "vùng sau khác vùng trước" là dấu hiệu hỏng. Đơn vị tính thì
+    không thuần nhất — HNG là phản ví dụ đo được — nên ở đây cùng một sự
+    kiện lại là chuyện bình thường và phải được phép ghi đè.
+    """
+    he_so_doc, _ = parse_unit(ket_qua_don_vi.value)
+
+    if he_so_doc is not None and ket_qua_don_vi.confidence >= NGUONG_DON_VI_VUNG:
+        return he_so_doc, "doc_duoc"
+
+    if he_so_truoc is not None:
+        return he_so_truoc, "ke_thua"
+
+    return None, "chua_biet"
+
+
+def _don_vi_tai_lieu(
+    he_so_theo_truong: dict[str, int], da_doc: list[tuple[int, str]]
+) -> tuple[str | None, int | None]:
+    """
+    Kết luận đơn vị MỨC TÀI LIỆU: hệ số đã áp cho NHIỀU chỉ tiêu nhất.
+
+    Vì sao vẫn cần một con số mức tài liệu khi hệ số đã buộc theo bảng: hai
+    thứ hạ nguồn đọc nó. `validate_result()` lùi về nó cho những ô không rõ
+    đọc từ bảng nào (ví dụ ô do nhánh OCR điền), và tập gold chấm điểm bằng
+    `unit_multiplier` — một trường DUY NHẤT cho mỗi tài liệu, theo
+    ANNOTATION-GUIDELINE mục 3.1.
+
+    ĐA SỐ THEO SỐ CHỈ TIÊU, không phải vùng đọc được đầu tiên. Với HNG, một
+    chỉ tiêu đọc từ công văn `tỷ đồng` và 25 chỉ tiêu đọc từ BCTC `nghìn
+    đồng`, nên đa số trả về `nghìn đồng` — khớp gold. Lấy vùng đầu tiên sẽ
+    trả về `tỷ đồng` và bảng chấm điểm báo sai đơn vị trong khi 25/26 con số
+    đã quy đổi đúng, tức con số đo nói ngược lại điều đã xảy ra.
+
+    Hoà thì lấy hệ số ĐỌC ĐƯỢC SỚM NHẤT. Điều kiện này không mang ý nghĩa
+    nghiệp vụ, nó chỉ để kết quả TẤT ĐỊNH: cùng đầu vào phải cho cùng đầu
+    ra, nếu không thì lượt chạy không tái lập được.
+
+    `da_doc` là các cặp (hệ số, chuỗi gốc) theo đúng thứ tự đọc được trên
+    tài liệu. Trả `(None, None)` khi chưa vùng nào đọc được — tuyệt đối
+    không lùi về "đồng", đúng nguyên tắc của `parse_unit()`.
+    """
+    thu_tu: dict[int, int] = {}
+    raw_cua: dict[int, str] = {}
+    for i, (he_so, raw) in enumerate(da_doc):
+        thu_tu.setdefault(he_so, i)
+        raw_cua.setdefault(he_so, raw)
+
+    if not he_so_theo_truong:
+        return (da_doc[0][1], da_doc[0][0]) if da_doc else (None, None)
+
+    dem: dict[int, int] = {}
+    for he_so in he_so_theo_truong.values():
+        dem[he_so] = dem.get(he_so, 0) + 1
+
+    thang = min(dem, key=lambda h: (-dem[h], thu_tu.get(h, len(da_doc))))
+    return raw_cua.get(thang), thang
+
+
 def _luu_crop(region, page_no: int, region_index: int, crop_dir) -> str | None:
     """
     Ghi ảnh crop ra đĩa để bước đọc lại dùng lại, trả về đường dẫn.
@@ -535,6 +637,13 @@ def extract_fields_from_regions(
     (field nào trang trước không có, trang sau tìm tiếp; đã có rồi thì
     không ghi đè). Các chỉ tiêu nằm rải ở nhiều trang khác nhau: nhóm B01a
     ở trang bảng cân đối, nhóm B02a ở trang kết quả kinh doanh.
+
+    ĐƠN VỊ TÍNH THÌ NGƯỢC LẠI — đọc lại ở MỌI vùng, và vùng nào tự khai được
+    thì đơn vị của nó thắng đơn vị đang kế thừa. Vùng không khai mới lấy của
+    vùng trước. Xem `_he_so_vung()` cho lý do và cho ca HNG đã đo được.
+    Kết quả đi ra ở meta dưới ba khoá: `don_vi_tinh` (kết luận mức tài liệu,
+    theo đa số chỉ tiêu), `he_so_don_vi_theo_truong` (hệ số của từng ô, để
+    `validate_result()` quy đổi), và `don_vi_theo_vung` (bản khai từng vùng).
 
     n_samples > 1 bật self-consistency: gọi VLM nhiều lần trên cùng một ảnh
     ở nhiệt độ lớn hơn 0 rồi lấy tỷ lệ đồng thuận làm confidence. Một thay
@@ -578,11 +687,35 @@ def extract_fields_from_regions(
     # định suốt cả tài liệu: một tài liệu chỉ theo đúng một chuẩn.
     cac_field_can = fields_for(standard)
 
+    # UNIT_KEY KHÔNG nằm trong khung tích luỹ này nữa, dù empty_result() vẫn
+    # trả nó về. Khung này giữ những thứ "tìm thấy một lần rồi thôi", còn đơn
+    # vị tính bây giờ được đọc lại ở MỌI vùng — để nó chung khung thì đúng
+    # dòng `continue` bên dưới sẽ chốt nó ở vùng đầu tiên, tức dựng lại
+    # nguyên xi lỗi mà cả thay đổi này sinh ra để sửa.
     final_result: dict[str, FieldResult] = {
-        khoa: FieldResult(value=None, confidence=0.0) for khoa in empty_result(standard)
+        khoa: FieldResult(value=None, confidence=0.0)
+        for khoa in empty_result(standard)
+        if khoa != UNIT_KEY
     }
     warnings: list[str] = []
     pages_without_new_field = 0
+
+    # Đơn vị tính buộc theo BẢNG. Ba biến, ba vai trò khác nhau:
+    #
+    #   he_so_hien_hanh    đơn vị của vùng gần nhất đọc được, để vùng sau kế thừa
+    #   he_so_theo_truong  {chỉ tiêu -> hệ số của vùng đã sinh ra nó}, đi thẳng
+    #                      xuống validate_result()
+    #   don_vi_theo_vung   bản khai từng vùng: đọc ra gì, tin bao nhiêu, cuối
+    #                      cùng áp hệ số nào, vì lý do gì
+    #
+    # Cái thứ ba là certificate của cơ chế này. Bài học đắt của lượt chạy
+    # 30/08 (HANDOFF mục 20.7): bật một cơ chế mới mà không lưu certificate
+    # của nó thì cho ra số không quy được về nguyên nhân, và cái giá là chạy
+    # lại cả tập.
+    he_so_hien_hanh: int | None = None
+    he_so_theo_truong: dict[str, int] = {}
+    don_vi_theo_vung: list[dict] = []
+    da_doc_don_vi: list[tuple[int, str]] = []
 
     # Trạng thái dừng sớm là khoá TƯỜNG MINH trong meta, không để người đọc
     # suy ra từ số trang đã quét. Lý do: một chỉ tiêu bị bỏ qua vì dừng sớm
@@ -616,6 +749,34 @@ def extract_fields_from_regions(
                 crop_path=_luu_crop(region, page_no, region_index, crop_dir),
             )
 
+            # Đơn vị của vùng, quyết TRƯỚC mọi chỉ tiêu: mọi con số đọc ra từ
+            # vùng này đều được đóng dấu hệ số ấy ngay lúc lấy.
+            #
+            # Bước bỏ phiếu này KHÔNG mua thêm một lời gọi VLM nào. Prompt đã
+            # bắt model trả don_vi_tinh cho mọi vùng (mục 6 trong build_prompt),
+            # nên chuỗi đơn vị của từng bảng vốn đã nằm sẵn trong cac_mau —
+            # bản trước chỉ đơn giản là vứt nó đi từ vùng thứ hai trở đi.
+            ket_qua_don_vi, canh_bao_don_vi = _bo_phieu(cac_mau, UNIT_KEY, n_samples)
+            he_so_vung, nguon_don_vi = _he_so_vung(ket_qua_don_vi, he_so_hien_hanh)
+            if nguon_don_vi == "doc_duoc":
+                he_so_hien_hanh = he_so_vung
+                da_doc_don_vi.append((he_so_vung, ket_qua_don_vi.value))
+                if canh_bao_don_vi:
+                    warnings.append(f"Trang {page_no}: {canh_bao_don_vi}")
+
+            don_vi_theo_vung.append({
+                "trang": page_no,
+                "vung": region_index,
+                # Chuỗi ĐỌC ĐƯỢC tại vùng này, tách khỏi hệ số CUỐI CÙNG áp cho
+                # nó. Một vùng đọc ra "tỷ đồng" nhưng bị ngưỡng chặn rồi kế thừa
+                # "nghìn đồng" là một sự kiện đáng biết, và gộp hai khoá lại thì
+                # nó biến mất.
+                "raw": ket_qua_don_vi.value,
+                "confidence": ket_qua_don_vi.confidence,
+                "he_so": he_so_vung,
+                "nguon": nguon_don_vi,
+            })
+
             for khoa in final_result:
                 if final_result[khoa].value is not None:
                     continue
@@ -636,6 +797,13 @@ def extract_fields_from_regions(
                 ket_qua.provenance = nguon
                 final_result[khoa] = ket_qua
                 found_new_field = True
+                # Đóng dấu hệ số của ĐÚNG vùng vừa sinh ra con số này. Ghi ngay
+                # tại chỗ gán chứ không tra ngược từ provenance về sau: tra
+                # ngược thì phải giữ thêm một bảng vùng->hệ số và giữ cho nó
+                # đồng bộ, mà hai nguồn sự thật cho cùng một dữ kiện là cách
+                # chắc chắn nhất để chúng lệch nhau mà không ai thấy.
+                if he_so_vung is not None:
+                    he_so_theo_truong[khoa] = he_so_vung
                 if canh_bao:
                     warnings.append(f"Trang {page_no}: {canh_bao}")
 
@@ -704,12 +872,18 @@ def extract_fields_from_regions(
     # Đơn vị tính đi ra ở tầng meta chứ không nằm chung với các chỉ tiêu:
     # nó là dữ liệu về CÁCH ĐỌC cả bảng, và mọi hàm hạ nguồn đều giả định
     # data chỉ chứa số.
-    don_vi = final_result.pop(UNIT_KEY, None)
+    don_vi_raw, _ = _don_vi_tai_lieu(he_so_theo_truong, da_doc_don_vi)
 
     return ExtractionResult(
         data=final_result,
         meta={
-            UNIT_KEY: don_vi.value if don_vi is not None else None,
+            UNIT_KEY: don_vi_raw,
+            # Hệ số theo từng chỉ tiêu và bản khai từng vùng. Cả hai LUÔN có
+            # mặt: một lượt chạy không đọc được đơn vị ở đâu cả và một lượt
+            # chưa hề chạy cơ chế này phải phân biệt được nhau, mà nếu để khoá
+            # vắng mặt thì người đọc phải suy — và suy thì sai.
+            "he_so_don_vi_theo_truong": he_so_theo_truong,
+            "don_vi_theo_vung": don_vi_theo_vung,
             "standard": standard.value,
             # Băm NỘI DUNG prompt chứ không phải số phiên bản: số phiên
             # bản đòi con người nhớ tăng nó, và người ta không nhớ.

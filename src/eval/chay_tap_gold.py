@@ -129,9 +129,22 @@ def chay_mot_tai_lieu(gold: dict, pdf: Path, chuan_tu_gold: bool, nhat_ky) -> di
     # Hệ số đơn vị là mỏ neo duy nhất phá được bất biến scale, nên sai nó
     # làm hỏng TOÀN BỘ các chỉ tiêu cùng lúc chứ không hỏng lẻ tẻ — tách ra
     # đếm riêng, đừng để nó lẫn vào tỷ lệ trường đúng.
+    #
+    # `he_so_don_vi_da_dung` là kết luận MỨC TÀI LIỆU, và từ khi đơn vị được
+    # buộc theo bảng thì nó là hệ số áp cho ĐA SỐ chỉ tiêu chứ không còn là
+    # hệ số đọc được đầu tiên (xem `extract_vlm._don_vi_tai_lieu`). Định
+    # nghĩa phải đổi vì gold chỉ có một `unit_multiplier` cho mỗi tài liệu,
+    # trong khi tài liệu thật có thể trộn hai đơn vị — so một tài liệu trộn
+    # đơn vị với một con số duy nhất thì "đúng/sai" chỉ có nghĩa theo đa số.
     diem["he_so_don_vi_that"] = gold["unit_multiplier"]
     diem["he_so_don_vi_da_dung"] = ket_qua.meta.get("don_vi_tinh_he_so")
     diem["don_vi_tinh_raw"] = ket_qua.meta.get("don_vi_tinh_raw")
+    # Certificate của cơ chế buộc đơn vị theo bảng, giữ CÙNG điểm số. Không có
+    # nó thì một lượt chạy đúng đơn vị và một lượt chạy sai đơn vị nhưng được
+    # kế thừa cứu trông giống hệt nhau trong bảng kết quả — đúng bài học của
+    # mục 20.7 HANDOFF về lượt chạy 30/08.
+    diem["he_so_don_vi_theo_truong"] = ket_qua.meta.get("he_so_don_vi_theo_truong")
+    diem["don_vi_theo_vung"] = ket_qua.meta.get("don_vi_theo_vung")
     diem["so_canh_bao"] = len(ket_qua.warnings)
     # Certificate của tầng repair và kết luận lan ký hiệu mẫu đi CÙNG điểm số.
     # Bản trước chỉ giữ phần chấm điểm, nên một lượt chạy bật tầng repair không

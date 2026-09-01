@@ -203,9 +203,15 @@ $('btgio').onclick = async () => {
 
 async function nap() {
   const d = await (await fetch('/api/tai-lieu')).json();
-  $('file').innerHTML = d.tai_lieu.map(t =>
-    `<option value="${t.ten_file}" data-trang="${t.so_trang}">${t.ten_file}</option>`).join('');
-  $('tiendo').textContent = `${d.so_da_xong} tài liệu đã có file gold · nguồn: ${d.thu_muc}`;
+  // File không mở được vẫn nằm trong danh sách nhưng bị KHOÁ chọn: nó là một
+  // tài liệu thiếu của tập gold, cần thấy để đi tìm bản thay thế, chứ chọn
+  // vào thì chỉ nhận về trang trắng không rõ vì sao.
+  $('file').innerHTML = d.tai_lieu.map(t => t.doc_duoc
+    ? `<option value="${t.ten_file}" data-trang="${t.so_trang}">${t.ten_file}</option>`
+    : `<option disabled title="${t.loi}">${t.ten_file} — HỎNG, không mở được</option>`).join('');
+  let tiendo = `${d.so_da_xong} tài liệu đã có file gold · nguồn: ${d.thu_muc}`;
+  if (d.so_hong) tiendo += ` · ${d.so_hong} file HỎNG cần tìm bản thay thế`;
+  $('tiendo').textContent = tiendo;
   doiFile();
 }
 

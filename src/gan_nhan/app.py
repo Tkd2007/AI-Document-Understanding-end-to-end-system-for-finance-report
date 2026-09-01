@@ -253,21 +253,49 @@ def danh_sach_tai_lieu() -> dict:
     Trạng thái `da_gan_nhan` là khoá tường minh chứ không để suy từ việc
     thiếu tên trong một danh sách khác — người gán nhãn cần thấy ngay còn
     bao nhiêu tài liệu, và đó cũng chính là thanh tiến độ của cả việc.
+
+    MỘT FILE HỎNG KHÔNG ĐƯỢC KÉO SẬP CẢ DANH SÁCH. Trước 01/09/2026 chỗ này
+    gọi `so_trang` trong một list comprehension trần: `FLC_2021Q4_TT200.pdf`
+    tải về từ Vietstock bị cụt mất 5,4 MB cuối, `so_trang` ném PdfiumError,
+    và cả endpoint trả 500 — người gán nhãn thấy danh sách trống trơn dù 69
+    tài liệu kia đọc tốt, không có manh mối nào chỉ ra file nào có lỗi.
     """
     if not THU_MUC_PDF.is_dir():
         raise HTTPException(500, f"Không có thư mục {THU_MUC_PDF}")
 
     da_co = {f.stem for f in GOLD_DIR.glob("*.json")} if GOLD_DIR.is_dir() else set()
-    tai_lieu = [
-        {"ten_file": f.name, "so_trang": so_trang(f)}
-        for f in sorted(THU_MUC_PDF.glob("*.pdf"))
-    ]
+    tai_lieu = [_mo_ta_tai_lieu(f) for f in sorted(THU_MUC_PDF.glob("*.pdf"))]
     return {
         "thu_muc": str(THU_MUC_PDF),
         "tai_lieu": tai_lieu,
         "doc_id_da_gan_nhan": sorted(da_co),
         "so_da_xong": len(da_co),
+        # Đếm riêng thay vì để người đọc tự lọc `doc_duoc`: số này là thứ
+        # phải hiện lên giao diện, vì file hỏng nghĩa là thiếu tài liệu
+        # trong tập gold chứ không phải một phiền toái hiển thị.
+        "so_hong": sum(1 for t in tai_lieu if not t["doc_duoc"]),
     }
+
+
+def _mo_ta_tai_lieu(duong_dan: Path) -> dict:
+    """
+    Một dòng trong danh sách tài liệu, kèm khoá `doc_duoc` tường minh.
+
+    File hỏng vẫn được LIỆT KÊ chứ không bị lọc đi im lặng: tập gold đếm
+    theo tài liệu, nên một cái tên biến mất khỏi danh sách là một tài liệu
+    bị bỏ sót mà không ai biết. Hiện nó ra kèm lý do thì người gán nhãn đi
+    tìm được bản thay thế.
+    """
+    try:
+        so = so_trang(duong_dan)
+    except Exception as e:  # pypdfium2 ném PdfiumError, nhưng file rác ném đủ loại khác
+        return {
+            "ten_file": duong_dan.name,
+            "so_trang": 0,
+            "doc_duoc": False,
+            "loi": f"{type(e).__name__}: {e}",
+        }
+    return {"ten_file": duong_dan.name, "so_trang": so, "doc_duoc": True, "loi": None}
 
 
 @app.get("/api/trang/{ten_file}/{chi_so}")

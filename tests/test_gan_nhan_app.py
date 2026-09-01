@@ -11,6 +11,7 @@ import json
 import re
 import time
 
+import pypdfium2 as pdfium
 import pytest
 from fastapi.testclient import TestClient
 
@@ -406,3 +407,57 @@ def test_ghi_xong_thi_dong_ho_duoc_don_di(client):
     client.post("/api/luu", json=_than())
 
     assert client.get("/api/dong-ho/TEST_2026Q1_TT99").json()["trang_thai"] == "chua_bat_dau"
+
+
+def _pdf_that(duong_dan):
+    """Một PDF hợp lệ nhỏ nhất, dựng bằng chính thư viện mà máy chủ dùng để đọc."""
+    tai_lieu = pdfium.PdfDocument.new()
+    tai_lieu.new_page(200, 300)
+    tai_lieu.save(str(duong_dan))
+    tai_lieu.close()
+
+
+def test_mot_pdf_hong_khong_keo_sap_danh_sach(client, tmp_path):
+    """
+    Chế độ lỗi có thật ngày 01/09/2026: `FLC_2021Q4_TT200.pdf` tải từ
+    Vietstock bị cụt mất 5,4 MB cuối, `so_trang` ném PdfiumError, và cả
+    endpoint trả 500 — người gán nhãn mở công cụ lên thấy danh sách trống
+    trơn dù 69 tài liệu kia đọc tốt, không manh mối nào chỉ ra file nào lỗi.
+    """
+    _pdf_that(tmp_path / "pdf" / "TOT_2026Q1_TT99.pdf")
+    # Bắt đầu bằng `%PDF` và nặng hơn ngưỡng 50 KB, y như file cụt thật: đó
+    # chính là lý do cả hai phép kiểm rẻ tiền ở tầng tải đều không bắt được.
+    (tmp_path / "pdf" / "HONG_2026Q1_TT99.pdf").write_bytes(b"%PDF-1.4\n" + b"x" * 60_000)
+
+    r = client.get("/api/tai-lieu")
+
+    assert r.status_code == 200
+    theo_ten = {t["ten_file"]: t for t in r.json()["tai_lieu"]}
+    assert theo_ten["TOT_2026Q1_TT99.pdf"]["doc_duoc"] is True
+    assert theo_ten["TOT_2026Q1_TT99.pdf"]["so_trang"] == 1
+
+
+def test_file_hong_van_duoc_liet_ke_kem_ly_do(client, tmp_path):
+    """
+    Lọc file hỏng đi cho danh sách sạch là cách tệ hơn cả trả 500: tập gold
+    đếm theo tài liệu, nên một cái tên biến mất im lặng là một tài liệu bị
+    bỏ sót mà không ai biết để đi tìm bản thay thế.
+    """
+    (tmp_path / "pdf" / "HONG_2026Q1_TT99.pdf").write_bytes(b"%PDF-1.4\n" + b"x" * 60_000)
+
+    d = client.get("/api/tai-lieu").json()
+
+    assert [t["ten_file"] for t in d["tai_lieu"]] == ["HONG_2026Q1_TT99.pdf"]
+    assert d["tai_lieu"][0]["doc_duoc"] is False
+    assert d["tai_lieu"][0]["loi"]
+    assert d["so_hong"] == 1
+
+
+def test_khong_co_file_hong_thi_so_hong_van_la_khoa_tuong_minh(client, tmp_path):
+    """Trạng thái phải đọc được từ khoá, không phải suy từ sự vắng mặt của nó."""
+    _pdf_that(tmp_path / "pdf" / "TOT_2026Q1_TT99.pdf")
+
+    d = client.get("/api/tai-lieu").json()
+
+    assert d["so_hong"] == 0
+    assert d["tai_lieu"][0]["loi"] is None

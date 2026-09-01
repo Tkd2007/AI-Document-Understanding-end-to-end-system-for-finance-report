@@ -334,7 +334,7 @@ giống nhau đến mức nếu một trang vào train và một trang vào test
 
 ## Sửa đổi
 
-**Mười lăm tu chính, không cái nào được rút gọn hay viết đè.** Đó là điều kiện
+**Mười sáu tu chính, không cái nào được rút gọn hay viết đè.** Đó là điều kiện
 để việc đăng ký trước còn giá trị: một bản ghi sửa được sau khi thấy kết quả
 thì không chứng minh được gì. **Mục này vì thế cố ý nằm ngoài mọi đợt dọn dẹp
 tài liệu của repo** — nén nó lại là phá đúng thứ nó tồn tại để bảo vệ. Mục lục
@@ -363,8 +363,53 @@ chính ghi *ta cam kết đo khác đi*, changelog ghi *con số đã đổi bao
 | 27/08 | Phân bố lỗi thật ở tầng gold khác hẳn phân bố bơm ở tầng XBRL | giới hạn H2, H3 |
 | 28/08 | Tài liệu đã chạy pipeline bị loại khỏi tập gán nhãn đôi | đo đồng thuận |
 | 28/08 | **HOÃN Mốc 2, chạy Mốc 3 trước** — kèm ngoại lệ cho ca hoà | thứ tự mốc dừng |
+| 01/09 | Phạm vi tổng thể loại thêm chứng khoán, bảo hiểm, quản lý quỹ | tính khái quát của H1, H2 |
 
 Mọi sửa đổi ghi vào đây kèm ngày và lý do, không sửa đè lên trên.
+
+### 01/09/2026 — Tổng thể thu hẹp: loại cả chứng khoán, bảo hiểm, quản lý quỹ
+
+**Sửa đổi.** Tổng thể mà tập gold lấy mẫu từ đó nay loại **bốn** nhóm tổ chức
+phát hành chứ không phải một: tổ chức tín dụng và chi nhánh ngân hàng nước
+ngoài (đã có từ đầu), cộng thêm **công ty chứng khoán, doanh nghiệp bảo hiểm
+và công ty quản lý quỹ**. Câu chữ tương ứng ở `ANNOTATION-GUIDELINE.md` mục 2
+sửa cùng ngày.
+
+**Vì sao phải vào đây chứ không chỉ vào guideline.** Đây là thay đổi **tổng
+thể lấy mẫu**, nên nó đổi phạm vi khái quát của mọi kết luận H1 và H2: bài
+viết từ nay phải nói rõ kết quả áp cho doanh nghiệp phi tài chính niêm yết,
+không phải cho doanh nghiệp niêm yết nói chung. Một giới hạn về tính khái quát
+là cam kết nghiên cứu, không phải chi tiết thao tác.
+
+**Bằng chứng buộc phải thu hẹp.** `BVH_2026Q2_TT99` (Tập đoàn Bảo Việt) dùng
+biểu mẫu B02 mở rộng cho hoạt động bảo hiểm: mã chạy 01 → 21 → 42 → 52 → 70,
+**không có mã 10, 11, 20 lẫn 30**. Mã 30 là ca nặng nhất vì không có dòng nào
+tương đương về nghĩa — biểu mẫu đi thẳng từ 42 sang 50 — nên mọi cách quy đổi
+đều làm đẳng thức `ln_thuan_hdkd + ln_khac = loi_nhuan_truoc_thue` sai lệch
+trên một tài liệu không có lỗi trích xuất nào. Nghĩa là giữ tài liệu ấy lại sẽ
+**đưa dương tính giả vào chính ground truth**, tức làm hỏng đúng phép đo của
+H1. B01 và B03 của tài liệu này thì chuẩn TT99 bình thường; một biểu mẫu lệch
+là đủ.
+
+**Vì sao đây không phải là loại dữ liệu sau khi đã thấy kết quả** — điểm mà
+người phản biện sẽ đánh trước tiên. Tiêu chí loại phát biểu trên **ngành nghề
+đăng ký của tổ chức phát hành**, quan sát được trước mọi phép đo và không dính
+gì tới hiệu năng. Chín tài liệu bị loại **chưa từng được gán nhãn và chưa từng
+chạy pipeline** — không có dấu vết nào của chúng trong `data/gold/` lẫn
+`data/output/` — nên không có kết quả nào để mà nhìn thấy. Và mục 2 của
+guideline đã chốt "phi tài chính" ngay từ 23/08/2026 với đúng lý do "mẫu biểu
+và mã số khác hẳn"; tu chính này chỉ liệt kê đủ bốn nhóm mà lý do ấy phủ,
+thay vì mỗi tổ chức tín dụng.
+
+**Chín tài liệu bị loại và cách thay.** `MBB`, `STB`, `TCB`, `VCB`, `VPB`,
+`KLB`, `VIB` (ngân hàng), `SSI` (chứng khoán), `BVH` (bảo hiểm). Mỗi cái được
+thay bằng một tài liệu **cùng Thông tư, cùng kỳ báo cáo, cùng sàn, cùng hạng
+quy mô, cũng là bản quét không lớp text**, nên cơ cấu 30 TT200 / 30 TT99 và
+bốn nhóm Stress ở guideline mục 7 giữ nguyên. Bảng đối chiếu từng cặp ở
+`data/bctc/NGUON.md`.
+
+**Không đụng tới số đo nào**, nên không có mục tương ứng ở `CHANGELOG.md`: tập
+gold đã gán nhãn không mất tài liệu nào, và không lượt chạy nào phải làm lại.
 
 ### 28/08/2026 (muộn hơn) — HOÃN Mốc 2, chạy Mốc 3 trước
 

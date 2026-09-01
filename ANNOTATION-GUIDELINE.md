@@ -61,7 +61,7 @@ Xem khung ở đầu file.
 
 | Mục | Quyết định | Lý do |
 |---|---|---|
-| Loại doanh nghiệp | **Phi tài chính** | Tổ chức tín dụng và chi nhánh ngân hàng nước ngoài theo chế độ kế toán riêng của Ngân hàng Nhà nước — mẫu biểu và mã số khác hẳn |
+| Loại doanh nghiệp | **Phi tài chính.** Loại tổ chức tín dụng và chi nhánh ngân hàng nước ngoài, **công ty chứng khoán, doanh nghiệp bảo hiểm, công ty quản lý quỹ** | Cả bốn nhóm lập báo cáo theo chế độ kế toán riêng của ngành nên **mẫu biểu và mã số khác hẳn**. *Nói rõ 01/09/2026:* bản cũ chỉ kể tên tổ chức tín dụng, nên 9 tài liệu ngân hàng / chứng khoán / bảo hiểm vẫn lọt vào tập tải — xem mục Sửa đổi |
 | Loại báo cáo | Báo cáo **riêng** hoặc **hợp nhất**, nhưng phải ghi rõ | Hai loại có số khác nhau trên cùng một doanh nghiệp cùng một kỳ. Không ghi rõ là trộn hai tổng thể |
 | Biểu mẫu | B01, B02 **và B03** (mọi biến thể kỳ: không hậu tố, `a`, `b`) | **Sửa 25/08/2026:** bộ chỉ tiêu chuyển sang kịch bản E nên B03 nay CÓ gán nhãn — 6 chỉ tiêu. Xem mục Sửa đổi |
 | Cột | **Kỳ NGẮN NHẤT và MỚI NHẤT**: bảng cân đối lấy cột có ngày mới nhất; bảng kết quả kinh doanh lấy nhóm **Quý**, kỳ này — **KHÔNG lấy cột luỹ kế** | **Chốt 23/08/2026:** cột kỳ so sánh KHÔNG gán nhãn — lý do ở `PREREGISTRATION.md` mục Sửa đổi. **Nói rõ 28/08/2026:** B02 có BỐN cột và hai nhóm kết thúc cùng ngày, nên đừng chọn bằng ngày kết thúc, cũng đừng chọn bằng vị trí (trang có thể xoay 90°) |
@@ -553,6 +553,10 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 - [ ] **Đúng cột**: bảng cân đối lấy cột có ngày mới nhất; bảng kết quả kinh
       doanh lấy nhóm **Quý**, kỳ này — KHÔNG lấy cột luỹ kế. Hai nhóm cột của
       B02 kết thúc cùng ngày nên đừng chọn bằng ngày (mục 2)
+- [ ] **B02 đúng biểu mẫu doanh nghiệp thường**: có mã 10, 11, 20 và 30.
+      Thiếu bất kỳ mã nào trong bốn mã đó thì **dừng, đừng gán nhãn tiếp** —
+      đó là biểu mẫu riêng của ngành tài chính, và tài liệu nằm ngoài phạm vi
+      (mục 2). Báo lại để loại tài liệu và tải một tài liệu thay thế
 - [ ] Đã đối chiếu **mã số**, không chỉ tên chỉ tiêu
 - [ ] Đã kiểm riêng các cặp dễ nhầm ở mục 3.6
 - [ ] Không sửa số cho cân đẳng thức; lệch đáng kể thì ghi `notes`
@@ -566,6 +570,56 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 
 > Mọi thay đổi guideline ghi vào đây kèm **ngày** và **lý do**, và ghi rõ
 > **những tài liệu nào phải gán nhãn lại**. Không sửa đè lên nội dung trên.
+
+### 01/09/2026 — Phạm vi loại thêm chứng khoán, bảo hiểm, quản lý quỹ
+
+**Chỗ sửa:** mục 2, dòng "Loại doanh nghiệp"; và mục 8, thêm một mục vào danh
+mục kiểm.
+
+**KHÔNG phải gán nhãn lại tài liệu nào.** Chín tài liệu bị loại đều chưa từng
+được gán nhãn và chưa từng chạy pipeline — không có file nào của chúng trong
+`data/gold/` lẫn `data/output/`. Việc này lộ ra đúng lúc mở tài liệu đầu tiên
+thuộc nhóm đó, nên tập gold hiện có không bị đụng tới.
+
+**Chuyện gì đã xảy ra.** Người gán nhãn mở `BVH_2026Q2_TT99` (Tập đoàn Bảo
+Việt) và không tìm thấy mã 10. B02 của tài liệu này chạy mã 01 → 21 → 42 →
+52 → 70: **không có mã 10, 11, 20 lẫn 30**. Ba mã đầu còn có dòng tương đương
+về nghĩa — 15 "Doanh thu thuần từ hoạt động kinh doanh bảo hiểm", 41 "Tổng chi
+trực tiếp hoạt động kinh doanh bảo hiểm", 42 "Lợi nhuận gộp hoạt động kinh
+doanh bảo hiểm" — nhưng **mã 30 thì không có dòng nào tương đương**, biểu mẫu
+đi thẳng từ 42 sang 50.
+
+**Vì sao không gán theo dòng tương đương mà lại loại cả tài liệu.** Gán
+15 → 10, 41 → 11, 42 → 20 rồi ghi 0 cho mã 30 theo quy tắc ô trống của mục 3.4
+làm đẳng thức `ln_thuan_hdkd + ln_khac = loi_nhuan_truoc_thue` sai lệch cả
+nghìn tỷ đồng trên một tài liệu **không có lỗi trích xuất nào** — tức tự tay
+nướng một dương tính giả vào chính ground truth, đúng thứ H1 sinh ra để đo. Lý
+lẽ của mục 3.4 cũng không phủ được ca này: nó dựa vào TT99 mục 1.2.3, "chỉ tiêu
+**không có số liệu** được miễn trình bày", mà mã 30 ở đây vắng vì **biểu mẫu
+không có khái niệm ấy**, không phải vì kỳ này không phát sinh. Thêm nữa,
+`doanh_thu_thuan` sẽ mang hai nghĩa khác nhau ở hai nhóm tài liệu, nên mọi con
+số accuracy gộp theo chỉ tiêu mất nghĩa.
+
+**Vì sao đây không phải là loại tài liệu sau khi đã nhìn thấy kết quả.** Tiêu
+chí loại phát biểu trên **ngành nghề đăng ký của tổ chức phát hành**, quan sát
+được trước mọi phép đo; Luật 1 còn nguyên vì chưa tài liệu nào trong chín cái
+đó được chạy pipeline; và quyết định không hề dựa vào việc hệ chạy tốt hay xấu
+trên chúng. Bản cũ của mục 2 đã chốt phạm vi là "phi tài chính" với đúng lý do
+này ngay từ 23/08/2026 — tu chính hôm nay chỉ làm câu chữ khớp lại với lý do
+của chính nó, chứ không mở ra một tiêu chí mới.
+
+**Chín tài liệu bị loại**, tất cả là tổ chức tài chính: `MBB`, `STB`, `TCB`,
+`VCB`, `VPB`, `KLB`, `VIB` (ngân hàng), `SSI` (chứng khoán), `BVH` (bảo hiểm).
+Chúng được thay bằng chín tài liệu **cùng Thông tư, cùng kỳ báo cáo, cùng sàn,
+cùng hạng quy mô, cũng là bản quét không lớp text**, nên tỷ lệ 30 TT200 / 30
+TT99 và cơ cấu bốn nhóm Stress không đổi. Bảng đối chiếu từng cặp, kèm đặc
+điểm đã mở ra kiểm tận mắt của từng tài liệu thay thế, ở `data/bctc/NGUON.md`
+mục cuối.
+
+**Cái bẫy để lần sau không phải phát hiện lại bằng tay:** danh mục kiểm mục 8
+nay có một mục bắt người gán nhãn xác nhận B02 có đủ mã 10, 11, 20, 30 trước
+khi ghi số. Thiếu mã nào trong bốn mã đó thì dừng, vì đó là dấu hiệu biểu mẫu
+riêng của ngành chứ không phải chỉ tiêu vắng mặt.
 
 ### 31/08/2026 — Mã 51 và 52 ghi theo NGHĨA KINH TẾ — **CHỈ ÁP CHO TT200**
 

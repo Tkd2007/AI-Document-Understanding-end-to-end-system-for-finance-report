@@ -126,6 +126,7 @@ mục Sửa đổi của `PREREGISTRATION.md` hoặc `ANNOTATION-GUIDELINE.md`.
 | — | 26/08 | **Không có người gán nhãn thứ hai**; người chủ trì tự gán lại sau ≥ 2 tuần | Bài phải nói rõ đây là bản thay thế kèm giới hạn |
 | — | 26/08 | Quy mô tập gold theo mốc **10 → 60 → 100** | Đừng gộp ba mốc thành "gán nhãn cho tới khi đủ 100" |
 | — | 25/08 | Chỉ số chính của H3 trên tầng XBRL tính ở **mức LƯỢT** | Tầng gold giữ mức trường |
+| — | 01/09 | **Loại khỏi tổng thể mọi tổ chức tài chính** — ngân hàng, chứng khoán, bảo hiểm, quản lý quỹ | 9 tài liệu bị thay bằng 9 tài liệu phi tài chính cùng kỳ; tu chính ở `PREREGISTRATION.md` và `ANNOTATION-GUIDELINE.md` 01/09 — mục 19.6 |
 
 ---
 
@@ -945,6 +946,33 @@ Hiện trạng của tầng gold. **Lý do và số đo của từng thay đổi
    hai tuần sau khi có tài liệu mới. Hai tuần ấy là thời gian **chờ** nằm trên
    đường găng.
 5. **Đo trần người**, 10 tài liệu, sau khi có số phút ở bước 1.
+
+### 19.6 Kho tài liệu thô `data/bctc/` — 70 PDF, và chỗ nó CHƯA khớp danh mục
+
+Thư mục có **70 PDF: 35 TT200 và 35 TT99**, tất cả là bản quét không lớp text.
+Nguồn của từng file ở `data/bctc/NGUON.md` — file này **nằm ngoài git** (dính
+`data/bctc/*` trong `.gitignore`) nên nó chỉ có trên máy người chủ trì; bảng
+sắp theo mã cổ phiếu từ 01/09/2026.
+
+**Chín tài liệu bị loại 01/09/2026 vì tổ chức phát hành là tổ chức tài chính**
+— `MBB`, `STB`, `TCB`, `VCB`, `VPB`, `KLB`, `VIB`, `SSI`, `BVH`. Lý do đầy đủ
+ở mục Sửa đổi 01/09 của `PREREGISTRATION.md`; tóm tắt: biểu mẫu B02 của họ
+theo chế độ kế toán riêng của ngành, `BVH` không có mã 10, 11, 20 lẫn 30, và
+mã 30 thì không có cả dòng tương đương. Chín tài liệu thay thế giữ nguyên
+Thông tư, kỳ báo cáo, sàn, hạng quy mô và tính chất bản quét: `BCM_2021Q1`,
+`GMD_2023Q3`, `DPM_2022Q3`, `PVT_2022Q2`, `PVD_2023Q4`, `VCG_2022Q4` (TT200);
+`SAB_2026Q2`, `TDH_2026Q2`, `HDG_2026Q2` (TT99). Cả chín đã mở ra kiểm tận
+mắt B01/B02/B03.
+
+**Chỗ chưa khớp, và nó chặn việc gì.** `data/nguon_gold.json` vẫn chỉ có
+**10 mục** — 10 tài liệu có sẵn từ trước 31/08/2026. Sáu mươi tài liệu tải
+ngày 31/08 và chín tài liệu thay ngày 01/09 **chưa có mục nào trong danh mục**,
+nên `python src/tai_bctc.py` không dựng lại được kho này trên máy khác, và
+`vai_tro`/`do_phan_giai_dpi`/`gan_nhan_doi` của chúng chưa được khai. Đây
+chính là việc "chọn mã cho mốc 60" ở mục 19.3 bước 2 và mục 16 việc 5 — nay nó
+không còn là việc *tìm* tài liệu nữa (đã có sẵn 70 file trên đĩa) mà là việc
+**khai chúng vào danh mục**, gồm cả chạy `python src/do_do_phan_giai.py` để
+điền dpi.
 
 > **19.4 (nguồn tài liệu và 10 tài liệu đầu) và 19.5 (độ phân giải bản
 > quét — cách đo và cạm bẫy) đã chuyển sang

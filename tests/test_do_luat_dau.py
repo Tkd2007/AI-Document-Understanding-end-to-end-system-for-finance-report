@@ -10,7 +10,7 @@ nhất trong báo cáo mà bài viết sẽ dựa vào.
 import pytest
 
 from eval.do_luat_dau import _chay_mot_dieu_kien, _loi_dau_that, _truong_sai
-from fields_config import Standard
+from fields_config import QuyUocDau, Standard
 
 
 def test_loi_dau_that_nhan_dung_ca_lat_dau():
@@ -43,7 +43,13 @@ def test_loi_dau_that_bo_qua_o_khong_doc_duoc():
 
 
 def _bon_dong_thue(standard=Standard.TT200):
-    """Bộ giá trị chỉ gồm bốn dòng của đẳng thức mã 60, đã cân."""
+    """
+    Bộ giá trị chỉ gồm bốn dòng của đẳng thức mã 60, đã cân ở quy ước TỔNG.
+
+    `1000 − 300 + 50 = 750`, tức mã 51 và 52 mang dấu — dạng mà tài liệu in
+    khoản trừ trong ngoặc đơn dùng. Chấm nó bằng `QuyUocDau.TRU` sẽ lệch đúng
+    gấp đôi tổng hai dòng thuế, nên các test dưới đây phải truyền `TONG`.
+    """
     gold = {
         "loi_nhuan_truoc_thue": 1_000.0,
         "thue_tndn_hien_hanh": -300.0,
@@ -57,7 +63,7 @@ def test_ra_tay_dung_ten_thi_tinh_la_dinh_vi_dung():
     gold, standard = _bon_dong_thue()
     du_doan = {**gold, "thue_tndn_hoan_lai": -50.0}
 
-    r = _chay_mot_dieu_kien(du_doan, gold, standard)
+    r = _chay_mot_dieu_kien(du_doan, gold, standard, QuyUocDau.TONG)
 
     assert r["trang_thai"] == "dinh_vi_duoc"
     assert r["phan_xu"] == "dinh_vi_dung"
@@ -66,7 +72,7 @@ def test_ra_tay_dung_ten_thi_tinh_la_dinh_vi_dung():
 def test_im_lang_khi_khong_co_loi_dau_thi_tinh_la_dung():
     gold, standard = _bon_dong_thue()
 
-    r = _chay_mot_dieu_kien(dict(gold), gold, standard)
+    r = _chay_mot_dieu_kien(dict(gold), gold, standard, QuyUocDau.TONG)
 
     assert r["phan_xu"] == "im_lang_dung"
 
@@ -83,7 +89,7 @@ def test_co_loi_dau_ma_luat_im_lang_thi_tinh_la_BO_SOT():
     gold = {**gold, "tien_dau_ky": 500.0}
     du_doan = {**gold, "tien_dau_ky": -500.0}
 
-    r = _chay_mot_dieu_kien(du_doan, gold, standard)
+    r = _chay_mot_dieu_kien(du_doan, gold, standard, QuyUocDau.TONG)
 
     assert r["so_loi_dau_that"] == 1
     assert r["phan_xu"] == "bo_sot"
@@ -95,7 +101,9 @@ def test_khong_dung_dang_thuc_nao_thi_noi_ra_chu_khong_tinh_la_im_lang_dung():
     thay vì `im_lang_dung`, nếu không thì mọi tài liệu đọc được quá ít chỉ tiêu
     sẽ lặng lẽ cộng điểm cho luật.
     """
-    r = _chay_mot_dieu_kien({"hang_ton_kho": 1.0}, {"hang_ton_kho": 2.0}, Standard.TT200)
+    r = _chay_mot_dieu_kien(
+        {"hang_ton_kho": 1.0}, {"hang_ton_kho": 2.0}, Standard.TT200, QuyUocDau.TONG
+    )
 
     assert r["phan_xu"] == "khong_do_duoc"
 
@@ -104,6 +112,6 @@ def test_khong_dung_dang_thuc_nao_thi_noi_ra_chu_khong_tinh_la_im_lang_dung():
 def test_chay_duoc_tren_ca_hai_chuan(standard):
     gold, _ = _bon_dong_thue()
 
-    r = _chay_mot_dieu_kien(dict(gold), gold, standard)
+    r = _chay_mot_dieu_kien(dict(gold), gold, standard, QuyUocDau.TONG)
 
     assert r["so_dang_thuc"] >= 1

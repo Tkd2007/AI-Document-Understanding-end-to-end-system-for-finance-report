@@ -41,6 +41,17 @@ class GroundTruthDoc:
     ticker: str
     period: str
     standard: str
+    # Quy ước dấu MÀ BÁO CÁO NÀY DÙNG để in các dòng khấu trừ của B02:
+    # "tong" (khoản trừ in trong ngoặc, 60 = 50+51+52), "tru" (in độ lớn,
+    # 60 = 50-51-52), hay "khong_xac_dinh" khi không đọc được.
+    #
+    # BẮT BUỘC, và không có mặc định, vì cùng lý do với `unit_declared`: đây
+    # là một tham số TRÌNH BÀY đọc được từ trang giấy mà thiếu nó thì con số
+    # đã lưu không diễn giải được. `51 = 68.069.473.287` một mình không nói
+    # được đó là chi phí thuế hay thu nhập thuế; phải có quy ước mới biết.
+    # Đo được ngày 01/09/2026: cả hai cách in cùng tồn tại trong chuẩn TT200,
+    # nên suy nó ra từ `standard` là suy sai.
+    quy_uoc_dau: str
     unit_declared: str
     unit_multiplier: int
     values: dict
@@ -102,7 +113,8 @@ class GroundTruthDoc:
     def __post_init__(self):
         thieu = [
             ten
-            for ten in ("doc_id", "source_url", "downloaded_at", "annotator", "annotated_at")
+            for ten in ("doc_id", "source_url", "downloaded_at", "annotator",
+                        "annotated_at", "quy_uoc_dau")
             if not getattr(self, ten)
         ]
         if thieu:
@@ -122,7 +134,20 @@ class GroundTruthDoc:
 
     @classmethod
     def load(cls, duong_dan: str | Path) -> "GroundTruthDoc":
-        return cls(**json.loads(Path(duong_dan).read_text(encoding="utf-8")))
+        noi_dung = json.loads(Path(duong_dan).read_text(encoding="utf-8"))
+        # File gold ghi trước 01/09/2026 không có khoá `quy_uoc_dau`, và
+        # KHÔNG được đoán hộ chúng: quy ước là thứ chỉ đọc được trên tờ giấy,
+        # còn giá trị đã lưu thì đã qua nhiều lượt lật dấu cơ học nên suy
+        # ngược từ nó ra cách báo cáo trình bày là suy từ chính quy tắc đang
+        # bị thay. Báo lỗi nói rõ phải làm gì thay vì để TypeError khó hiểu.
+        if "quy_uoc_dau" not in noi_dung:
+            raise ValueError(
+                f"{Path(duong_dan).name} thiếu khoá `quy_uoc_dau` — file này "
+                f"được gán nhãn trước 01/09/2026, khi quy ước dấu còn bị suy "
+                f"từ chuẩn Thông tư. Phải đọc lại mã 11 và mã 51 trên chính "
+                f"PDF rồi gán nhãn lại, không suy từ giá trị đang lưu."
+            )
+        return cls(**noi_dung)
 
 
 @dataclass

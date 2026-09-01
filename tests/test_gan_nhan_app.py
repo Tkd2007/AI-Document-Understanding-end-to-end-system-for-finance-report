@@ -44,6 +44,7 @@ def _than(**doi):
         "ticker": "TEST",
         "period": "2026Q1",
         "standard": "TT99",
+        "quy_uoc_dau": "tru",
         "unit_declared": "Đơn vị tính: VND",
         "values": dict.fromkeys(fields_for(Standard.TT99), "0"),
         "source_url": "https://example.vn/bctc.pdf",
@@ -156,7 +157,12 @@ def test_kiem_khong_tra_ve_gia_tri_de_nghi_qua_HTTP(client):
 
     d = client.post(
         "/api/kiem",
-        json={"standard": "TT99", "values": gia_tri, "unit_declared": "Đơn vị tính: VND"},
+        json={
+            "standard": "TT99",
+            "quy_uoc_dau": "tru",
+            "values": gia_tri,
+            "unit_declared": "Đơn vị tính: VND",
+        },
     ).json()
 
     assert set(d) == {"he_so_don_vi", "o_khong_ro", "dang_thuc", "dau_khau_tru"}

@@ -35,6 +35,7 @@ from eval.schema import GOLD_DIR, GroundTruthDoc
 from fields_config import (
     FIELD_MAP,
     FIELD_RULES,
+    QuyUocDau,
     Standard,
     fields_for,
     line_codes_for,
@@ -143,6 +144,7 @@ _dong_ho: dict[str, DongHo] = {}
 
 class YeuCauKiem(BaseModel):
     standard: str
+    quy_uoc_dau: str
     values: dict[str, str | None]
     unit_declared: str = ""
 
@@ -152,6 +154,7 @@ class YeuCauLuu(BaseModel):
     ticker: str
     period: str
     standard: str
+    quy_uoc_dau: str
     unit_declared: str
     values: dict[str, str | None]
     source_url: str
@@ -380,6 +383,7 @@ def doc_lai_ban_ghi(doc_id: str) -> dict:
         "ticker": ban_ghi.ticker,
         "period": ban_ghi.period,
         "standard": ban_ghi.standard,
+        "quy_uoc_dau": ban_ghi.quy_uoc_dau,
         "unit_declared": ban_ghi.unit_declared,
         "source_url": ban_ghi.source_url,
         "downloaded_at": ban_ghi.downloaded_at,
@@ -437,6 +441,29 @@ def dieu_khien_dong_ho(doc_id: str, hanh_dong: str) -> dict:
     return _tra_ve_dong_ho(doc_id, dh)
 
 
+def _quy_uoc(gia_tri: str) -> QuyUocDau:
+    """
+    Đọc quy ước dấu người gán nhãn đã chọn. 400 nếu không hợp lệ.
+
+    KHÔNG có mặc định. Quy ước là thứ người gán nhãn phải ĐỌC trên tờ giấy —
+    công thức in trong nhãn dòng mã 60, hoặc dấu ngoặc của mã 11 — nên một
+    giá trị mặc định ở đây là mời họ bỏ qua đúng bước quan sát mà cả thiết kế
+    dựa vào. Không đọc được thì chọn `khong_xac_dinh`, và đó là một lựa chọn
+    tường minh chứ không phải bỏ trống.
+    """
+    try:
+        return QuyUocDau(gia_tri)
+    except ValueError:
+        raise HTTPException(
+            400,
+            {
+                "loi": "quy_uoc_dau_khong_hop_le",
+                "nhan_duoc": gia_tri,
+                "hop_le": [q.value for q in QuyUocDau],
+            },
+        ) from None
+
+
 @app.post("/api/kiem")
 def kiem(yeu_cau: YeuCauKiem) -> dict:
     """
@@ -450,6 +477,7 @@ def kiem(yeu_cau: YeuCauKiem) -> dict:
     vô dụng cho việc đo tỷ lệ lỗi thật.
     """
     ch = _chuan(yeu_cau.standard)
+    qu = _quy_uoc(yeu_cau.quy_uoc_dau)
     he_so, _ = parse_unit(yeu_cau.unit_declared)
     gia_tri, khong_ro = _doc_bo_gia_tri(yeu_cau.values, ch, he_so or 1)
 
@@ -463,11 +491,11 @@ def kiem(yeu_cau: YeuCauKiem) -> dict:
                 "lech": r.lech,
                 "thieu": list(r.thieu),
             }
-            for r in kiem_dang_thuc(gia_tri, ch)
+            for r in kiem_dang_thuc(gia_tri, ch, qu)
         ],
         "dau_khau_tru": [
             {"truong": r.truong, "trang_thai": r.trang_thai, "ly_do": r.ly_do}
-            for r in kiem_dau_khau_tru(gia_tri, ch)
+            for r in kiem_dau_khau_tru(gia_tri, ch, qu)
         ],
     }
 
@@ -521,6 +549,7 @@ def luu(yeu_cau: YeuCauLuu) -> dict:
         )
 
     ch = _chuan(yeu_cau.standard)
+    qu = _quy_uoc(yeu_cau.quy_uoc_dau)
     he_so = _he_so_don_vi_hop_le(yeu_cau.unit_declared, yeu_cau.notes)
 
     gia_tri, khong_ro = _doc_bo_gia_tri(yeu_cau.values, ch, he_so)
@@ -538,6 +567,7 @@ def luu(yeu_cau: YeuCauLuu) -> dict:
         ticker=yeu_cau.ticker,
         period=yeu_cau.period,
         standard=ch.value,
+        quy_uoc_dau=qu.value,
         unit_declared=yeu_cau.unit_declared,
         unit_multiplier=he_so,
         values=gia_tri,

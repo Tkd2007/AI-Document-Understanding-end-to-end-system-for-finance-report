@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 from constraints import build_matrix
-from fields_config import Standard, fields_for, identities_for
+from fields_config import QuyUocDau, Standard, fields_for, identities_for
 from repair.candidates import generate
 from repair.diagnose import RESIDUAL_TOL as TOL_DIAGNOSE
 from repair.diagnose import diagnose
@@ -252,7 +252,7 @@ def test_chay_duoc_tren_ma_tran_that(standard):
     Luật phải chạy được trên ma trận 26/27 chỉ tiêu chứ không chỉ trên hệ đồ
     chơi ba cột — số cột và số đẳng thức thật khác hẳn về quy mô.
     """
-    A, field_order = build_matrix(fields_for(standard), identities_for(standard))
+    A, field_order = build_matrix(fields_for(standard), identities_for(standard, QuyUocDau.TRU))
     values = dict.fromkeys(field_order, 0.0)
 
     kq = luat_dau_residual(values, A, field_order)
@@ -277,7 +277,7 @@ def test_dinh_vi_duoc_ma_52_tren_dang_thuc_that():
     ]
     # build_matrix() bỏ mọi đẳng thức có field nằm ngoài danh sách, nên đây
     # đúng bằng đẳng thức mã 60 như dự án ĐANG KHAI, không phải bản chép tay.
-    A, field_order = build_matrix(bon_dong, identities_for(standard))
+    A, field_order = build_matrix(bon_dong, identities_for(standard, QuyUocDau.TONG))
     assert A.shape[0] == 1
 
     # Mã 60 = 1000 + (−300) + 50 = 750. Mã 52 DƯƠNG là thu nhập thuế hoãn

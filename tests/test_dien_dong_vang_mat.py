@@ -18,7 +18,7 @@ os.environ.setdefault("OPENROUTER_MODEL", "model-gia-cho-test")
 
 import router  # noqa: E402
 from extract_baseline import DauVetDong  # noqa: E402
-from fields_config import Standard  # noqa: E402
+from fields_config import QuyUocDau, Standard  # noqa: E402
 from validation import validate_result  # noqa: E402
 
 VANG_MAT = DauVetDong(None, "khong_thay_dong")
@@ -102,7 +102,7 @@ BAO_CAO_VNM_SAI_HANG_TON_KHO = {
 
 
 def _co_canh_bao_phan_ra(gia_tri: dict) -> bool:
-    warnings = validate_result(gia_tri, Standard.TT99)["warnings"]
+    warnings = validate_result(gia_tri, Standard.TT99, QuyUocDau.TRU)["warnings"]
     return any("thành phần tài sản ngắn hạn" in w for w in warnings)
 
 

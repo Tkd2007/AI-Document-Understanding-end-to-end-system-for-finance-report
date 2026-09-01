@@ -23,7 +23,7 @@ from constraints import (
     single_field_localizable,
     zero_columns,
 )
-from fields_config import Standard, fields_for, identities_for
+from fields_config import QuyUocDau, Standard, fields_for, identities_for
 
 # --- Ví dụ tính tay: a + b = c ---------------------------------------------
 #
@@ -131,7 +131,7 @@ VNM_Q1_2026 = {
 
 
 def _ma_tran_that(standard: Standard):
-    return build_matrix(fields_for(standard), identities_for(standard))
+    return build_matrix(fields_for(standard), identities_for(standard, QuyUocDau.TRU))
 
 
 @pytest.mark.parametrize("standard", list(Standard))
@@ -198,7 +198,7 @@ def _ma_tran_phu_boi_bo_so_that(standard: Standard):
     co_so = [ten for ten in fields_for(standard) if ten in VNM_Q1_2026]
     dang_thuc = [
         dt
-        for dt in identities_for(standard)
+        for dt in identities_for(standard, QuyUocDau.TRU)
         if all(ten in VNM_Q1_2026 for ten in [*dt[0], dt[1]])
     ]
     A, field_order = build_matrix(co_so, dang_thuc)
@@ -333,7 +333,9 @@ def test_van_khong_ton_tai_bo_field_nao_dinh_vi_duoc_hoan_toan():
     lam và trả `chac_chan=False`. Cờ đó phải được đọc đúng — "không tìm
     thấy" chứ không phải "đã chứng minh không tồn tại".
     """
-    bo, chac_chan = minimal_localizing_set(fields_for(Standard.TT99), identities_for(Standard.TT99))
+    bo, chac_chan = minimal_localizing_set(
+        fields_for(Standard.TT99), identities_for(Standard.TT99, QuyUocDau.TRU)
+    )
 
     assert bo is None
     assert not chac_chan, "27 field thì không vét cạn nổi, phải báo là kết quả tham lam"
@@ -417,7 +419,10 @@ def test_bao_cao_neu_ro_cac_con_so_quan_trong(tmp_path):
     A, field_order = _ma_tran_that(Standard.TT99)
     duong_dan = tmp_path / "identifiability.md"
 
-    noi_dung = report(A, field_order, identities_for(Standard.TT99), out_path=duong_dan)
+    noi_dung = report(
+        A, field_order, identities_for(Standard.TT99, QuyUocDau.TRU),
+        out_path=duong_dan,
+    )
 
     assert duong_dan.read_text(encoding="utf-8") == noi_dung
     assert "`rank(A)`: **9**" in noi_dung
@@ -439,6 +444,6 @@ def test_bao_cao_noi_ro_KHONG_CO_field_cot_toan_0_thay_vi_im_lang(tmp_path):
     """
     A, field_order = _ma_tran_that(Standard.TT99)
 
-    noi_dung = report(A, field_order, identities_for(Standard.TT99))
+    noi_dung = report(A, field_order, identities_for(Standard.TT99, QuyUocDau.TRU))
 
     assert "**cột toàn 0** (lỗi không PHÁT HIỆN được): **0 / 27** — không có" in noi_dung

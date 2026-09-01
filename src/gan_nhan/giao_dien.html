@@ -108,6 +108,14 @@
       <label>Chuẩn
         <select id="chuan"><option value="TT99">TT99</option><option value="TT200">TT200</option></select>
       </label>
+      <label>Quy ước dấu B02 — <b>đọc trên tờ giấy</b>
+        <select id="quy_uoc_dau">
+          <option value="">— chọn sau khi nhìn mã 11 và mã 60 —</option>
+          <option value="tru">trừ: mã 11 in ĐỘ LỚN, 60 = 50 − 51 − 52</option>
+          <option value="tong">tổng: mã 11 in TRONG NGOẶC, 60 = 50 + 51 + 52</option>
+          <option value="khong_xac_dinh">không xác định được</option>
+        </select>
+      </label>
       <label>Mã CK<input id="ticker" placeholder="VNM"></label>
       <label>Kỳ<input id="period" placeholder="2026Q1"></label>
       <label>Người gán nhãn<input id="annotator" placeholder="tên"></label>
@@ -299,7 +307,8 @@ function veDauKhauTru(ds) {
 
 $('btkiem').onclick = async () => {
   const r = await fetch('/api/kiem', {method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({standard:$('chuan').value, values:layGiaTri(),
+    body: JSON.stringify({standard:$('chuan').value,
+                          quy_uoc_dau:$('quy_uoc_dau').value, values:layGiaTri(),
                           unit_declared:$('unit_declared').value})});
   veKetQua(await r.json());
   soLanKiem++; daKiemLan1 = true;
@@ -310,7 +319,8 @@ $('btluu').onclick = async () => {
   $('danhmuc').querySelectorAll('input[type=checkbox]').forEach(c => kiem[c.dataset.ma] = c.checked);
   const than = {
     doc_id:$('doc_id').value, ticker:$('ticker').value, period:$('period').value,
-    standard:$('chuan').value, unit_declared:$('unit_declared').value,
+    standard:$('chuan').value, quy_uoc_dau:$('quy_uoc_dau').value,
+    unit_declared:$('unit_declared').value,
     values:layGiaTri(), source_url:$('source_url').value,
     downloaded_at:$('downloaded_at').value, annotator:$('annotator').value,
     notes:$('notes').value, danh_muc_kiem:kiem,
@@ -397,6 +407,7 @@ $('btmolai').onclick = async () => {
   // Chuẩn phải đặt và nạp lại bảng TRƯỚC khi điền, vì bộ chỉ tiêu của hai
   // chuẩn khác nhau — điền trước rồi đổi chuẩn sẽ xoá sạch những gì vừa điền.
   $('chuan').value = d.standard;
+  $('quy_uoc_dau').value = d.quy_uoc_dau ?? '';
   await napChiTieu();
 
   ['ticker','period','unit_declared','source_url','downloaded_at','annotator','notes']

@@ -192,6 +192,7 @@ def _gold_hop_le(**ghi_de) -> dict:
         "ticker": "VNM",
         "period": "2026Q1",
         "standard": "TT99",
+        "quy_uoc_dau": "tru",
         "unit_declared": "đồng",
         "unit_multiplier": 1,
         "values": dict(GOLD),

@@ -14,7 +14,7 @@ nhiều công ty đều đứng trên cát.
 
 import pytest
 
-from fields_config import TOTAL_ASSETS_BOUNDS, Standard, parse_unit
+from fields_config import TOTAL_ASSETS_BOUNDS, QuyUocDau, Standard, parse_unit
 from validation import validate_result
 
 
@@ -97,7 +97,7 @@ def test_quy_doi_ra_dong_dung_tung_dong():
     con số VND, không sai một đồng. Đây là điều kiện để accuracy đo trên
     nhiều công ty khác đơn vị có nghĩa gì.
     """
-    ket_qua = validate_result(BAO_CAO_TRIEU_DONG, Standard.TT99)
+    ket_qua = validate_result(BAO_CAO_TRIEU_DONG, Standard.TT99, QuyUocDau.TRU)
 
     for key, gia_tri_trieu in BAO_CAO_TRIEU_DONG.items():
         if key == "don_vi_tinh":
@@ -107,7 +107,7 @@ def test_quy_doi_ra_dong_dung_tung_dong():
 
 def test_bao_cao_ghi_trieu_dong_khong_sinh_warning():
     """Quy đổi đúng thì mọi check phía sau phải sạch."""
-    assert validate_result(BAO_CAO_TRIEU_DONG, Standard.TT99)["warnings"] == []
+    assert validate_result(BAO_CAO_TRIEU_DONG, Standard.TT99, QuyUocDau.TRU)["warnings"] == []
 
 
 def test_meta_ghi_lai_don_vi_da_doc_duoc():
@@ -115,7 +115,7 @@ def test_meta_ghi_lai_don_vi_da_doc_duoc():
     Đơn vị phải đi ra ngoài ở tầng meta, không lẫn vào data. Đây là dữ liệu
     về CÁCH ĐỌC cả bảng, và bước đọc lại ở giai đoạn C cần nó.
     """
-    meta = validate_result(BAO_CAO_TRIEU_DONG, Standard.TT99)["meta"]
+    meta = validate_result(BAO_CAO_TRIEU_DONG, Standard.TT99, QuyUocDau.TRU)["meta"]
 
     assert meta["don_vi_tinh_raw"] == "triệu đồng"
     assert meta["don_vi_tinh_chuan"] == "triệu đồng"
@@ -128,7 +128,8 @@ def test_don_vi_tinh_khong_lan_vao_data():
     số thì chuỗi "triệu đồng" thành None kèm cảnh báo "không đọc được thành
     số" — một cảnh báo hoàn toàn sai về một dữ liệu hoàn toàn đúng.
     """
-    assert "don_vi_tinh" not in validate_result(BAO_CAO_TRIEU_DONG, Standard.TT99)["data"]
+    ket_qua = validate_result(BAO_CAO_TRIEU_DONG, Standard.TT99, QuyUocDau.TRU)
+    assert "don_vi_tinh" not in ket_qua["data"]
 
 
 def test_doc_nham_trieu_dong_thanh_dong_bi_mo_neo_bat():
@@ -147,7 +148,7 @@ def test_doc_nham_trieu_dong_thanh_dong_bi_mo_neo_bat():
     doc_nham = dict(BAO_CAO_TRIEU_DONG)
     doc_nham["don_vi_tinh"] = "đồng"
 
-    ket_qua = validate_result(doc_nham, Standard.TT99)
+    ket_qua = validate_result(doc_nham, Standard.TT99, QuyUocDau.TRU)
     canh_bao_dang_thuc = [w for w in ket_qua["warnings"] if "phải bằng" in w]
     canh_bao_don_vi = [w for w in ket_qua["warnings"] if "đơn vị tính" in w]
 
@@ -164,7 +165,7 @@ def test_khong_khai_don_vi_thi_canh_bao_va_bo_qua_bien():
     """
     thieu_don_vi = {k: v for k, v in BAO_CAO_TRIEU_DONG.items() if k != "don_vi_tinh"}
 
-    warnings = validate_result(thieu_don_vi, Standard.TT99)["warnings"]
+    warnings = validate_result(thieu_don_vi, Standard.TT99, QuyUocDau.TRU)["warnings"]
 
     assert [w for w in warnings if "Không có khai báo đơn vị tính" in w]
     assert [w for w in warnings if "ngoài biên hợp lý" in w] == []
@@ -174,7 +175,7 @@ def test_khong_quy_doi_khi_chua_biet_he_so():
     """Chưa biết hệ số thì giữ nguyên số thô, không nhân bừa với 1."""
     thieu_don_vi = {k: v for k, v in BAO_CAO_TRIEU_DONG.items() if k != "don_vi_tinh"}
 
-    ket_qua = validate_result(thieu_don_vi, Standard.TT99)
+    ket_qua = validate_result(thieu_don_vi, Standard.TT99, QuyUocDau.TRU)
 
     assert ket_qua["data"]["tong_tai_san"] == 1_000_000
     assert ket_qua["meta"]["don_vi_tinh_he_so"] is None
@@ -304,7 +305,7 @@ def test_quy_doi_tung_o_theo_he_so_cua_bang_da_sinh_ra_no():
     tron_don_vi["loi_nhuan_sau_thue"] = 80
 
     ket_qua = validate_result(
-        tron_don_vi, Standard.TT99, {"loi_nhuan_sau_thue": 1_000_000_000}
+        tron_don_vi, Standard.TT99, QuyUocDau.TRU, {"loi_nhuan_sau_thue": 1_000_000_000}
     )
 
     assert ket_qua["data"]["loi_nhuan_sau_thue"] == 80_000_000_000
@@ -319,7 +320,7 @@ def test_o_khong_co_trong_anh_xa_thi_lui_ve_he_so_muc_tai_lieu():
     liệu chứ không phải bị bỏ quên không quy đổi.
     """
     ket_qua = validate_result(
-        BAO_CAO_TRIEU_DONG, Standard.TT99, {"tong_tai_san": 1_000}
+        BAO_CAO_TRIEU_DONG, Standard.TT99, QuyUocDau.TRU, {"tong_tai_san": 1_000}
     )
 
     assert ket_qua["data"]["tong_tai_san"] == 1_000_000_000
@@ -333,6 +334,6 @@ def test_mo_neo_bien_do_lon_gac_theo_he_so_cua_chinh_tong_tai_san():
     một bảng khai đồng — con số quy đổi ra 1 triệu đồng, ngoài biên, và mỏ
     neo là thứ duy nhất bắt được vì mọi đẳng thức vẫn khớp.
     """
-    ket_qua = validate_result(BAO_CAO_TRIEU_DONG, Standard.TT99, {"tong_tai_san": 1})
+    ket_qua = validate_result(BAO_CAO_TRIEU_DONG, Standard.TT99, QuyUocDau.TRU, {"tong_tai_san": 1})
 
     assert [w for w in ket_qua["warnings"] if "ngoài biên hợp lý" in w]

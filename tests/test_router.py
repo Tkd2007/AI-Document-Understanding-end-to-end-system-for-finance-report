@@ -9,7 +9,7 @@ có gọi VLM hay không, tức là quyết định cả chi phí lẫn độ đ
 
 import router
 from extraction_types import ExtractionResult, FieldResult
-from fields_config import Standard, empty_result
+from fields_config import QuyUocDau, Standard, empty_result
 from router import is_acceptable
 
 # Số thật từ báo cáo VNM Q1/2026, trùng bộ dùng trong test_validation.py.
@@ -34,19 +34,19 @@ VNM_Q1_2026 = {
 
 
 def test_ket_qua_rong_thi_khong_dat():
-    assert is_acceptable(empty_result(Standard.TT99), Standard.TT99) is False
+    assert is_acceptable(empty_result(Standard.TT99), Standard.TT99, QuyUocDau.TRU) is False
 
 
 def test_bao_cao_that_thi_dat():
     """Đủ field bắt buộc và không warning -> không cần gọi VLM."""
-    assert is_acceptable(VNM_Q1_2026, Standard.TT99) is True
+    assert is_acceptable(VNM_Q1_2026, Standard.TT99, QuyUocDau.TRU) is True
 
 
 def test_thieu_field_bat_buoc_thi_khong_dat():
     thieu = dict(VNM_Q1_2026)
     thieu["tong_tai_san"] = None
 
-    assert is_acceptable(thieu, Standard.TT99) is False
+    assert is_acceptable(thieu, Standard.TT99, QuyUocDau.TRU) is False
 
 
 def _vlm_gia(gia_tri: dict) -> ExtractionResult:
@@ -95,9 +95,9 @@ def _dem_lan_goi_is_acceptable(monkeypatch) -> list:
     lan_goi = []
     that = router.is_acceptable
 
-    def dem(result, standard):
+    def dem(result, standard, quy_uoc):
         lan_goi.append(result)
-        return that(result, standard)
+        return that(result, standard, quy_uoc)
 
     monkeypatch.setattr(router, "is_acceptable", dem)
     return lan_goi
@@ -172,7 +172,7 @@ def test_co_gia_tri_nhung_sai_thi_van_khong_dat():
     sai["hang_ton_kho"] = 5393002084
 
     assert all(value is not None for value in sai.values())
-    assert is_acceptable(sai, Standard.TT99) is False
+    assert is_acceptable(sai, Standard.TT99, QuyUocDau.TRU) is False
 
 
 def _vlm_gia_co_early_stop(gia_tri: dict, early_stop: dict):

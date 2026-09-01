@@ -7,17 +7,19 @@ lúc nào, kể cả sau khi đổi luật, mà không phải trả lại ba ti�
 
     PYTHONPATH=src python src/eval/do_luat_dau.py
 
-ĐO HAI ĐIỀU KIỆN, và khoảng cách giữa chúng mới là thứ đáng đọc:
+ĐO MỘT ĐIỀU KIỆN từ 01/09/2026, và đó là một thay đổi có lý do:
 
-  thô               — đúng đầu ra pipeline như đã lưu, tức TRƯỚC bản vá
-                      `chuan_hoa_dau()` (`a0cd5ab`). Ở đây còn nguyên 11 lỗi
-                      đảo dấu, nên nó đo luật ở chế độ lỗi mà luật sinh ra để
-                      bắt.
-  sau chuẩn hoá dấu — sau khi `chuan_hoa_dau()` đã lật ba dòng khấu trừ. Đây
-                      là hiện trạng thật của pipeline, và con số ở đây mới là
-                      con số được phép trích dẫn cho phần đóng góp THÊM của
-                      luật. Nó nhỏ hơn hẳn, đúng như phải vậy — hai cơ chế
-                      chồng lên nhau ở cùng một chế độ lỗi.
+  thô — đúng đầu ra pipeline như đã lưu. Trước 01/09/2026 còn một điều kiện
+        thứ hai, "sau `chuan_hoa_dau()`", đo phần luật đóng góp THÊM sau khi
+        tầng trích xuất đã tự lật ba dòng khấu trừ. Điều kiện ấy bị bỏ vì
+        `chuan_hoa_dau()` đã bị xoá: quy ước dấu nay được ĐỌC từ tài liệu và
+        truyền vào, nên tầng trích xuất không còn lật dấu của ai cả. Hệ quả
+        khi đọc bảng: con số của lượt chạy sau ngày đó KHÔNG so thẳng được
+        với con số của lượt chạy trước — chúng đo hai cấu hình khác nhau.
+
+QUY ƯỚC DẤU LẤY TỪ NHÃN GOLD, khoá `quy_uoc_dau`. Đây là phép đo chấm
+pipeline, nên tham số của phép chấm phải đến từ sự thật đã gán nhãn chứ
+không từ chính thứ đang bị chấm.
 
 CÁCH CHẤM, và vì sao nó khắt khe hơn "luật có ra tay không". Một lần ra tay
 chỉ được tính là ĐÚNG khi chỉ tiêu luật gọi tên thật sự lộn dấu so với nhãn
@@ -40,7 +42,7 @@ if sys.path and sys.path[0] == _THU_MUC_SCRIPT:
     sys.path.pop(0)
 
 from constraints import build_matrix  # noqa: E402
-from fields_config import Standard, chuan_hoa_dau, identities_for  # noqa: E402
+from fields_config import QuyUocDau, Standard, identities_for  # noqa: E402
 from repair.candidates import generate as sinh_ung_vien  # noqa: E402
 from repair.diagnose import diagnose  # noqa: E402
 from repair.luat_dau import luat_dau_residual  # noqa: E402
@@ -75,13 +77,15 @@ def _truong_sai(du_doan: dict, gold: dict) -> set[str]:
     }
 
 
-def _chay_mot_dieu_kien(du_doan: dict, gold: dict, standard: Standard) -> dict:
+def _chay_mot_dieu_kien(
+    du_doan: dict, gold: dict, standard: Standard, quy_uoc: QuyUocDau
+) -> dict:
     """Chạy luật trên một bộ giá trị và chấm nó với nhãn tay."""
     # Chỉ dựng ma trận trên các chỉ tiêu ĐỌC ĐƯỢC. build_matrix() tự bỏ đẳng
     # thức nào có thành phần nằm ngoài danh sách — coi chỉ tiêu thiếu như 0 sẽ
     # dựng ra ràng buộc sai và báo cáo lạc quan hơn sự thật.
     co_gia_tri = [k for k, v in du_doan.items() if v is not None]
-    A, field_order = build_matrix(co_gia_tri, identities_for(standard))
+    A, field_order = build_matrix(co_gia_tri, identities_for(standard, quy_uoc))
 
     if A.shape[0] == 0:
         return {"trang_thai": "khong_co_dang_thuc", "phan_xu": "khong_do_duoc"}
@@ -131,7 +135,9 @@ def _cham(du_doan: dict, gold: dict) -> tuple[int, int, int, int]:
     return dung, len(gold), cam_sai, co_gia_tri
 
 
-def _ap_tang_repair(du_doan: dict, standard: Standard) -> tuple[dict, list[str]]:
+def _ap_tang_repair(
+    du_doan: dict, standard: Standard, quy_uoc: QuyUocDau
+) -> tuple[dict, list[str]]:
     """
     Chạy trọn tầng repair trên một bộ giá trị, trả (giá trị sau, chỉ tiêu đã đổi).
 
@@ -140,7 +146,7 @@ def _ap_tang_repair(du_doan: dict, standard: Standard) -> tuple[dict, list[str]]
     mà không chạy ở pipeline sẽ cho ra một con số không ai tái lập được.
     """
     co_gia_tri = [k for k, v in du_doan.items() if v is not None]
-    A, field_order = build_matrix(co_gia_tri, identities_for(standard))
+    A, field_order = build_matrix(co_gia_tri, identities_for(standard, quy_uoc))
     if A.shape[0] == 0:
         return dict(du_doan), []
 
@@ -163,25 +169,26 @@ def chay() -> dict:
 
     for muc in ket_qua["tung_tai_lieu"]:
         doc_id = muc["doc_id"]
-        gold = json.loads(
+        ho_so_gold = json.loads(
             (THU_MUC_GOLD / f"{doc_id}.json").read_text(encoding="utf-8")
-        )["values"]
+        )
+        gold = ho_so_gold["values"]
         du_doan = muc["gia_tri_du_doan"]
         standard = Standard(muc["chuan_that"])
+        # Quy ước dấu lấy từ NHÃN GOLD, không từ đầu ra pipeline: đây là phép
+        # đo chấm pipeline, nên tham số của phép chấm phải đến từ sự thật đã
+        # gán nhãn chứ không từ thứ đang bị chấm.
+        quy_uoc = QuyUocDau(ho_so_gold["quy_uoc_dau"])
 
-        # chuan_hoa_dau() trả (giá trị, danh sách khoá đã lật) — chỉ cần cái đầu.
-        da_chuan_hoa, _ = chuan_hoa_dau(dict(du_doan), standard)
-        sau_repair, da_doi = _ap_tang_repair(da_chuan_hoa, standard)
+        sau_repair, da_doi = _ap_tang_repair(dict(du_doan), standard, quy_uoc)
 
         dong.append(
             {
                 "doc_id": doc_id,
-                "tho": _chay_mot_dieu_kien(du_doan, gold, standard),
-                "sau_chuan_hoa": _chay_mot_dieu_kien(da_chuan_hoa, gold, standard),
+                "tho": _chay_mot_dieu_kien(du_doan, gold, standard, quy_uoc),
                 "repair_da_doi": da_doi,
                 "cham": {
                     "tho": _cham(du_doan, gold),
-                    "sau_chuan_hoa": _cham(da_chuan_hoa, gold),
                     "sau_repair": _cham(sau_repair, gold),
                 },
             }
@@ -197,8 +204,7 @@ def bao_cao(kq: dict) -> str:
     d.append("")
 
     for nhan, khoa in (
-        ("Điều kiện A — đầu ra thô, TRƯỚC bản vá `chuan_hoa_dau()`", "tho"),
-        ("Điều kiện B — SAU `chuan_hoa_dau()`, tức hiện trạng pipeline", "sau_chuan_hoa"),
+        ("Điều kiện A — đầu ra pipeline, không qua bước chuẩn hoá dấu nào", "tho"),
     ):
         d += [f"## {nhan}", ""]
         d.append(
@@ -227,8 +233,7 @@ def bao_cao(kq: dict) -> str:
     d.append("|---|---:|---:|")
     for nhan, khoa in (
         ("Thô — như pipeline đã ghi ra", "tho"),
-        ("Sau `chuan_hoa_dau()` (`a0cd5ab`)", "sau_chuan_hoa"),
-        ("Sau `chuan_hoa_dau()` + **tầng repair**", "sau_repair"),
+        ("Sau **tầng repair**", "sau_repair"),
     ):
         dung = sum(m["cham"][khoa][0] for m in kq["tung_tai_lieu"])
         tong = sum(m["cham"][khoa][1] for m in kq["tung_tai_lieu"])
@@ -253,12 +258,12 @@ def bao_cao(kq: dict) -> str:
         d.append(f"- `{doc_id}` — {', '.join(cac)}")
     d += [
         "",
-        "Đọc con số này cho đúng: phần đóng góp THÊM của tầng repair mỏng, vì "
-        "`chuan_hoa_dau()` đã lấy hết phần dễ ở cùng chế độ lỗi. Giá trị của "
-        "luật không nằm ở số ô nó sửa mà ở chỗ nó **chứng minh được** — và ở "
-        "chỗ nó phân xử Câu 13 bằng số liệu thay vì bằng tranh luận câu chữ: "
-        "cả hai lần ra tay đều rơi đúng vào `thue_tndn_hoan_lai`, chỉ tiêu mà "
-        "guideline cũ bắt ghi dương.",
+        "Đọc con số này cho đúng: giá trị của luật không nằm ở số ô nó sửa mà "
+        "ở chỗ nó **chứng minh được**. Từ 01/09/2026 tầng trích xuất KHÔNG "
+        "còn bước lật dấu nào — `chuan_hoa_dau()` đã bị xoá và quy ước dấu "
+        "nay được ĐỌC từ tài liệu — nên con số ở đây không còn bị một cơ chế "
+        "khác lấy mất phần dễ ở cùng chế độ lỗi. Mốc so trước ngày đó KHÔNG "
+        "so thẳng được với mốc sau.",
         "",
     ]
 

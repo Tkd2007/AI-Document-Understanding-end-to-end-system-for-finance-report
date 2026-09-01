@@ -43,10 +43,12 @@ from extraction_types import ExtractionResult, FieldResult
 from fields_config import (
     DEFAULT_STANDARD,
     UNIT_KEY,
+    QuyUocDau,
     Standard,
     empty_result,
     fields_for,
     identities_for,
+    xac_dinh_quy_uoc,
 )
 from ky_hieu_mau import lan_ky_hieu
 from metrics import RunMetrics, merge_into_totals, thong_tin_tai_lap, timer
@@ -565,7 +567,8 @@ def run_ocr_first(
         co_field_moi = _lap_cho_trong(result, _ocr_mot_trang(page, bo_nho_text, metrics))
         dung_som["trang_cuoi"] = page["page"]
 
-        if is_acceptable(gia_tri_tran(result), standard):
+        quy_uoc, _ = quy_uoc_cua_luot(gia_tri_tran(result), bo_nho_text)
+        if is_acceptable(gia_tri_tran(result), standard, quy_uoc):
             print(f"--- OCR đã đủ và hợp lệ, dừng ở trang {page['page']} ---")
             dung_som.update(da_dung_som=True, ly_do="du_va_hop_le")
             break
@@ -642,7 +645,8 @@ def run_unconstrained(
 
 
 def run_vlm(
-    pages_iter, cached_pages: list, result: dict, standard: Standard, metrics=None, ghi_lai=None
+    pages_iter, cached_pages: list, result: dict, standard: Standard,
+    quy_uoc: QuyUocDau, metrics=None, ghi_lai=None,
 ) -> dict:
     """
     Chạy nhánh VLM và trộn kết quả vào result.
@@ -654,7 +658,7 @@ def run_vlm(
          nguyên đó và cả validation gate thành vô nghĩa: tốn tiền gọi VLM
          rồi vứt kết quả đúng đi.
     """
-    has_warnings = bool(validate_result(gia_tri_tran(result), standard)["warnings"])
+    has_warnings = bool(validate_result(gia_tri_tran(result), standard, quy_uoc)["warnings"])
 
     extraction = extract_fields_from_regions(
         _remaining_pages(pages_iter, cached_pages), metrics, standard
@@ -672,8 +676,34 @@ def run_vlm(
     return result
 
 
+def van_ban_da_ocr(bo_nho_text: dict) -> str:
+    """
+    Nối text OCR của mọi trang đã đọc, để dò công thức mã 60 in trên biểu mẫu.
+
+    Đọc từ bộ nhớ OCR sẵn có chứ không OCR lại: công thức nằm trong nhãn dòng
+    của chính bảng B02, tức trang nào chứa mã 60 thì trang đó đã được đọc rồi.
+    """
+    return "\n".join(
+        muc["text"] for muc in bo_nho_text.values()
+        if isinstance(muc, dict) and isinstance(muc.get("text"), str)
+    )
+
+
+def quy_uoc_cua_luot(gia_tri: dict, bo_nho_text: dict) -> tuple[QuyUocDau, str]:
+    """
+    Quy ước dấu của tài liệu đang chạy, kèm nguồn đã dùng để chốt nó.
+
+    Tính LẠI ở mỗi chỗ cần thay vì chốt một lần đầu lượt chạy, và đó là chủ
+    đích: cả hai nguồn — công thức in và dấu ngoặc mã 11 — chỉ có sau khi đã
+    đọc được trang, nên chốt trước lúc trích xuất là chốt trên hư không. Hàm
+    rẻ (một regex trên text đã có sẵn) nên gọi lại nhiều lần không tốn gì.
+    """
+    return xac_dinh_quy_uoc(van_ban_da_ocr(bo_nho_text), gia_tri)
+
+
 def chay_tang_repair(
-    data: dict, result: dict, standard: Standard, vung_theo_khoa: dict | None = None
+    data: dict, result: dict, standard: Standard, quy_uoc: QuyUocDau,
+    vung_theo_khoa: dict | None = None
 ) -> tuple[dict, dict]:
     """
     Chạy tầng định vị/sửa lỗi trên bộ giá trị ĐÃ ép kiểu và quy đổi.
@@ -701,7 +731,7 @@ def chay_tang_repair(
     cách neo cho ba mức tin cậy khác hẳn nhau.
     """
     co_gia_tri = [k for k, v in data.items() if v is not None and k != UNIT_KEY]
-    A, field_order = build_matrix(co_gia_tri, identities_for(standard))
+    A, field_order = build_matrix(co_gia_tri, identities_for(standard, quy_uoc))
 
     if A.shape[0] == 0:
         return data, {"da_chay": True, "verdict": "ABSTAIN", "ma_ly_do": "thieu_gia_tri",
@@ -840,11 +870,15 @@ def route_document(
                     pages_iter, cached_pages, result, standard, bo_nho_text, metrics
                 )
 
-            if not is_acceptable(gia_tri_tran(result), standard):
+            quy_uoc_cong, _ = quy_uoc_cua_luot(gia_tri_tran(result), bo_nho_text)
+            if not is_acceptable(gia_tri_tran(result), standard, quy_uoc_cong):
                 if USE_OCR_FIRST:
                     missing = [k for k, kq in result.items() if kq.value is None]
                     print(f"--- OCR chưa đạt (thiếu/nghi ngờ: {missing}), chuyển sang VLM ---")
-                result = run_vlm(pages_iter, cached_pages, result, standard, metrics, thong_tin_vlm)
+                result = run_vlm(
+                    pages_iter, cached_pages, result, standard, quy_uoc_cong, metrics,
+                    thong_tin_vlm,
+                )
 
         # Ép kiểu số TRƯỚC khi lưu và trả về. VLM đôi khi trả số dưới dạng
         # chuỗi, nên nếu lưu thẳng result thô thì file _routed.json và
@@ -895,11 +929,20 @@ def route_document(
         # — ô nhánh VLM đọc được rồi bị bước sau bỏ đi chỉ có trong bản đầu —
         # và để cả hai cùng tên trong một dict là mời người đọc sau này lấy
         # nhầm cái không nói lên điều đã xảy ra với con số.
+        # Chốt quy ước dấu TRÊN BỘ GIÁ TRỊ CUỐI CÙNG, sau khi cả hai nhánh đã
+        # điền xong: mã 11 có thể do nhánh VLM lấp vào sau nhánh OCR, và quy
+        # ước đọc từ một ô chưa có thì đọc được gì.
+        quy_uoc, nguon_quy_uoc = quy_uoc_cua_luot(gia_tri_da_dien, bo_nho_text)
         da_kiem = validate_result(
             gia_tri_da_dien,
             standard,
+            quy_uoc,
             _he_so_cua_o_da_giu(result, meta_vlm.pop("he_so_don_vi_theo_truong", None)),
         )
+        # Nguồn đã chốt quy ước là khoá TƯỜNG MINH, không suy từ chỗ khác:
+        # `cong_thuc` và `ma_11` cho hai mức tin cậy khác hẳn, còn `mau_thuan`
+        # là ca đáng đếm riêng vì nó chính là giới hạn đã khai của thiết kế.
+        da_kiem["meta"]["nguon_quy_uoc_dau"] = nguon_quy_uoc
         data = da_kiem["data"]
 
         # TẦNG REPAIR chạy SAU khi validate_result() đã chấm xong, không phải
@@ -914,7 +957,8 @@ def route_document(
         chung_chi_repair = {"da_chay": False, "ly_do": "tang_repair_dang_tat"}
         if BAT_TANG_REPAIR and not DISABLE_CONSTRAINT_GATE:
             data, chung_chi_repair = chay_tang_repair(
-                data, result, standard, gom_vung(cached_pages, bo_nho_text, metrics)
+                data, result, standard, quy_uoc,
+                gom_vung(cached_pages, bo_nho_text, metrics),
             )
 
         # Ghi giá trị đã ép kiểu và quy đổi NGƯỢC vào FieldResult, giữ
@@ -1002,7 +1046,7 @@ def route_document(
         print(metrics.summary())
 
 
-def is_acceptable(result: dict, standard: Standard) -> bool:
+def is_acceptable(result: dict, standard: Standard, quy_uoc: QuyUocDau) -> bool:
     """
     Kết quả có đáng tin để dừng sớm / khỏi cần fallback VLM không?
 
@@ -1023,7 +1067,7 @@ def is_acceptable(result: dict, standard: Standard) -> bool:
     if not has_required_fields(result):
         return False
 
-    return not validate_result(result, standard)["warnings"]
+    return not validate_result(result, standard, quy_uoc)["warnings"]
 
 
 def save_result(file_path: str, result: dict) -> Path:

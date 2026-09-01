@@ -47,6 +47,53 @@ class Standard(str, Enum):
 DEFAULT_STANDARD = Standard.TT99
 
 
+class QuyUocDau(str, Enum):
+    """
+    Quy ước dấu mà MỘT BÁO CÁO dùng để in các dòng khấu trừ của B02.
+
+    Đây là thuộc tính của TỪNG TÀI LIỆU, không phải của Thông tư — điều đã
+    được kiểm trên tập tài liệu thật ngày 01/09/2026: trong cùng chuẩn TT200,
+    `DGC`, `HNG`, `KDH`, `MWG`, `NLG`, `NVL`, `REE`, `SBT`, `TTF`, `VCG`,
+    `VHC`, `VHM` in theo `TONG`, còn `BCM`, `DPM`, `DVD` in theo `TRU`.
+
+    Hai quy ước là CÙNG MỘT PHƯƠNG TRÌNH, chỉ khác chỗ dấu nằm ở dữ liệu hay
+    nằm ở công thức:
+
+        TONG:  khoản trừ in TRONG NGOẶC (đọc ra số âm)
+               20 = 10 + 11        60 = 50 + 51 + 52
+        TRU:   khoản trừ in ĐỘ LỚN (đọc ra số dương)
+               20 = 10 − 11        60 = 50 − 51 − 52
+
+    Quy ước ĐỒNG NHẤT trong một tài liệu — mã 11 và mã 51 luôn cùng cách in,
+    đã kiểm trên toàn bộ tài liệu ngày 01/09/2026. Nhờ vậy nó là MỘT bit cho
+    cả tài liệu chứ không phải một bit cho mỗi đẳng thức.
+
+    KHONG_XAC_DINH là trạng thái tường minh, không phải giá trị thiếu: tài
+    liệu không in công thức VÀ không đọc được dấu ngoặc của mã 11 thì hai
+    đẳng thức B02 bị BỎ QUA cho riêng nó. Để nó tự suy ra từ sự vắng mặt của
+    khoá sẽ khiến "chưa đọc được" và "đã đọc, ra dạng tổng" trông giống nhau.
+    """
+
+    TONG = "tong"
+    TRU = "tru"
+    KHONG_XAC_DINH = "khong_xac_dinh"
+
+
+# Dấu BẮT BUỘC của mã 11 theo từng quy ước, dùng cho phép kiểm thay chỗ luật
+# "giá vốn luôn dương" đã bị bỏ ngày 01/09/2026.
+#
+# CHỈ mã 11 có luật cứng này. Mã 51 và 52 thì KHÔNG: một khoản thu nhập thuế
+# hoãn lại đi cùng chi phí thuế hiện hành là trạng thái kế toán có thật, nên
+# cả hai dấu đều hợp lệ ở cả hai quy ước — kết luận đã chốt ở Câu 13
+# (28/08/2026) và đừng mở lại. Giá vốn thì không có ca tương tự: giá vốn
+# "âm" theo nghĩa kinh tế không tồn tại, nên dấu của nó bị quy ước ấn định
+# hoàn toàn và lệch khỏi đó là đọc sai.
+DAU_MA_11: dict[QuyUocDau, int] = {
+    QuyUocDau.TONG: -1,
+    QuyUocDau.TRU: +1,
+}
+
+
 # Bộ chỉ tiêu chốt ở MỐC 1 ngày 23/08/2026 — kịch bản D của
 # `constraints_scenarios.py`, mở rộng từ 11 lên 21 chỉ tiêu.
 #
@@ -143,7 +190,11 @@ FIELD_RULES = {
     "von_chu_so_huu":            {"allow_negative": True,  "required": False},
     "tong_nguon_von":            {"allow_negative": False, "required": False},
     "doanh_thu_thuan":           {"allow_negative": False, "required": True},
-    "gia_von_hang_ban":          {"allow_negative": False, "required": False},
+    # Mã 11 CHO PHÉP ÂM từ 01/09/2026, và đây không phải nới lỏng: tài liệu
+    # in mã 11 trong ngoặc đơn thì giá trị đọc nguyên văn PHẢI âm. Luật cũ
+    # "giá vốn luôn dương" chỉ đúng với tài liệu in ở dạng độ lớn. Phép kiểm
+    # thay thế mạnh ngang luật cũ nhưng biết quy ước: `kiem_dau_ma_11()`.
+    "gia_von_hang_ban":          {"allow_negative": True,  "required": False},
     "loi_nhuan_gop":             {"allow_negative": True,  "required": False},
     "ln_thuan_hdkd":             {"allow_negative": True,  "required": False},
     "ln_khac":                   {"allow_negative": True,  "required": False},
@@ -172,84 +223,56 @@ FIELD_RULES = {
 }
 
 
-def chuan_hoa_dau(gia_tri: dict, standard: Standard) -> tuple[dict, list[str]]:
+def kiem_dau_ma_11(gia_tri: dict, quy_uoc: QuyUocDau) -> str | None:
     """
-    Sửa dấu ba dòng khấu trừ mà dấu ngoặc KHÔNG mang nghĩa số âm.
+    Cảnh báo khi dấu của mã 11 không khớp quy ước dấu của tài liệu.
 
-    Trên cùng một trang B02, dấu ngoặc mang hai nghĩa khác nhau. Ở mã 40 nó
-    là số liệu — lợi nhuận khác âm thật. Ở mã 11 nó chỉ là cách trình bày
-    "dòng này bị trừ đi", vì văn bản viết `Mã 20 = Mã 10 − Mã 11`, tức mã 11
-    vào công thức như một số dương. `parse_number()` không biết mình đang
-    đọc chỉ tiêu nào nên áp "ngoặc là âm" cho cả hai nghĩa.
+    Trả về câu cảnh báo, hay `None` nếu không có gì để nói.
 
-    Đây không phải lỗi giả định: trên tập gold ngày 27/08/2026, MWG và VRE
-    mỗi tài liệu sai đúng ba dòng này — không thừa, không thiếu — và tổng
-    cộng 8 trong 24 lỗi câm đo được đến từ đây.
+    HÀM NÀY THAY CHO HAI THỨ ĐÃ BỊ BỎ ngày 01/09/2026, và thay được vì cả hai
+    vốn là cùng một luật viết dưới dạng kém hơn:
 
-    Trả về (giá trị đã sửa, danh sách khoá bị đổi dấu). Danh sách ấy đi vào
-    meta chứ không im lặng: một bước lật dấu không ghi lại thì về sau không
-    ai phân biệt được "báo cáo in dương" với "ta đã lật".
+      - Luật "giá vốn hàng bán LUÔN DƯƠNG" của guideline mục 3.3. Nó chỉ đúng
+        với tài liệu in mã 11 ở dạng độ lớn. Trên tài liệu in mã 11 trong
+        ngoặc đơn, luật ấy ép dấu ngược hẳn với tờ giấy.
+      - `chuan_hoa_dau()`, vốn LẬT dấu mã 11 và mã 51 theo suy luận rồi mới
+        kiểm. Nó bị xoá vì suy luận ấy hỏng trên tài liệu in dạng trừ: mã 51
+        được lật đúng còn mã 52 không bao giờ bị đụng tới, để lại residual
+        đúng gấp đôi mã 52 — một dương tính giả bảo đảm trên tài liệu không có
+        lỗi đọc nào. Đo được trên `BVH_2026Q2`: −56.149.699.672 đồng.
 
-    MÃ 52 KHÔNG BAO GIỜ BỊ ĐỤNG TỚI, và đó nay là kết luận đã chốt chứ không
-    còn là phòng xa. Câu 13 (28/08/2026) phân xử: nhãn gold đúng, guideline
-    sai. Đẳng thức mã 60 chỉ ràng buộc TỔNG hai dòng thuế, nên một mã 52
-    ngược chiều mã 51 — thu nhập thuế hoãn lại đi cùng chi phí thuế hiện
-    hành — là trạng thái kế toán có thật. Ba tài liệu gold (HNG, MWG, VRE)
-    rơi đúng vào đó và cả ba đều cân đẳng thức tới từng đồng. Lật chúng là
-    ĐẺ RA lỗi câm mới.
+    CHỈ KIỂM, KHÔNG SỬA. Đây là điểm khác quan trọng nhất so với
+    `chuan_hoa_dau()`. Một tầng trích xuất tự lật dấu cho cân sẽ làm mọi kết
+    quả thoả đẳng thức, và phép đo H1 — so vi phạm ràng buộc với confidence
+    của model — mất sạch tín hiệu vì tín hiệu bị chính bước trích xuất làm
+    phẳng. Quyết định dấu thuộc về tầng repair, nơi được phép dùng ràng buộc.
 
-    MÃ 51 XÉT THEO CHIỀU MÃ 50/60, TỨC CHẶT HƠN GUIDELINE HIỆN HÀNH.
-    Guideline nói mã 51 ghi theo nghĩa kinh tế rồi kiểm bằng đẳng thức —
-    tiêu chí mà `gan_nhan.kiem.kiem_dau_khau_tru()` dùng cho người gán nhãn.
-    Hàm này KHÔNG dùng tiêu chí đó, vì nó sẽ giải đẳng thức ra dấu (xem đoạn
-    dưới). Chỗ vênh là có thật và đã biết: nó vô hại trên dữ liệu hiện có
-    (mã 51 âm ở mọi file gold có chi phí thuế) nhưng sẽ lật nhầm một mã 51
-    dương hợp lệ nếu gặp. Đường đóng nó là chuyển quyết định dấu của cả hai
-    dòng thuế sang tầng repair, nơi được phép dùng ràng buộc.
-
-    CHIỀU LẬT PHỤ THUỘC CHUẨN, và đó là lý do `standard` BẮT BUỘC ở đây.
-    TT200 dùng quy ước dấu có hướng từ 31/08/2026 nên mã 51 lưu ÂM khi là chi
-    phí, tức `60 < 50` cộng một mã 51 DƯƠNG mới là dấu hiệu sai. TT99 vẫn ở
-    quy ước độ lớn — chưa xác minh, xem `_MA_60_TT99` — nên chiều lật của nó
-    giữ nguyên như cũ: `60 < 50` cộng một mã 51 ÂM mới là sai.
-
-    Đọc kỹ chỗ này trước khi sửa: đảo nhầm chiều thì hàm lật đúng những ô
-    đang đúng, và đẳng thức vỡ trên toàn bộ tài liệu của chuẩn ấy. Cũng đừng
-    cho `standard` một mặc định — một chuẩn đoán sai ở đây hỏng im lặng, cùng
-    lý do `validate_result()` đã bỏ mặc định của nó.
-
-    CỐ Ý KHÔNG giải đẳng thức mã 60 để chọn dấu.
-    Giải nó ra dấu thì mọi kết quả đều thoả nó, và phép đo H1 — so vi phạm
-    ràng buộc với confidence của model — mất sạch nghĩa vì tín hiệu bị chính
-    bước trích xuất làm phẳng. Ở đây chỉ dùng CHIỀU của mã 50 so với mã 60;
-    độ lớn vẫn tự do sai, nên đẳng thức vẫn còn khả năng vỡ và vẫn còn là
-    phép kiểm độc lập.
+    CHỈ MÃ 11, KHÔNG ĐỘNG TỚI MÃ 51/52. Giá vốn "âm" theo nghĩa kinh tế không
+    tồn tại, nên quy ước ấn định dấu của nó hoàn toàn. Hai dòng thuế thì
+    không: thu nhập thuế hoãn lại đi cùng chi phí thuế hiện hành là trạng thái
+    kế toán có thật, đã phân xử ở Câu 13 (28/08/2026) trên ba tài liệu gold
+    HNG, MWG, VRE — cả ba đều cân đẳng thức tới từng đồng với hai dòng thuế
+    ngược chiều nhau. Áp luật dấu cho chúng là đẻ ra lỗi câm mới.
     """
-    ra = dict(gia_tri)
-    da_doi: list[str] = []
+    if quy_uoc is QuyUocDau.KHONG_XAC_DINH:
+        return None
 
-    gia_von = ra.get("gia_von_hang_ban")
-    if isinstance(gia_von, (int, float)) and gia_von < 0:
-        ra["gia_von_hang_ban"] = -gia_von
-        da_doi.append("gia_von_hang_ban")
+    gia_von = gia_tri.get("gia_von_hang_ban")
+    # Số không thì không có dấu để mà sai, và nó là giá trị hợp lệ ở cả hai
+    # quy ước — doanh nghiệp không phát sinh giá vốn trong kỳ.
+    if not isinstance(gia_von, (int, float)) or gia_von == 0:
+        return None
 
-    truoc_thue = ra.get("loi_nhuan_truoc_thue")
-    sau_thue = ra.get("loi_nhuan_sau_thue")
-    # Thiếu một trong hai thì KHÔNG đoán. Tiêu chí duy nhất hàm này được
-    # phép dùng là chiều của mã 50 so với mã 60, nên vắng một trong hai là
-    # vắng luôn căn cứ — đoán tiếp là tự cho mình một quyền không có.
-    if isinstance(truoc_thue, (int, float)) and isinstance(sau_thue, (int, float)):
-        thue = ra.get("thue_tndn_hien_hanh")
-        # Kiểm kiểu TRƯỚC khi so dấu: mã 51 vắng mặt là chuyện thường (không
-        # bắt buộc trong FIELD_RULES), và so `None > 0` thì nổ TypeError giữa
-        # bước validate — hỏng cả lượt chạy vì một ô không đọc được.
-        if sau_thue < truoc_thue and isinstance(thue, (int, float)):
-            dau_sai = (thue > 0) if standard is Standard.TT200 else (thue < 0)
-            if dau_sai:
-                ra["thue_tndn_hien_hanh"] = -thue
-                da_doi.append("thue_tndn_hien_hanh")
+    dau_can = DAU_MA_11[quy_uoc]
+    if (gia_von > 0) == (dau_can > 0):
+        return None
 
-    return ra, da_doi
+    mo_ta = "in trong ngoặc đơn nên phải ÂM" if dau_can < 0 else "in độ lớn nên phải DƯƠNG"
+    return (
+        f"{FIELD_MAP['gia_von_hang_ban']} có dấu ngược quy ước của tài liệu: "
+        f"tài liệu ở dạng `{quy_uoc.value}`, mã 11 {mo_ta}, mà giá trị đọc được "
+        f"là {gia_von:,}"
+    )
 
 
 def _khong_am(value) -> bool:
@@ -383,11 +406,9 @@ _DANG_THUC_CHUNG = [
         "tong_tai_san",
         "Tổng cộng nguồn vốn phải bằng Tổng cộng tài sản",
     ),
-    (
-        ["gia_von_hang_ban", "loi_nhuan_gop"],
-        "doanh_thu_thuan",
-        "Giá vốn hàng bán + Lợi nhuận gộp phải bằng Doanh thu thuần",
-    ),
+    # ĐẲNG THỨC MÃ 20 TÁCH THEO QUY ƯỚC DẤU — xem `_GIA_VON_TONG` /
+    # `_GIA_VON_TRU` dưới khối này. Nó rời khỏi đây ngày 01/09/2026: hình
+    # dạng của nó phụ thuộc cách BÁO CÁO in mã 11, không phụ thuộc Thông tư.
     # Hai đẳng thức B02 dưới đây kéo loi_nhuan_truoc_thue và
     # loi_nhuan_sau_thue ra khỏi tình trạng CỘT TOÀN 0. Trước Mốc 1, hai chỉ
     # tiêu này không nằm trong đẳng thức nào — sai bao nhiêu cũng không ràng
@@ -397,9 +418,8 @@ _DANG_THUC_CHUNG = [
         "loi_nhuan_truoc_thue",
         "Lợi nhuận thuần từ HĐKD + Lợi nhuận khác phải bằng Lợi nhuận trước thuế",
     ),
-    # ĐẲNG THỨC MÃ 60 TÁCH THEO CHUẨN — xem `_MA_60_TT200` / `_MA_60_TT99`
-    # ngay dưới khối này. Đây là chỗ thứ hai hai chuẩn khác nhau về hình dạng
-    # đẳng thức, cùng loại với phân rã Tài sản ngắn hạn.
+    # ĐẲNG THỨC MÃ 60 TÁCH THEO QUY ƯỚC DẤU — xem `_MA_60_TONG` /
+    # `_MA_60_TRU` dưới khối này, cùng lý do với đẳng thức mã 20.
     # Hai đẳng thức B03 — kịch bản E. Cả hai chuẩn khai báo GIỐNG HỆT nhau,
     # đã đối chiếu Công báo và chép nguyên văn ở Phụ lục A mục 3.4 của
     # HANDOFF.md: `data/legal/2015_289 + 290-200_2014_TT-BTC.pdf` Điều 114
@@ -428,47 +448,68 @@ _DANG_THUC_CHUNG = [
     ),
 ]
 
-# Đẳng thức mã 60 — HAI CHUẨN ĐANG DÙNG HAI QUY ƯỚC DẤU KHÁC NHAU.
+# HAI ĐẲNG THỨC B02 TÁCH THEO QUY ƯỚC DẤU CỦA TỪNG TÀI LIỆU.
 #
-# Trạng thái này là CÓ CHỦ ĐÍCH và TẠM THỜI, chốt 31/08/2026: quy ước dấu có
-# hướng mới chỉ được xác minh trên TT200, còn TT99 phải chờ thêm tài liệu.
-# Người chủ trì quyết giữ TT99 nguyên như cũ thay vì suy diễn từ TT200 sang —
-# hai Thông tư đã khác nhau thật ở phân rã Tài sản ngắn hạn, nên "chắc là
-# giống" không phải căn cứ dùng được.
+# Trước 01/09/2026 hai đẳng thức này tách theo CHUẨN: TT200 dùng dạng tổng,
+# TT99 dùng dạng trừ. Cách tách ấy SAI, và sai theo kiểu chỉ lộ ra khi có đủ
+# tài liệu: người chủ trì đọc tay 15 báo cáo TT200 ngày 01/09/2026 và thấy cả
+# hai cách in cùng tồn tại trong MỘT chuẩn — `DGC`, `HNG`, `KDH`, `MWG`,
+# `NLG`, `NVL`, `REE`, `SBT`, `TTF`, `VCG`, `VHC`, `VHM` in dạng tổng, còn
+# `BCM`, `DPM`, `DVD` in dạng trừ. Quy ước là thuộc tính của TỜ GIẤY, không
+# phải của Thông tư.
 #
-# TT200 — quy ước DẤU CÓ HƯỚNG. Mã 51 và 52 lưu theo NGHĨA KINH TẾ chứ không
-# theo con số in trên giấy: chi phí thuế lưu ÂM, thu nhập thuế lưu DƯƠNG. Nhờ
-# vậy đẳng thức thành một tổng thuần.
+# HAI DẠNG LÀ CÙNG MỘT PHƯƠNG TRÌNH, chỉ khác chỗ dấu nằm ở dữ liệu hay nằm ở
+# công thức. Văn bản gốc viết ở dạng trừ — TT200 Điều 113 mục 3.18 ghi
+# `Mã số 60 = Mã số 50 - (Mã số 51 + Mã số 52)` — nên tài liệu in dạng trừ là
+# tài liệu chép đúng chữ Thông tư, còn tài liệu in dạng tổng đã tự chuyển vế.
+# Cả hai đều hợp lệ và cả hai đều xuất hiện thật.
 #
-# Văn bản gốc viết ở quy ước khác — TT200 Điều 113 mục 3.18 ghi
-# `Mã số 60 = Mã số 50 - (Mã số 51 + Mã số 52)`, tức 51/52 vào công thức như
-# độ lớn dương. HAI DẠNG LÀ CÙNG MỘT PHƯƠNG TRÌNH, chỉ khác chỗ dấu nằm ở dữ
-# liệu hay nằm ở công thức. Đừng "sửa lại cho đúng Thông tư" — sửa mà không
-# lật dấu dữ liệu là làm vỡ đẳng thức trên toàn bộ gold TT200.
+# VÌ SAO KHÔNG DÙNG PHÉP TUYỂN "thoả một trong hai dạng thì đạt". Đo trên
+# `DGC_2025Q2_TT200`: lật dấu riêng mã 51 — một lỗi dấu thuần tuý, không đụng
+# chữ số nào — làm bộ số chuyển từ thoả dạng tổng sang thoả dạng trừ, nên phép
+# tuyển cho nó đi qua trong khi sai lệch thật là 47.108.746.070 đồng, tức 7,5%
+# mã 50. Hai vế lệch nhau đúng `2×(51+52)`, đúng bằng lượng mà một lỗi dấu
+# dịch chuyển, nên phép tuyển mù với CHÍNH lớp lỗi mà ràng buộc này tồn tại để
+# bắt. Thêm nữa phép tuyển không viết được thành ràng buộc tuyến tính, tức bỏ
+# luôn toàn bộ phần H0.
 #
-# KHÔNG được gì về identifiability, đã đo chứ không đoán: sinh lại
-# `data/output/identifiability_*.md` trước và sau cho ra cùng số chỉ tiêu định
-# vị được, cùng `dim null(A)`, và cùng danh sách cặp không phân biệt được. Đổi
-# vế chỉ lật dấu hai cột, mà quan hệ tỷ lệ giữa các cột thì bất biến với phép
-# lật ấy. Đừng viết thay đổi này vào bài như một cải thiện định vị.
-_MA_60_TT200 = (
+# KHÔNG ĐỔI GÌ VỀ IDENTIFIABILITY, đã đo chứ không đoán: dựng ma trận cho cả
+# bốn tổ hợp (hai chuẩn × hai quy ước) cho ra cùng `rank(A)` bằng 9, cùng
+# `dim null(A)` (17 với TT200, 18 với TT99), cùng 7 chỉ tiêu định vị được, và
+# cùng DANH SÁCH cặp không phân biệt được — trùng từng phần tử chứ không chỉ
+# trùng số đếm. Lý do: đổi quy ước chỉ lật dấu vài cột của A, mà hạng, không
+# gian null và quan hệ tỷ lệ giữa các cột đều bất biến với phép lật ấy. Đừng
+# viết thay đổi này vào bài như một cải thiện định vị.
+_MA_60_TONG = (
     ["loi_nhuan_truoc_thue", "thue_tndn_hien_hanh", "thue_tndn_hoan_lai"],
     "loi_nhuan_sau_thue",
-    "Lợi nhuận trước thuế + thuế hiện hành + thuế hoãn lại (đều có dấu) "
-    "phải bằng Lợi nhuận sau thuế",
+    "B02 dạng tổng: Mã 60 = Mã 50 + Mã 51 + Mã 52",
 )
 
-# TT99 — quy ước ĐỘ LỚN, giữ nguyên như trước 31/08/2026. Mã 51 và 52 lưu
-# theo độ lớn dương, đúng chữ trong Thông tư, và đẳng thức chuyển vế thành
-# dạng cộng để khớp cấu trúc (danh sách cộng, tổng) mà ma trận A dựng trên đó.
-#
-# CHƯA XÁC MINH, đừng đồng bộ sang cho giống TT200 khi chưa có tài liệu. Yêu
-# cầu về bộ tài liệu cần thu thập để xác minh nằm ở `docs/yeu-cau-tai-lieu-bctc.md`.
-_MA_60_TT99 = (
+_MA_60_TRU = (
     ["loi_nhuan_sau_thue", "thue_tndn_hien_hanh", "thue_tndn_hoan_lai"],
     "loi_nhuan_truoc_thue",
-    "Lợi nhuận sau thuế + chi phí thuế hiện hành + hoãn lại "
-    "phải bằng Lợi nhuận trước thuế",
+    "B02 dạng trừ: Mã 60 = Mã 50 − Mã 51 − Mã 52",
+)
+
+# Đẳng thức mã 20, tách theo cùng một bit. Mã 11 in trong ngoặc thì đọc ra số
+# ÂM và cộng vào; in độ lớn thì đọc ra số DƯƠNG và trừ đi.
+#
+# Bản trước ép mã 11 luôn dương rồi dùng một mình dạng trừ. Hệ quả là hai
+# đẳng thức B02 trong CÙNG một file gold chạy hai quy ước ngược nhau —
+# `DGC_2025Q2_TT200` lưu mã 11 dương (dạng trừ) nhưng mã 51 âm (dạng tổng),
+# trong khi `notes` của chính file đó ghi rằng trên giấy CẢ HAI đều in trong
+# ngoặc. Đó là cùng một lỗi, chỉ chưa ai gọi tên.
+_GIA_VON_TONG = (
+    ["doanh_thu_thuan", "gia_von_hang_ban"],
+    "loi_nhuan_gop",
+    "B02 dạng tổng: Mã 20 = Mã 10 + Mã 11",
+)
+
+_GIA_VON_TRU = (
+    ["gia_von_hang_ban", "loi_nhuan_gop"],
+    "doanh_thu_thuan",
+    "B02 dạng trừ: Mã 20 = Mã 10 − Mã 11",
 )
 
 # Phân rã Tài sản ngắn hạn — CHỖ HAI CHUẨN KHÁC NHAU THẬT.
@@ -498,18 +539,32 @@ _PHAN_RA_TSNH_TT99 = (
     "(TT99: mã 100 = 110+120+130+140+150+160)",
 )
 
-# Đẳng thức tách theo CHUẨN mẫu biểu.
+# Đẳng thức tách theo HAI TRỤC ĐỘC LẬP: chuẩn mẫu biểu, và quy ước dấu.
 #
-# Việc tách theo chuẩn từng là biện pháp phòng xa — hai chuẩn khi đó dùng
-# chung đúng một bộ đẳng thức. Sau khi đối chiếu Công báo ở Mốc 1 thì nó
-# thành cần thiết thật: phân rã Tài sản ngắn hạn khác nhau giữa hai chuẩn.
+# Hai trục này khác hẳn nhau về bản chất, đừng gộp:
 #
-# ĐÃ ĐỐI CHIẾU 23/08/2026 với Công báo số 287+288 và 289+290 (TT200) và số
-# 1577+1578, 1579+1580, 1581+1582 (TT99). Bảng đối chiếu từng dòng ở
-# HANDOFF.md, Phụ lục A mục 3.
-FIELD_IDENTITIES: dict[Standard, list] = {
-    Standard.TT200: [*_DANG_THUC_CHUNG, _MA_60_TT200, _PHAN_RA_TSNH_TT200],
-    Standard.TT99: [*_DANG_THUC_CHUNG, _MA_60_TT99, _PHAN_RA_TSNH_TT99],
+#   CHUẨN quyết định tài liệu có những CHỈ TIÊU nào và phân rã ra sao. Chỗ
+#   khác nhau thật là phân rã Tài sản ngắn hạn (TT99 chèn thêm tài sản sinh
+#   học). ĐÃ ĐỐI CHIẾU 23/08/2026 với Công báo số 287+288 và 289+290 (TT200)
+#   và số 1577+1578, 1579+1580, 1581+1582 (TT99) — bảng đối chiếu từng dòng ở
+#   HANDOFF.md Phụ lục A mục 3.
+#
+#   QUY ƯỚC DẤU quyết định hai đẳng thức B02 viết ở DẠNG nào. Nó đọc được từ
+#   trang giấy của từng tài liệu và không suy ra được từ chuẩn — xem docstring
+#   của `QuyUocDau`.
+#
+# `KHONG_XAC_DINH` không có mặt ở đây, và đó là chủ đích: tài liệu không đọc
+# được quy ước thì hai đẳng thức B02 bị BỎ, chứ không được lặng lẽ gán cho một
+# dạng. `identities_for()` xử lý ca đó.
+FIELD_IDENTITIES: dict[tuple[Standard, QuyUocDau], list] = {
+    (Standard.TT200, QuyUocDau.TONG): [
+        *_DANG_THUC_CHUNG, _GIA_VON_TONG, _MA_60_TONG, _PHAN_RA_TSNH_TT200],
+    (Standard.TT200, QuyUocDau.TRU): [
+        *_DANG_THUC_CHUNG, _GIA_VON_TRU, _MA_60_TRU, _PHAN_RA_TSNH_TT200],
+    (Standard.TT99, QuyUocDau.TONG): [
+        *_DANG_THUC_CHUNG, _GIA_VON_TONG, _MA_60_TONG, _PHAN_RA_TSNH_TT99],
+    (Standard.TT99, QuyUocDau.TRU): [
+        *_DANG_THUC_CHUNG, _GIA_VON_TRU, _MA_60_TRU, _PHAN_RA_TSNH_TT99],
 }
 
 # Dung sai cho đẳng thức, tính theo tỷ lệ trên giá trị tổng.
@@ -977,9 +1032,26 @@ def line_codes_for(standard: Standard) -> dict[str, tuple[str, str]]:
     return FIELD_LINE_CODES[standard]
 
 
-def identities_for(standard: Standard) -> list:
-    """Bộ đẳng thức kế toán của một chuẩn."""
-    return FIELD_IDENTITIES[standard]
+def identities_for(standard: Standard, quy_uoc: QuyUocDau) -> list:
+    """
+    Bộ đẳng thức kế toán của một chuẩn, ở quy ước dấu của một tài liệu.
+
+    `quy_uoc` là THAM SỐ BẮT BUỘC và cố ý không có mặc định, cùng lý do với
+    `standard` ở `validate_result()`: đoán nhầm quy ước không làm gì nổ, nó
+    chỉ làm hai đẳng thức B02 lệch đúng gấp đôi các dòng khấu trừ — một dương
+    tính giả trông y hệt lỗi đọc số thật.
+
+    `KHONG_XAC_DINH` trả về bộ đẳng thức KHÔNG có hai đẳng thức B02 phụ thuộc
+    quy ước. Đây là hành vi đúng chứ không phải suy biến: chưa đọc được quy
+    ước thì chưa biết chúng có dạng nào, mà chạy nhầm dạng còn tệ hơn không
+    chạy — không chạy thì mất khả năng phát hiện, chạy nhầm thì BỊA ra lỗi.
+    """
+    if quy_uoc is QuyUocDau.KHONG_XAC_DINH:
+        phu_thuoc_quy_uoc = {id(_GIA_VON_TONG), id(_GIA_VON_TRU),
+                             id(_MA_60_TONG), id(_MA_60_TRU)}
+        return [dt for dt in FIELD_IDENTITIES[(standard, QuyUocDau.TONG)]
+                if id(dt) not in phu_thuoc_quy_uoc]
+    return FIELD_IDENTITIES[(standard, quy_uoc)]
 
 
 def fields_for(standard: Standard) -> list[str]:
@@ -1102,3 +1174,104 @@ def detect_standard(text: str) -> tuple[Standard | None, float]:
         )
 
     return thang, do_tin_cay
+
+
+# --- Nhận diện QUY ƯỚC DẤU của một tài liệu ------------------------------
+#
+# Hai nguồn ĐỘC LẬP cho cùng một bit, cố ý giữ cả hai để kiểm chéo nhau.
+#
+#   1. Công thức in ngay trong nhãn dòng, ví dụ "(60 = 50 + 51 + 52)". Đây là
+#      lời khai tường minh của chính báo cáo, nên nó được ưu tiên. Người chủ
+#      trì đo tay ngày 01/09/2026: phần lớn tài liệu in dạng trừ CÓ in công
+#      thức, nhưng không phải tất cả — nên một mình nguồn này không đủ phủ.
+#   2. Dấu ngoặc đơn của mã 11. Giá vốn LUÔN có mặt, LUÔN là khoản trừ, và
+#      không bao giờ hợp lệ mang nghĩa thu nhập — nên dấu của nó do quy ước
+#      ấn định hoàn toàn. Mã 51/52 KHÔNG dùng được vào việc này vì chúng có
+#      thể bằng 0 hoặc đổi chiều thật (Câu 13, 28/08/2026).
+#
+# CÙNG MỘT BIT CHO CẢ TÀI LIỆU. Người chủ trì đã kiểm tay ngày 01/09/2026 và
+# xác nhận quy ước đồng nhất giữa mã 11 và mã 51 trên toàn bộ tài liệu đọc
+# được, nên không cần một bit riêng cho mỗi đẳng thức.
+_DAU_TRU = r"[-−–—]"
+# Báo cáo thật xen chữ "Mã số" giữa các con số — TT200 Điều 113 mục 3.18 viết
+# nguyên văn `Mã số 60 = Mã số 50 - (Mã số 51 + Mã số 52)` và nhiều báo cáo
+# chép y như vậy vào nhãn dòng. Bỏ qua phần chữ ấy thay vì bắt người đọc phải
+# gặp đúng dạng rút gọn.
+_MA = r"(?:[Mm]ã\s*(?:số\s*)?)?"
+_CT_TONG = re.compile(rf"{_MA}60\s*=\s*{_MA}50\s*\+\s*{_MA}51\s*\+\s*{_MA}52")
+_CT_TRU = re.compile(
+    rf"{_MA}60\s*=\s*{_MA}50\s*{_DAU_TRU}\s*\(?\s*{_MA}51\s*"
+    rf"[-−–—+]\s*{_MA}52\s*\)?"
+)
+
+
+def quy_uoc_tu_cong_thuc(van_ban: str) -> QuyUocDau | None:
+    """
+    Quy ước đọc từ công thức mã 60 in trong nhãn dòng, `None` nếu không thấy.
+
+    Bắt cả hai cách viết dạng trừ mà báo cáo thật dùng: `60 = 50 - 51 - 52`
+    và `60 = 50 - (51 + 52)` — dạng sau là nguyên văn TT200 Điều 113 mục 3.18.
+
+    Thấy CẢ HAI dạng trên cùng một trang thì trả `None` chứ không chọn bừa:
+    trang nhắc cả hai công thức là trang không kết luận được, cùng nguyên tắc
+    với `nhan_dien_chuan()` khi hai chuẩn hoà điểm.
+    """
+    co_tong = bool(_CT_TONG.search(van_ban))
+    co_tru = bool(_CT_TRU.search(van_ban))
+    if co_tong and co_tru:
+        return None
+    if co_tong:
+        return QuyUocDau.TONG
+    if co_tru:
+        return QuyUocDau.TRU
+    return None
+
+
+def quy_uoc_tu_ma_11(gia_tri: dict) -> QuyUocDau | None:
+    """
+    Quy ước suy từ dấu của mã 11 như ĐỌC NGUYÊN VĂN, `None` nếu không suy được.
+
+    Mã 11 vắng mặt, không đọc được, hay bằng 0 thì không có dấu để đọc — trả
+    `None` chứ đừng đoán. Giá trị 0 đặc biệt đáng chú ý: nó hợp lệ ở cả hai
+    quy ước nên không mang một bit thông tin nào.
+    """
+    gia_von = gia_tri.get("gia_von_hang_ban")
+    if not isinstance(gia_von, (int, float)) or gia_von == 0:
+        return None
+    return QuyUocDau.TONG if gia_von < 0 else QuyUocDau.TRU
+
+
+def xac_dinh_quy_uoc(van_ban: str, gia_tri: dict) -> tuple[QuyUocDau, str]:
+    """
+    Chốt quy ước dấu của tài liệu. Trả `(quy ước, nguồn đã dùng)`.
+
+    `nguồn` là khoá TƯỜNG MINH đi vào metrics, không phải chú thích: bốn ca
+    dưới đây dẫn tới bốn mức tin cậy khác hẳn nhau và bảng kết quả phải đếm
+    chúng riêng.
+
+        cong_thuc     — đọc được công thức in; nguồn mạnh nhất
+        ma_11         — không có công thức, suy từ dấu ngoặc mã 11
+        mau_thuan     — có cả hai và chúng NGƯỢC NHAU
+        khong_doc_duoc — không nguồn nào nói được gì
+
+    MÂU THUẪN THÌ TRẢ `KHONG_XAC_DINH`, không chọn bên nào. Hai nguồn ngược
+    nhau nghĩa là một trong hai đã bị đọc sai mà ta không biết cái nào; chạy
+    đẳng thức theo bên đoán sai sẽ BỊA ra một lỗi lệch đúng gấp đôi các dòng
+    khấu trừ, tệ hơn hẳn việc bỏ qua hai đẳng thức ấy. Cùng nguyên tắc đã
+    viết ở `identities_for()`.
+
+    Ca mâu thuẫn cũng chính là thứ đáng đo: nó là GIỚI HẠN đã khai của thiết
+    kế này — quy ước đọc từ một dấu ngoặc, nên một lỗi đọc ngoặc ở riêng mã 11
+    lật cả hai đẳng thức B02. Đếm được ca mâu thuẫn là đếm được phần nào của
+    giới hạn ấy thật sự xảy ra.
+    """
+    tu_ct = quy_uoc_tu_cong_thuc(van_ban or "")
+    tu_11 = quy_uoc_tu_ma_11(gia_tri)
+
+    if tu_ct is not None and tu_11 is not None and tu_ct is not tu_11:
+        return QuyUocDau.KHONG_XAC_DINH, "mau_thuan"
+    if tu_ct is not None:
+        return tu_ct, "cong_thuc"
+    if tu_11 is not None:
+        return tu_11, "ma_11"
+    return QuyUocDau.KHONG_XAC_DINH, "khong_doc_duoc"

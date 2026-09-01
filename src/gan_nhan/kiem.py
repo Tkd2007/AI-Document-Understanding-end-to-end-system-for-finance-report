@@ -37,7 +37,13 @@ thầm mà cả module này được viết ra để chặn.
 
 from dataclasses import dataclass
 
-from fields_config import IDENTITY_TOLERANCE_RATIO, Standard, identities_for
+from fields_config import (
+    DAU_MA_11,
+    IDENTITY_TOLERANCE_RATIO,
+    QuyUocDau,
+    Standard,
+    identities_for,
+)
 
 # Dung sai theo TỶ LỆ, không tuyệt đối. Giá trị cỡ 1e13 nên sai số làm tròn
 # tuyệt đối cũng cỡ lớn, và một ngưỡng tuyệt đối sẽ hoặc bỏ sót mọi thứ hoặc
@@ -62,7 +68,9 @@ class KetQuaMotDangThuc:
     thieu: tuple[str, ...] = ()
 
 
-def kiem_dang_thuc(values: dict, standard: Standard) -> list[KetQuaMotDangThuc]:
+def kiem_dang_thuc(
+    values: dict, standard: Standard, quy_uoc: QuyUocDau
+) -> list[KetQuaMotDangThuc]:
     """
     Chạy mọi đẳng thức của chuẩn trên bộ số người vừa gõ.
 
@@ -74,7 +82,7 @@ def kiem_dang_thuc(values: dict, standard: Standard) -> list[KetQuaMotDangThuc]:
     chạy. Phân biệt hai thứ này là toàn bộ lý do guideline mục 3.4 tồn tại.
     """
     ket = []
-    for cac_thanh_phan, tong, mo_ta in identities_for(standard):
+    for cac_thanh_phan, tong, mo_ta in identities_for(standard, quy_uoc):
         can_co = [*cac_thanh_phan, tong]
         thieu = tuple(ten for ten in can_co if values.get(ten) is None)
         if thieu:
@@ -89,9 +97,11 @@ def kiem_dang_thuc(values: dict, standard: Standard) -> list[KetQuaMotDangThuc]:
     return ket
 
 
-# Ba chỉ tiêu mà guideline mục 3.3 tách khỏi luật "ngoặc là âm": giá vốn luôn
-# dương, còn hai dòng thuế ghi theo NGHĨA KINH TẾ chứ không theo con số in. Để
-# dưới dạng dữ liệu ở đây vì quy tắc phải có đúng một nơi định nghĩa.
+# Ba chỉ tiêu mà guideline mục 3.3 xét dấu riêng. Từ 01/09/2026 mọi giá trị
+# đều chép NGUYÊN VĂN như in — không còn diễn giải nghĩa kinh tế — và dấu được
+# đối chiếu với QUY ƯỚC của tài liệu: mã 11 phải khớp `DAU_MA_11`, còn mã 51
+# và 52 xét bằng đẳng thức chứ không bằng luật dấu. Để dưới dạng dữ liệu ở đây
+# vì quy tắc phải có đúng một nơi định nghĩa.
 GIA_VON = "gia_von_hang_ban"
 TRUONG_THUE = ("thue_tndn_hien_hanh", "thue_tndn_hoan_lai")
 
@@ -148,7 +158,9 @@ def _dao_dau_lam_can(values: dict, ten: str, identities) -> bool | None:
     return False if chay_duoc else None
 
 
-def kiem_dau_khau_tru(values: dict, standard: Standard) -> list[KetQuaMotDau]:
+def kiem_dau_khau_tru(
+    values: dict, standard: Standard, quy_uoc: QuyUocDau
+) -> list[KetQuaMotDau]:
     """
     Kiểm dấu ba chỉ tiêu khấu trừ, theo guideline mục 3.3.
 
@@ -164,23 +176,39 @@ def kiem_dau_khau_tru(values: dict, standard: Standard) -> list[KetQuaMotDau]:
     với nhau, nên một khoản hoàn nhập thuế hoãn lại ghi dương là hợp lệ ngay
     cả khi tổng số thuế là chi phí.
 
-    Giá vốn hàng bán thì xét thẳng theo dấu, không cần đẳng thức:
-    `FIELD_RULES` đặt `allow_negative` là False cho nó, tức âm là sai bất kể
-    các chỉ tiêu quanh nó có cân hay không.
+    Giá vốn hàng bán xét thẳng theo QUY ƯỚC, không cần đẳng thức: giá vốn
+    "âm" theo nghĩa kinh tế không tồn tại, nên quy ước ấn định dấu của nó hoàn
+    toàn và lệch khỏi đó là đọc sai, bất kể các chỉ tiêu quanh nó có cân hay
+    không. Chưa chốt được quy ước thì báo CHƯA QUYẾT ĐỊNH ĐƯỢC chứ không báo
+    đạt — không có quy ước thì không có gì để so dấu với.
     """
     ket = []
-    identities = identities_for(standard)
+    identities = identities_for(standard, quy_uoc)
 
     gia_von = values.get(GIA_VON)
     if gia_von is None:
         ket.append(KetQuaMotDau(GIA_VON, CHUA_GO, "chưa gõ hoặc đọc không ra"))
-    elif gia_von < 0:
+    elif quy_uoc is QuyUocDau.KHONG_XAC_DINH or gia_von == 0:
+        # Chưa chốt được quy ước thì không có gì để so dấu với; giá vốn bằng 0
+        # thì không có dấu để mà sai. Cả hai đều KHÔNG được báo "đạt" một cách
+        # im lặng — nói rõ là chưa kết luận được.
+        ket.append(
+            KetQuaMotDau(
+                GIA_VON,
+                CHUA_QUYET_DINH_DUOC,
+                "chưa chốt được quy ước dấu của tài liệu, hoặc giá vốn bằng 0 "
+                "nên không có dấu để đối chiếu",
+            )
+        )
+    elif (gia_von > 0) != (DAU_MA_11[quy_uoc] > 0):
         ket.append(
             KetQuaMotDau(
                 GIA_VON,
                 NGHI_SAI_DAU,
-                "giá vốn hàng bán ghi âm — báo cáo in trong ngoặc đơn nhưng "
-                "guideline mục 3.3 bắt ghi dương",
+                f"giá vốn ngược quy ước của tài liệu: tài liệu ở dạng "
+                f"`{quy_uoc.value}` nên mã 11 phải "
+                + ("ÂM" if DAU_MA_11[quy_uoc] < 0 else "DƯƠNG")
+                + " — guideline mục 3.3",
             )
         )
     else:
@@ -243,7 +271,13 @@ DANH_MUC_KIEM = [
     ("don_vi_nguyen_van", "unit_declared chép nguyên văn; unit_multiplier khớp", True),
     ("da_quy_doi", "Mọi giá trị đã quy đổi về đồng", True),
     ("am_bang_dau_tru",
-     "Số âm ghi bằng dấu trừ, không phải ngoặc; mã 11, 51, 52 ghi dương", True),
+     "Số âm ghi bằng dấu trừ, không phải ngoặc — chép NGUYÊN VĂN, kể cả mã 11", True),
+    ("da_doc_quy_uoc_dau",
+     "Đã ĐỌC quy ước dấu trên tờ giấy: công thức mã 60 in trong nhãn dòng, "
+     "hoặc dấu ngoặc của mã 11 — không suy từ Thông tư", False),
+    ("b02_du_ma_10_11_20_30",
+     "B02 đúng biểu mẫu doanh nghiệp thường: có đủ mã 10, 11, 20 và 30. "
+     "Thiếu mã nào thì DỪNG, tài liệu ngoài phạm vi", False),
     ("o_trong_ghi_0", "Ô trống, dấu gạch, dòng vắng mặt ghi 0; null chỉ khi đọc không ra", False),
     ("doi_chieu_ma_so", "Đã đối chiếu mã số, không chỉ tên chỉ tiêu", False),
     ("kiem_cap_de_nham", "Đã kiểm riêng các cặp dễ nhầm ở guideline mục 3.6", False),

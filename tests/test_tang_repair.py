@@ -13,11 +13,17 @@ Ba thứ phải khoá, và cả ba đều là điều kiện để con số củ
 
 import router
 from extraction_types import FieldResult, Provenance
-from fields_config import Standard
+from fields_config import QuyUocDau, Standard
 
 
 def _bo_so_can():
-    """Bốn dòng của đẳng thức mã 60, đã cân: 1000 + (−300) + 50 = 750."""
+    """
+    Bốn dòng của đẳng thức mã 60, đã cân ở quy ước TỔNG: 1000 + (−300) + 50 = 750.
+
+    Mọi lời gọi trong file này vì thế truyền `QuyUocDau.TONG`. Truyền `TRU` sẽ
+    làm đẳng thức lệch gấp đôi tổng hai dòng thuế và tầng repair đi sửa một lỗi
+    không tồn tại.
+    """
     return {
         "loi_nhuan_truoc_thue": 1_000.0,
         "thue_tndn_hien_hanh": -300.0,
@@ -42,7 +48,7 @@ def test_mac_dinh_tat():
 def test_sua_duoc_loi_dau_va_khai_ra_nguon_dinh_vi():
     gia_tri = {**_bo_so_can(), "thue_tndn_hoan_lai": -50.0}
 
-    sau, cc = router.chay_tang_repair(gia_tri, _ket_qua(gia_tri), Standard.TT200)
+    sau, cc = router.chay_tang_repair(gia_tri, _ket_qua(gia_tri), Standard.TT200, QuyUocDau.TONG)
 
     assert cc["verdict"] == "REPAIRED"
     assert cc["nguon_dinh_vi"] == "luat_dau"
@@ -56,7 +62,7 @@ def test_certificate_ghi_ca_gia_tri_truoc_va_sau():
     """
     gia_tri = {**_bo_so_can(), "thue_tndn_hoan_lai": -50.0}
 
-    _, cc = router.chay_tang_repair(gia_tri, _ket_qua(gia_tri), Standard.TT200)
+    _, cc = router.chay_tang_repair(gia_tri, _ket_qua(gia_tri), Standard.TT200, QuyUocDau.TONG)
 
     doi = cc["da_doi"]["thue_tndn_hoan_lai"]
     assert doi["truoc"] == -50.0
@@ -67,7 +73,7 @@ def test_certificate_ghi_ca_gia_tri_truoc_va_sau():
 def test_bo_so_da_can_thi_khong_doi_gi():
     gia_tri = _bo_so_can()
 
-    sau, cc = router.chay_tang_repair(gia_tri, _ket_qua(gia_tri), Standard.TT200)
+    sau, cc = router.chay_tang_repair(gia_tri, _ket_qua(gia_tri), Standard.TT200, QuyUocDau.TONG)
 
     assert cc["verdict"] == "VERIFIED"
     assert cc["da_doi"] == {}
@@ -83,7 +89,7 @@ def test_abstain_thi_KHONG_dong_vao_gia_tri():
     # Lệch không phải vì dấu: không tổ hợp ứng viên nào đưa residual về 0.
     gia_tri = {**_bo_so_can(), "loi_nhuan_sau_thue": 123.0}
 
-    sau, cc = router.chay_tang_repair(gia_tri, _ket_qua(gia_tri), Standard.TT200)
+    sau, cc = router.chay_tang_repair(gia_tri, _ket_qua(gia_tri), Standard.TT200, QuyUocDau.TONG)
 
     assert cc["verdict"] == "ABSTAIN"
     assert sau == gia_tri
@@ -97,7 +103,7 @@ def test_certificate_khai_rang_o_lan_can_dang_TAT():
     """
     gia_tri = _bo_so_can()
 
-    _, cc = router.chay_tang_repair(gia_tri, _ket_qua(gia_tri), Standard.TT200)
+    _, cc = router.chay_tang_repair(gia_tri, _ket_qua(gia_tri), Standard.TT200, QuyUocDau.TONG)
 
     assert cc["o_lan_can"] is False
 
@@ -125,7 +131,7 @@ def test_co_vung_thi_NEO_khai_theo_tung_chi_tieu():
         for k, v in gia_tri.items()
     }
 
-    _, cc = router.chay_tang_repair(gia_tri, result, Standard.TT200, {(5, 0): vung})
+    _, cc = router.chay_tang_repair(gia_tri, result, Standard.TT200, QuyUocDau.TONG, {(5, 0): vung})
 
     assert cc["o_lan_can"] is True
     assert cc["neo"]["loi_nhuan_sau_thue"] == "khop_gia_tri"
@@ -147,7 +153,8 @@ def test_chi_tieu_o_VUNG_KHAC_thi_khong_lay_duoc_o_lan_can():
     }
 
     _, cc = router.chay_tang_repair(
-        gia_tri, result, Standard.TT200, {(5, 0): {"o": [], "o_so": [(750, (0, 0, 1, 1))]}}
+        gia_tri, result, Standard.TT200, QuyUocDau.TONG,
+        {(5, 0): {"o": [], "o_so": [(750, (0, 0, 1, 1))]}},
     )
 
     assert set(cc["neo"].values()) == {"khong_co_vung"}
@@ -156,7 +163,7 @@ def test_chi_tieu_o_VUNG_KHAC_thi_khong_lay_duoc_o_lan_can():
 def test_certificate_khai_ca_khi_luat_dau_im_lang():
     gia_tri = {**_bo_so_can(), "loi_nhuan_sau_thue": 123.0}
 
-    _, cc = router.chay_tang_repair(gia_tri, _ket_qua(gia_tri), Standard.TT200)
+    _, cc = router.chay_tang_repair(gia_tri, _ket_qua(gia_tri), Standard.TT200, QuyUocDau.TONG)
 
     assert cc["luat_dau"]["trang_thai"] == "im_lang"
 
@@ -168,7 +175,7 @@ def test_khong_dung_duoc_dang_thuc_nao_thi_noi_ra():
     đạt", và ở đây không có gì được kiểm cả.
     """
     _, cc = router.chay_tang_repair(
-        {"hang_ton_kho": 1.0}, _ket_qua({"hang_ton_kho": 1.0}), Standard.TT200
+        {"hang_ton_kho": 1.0}, _ket_qua({"hang_ton_kho": 1.0}), Standard.TT200, QuyUocDau.TONG
     )
 
     assert cc["verdict"] == "ABSTAIN"

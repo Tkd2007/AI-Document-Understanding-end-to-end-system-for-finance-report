@@ -21,9 +21,10 @@ from fields_config import (
     REVENUE_TO_ASSETS_LIMIT,
     TOTAL_ASSETS_BOUNDS,
     UNIT_KEY,
+    QuyUocDau,
     Standard,
-    chuan_hoa_dau,
     identities_for,
+    kiem_dau_ma_11,
     parse_unit,
 )
 
@@ -75,7 +76,10 @@ def has_required_fields(data: dict) -> bool:
 
 
 def validate_result(
-    result: dict, standard: Standard, he_so_theo_truong: dict[str, int] | None = None
+    result: dict,
+    standard: Standard,
+    quy_uoc: QuyUocDau,
+    he_so_theo_truong: dict[str, int] | None = None,
 ) -> dict:
     """
     Trả về {"data": <đã ép kiểu số>, "warnings": [...]}.
@@ -100,6 +104,13 @@ def validate_result(
 
     standard quyết định dùng bộ đẳng thức của chuẩn mẫu biểu nào, và là
     THAM SỐ BẮT BUỘC — không có mặc định.
+
+    quy_uoc quyết định hai đẳng thức B02 (mã 20 và mã 60) viết ở DẠNG nào, và
+    cũng BẮT BUỘC vì cùng một lý do. Nó là thuộc tính của TỜ GIẤY chứ không
+    của Thông tư — xem `QuyUocDau`. Truyền nhầm nó không làm gì nổ, chỉ làm
+    hai đẳng thức ấy lệch đúng gấp đôi các dòng khấu trừ, và cảnh báo sinh ra
+    trông y hệt một lỗi đọc số thật. `QuyUocDau.KHONG_XAC_DINH` là lựa chọn
+    hợp lệ và có nghĩa rõ: bỏ qua hai đẳng thức đó cho tài liệu này.
 
     VÌ SAO MẶC ĐỊNH ĐÃ BỊ BỎ ĐI. Bản trước để `standard=DEFAULT_STANDARD`
     kèm lời cảnh báo rằng mặc định đó thành nguy hiểm "ngay khi việc đối
@@ -161,14 +172,18 @@ def validate_result(
 
         data[key] = number
 
-    # 1b. Sửa dấu ba dòng khấu trừ, NGAY SAU khi ép kiểu và TRƯỚC mọi phép
-    #     kiểm. Phải nằm ở đây chứ không phải trong router: trước bước ép
-    #     kiểu thì giá trị VLM còn có thể là chuỗi, và một hàm kiểm dấu chạy
-    #     trên chuỗi sẽ lặng lẽ không làm gì cả — hỏng đúng kiểu khó thấy
-    #     nhất. Đặt trước bước 2 và 4 vì để giá vốn âm đi tiếp thì cả cảnh
-    #     báo "âm bất thường" lẫn đẳng thức mã 20 đều báo một lỗi không có
-    #     thật, và tầng ràng buộc sẽ đi sửa chỗ không hỏng.
-    data, dau_da_sua = chuan_hoa_dau(data, standard)
+    # 1b. KIỂM dấu mã 11 theo quy ước của tài liệu — không sửa.
+    #
+    #     Bản trước gọi `chuan_hoa_dau()` ở đúng chỗ này và LẬT dấu mã 11 với
+    #     mã 51 theo suy luận. Hàm đó bị xoá ngày 01/09/2026: suy luận của nó
+    #     hỏng trên tài liệu in ở dạng trừ, để lại residual đúng gấp đôi mã 52
+    #     trên tài liệu không có lỗi đọc nào. Nay quy ước được ĐỌC từ tài liệu
+    #     và truyền vào, nên không còn gì phải suy.
+    #
+    #     Vẫn phải nằm SAU bước ép kiểu: trước đó giá trị VLM còn có thể là
+    #     chuỗi, và một phép kiểm dấu chạy trên chuỗi sẽ lặng lẽ không làm gì.
+    if (canh_bao_ma_11 := kiem_dau_ma_11(data, quy_uoc)) is not None:
+        warnings.append(canh_bao_ma_11)
 
     # 2. Số âm ở những chỉ tiêu không được phép âm
     for key, value in data.items():
@@ -209,7 +224,7 @@ def validate_result(
     #    chữ số ở BẤT KỲ field nào trong nhóm là lộ ngay. Đây là thứ bắt
     #    được kiểu sai nguy hiểm nhất: giá trị đọc ra trông hợp lý, đúng
     #    thứ bậc, nhưng thực ra lấy nhầm dòng.
-    for parts, total_key, message in identities_for(standard):
+    for parts, total_key, message in identities_for(standard, quy_uoc):
         total = data.get(total_key)
         values = [data.get(key) for key in parts]
 
@@ -300,10 +315,12 @@ def validate_result(
             # liệu thuần một đơn vị.
             "he_so_don_vi_theo_truong": he_so_da_dung,
             "standard": standard.value,
-            # Khoá nào đã bị lật dấu. Không ghi lại thì về sau không ai phân
-            # biệt được "báo cáo in dương" với "ta đã sửa", và một bước sửa
-            # vô hình là bước không kiểm toán lại được.
-            "dau_da_sua": dau_da_sua,
+            # Quy ước dấu đã dùng để chọn hai đẳng thức B02. LUÔN có mặt, kể
+            # cả khi là `khong_xac_dinh`: hai đẳng thức ấy khi đó KHÔNG chạy,
+            # và một lượt chạy 7 đẳng thức phải phân biệt được với một lượt
+            # chạy đủ 9 — nếu không thì residual bằng 0 của hai lượt trông
+            # giống hệt nhau trong khi chúng nói hai chuyện khác hẳn.
+            "quy_uoc_dau": quy_uoc.value,
         },
         "warnings": warnings,
     }

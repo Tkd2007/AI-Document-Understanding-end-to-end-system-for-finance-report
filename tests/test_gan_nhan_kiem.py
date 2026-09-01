@@ -7,7 +7,7 @@ biến một tài liệu gán nhãn dở dang thành một tài liệu trông đ
 đi thẳng vào tập gold như vậy.
 """
 
-from fields_config import Standard, fields_for
+from fields_config import QuyUocDau, Standard, fields_for
 from gan_nhan.kiem import (
     CHUA_GO,
     CHUA_QUYET_DINH_DUOC,
@@ -55,9 +55,10 @@ def _bo_can_bang() -> dict:
             "ln_thuan_hdkd": 200,
             "ln_khac": 20,
             "loi_nhuan_truoc_thue": 220,
-            # TT99 — quy ước ĐỘ LỚN, chưa xác minh nên giữ như cũ. Bộ số
-            # này chạy dưới Standard.TT99 nên đừng đồng bộ dấu với các ca
-            # TT200 bên dưới; hai chuẩn đang cố ý khác nhau (31/08/2026).
+            # Bộ số này ở quy ước TRỪ: mã 11 và mã 51 in độ lớn, nên
+            # `20 = 10 − 11` và `60 = 50 − 51 − 52`. Từ 01/09/2026 quy ước là
+            # thuộc tính của TÀI LIỆU chứ không của Thông tư, nên phải truyền
+            # `QuyUocDau.TRU` vào chứ không suy từ `Standard`.
             "thue_tndn_hien_hanh": 40,
             "thue_tndn_hoan_lai": 5,
             "loi_nhuan_sau_thue": 175,
@@ -74,7 +75,7 @@ def _bo_can_bang() -> dict:
 
 
 def test_bo_can_bang_thi_moi_dang_thuc_deu_dat():
-    ket = kiem_dang_thuc(_bo_can_bang(), Standard.TT99)
+    ket = kiem_dang_thuc(_bo_can_bang(), Standard.TT99, QuyUocDau.TRU)
 
     assert len(ket) == 9
     assert all(r.trang_thai == DAT for r in ket), [r.mo_ta for r in ket if r.trang_thai != DAT]
@@ -89,7 +90,7 @@ def test_lech_mot_o_thi_bao_dung_dang_thuc_do_va_bao_muc_lech():
     v = _bo_can_bang()
     v["hang_ton_kho"] = 400          # lệch +50 so với bộ cân
 
-    ket = {r.mo_ta: r for r in kiem_dang_thuc(v, Standard.TT99)}
+    ket = {r.mo_ta: r for r in kiem_dang_thuc(v, Standard.TT99, QuyUocDau.TRU)}
     hong = [r for r in ket.values() if r.trang_thai == LECH]
 
     assert len(hong) == 1
@@ -114,7 +115,7 @@ def test_khong_bao_gio_tra_ve_gia_tri_de_nghi():
     v = _bo_can_bang()
     v["hang_ton_kho"] = 400
 
-    for r in kiem_dang_thuc(v, Standard.TT99):
+    for r in kiem_dang_thuc(v, Standard.TT99, QuyUocDau.TRU):
         assert set(vars(r)) == {"mo_ta", "trang_thai", "lech", "thieu"}
 
 
@@ -126,7 +127,11 @@ def test_thieu_thanh_phan_khong_duoc_dem_la_dat():
     v = _bo_can_bang()
     v["hang_ton_kho"] = None
 
-    ket = [r for r in kiem_dang_thuc(v, Standard.TT99) if r.trang_thai == THIEU_THANH_PHAN]
+    ket = [
+        r
+        for r in kiem_dang_thuc(v, Standard.TT99, QuyUocDau.TRU)
+        if r.trang_thai == THIEU_THANH_PHAN
+    ]
 
     assert len(ket) == 1
     assert ket[0].thieu == ("hang_ton_kho",)
@@ -141,7 +146,7 @@ def test_gia_tri_0_van_cho_dang_thuc_chay_binh_thuong():
     v = _bo_can_bang()
     v["tai_san_sinh_hoc_ngan_han"] = 0
 
-    assert all(r.trang_thai == DAT for r in kiem_dang_thuc(v, Standard.TT99))
+    assert all(r.trang_thai == DAT for r in kiem_dang_thuc(v, Standard.TT99, QuyUocDau.TRU))
 
 
 def test_danh_muc_kiem_bat_nguoi_tick_dung_nhung_o_may_khong_biet():
@@ -158,21 +163,35 @@ def test_danh_muc_kiem_bat_nguoi_tick_dung_nhung_o_may_khong_biet():
     assert con_thieu_o_kiem(dict.fromkeys(O_NGUOI_PHAI_TICK, True)) == []
 
 
-def _dau(values: dict, chuan: Standard = Standard.TT200) -> dict:
+def _dau(
+    values: dict,
+    chuan: Standard = Standard.TT200,
+    quy_uoc: QuyUocDau = QuyUocDau.TRU,
+) -> dict:
     """Kết quả kiểm dấu, tra theo tên trường cho dễ đọc."""
-    return {r.truong: r.trang_thai for r in kiem_dau_khau_tru(values, chuan)}
+    return {r.truong: r.trang_thai for r in kiem_dau_khau_tru(values, chuan, quy_uoc)}
 
 
-def test_gia_von_am_bi_bao_la_nghi_sai_dau():
+def test_dau_ma_11_xet_theo_QUY_UOC_cua_tai_lieu():
     """
-    Guideline mục 3.3 bắt mã 11 ghi dương dù báo cáo in trong ngoặc đơn, vì
-    văn bản đưa nó vào công thức `Mã 20 = Mã 10 - Mã 11`. `FIELD_RULES` đặt
-    `allow_negative` False cho nó, nên âm là sai bất kể đẳng thức có cân hay
-    không — không cần và không được chờ đẳng thức xác nhận.
+    Từ 01/09/2026 dấu mã 11 không còn một luật cứng "luôn dương".
+
+    Luật cũ chỉ đúng với tài liệu in mã 11 ở dạng độ lớn; trên tài liệu in
+    trong ngoặc đơn nó ép dấu ngược hẳn tờ giấy. Nay dấu đúng là dấu KHỚP QUY
+    ƯỚC, nên cùng một con số cho hai kết luận trái ngược tuỳ tài liệu — và đó
+    chính là điều phải giữ. Vẫn không cần chờ đẳng thức xác nhận: giá vốn
+    "âm" theo nghĩa kinh tế không tồn tại nên quy ước ấn định dấu hoàn toàn.
     """
     v = {ten: 0 for ten in fields_for(Standard.TT200)}
-    assert _dau({**v, "gia_von_hang_ban": 100})["gia_von_hang_ban"] == DAU_DAT
-    assert _dau({**v, "gia_von_hang_ban": -100})["gia_von_hang_ban"] == NGHI_SAI_DAU
+    assert _dau({**v, "gia_von_hang_ban": 100}, quy_uoc=QuyUocDau.TRU)[
+        "gia_von_hang_ban"] == DAU_DAT
+    assert _dau({**v, "gia_von_hang_ban": -100}, quy_uoc=QuyUocDau.TRU)[
+        "gia_von_hang_ban"] == NGHI_SAI_DAU
+
+    assert _dau({**v, "gia_von_hang_ban": -100}, quy_uoc=QuyUocDau.TONG)[
+        "gia_von_hang_ban"] == DAU_DAT
+    assert _dau({**v, "gia_von_hang_ban": 100}, quy_uoc=QuyUocDau.TONG)[
+        "gia_von_hang_ban"] == NGHI_SAI_DAU
 
 
 def test_thue_hoan_lai_duong_HOP_LE_khi_dang_thuc_da_can():
@@ -201,10 +220,12 @@ def test_thue_hoan_lai_duong_HOP_LE_khi_dang_thuc_da_can():
     # Chỉ đẳng thức thuế mới nói được gì ở đây; các đẳng thức khác lệch vì bộ
     # số dựng tay này để trống phần còn lại của B01 và B02.
     dang_thuc_thue = next(
-        r for r in kiem_dang_thuc(v, Standard.TT200) if "thuế hiện hành" in r.mo_ta
+        r
+        for r in kiem_dang_thuc(v, Standard.TT200, QuyUocDau.TONG)
+        if "Mã 60" in r.mo_ta
     )
     assert dang_thuc_thue.trang_thai == DAT
-    assert _dau(v)["thue_tndn_hoan_lai"] == DAU_DAT
+    assert _dau(v, quy_uoc=QuyUocDau.TONG)["thue_tndn_hoan_lai"] == DAU_DAT
 
 
 def test_thieu_thanh_phan_thi_bao_CHUA_QUYET_DINH_DUOC_chu_khong_bao_dat():
@@ -231,15 +252,20 @@ def test_thieu_thanh_phan_thi_bao_CHUA_QUYET_DINH_DUOC_chu_khong_bao_dat():
     assert dat["gia_von_hang_ban"] == CHUA_GO
 
 
-def test_bo_so_DGC_that_da_tung_lot_qua_muoi_mot_lan_kiem_dang_thuc():
+def test_bo_so_DGC_chep_nguyen_van_nay_DA_CAN_duoi_dung_quy_uoc():
     """
-    Hồi quy trên ca đã xảy ra thật, chép từ B02 của `DGC_2025Q2_TT200`.
+    Hồi quy đảo chiều, chép từ B02 của `DGC_2025Q2_TT200`.
 
-    Bộ số này chép đúng từng chữ số trên báo cáo nhưng sai dấu ở mã 11 và
-    mã 51, nên hai đẳng thức B02 lệch. File gold khi đó có
-    `so_lan_kiem_dang_thuc` bằng 11: người gán nhãn kiểm mười một lần mà
-    không tìm ra, vì không có lỗi đọc nào để tìm. Phép kiểm dấu tồn tại để
-    lần sau câu trả lời hiện ra ngay lần kiểm đầu.
+    Bộ số này chép ĐÚNG TỪNG CHỮ SỐ và đúng từng dấu ngoặc trên báo cáo. Dưới
+    quy tắc cũ nó bị coi là "sai dấu ở mã 11 và mã 51", vì quy tắc ấy ép mã 11
+    dương và buộc mã 60 vào dạng tổng theo CHUẨN. File gold khi đó có
+    `so_lan_kiem_dang_thuc` bằng 11: người gán nhãn kiểm mười một lần mà không
+    tìm ra lỗi, vì KHÔNG CÓ lỗi đọc nào để tìm — cái sai nằm ở quy tắc.
+
+    DGC in ở dạng TỔNG (mã 11 và mã 51 đều trong ngoặc). Đọc nguyên văn rồi
+    chấm bằng đúng quy ước của nó thì cả hai đẳng thức B02 cân tuyệt đối và
+    không dòng nào bị báo sai dấu. Đây là thứ thay đổi ngày 01/09/2026 mua
+    được, và là hàng rào chặn ai đó khôi phục luật "giá vốn luôn dương".
     """
     v = {ten: 0 for ten in fields_for(Standard.TT200)}
     v.update(
@@ -250,23 +276,51 @@ def test_bo_so_DGC_that_da_tung_lot_qua_muoi_mot_lan_kiem_dang_thuc():
             "ln_thuan_hdkd": 628_952_962_840,
             "ln_khac": -83_660_312,
             "loi_nhuan_truoc_thue": 628_869_302_528,
-            "thue_tndn_hien_hanh": 23_554_373_035,
+            "thue_tndn_hien_hanh": -23_554_373_035,
             "thue_tndn_hoan_lai": 0,
             "loi_nhuan_sau_thue": 605_314_929_493,
         }
     )
 
-    dat = _dau(v)
-    assert dat["gia_von_hang_ban"] == NGHI_SAI_DAU
-    assert dat["thue_tndn_hien_hanh"] == NGHI_SAI_DAU
+    dat = _dau(v, quy_uoc=QuyUocDau.TONG)
+    assert dat["gia_von_hang_ban"] == DAU_DAT
+    assert dat["thue_tndn_hien_hanh"] == DAU_DAT
 
-    # Mức lệch đúng bằng GẤP ĐÔI trường bị đảo dấu — chữ ký số học của lỗi
-    # dấu, thứ tách nó khỏi ca báo cáo tự mâu thuẫn.
-    lech = {r.mo_ta: r.lech for r in kiem_dang_thuc(v, Standard.TT200) if r.trang_thai == LECH}
-    assert set(lech.values()) == {-2 * 107_515_846_476, 2 * 23_554_373_035}
+    b02 = [
+        r
+        for r in kiem_dang_thuc(v, Standard.TT200, QuyUocDau.TONG)
+        if "Mã 20" in r.mo_ta or "Mã 60" in r.mo_ta
+    ]
+    assert len(b02) == 2  # noqa: PLR2004
+    assert all(r.trang_thai == DAT for r in b02)
 
-    # Đảo dấu theo mục 3.3 thì mọi đẳng thức cân, không phải đổi chữ số nào.
-    v["gia_von_hang_ban"] = 107_515_846_476
-    v["thue_tndn_hien_hanh"] = -23_554_373_035
-    assert all(r.trang_thai == DAT for r in kiem_dang_thuc(v, Standard.TT200))
-    assert all(t == DAU_DAT for t in _dau(v).values())
+
+def test_cham_DGC_bang_quy_uoc_SAI_thi_lech_dung_gap_doi():
+    """
+    Mặt kia của cùng bộ số: chấm bằng quy ước TRỪ — đúng thứ quy tắc cũ làm —
+    thì cả hai đẳng thức B02 vỡ, mỗi cái lệch ĐÚNG GẤP ĐÔI dòng khấu trừ của
+    nó. Chữ ký số học ấy là thứ tách "dùng nhầm quy ước" khỏi "báo cáo tự mâu
+    thuẫn", và nó chính là 47.108.746.070 đồng mà phép tuyển "thoả một trong
+    hai đẳng thức" sẽ cho đi qua im lặng.
+    """
+    v = {ten: 0 for ten in fields_for(Standard.TT200)}
+    v.update(
+        {
+            "doanh_thu_thuan": 196_237_282_225,
+            "gia_von_hang_ban": -107_515_846_476,
+            "loi_nhuan_gop": 88_721_435_749,
+            "loi_nhuan_truoc_thue": 628_869_302_528,
+            "thue_tndn_hien_hanh": -23_554_373_035,
+            "thue_tndn_hoan_lai": 0,
+            "loi_nhuan_sau_thue": 605_314_929_493,
+        }
+    )
+
+    # Chỉ xét hai đẳng thức B02 phụ thuộc quy ước; các đẳng thức khác lệch vì
+    # bộ số dựng tay này để trống phần còn lại của B01 và B02.
+    lech = {
+        r.mo_ta: r.lech
+        for r in kiem_dang_thuc(v, Standard.TT200, QuyUocDau.TRU)
+        if r.trang_thai == LECH and ("Mã 20" in r.mo_ta or "Mã 60" in r.mo_ta)
+    }
+    assert set(lech.values()) == {-2 * 107_515_846_476, -2 * 23_554_373_035}

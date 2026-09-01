@@ -1,4 +1,4 @@
-from fields_config import Standard
+from fields_config import QuyUocDau, Standard
 from validation import coerce_number, validate_result
 
 
@@ -45,7 +45,7 @@ VNM_Q1_2026 = {
 
 
 def test_bao_cao_that_khong_co_warning():
-    assert validate_result(VNM_Q1_2026, Standard.TT99)["warnings"] == []
+    assert validate_result(VNM_Q1_2026, Standard.TT99, QuyUocDau.TRU)["warnings"] == []
 
 
 def test_lech_mot_chu_so_bi_bat():
@@ -57,7 +57,7 @@ def test_lech_mot_chu_so_bi_bat():
     sai = dict(VNM_Q1_2026)
     sai["tai_san_ngan_han"] += 10_000_000
 
-    assert validate_result(sai, Standard.TT99)["warnings"] != []
+    assert validate_result(sai, Standard.TT99, QuyUocDau.TRU)["warnings"] != []
 
 
 # Doanh nghiệp lỗ nặng: lỗ luỹ kế đã ăn hết vốn nên VCSH âm, bán dưới giá
@@ -85,7 +85,8 @@ DOANH_NGHIEP_LO = {
 
 def _canh_bao_nhac_toi(result: dict, cum_tu: str) -> list[str]:
     """Các cảnh báo có nhắc tới cụm từ này — để assert đúng luật cần xét."""
-    return [w for w in validate_result(result, Standard.TT99)["warnings"] if cum_tu in w]
+    canh_bao = validate_result(result, Standard.TT99, QuyUocDau.TRU)["warnings"]
+    return [w for w in canh_bao if cum_tu in w]
 
 
 def test_doanh_nghiep_lo_khong_sinh_warning_nao():
@@ -93,7 +94,7 @@ def test_doanh_nghiep_lo_khong_sinh_warning_nao():
     Ca biên tổng hợp: cả ba bất đẳng thức có điều kiện đều bị vi phạm về
     mặt hình thức, nhưng bộ số hoàn toàn đúng nên không được báo gì.
     """
-    assert validate_result(DOANH_NGHIEP_LO, Standard.TT99)["warnings"] == []
+    assert validate_result(DOANH_NGHIEP_LO, Standard.TT99, QuyUocDau.TRU)["warnings"] == []
 
 
 def test_vcsh_am_thi_no_vuot_tong_tai_san_khong_bi_bao_oan():
@@ -187,7 +188,9 @@ def test_bao_cao_TT200_duoc_kiem_bang_dang_thuc_TT200():
     tiêu TT200 không có, nên luôn None, nên CẢ đẳng thức bị bỏ qua. Một lỗi
     500 tỷ đi qua không một tiếng động.
     """
-    warnings = validate_result(BAO_CAO_TT200_LECH_PHAN_RA, Standard.TT200)["warnings"]
+    warnings = validate_result(
+        BAO_CAO_TT200_LECH_PHAN_RA, Standard.TT200, QuyUocDau.TRU
+    )["warnings"]
 
     assert _canh_bao_phan_ra(warnings), (
         "Lệch 500 tỷ trong phân rã tài sản ngắn hạn TT200 mà không sinh cảnh báo — "
@@ -204,12 +207,13 @@ def test_dung_nham_chuan_thi_dang_thuc_phan_ra_im_lang():
     mặc định về cho validate_result() thì test trên đỏ và test này giải
     thích ngay vì sao.
     """
-    warnings = validate_result(BAO_CAO_TT200_LECH_PHAN_RA, Standard.TT99)["warnings"]
+    warnings = validate_result(BAO_CAO_TT200_LECH_PHAN_RA, Standard.TT99, QuyUocDau.TRU)["warnings"]
 
     assert not _canh_bao_phan_ra(warnings)
 
 
 def test_meta_ghi_dung_chuan_da_dung():
     """Chuẩn nào được đem đi kiểm phải đọc lại được từ kết quả, không phải đoán."""
-    assert validate_result(VNM_Q1_2026, Standard.TT200)["meta"]["standard"] == "TT200"
-    assert validate_result(VNM_Q1_2026, Standard.TT99)["meta"]["standard"] == "TT99"
+    meta_200 = validate_result(VNM_Q1_2026, Standard.TT200, QuyUocDau.TRU)["meta"]
+    assert meta_200["standard"] == "TT200"
+    assert validate_result(VNM_Q1_2026, Standard.TT99, QuyUocDau.TRU)["meta"]["standard"] == "TT99"

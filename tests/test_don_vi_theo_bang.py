@@ -25,7 +25,7 @@ from PIL import Image
 import extract_vlm
 from extract_vlm import extract_fields_from_regions
 from extraction_types import FieldResult, Provenance
-from fields_config import Standard
+from fields_config import QuyUocDau, Standard
 from layout_detection import TableRegion
 from router import _he_so_cua_o_da_giu
 from validation import validate_result
@@ -126,7 +126,7 @@ def test_ca_hai_bang_cung_ra_dung_so_VND(monkeypatch):
     """
     ket_qua = _hai_vung(monkeypatch)
     data = validate_result(
-        ket_qua.values(), Standard.TT200, ket_qua.meta["he_so_don_vi_theo_truong"]
+        ket_qua.values(), Standard.TT200, QuyUocDau.TRU, ket_qua.meta["he_so_don_vi_theo_truong"]
     )["data"]
 
     assert data["tong_tai_san"] == 18_281_308_818_000

@@ -36,7 +36,7 @@ from pathlib import Path
 
 import numpy as np
 
-from fields_config import Standard, fields_for, identities_for
+from fields_config import QuyUocDau, Standard, fields_for, identities_for
 
 # Dung sai đặt TƯỜNG MINH thay vì để numpy tự chọn.
 #
@@ -444,16 +444,47 @@ if __name__ == "__main__":
 
     for chuan in Standard:
         cac_field = fields_for(chuan)
-        A, field_order = build_matrix(cac_field, identities_for(chuan))
+        # Báo cáo dựng trên quy ước TỔNG, nhưng phần bất biến dưới đây được
+        # KIỂM LẠI mỗi lần chạy chứ không chép từ trí nhớ: nếu một ngày nào đó
+        # hai quy ước cho kết quả khác nhau thì câu khẳng định in trong báo cáo
+        # phải sai theo, chứ không được đứng yên nói điều không còn đúng.
+        so_do = {}
+        for quy_uoc in (QuyUocDau.TONG, QuyUocDau.TRU):
+            A_q, thu_tu_q = build_matrix(cac_field, identities_for(chuan, quy_uoc))
+            so_do[quy_uoc] = (
+                rank(A_q),
+                null_space(A_q).shape[1],
+                sorted(k for k, v in single_field_localizable(A_q, thu_tu_q).items() if v),
+                sorted(tuple(sorted(c)) for c in collinear_columns(A_q, thu_tu_q)),
+            )
+        bat_bien = so_do[QuyUocDau.TONG] == so_do[QuyUocDau.TRU]
+
+        A, field_order = build_matrix(cac_field, identities_for(chuan, QuyUocDau.TONG))
 
         duong_dan = Path("data/output") / f"identifiability_{chuan.value}.md"
         noi_dung = report(
             A,
             field_order,
-            identities_for(chuan),
+            identities_for(chuan, QuyUocDau.TONG),
             tieu_de=f"Identifiability — chuẩn {chuan.value}",
-            out_path=duong_dan,
         )
+        noi_dung += (
+            """
+## Bất biến với quy ước dấu
+
+Ma trận trên dựng ở quy ước `tong`. Dựng lại ở quy ước `tru` cho ra """
+            + ("**cùng** " if bat_bien else "**KHÁC** ")
+            + """hạng, cùng số chiều không gian null, cùng danh sách chỉ tiêu
+định vị được và cùng danh sách cặp không phân biệt được — so từng phần tử chứ
+không chỉ so số đếm.
+
+Lý do: đổi quy ước chỉ lật dấu vài cột của `A`, mà hạng, không gian null và
+quan hệ tỷ lệ giữa các cột đều bất biến với phép lật ấy. Câu này được KIỂM LẠI
+mỗi lần sinh báo cáo, không chép từ trí nhớ.
+"""
+        )
+        duong_dan.parent.mkdir(parents=True, exist_ok=True)
+        duong_dan.write_text(noi_dung, encoding="utf-8")
 
         print(noi_dung)
         print(f"--- Đã ghi: {duong_dan} ---\n")

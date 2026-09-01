@@ -334,7 +334,7 @@ giống nhau đến mức nếu một trang vào train và một trang vào test
 
 ## Sửa đổi
 
-**Mười sáu tu chính, không cái nào được rút gọn hay viết đè.** Đó là điều kiện
+**Mười bảy tu chính, không cái nào được rút gọn hay viết đè.** Đó là điều kiện
 để việc đăng ký trước còn giá trị: một bản ghi sửa được sau khi thấy kết quả
 thì không chứng minh được gì. **Mục này vì thế cố ý nằm ngoài mọi đợt dọn dẹp
 tài liệu của repo** — nén nó lại là phá đúng thứ nó tồn tại để bảo vệ. Mục lục
@@ -364,8 +364,80 @@ chính ghi *ta cam kết đo khác đi*, changelog ghi *con số đã đổi bao
 | 28/08 | Tài liệu đã chạy pipeline bị loại khỏi tập gán nhãn đôi | đo đồng thuận |
 | 28/08 | **HOÃN Mốc 2, chạy Mốc 3 trước** — kèm ngoại lệ cho ca hoà | thứ tự mốc dừng |
 | 01/09 | Phạm vi tổng thể loại thêm chứng khoán, bảo hiểm, quản lý quỹ | tính khái quát của H1, H2 |
+| 01/09 | Nhãn chép **nguyên văn**; quy ước dấu B02 thành một trường đọc từ tài liệu | H1, H2, guideline 3.3, tập gold |
 
 Mọi sửa đổi ghi vào đây kèm ngày và lý do, không sửa đè lên trên.
+
+### 01/09/2026 (muộn hơn) — Nhãn chép nguyên văn; quy ước dấu thành tham số tài liệu
+
+**Sửa đổi.** Hai thay đổi đi liền nhau, và cái sau là hệ quả bắt buộc của cái
+trước.
+
+*(a) Giao thức gán nhãn.* Mọi giá trị chép **NGUYÊN VĂN như in** — ngoặc đơn
+là âm, không ngoặc là dương — cho MỌI chỉ tiêu. Ba ngoại lệ diễn giải bị bỏ:
+"giá vốn luôn dương", "mã 51/52 ghi theo nghĩa kinh tế", và quy tắc TT99 riêng
+"giữ nguyên dấu như in". Người gán nhãn không còn phải phán đoán một dòng là
+chi phí hay thu nhập; việc của họ thuần là ĐỌC.
+
+*(b) Hình dạng ràng buộc.* Hai đẳng thức B02 — mã 20 và mã 60 — nay chọn dạng
+theo một **tham số của từng tài liệu**, `quy_uoc_dau ∈ {tong, tru,
+khong_xac_dinh}`, đọc từ trang giấy và lưu trong file gold. Trước đó dạng của
+chúng bị buộc theo CHUẨN Thông tư.
+
+**Vì sao (b) là hệ quả bắt buộc của (a).** Chép nguyên văn thì con số một mình
+không diễn giải được: `51 = 68.069.473.287` không nói được đó là chi phí hay
+thu nhập thuế. Quy ước vì thế là **dữ liệu phải ghi**, không phải kiến thức
+suy ra được — đúng khuôn mẫu `unit_declared` / `unit_multiplier` mà mục 3.1 đã
+dùng cho đơn vị tính. Bỏ (b) mà giữ (a) sẽ để lại một tập gold không diễn giải
+được; giữ (b) mà bỏ (a) là quay lại bắt người gán nhãn phán đoán kế toán.
+
+**Bằng chứng buộc phải đổi.** Người chủ trì đọc tay 15 báo cáo TT200 ngày
+01/09/2026: **cả hai cách in cùng tồn tại trong một chuẩn** — 12 mã in dạng
+tổng, 3 mã (`BCM`, `DPM`, `DVD`) in dạng trừ. Giả định "mỗi Thông tư một quy
+ước", vốn là nền của cách buộc cũ, bị chính dữ liệu bác bỏ. Hệ quả đo được:
+trên tài liệu TT200 in dạng trừ, tầng trích xuất để lại residual **đúng gấp
+đôi mã 52** trên một tài liệu **không có lỗi đọc nào** — một dương tính giả có
+hệ thống, sinh ra bởi cấu hình chứ không bởi tài liệu, ngay giữa phép đo của
+H1. Số cụ thể trên ca đã kiểm: −56.149.699.672 đồng.
+
+**Đã bác một phương án rẻ hơn, và ghi lại để không ai đề xuất lại.** Phương án
+"chấp nhận nếu thoả MỘT TRONG HAI dạng" bị bác vì hai lý do đo được: (1) trên
+`DGC_2025Q2_TT200`, một lỗi lật dấu thuần tuý ở mã 51 chuyển bộ số từ thoả
+dạng này sang thoả dạng kia, nên phép tuyển cho lọt một sai lệch
+**47.108.746.070 đồng** — hai vế lệch nhau đúng `2×(51+52)`, đúng bằng lượng
+mà lỗi dấu dịch chuyển, nên phép tuyển mù với chính lớp lỗi cần bắt; (2) phép
+tuyển không viết được thành ràng buộc tuyến tính, nên không có ma trận `A`,
+không có `dim null(A)`, tức bỏ luôn toàn bộ H0.
+
+**KHÔNG đổi kết luận nào của H0, và đây là số đo chứ không phải lập luận.**
+Dựng `A` cho cả bốn tổ hợp (hai chuẩn × hai quy ước): cùng `rank(A)` bằng 9,
+cùng `dim null(A)` (17 với TT200, 18 với TT99), cùng 7/26 và 7/27 chỉ tiêu
+định vị được, cùng 0 cột toàn 0, và cùng **danh sách** cặp không phân biệt
+được — trùng từng phần tử. Lý do: đổi quy ước chỉ lật dấu vài cột của `A`, mà
+hạng, không gian null và quan hệ tỷ lệ giữa các cột đều bất biến với phép lật
+ấy. Phép kiểm này nay chạy lại mỗi lần sinh `identifiability_*.md` thay vì
+được chép từ trí nhớ.
+
+**Giả thuyết H0–H3 giữ nguyên phát biểu; mốc dừng giữ nguyên.** Mốc 3 chạy
+trên tầng XBRL của SEC nên không có biểu mẫu Việt Nam nào trong đó và không bị
+chạm. Số đã công bố trên tầng gold không phải rút lại: bug chỉ nổ khi quy ước
+in của tài liệu khác quy ước bị đóng cứng cho chuẩn của nó, mà 5 tài liệu gold
+TT200 đều in dạng tổng — đúng nhánh đang cài.
+
+**Cái phải dẫn lại:** mọi thống kê quy lỗi cho "xử lý dấu", cụ thể con số *8
+trong 24 lỗi câm* đo ngày 27/08/2026, vì `chuan_hoa_dau()` — cơ chế sinh ra
+chúng — đã bị xoá.
+
+**Giới hạn mới, khai trước khi có kết quả.** Ràng buộc B02 nay phụ thuộc một
+bit đọc từ tờ giấy. Sai chữ số vẫn bị bắt như cũ; riêng **lỗi đọc nhầm dấu
+ngoặc ở mã 11** lật cả hai đẳng thức B02 của tài liệu đó. Giảm thiểu bằng hai
+nguồn độc lập kiểm chéo (công thức in ưu tiên hơn dấu ngoặc mã 11), và ca hai
+nguồn mâu thuẫn được đếm RIÊNG trong metrics để phần nào của giới hạn này thật
+sự xảy ra là đo được chứ không phải ước đoán.
+
+**Tập gold gán nhãn lại từ đầu.** Quyết định của người chủ trì cùng ngày. Giá
+trị đang lưu đã qua nhiều lượt lật dấu cơ học khi quy tắc đổi nên không còn là
+bản sao trung thực của trang giấy — `notes` của bốn file ghi thẳng điều đó.
 
 ### 01/09/2026 — Tổng thể thu hẹp: loại cả chứng khoán, bảo hiểm, quản lý quỹ
 

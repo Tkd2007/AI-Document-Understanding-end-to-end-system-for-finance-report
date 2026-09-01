@@ -115,75 +115,87 @@ Báo cáo in `29.403` ở đơn vị "triệu đồng" thì ghi `29403000000`.
 *Vì sao:* hai tài liệu khác đơn vị mà lưu ở đơn vị gốc thì không so được với
 nhau, và mọi phép đo accuracy trên nhiều công ty mất nghĩa.
 
-### 3.3 Số âm, và dấu của ba dòng khấu trừ
+### 3.3 Số âm, và quy ước dấu của B02
 
-Báo cáo tài chính in số âm **trong ngoặc đơn**: `(1.234.567)`. Ghi giá trị âm:
-`-1234567`. Một số báo cáo dùng dấu trừ. Cả hai đều là số âm, ghi như nhau.
+**Luật một câu: chép ĐÚNG NHƯ IN. Ngoặc đơn là âm, không ngoặc là dương.**
+Áp cho mọi chỉ tiêu, không trừ chỉ tiêu nào — kể cả giá vốn hàng bán và hai
+dòng thuế. Một số báo cáo dùng dấu trừ thay ngoặc; cả hai đều là số âm.
 
-**Ba chỉ tiêu khấu trừ dưới đây không theo luật "ngoặc là âm":**
+*Vì sao không còn ngoại lệ nào:* chép nguyên văn là thao tác **cơ học và tái
+lập được**. Hai người gán nhãn độc lập nhìn cùng một ô sẽ ra cùng một số, nên
+độ đồng thuận đo được phản ánh chất lượng ĐỌC chứ không phản ánh mức độ hai
+người hiểu kế toán giống nhau. Nó cũng nhất quán với mục 3.5 vốn đã cấm "sửa
+cho cân": nhãn gold phải phản ánh tờ giấy, mọi diễn giải là việc của tầng sau.
 
-| Chỉ tiêu | Mã | Quy tắc |
+#### Nhưng phải ghi thêm MỘT thứ: quy ước dấu của tài liệu
+
+Chép nguyên văn thì con số một mình không tự diễn giải được. `51 =
+68.069.473.287` không nói được đó là chi phí thuế hay thu nhập thuế; phải biết
+tài liệu in theo quy ước nào mới biết. Quy ước ấy **cũng nằm trên tờ giấy**,
+nên nó là dữ liệu phải ghi lại, không phải kiến thức phải suy.
+
+Đây đúng khuôn mẫu đã dùng cho đơn vị tính ở mục 3.1: `unit_declared` giữ
+nguyên văn, `unit_multiplier` giữ phần diễn giải. Quy ước dấu là mỏ neo phá
+**bất biến dấu** y như dòng đơn vị tính là mỏ neo phá bất biến scale.
+
+Ghi vào khoá `quy_uoc_dau` của file gold, ba giá trị:
+
+| Giá trị | Trên báo cáo | Hai đẳng thức B02 thành |
 |---|---|---|
-| Giá vốn hàng bán | 11 | **Luôn dương.** Giá vốn âm là dấu hiệu đọc sai, không phải số liệu |
-| Chi phí thuế TNDN hiện hành | 51 | **TT200:** ghi theo NGHĨA KINH TẾ, không theo con số in — chi phí ghi **âm**, thu nhập thuế ghi **dương**. **TT99:** giữ nguyên dấu như in, quy ước cũ. Cả hai rồi kiểm bằng đẳng thức mã 60 |
-| Chi phí thuế TNDN hoãn lại | 52 | như mã 51 |
+| `tong` | khoản trừ in **trong ngoặc** (mã 11 âm) | `20 = 10 + 11`, `60 = 50 + 51 + 52` |
+| `tru` | khoản trừ in **độ lớn** (mã 11 dương) | `20 = 10 − 11`, `60 = 50 − 51 − 52` |
+| `khong_xac_dinh` | không đọc được | hai đẳng thức trên **bị bỏ qua** cho tài liệu này |
 
-> **HAI CHUẨN ĐANG DÙNG HAI QUY ƯỚC KHÁC NHAU, có chủ đích và tạm thời.** Quy
-> ước dấu có hướng mới chỉ xác minh trên TT200; TT99 chờ thêm tài liệu, yêu cầu
-> thu thập ở `docs/yeu-cau-tai-lieu-bctc.md`. **Đừng đồng bộ hai chuẩn cho
-> giống nhau khi chưa có tài liệu** — TT200 và TT99 đã khác nhau thật ở phân rã
-> Tài sản ngắn hạn, nên "chắc là giống" không phải căn cứ dùng được. Gán nhãn
-> tài liệu nào thì theo đúng cột của chuẩn ấy.
+**Hai dạng là CÙNG MỘT PHƯƠNG TRÌNH**, chỉ khác chỗ dấu nằm ở dữ liệu hay nằm
+ở công thức. Văn bản gốc viết ở dạng trừ — TT200 Điều 113 mục 3.18 ghi
+`Mã số 60 = Mã số 50 - (Mã số 51 + Mã số 52)` — nên tài liệu in dạng trừ là
+tài liệu chép đúng chữ Thông tư, còn tài liệu in dạng tổng đã tự chuyển vế.
+Cả hai đều hợp lệ và cả hai đều gặp thật.
 
-*Vì sao cần ngoại lệ:* trên cùng một trang B02, dấu ngoặc mang **hai nghĩa
-khác nhau**, và quy tắc "ngoặc là âm" gộp chúng làm một.
+#### Cách đọc quy ước, theo thứ tự ưu tiên
 
-- Mã 40 `(83.660.312)` — lợi nhuận khác **thật sự âm**. Dấu ở đây là số liệu.
-- Mã 11 `(107.515.846.476)` — giá vốn **không âm**. Dấu ở đây là cách trình
-  bày "dòng này bị trừ đi", vì văn bản viết `Mã 20 = Mã 10 − Mã 11`, tức mã
-  11 vào công thức như một số dương.
+1. **Công thức in trong nhãn dòng** — `(60 = 50 + 51 + 52)` hay
+   `(60 = 50 - 51 - 52)`. Đây là lời khai tường minh của chính báo cáo. Phần
+   lớn tài liệu dạng trừ có in, nhưng không phải tất cả.
+2. **Dấu ngoặc của mã 11.** Giá vốn **luôn có mặt, luôn là khoản trừ, và không
+   bao giờ hợp lệ mang nghĩa thu nhập** — nên dấu của nó do quy ước ấn định
+   hoàn toàn. Trong ngoặc ⇒ `tong`; không ngoặc ⇒ `tru`.
+   **Đừng dùng mã 51 hay 52 vào việc này:** chúng có thể bằng 0, và có thể đổi
+   chiều thật khi thuế là thu nhập.
+3. Hai nguồn trên **mâu thuẫn**, hoặc không nguồn nào đọc được ⇒
+   `khong_xac_dinh`. Đừng chọn bừa: chạy đẳng thức theo bên đoán sai sẽ **bịa
+   ra** một lỗi lệch đúng gấp đôi các dòng khấu trừ, tệ hơn hẳn việc bỏ qua.
 
-Ghi mã 11 thành số âm làm đẳng thức `giá vốn + lãi gộp = doanh thu thuần`
-lệch đúng **gấp đôi** giá vốn, và người gán nhãn sẽ đi tìm một lỗi không tồn
-tại trên báo cáo.
+**Quy ước ĐỒNG NHẤT trong một tài liệu** — mã 11 và mã 51 luôn cùng cách in.
+Người chủ trì đã kiểm tay trên toàn bộ tài liệu đọc được ngày 01/09/2026. Nhờ
+vậy nó là **một** bit cho cả tài liệu, không phải một bit cho mỗi đẳng thức.
 
-*Vì sao mã 51 và 52 ghi theo nghĩa kinh tế chứ không chép dấu như in:* **cách
-in không nhất quán ngay trong cùng một báo cáo.** `VRE_2026Q1_TT99` là ca đã
-gặp — người gán nhãn ghi lại nguyên văn ngày 26/08/2026: *"chi phí thuế (51)
-dương nhưng lại để trong () trong báo cáo, 52 cần âm thì lại để bên ngoài
-()"*. Chép dấu như in ở đó cho ra hai ô ngược nhau về quy ước, và không phép
-kiểm nào gỡ được vì cả hai đều "đúng như in".
+#### Dấu của mã 51 và 52 KHÔNG có luật riêng
 
-Ghi theo nghĩa kinh tế thì quy tắc phát biểu được thành một câu không phụ
-thuộc cách trình bày: **tiền đi ra khỏi lợi nhuận thì âm**. Chi phí thuế làm
-lợi nhuận giảm nên âm; hoàn nhập thuế hoãn lại làm lợi nhuận tăng nên dương.
+Chép như in, hết. Đừng áp luật dấu cho chúng, kể cả khi trông có vẻ sai: một
+khoản **thu nhập** thuế hoãn lại đi cùng **chi phí** thuế hiện hành là trạng
+thái kế toán có thật, nên hai dòng ngược chiều nhau là hợp lệ ở cả hai quy
+ước. Đây là kết luận đã phân xử ở Câu 13 (28/08/2026) trên ba tài liệu gold —
+HNG, MWG, VRE — cả ba đều cân đẳng thức tới từng đồng với hai dòng thuế ngược
+chiều. Ép chúng theo luật dấu là **đẻ ra lỗi câm mới**.
 
-*Hệ quả — đẳng thức mã 60 của **TT200** thành một tổng thuần:*
+Cái ràng buộc chúng là **đẳng thức mã 60**, không phải luật dấu.
 
-```
-TT200:  Mã 60 = Mã 50 + Mã 51 + Mã 52     (51/52 có dấu)
-TT99:   Mã 60 = Mã 50 − Mã 51 − Mã 52     (51/52 độ lớn, như Thông tư)
-```
+#### Phép kiểm khi nghi ngờ
 
-**Dạng này cố ý khác chữ trong Thông tư.** TT200 Điều 113 mục 3.18 viết
-`Mã số 60 = Mã số 50 - (Mã số 51 + Mã số 52)`, tức 51/52 vào công thức như độ
-lớn dương. **Hai dạng là cùng một phương trình**, chỉ khác chỗ dấu nằm ở dữ
-liệu hay nằm ở công thức. Đừng "sửa lại cho đúng Thông tư": sửa công thức mà
-không lật dấu dữ liệu là làm vỡ đẳng thức trên toàn bộ tập gold.
+- Bộ số **đã cân** dưới quy ước đã ghi → không sửa gì.
+- Đẳng thức lệch đúng **gấp đôi** một dòng khấu trừ → dòng đó ghi ngược dấu.
+  Đọc lại đúng ô ấy trên báo cáo.
+- **Cả hai** đẳng thức B02 cùng lệch gấp đôi → nhiều khả năng **ghi nhầm quy
+  ước**, không phải nhầm ô. Đọc lại mã 11 và công thức mã 60.
+- Đọc lại vẫn thấy như cũ → giữ nguyên và ghi `notes`, **đừng lật cho cân**.
 
-*Phép kiểm khi nghi ngờ:*
+Công cụ gán nhãn chạy sẵn các phép kiểm này, nên không phải tính tay.
 
-- Bộ số **đã cân** → dấu đang ghi là đúng, không sửa gì.
-- Đẳng thức **lệch đúng gấp đôi** một trong hai dòng thuế → dòng đó ghi ngược
-  dấu. Đọc lại đúng ô ấy trên báo cáo. Nếu đọc lại vẫn thấy nghĩa kinh tế
-  ngược với dấu đang ghi thì giữ nguyên và ghi `notes`, đừng lật cho cân.
-
-Công cụ gán nhãn chạy sẵn phép kiểm này (`kiem_dau_khau_tru`), nên không
-phải tính tay.
-
-Mọi chỉ tiêu **không có** trong bảng trên giữ nguyên dấu như in — kể cả lợi
-nhuận gộp, lợi nhuận khác, vốn chủ sở hữu và bốn dòng lưu chuyển tiền, vì ở
-những chỗ đó dấu âm là số liệu thật.
+> **Đổi ngày 01/09/2026.** Trước đó mã 11 bị ép "luôn dương" và mã 51/52 ghi
+> theo "nghĩa kinh tế", còn dạng đẳng thức thì buộc vào CHUẨN Thông tư —
+> TT200 dùng dạng tổng, TT99 dùng dạng trừ. Cách buộc ấy sai: cả hai cách in
+> cùng tồn tại trong một chuẩn. Xem mục Sửa đổi để biết bằng chứng và hệ quả.
 
 ### 3.4 Ô trống, dấu gạch, và số không
 
@@ -545,9 +557,11 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
       bảng dấu hiệu ở mục 3.7, và **không** theo hậu tố `a`/`b`
 - [ ] `unit_declared` chép **nguyên văn**; `unit_multiplier` khớp
 - [ ] Mọi giá trị đã quy đổi về **đồng**
-- [ ] Số âm ghi bằng dấu trừ, không phải ngoặc; giá vốn (mã 11) ghi
-      **dương**; hai dòng thuế (mã 51, 52) giữ nguyên dấu như in rồi kiểm
-      bằng đẳng thức mã 60 — mục 3.3
+- [ ] Mọi giá trị chép **NGUYÊN VĂN như in**: ngoặc đơn là âm, không ngoặc
+      là dương — kể cả mã 11, 51, 52. Không diễn giải nghĩa kinh tế (mục 3.3)
+- [ ] Đã **ĐỌC** `quy_uoc_dau` trên tờ giấy: công thức mã 60 in trong nhãn
+      dòng, hoặc dấu ngoặc của mã 11. **Không suy từ Thông tư** — cả hai cách
+      in cùng tồn tại trong một chuẩn (mục 3.3)
 - [ ] Ô trống, dấu gạch, và dòng vắng mặt đều ghi `0`; `null` **chỉ** dùng
       khi có dòng mà đọc không ra (mục 3.4)
 - [ ] **Đúng cột**: bảng cân đối lấy cột có ngày mới nhất; bảng kết quả kinh
@@ -570,6 +584,64 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 
 > Mọi thay đổi guideline ghi vào đây kèm **ngày** và **lý do**, và ghi rõ
 > **những tài liệu nào phải gán nhãn lại**. Không sửa đè lên nội dung trên.
+
+### 01/09/2026 (muộn hơn) — Chép NGUYÊN VĂN, và quy ước dấu thành một trường
+
+**Chỗ sửa:** mục 3.3 viết lại trọn; mục 8 đổi hai mục kiểm và thêm hai mục
+mới; `data/gold/*.json` có thêm khoá bắt buộc `quy_uoc_dau`.
+
+**PHẢI GÁN NHÃN LẠI TOÀN BỘ.** Người chủ trì quyết định chép lại tập gold từ
+đầu, và đó là lựa chọn đúng chứ không phải thừa: giá trị đang lưu đã qua nhiều
+lượt **lật dấu cơ học** khi quy tắc đổi — `notes` của bốn file ghi thẳng *"mã
+51 và 52 đã LẬT DẤU CƠ HỌC… KHÔNG phải đọc lại tờ giấy"* — nên chúng không còn
+là bản sao trung thực của trang giấy. Suy ngược từ chúng ra cách báo cáo trình
+bày là suy từ chính quy tắc đang bị thay.
+
+**Quy tắc cũ, ba mảnh, cả ba đều bỏ:**
+
+1. Giá vốn (mã 11) *"luôn dương"*.
+2. Mã 51 và 52 ghi theo *"nghĩa kinh tế"* — chi phí âm, thu nhập dương (áp cho
+   TT200 từ 31/08/2026); TT99 giữ *"nguyên dấu như in"*.
+3. Dạng đẳng thức mã 60 **buộc theo CHUẨN**: TT200 dùng tổng, TT99 dùng trừ.
+
+**Quy tắc mới, một mảnh:** chép nguyên văn như in, rồi ghi thêm `quy_uoc_dau`
+đọc được từ tờ giấy. Dạng của hai đẳng thức B02 do trường đó quyết định.
+
+**Bằng chứng buộc phải đổi, đo trên tài liệu thật ngày 01/09/2026.** Người chủ
+trì đọc tay 15 báo cáo TT200 và thấy **cả hai cách in cùng tồn tại trong một
+chuẩn**: `DGC`, `HNG`, `KDH`, `MWG`, `NLG`, `NVL`, `REE`, `SBT`, `TTF`, `VCG`,
+`VHC`, `VHM` in dạng tổng, còn `BCM`, `DPM`, `DVD` in dạng trừ. Buộc dạng theo
+Thông tư vì thế chấm sai mọi tài liệu TT200 in dạng trừ — và sai theo kiểu tệ
+nhất: đầu ra pipeline trên tài liệu như vậy để lại residual **đúng gấp đôi mã
+52** trên một tài liệu **không có lỗi đọc nào**, tức một dương tính giả bảo
+đảm, ngay giữa phép đo mà H1 sinh ra để làm.
+
+**Vì sao KHÔNG dùng phép tuyển "thoả một trong hai dạng thì đạt".** Đo trên
+`DGC_2025Q2_TT200`: lật dấu riêng mã 51 — lỗi dấu thuần tuý, không đụng chữ số
+nào — làm bộ số chuyển từ thoả dạng tổng sang thoả dạng trừ, nên phép tuyển
+cho nó đi qua trong khi sai lệch thật là **47.108.746.070 đồng**, bằng 7,5% mã
+50. Hai vế lệch nhau đúng `2×(51+52)`, đúng bằng lượng mà một lỗi dấu dịch
+chuyển, nên phép tuyển mù với **chính lớp lỗi** mà ràng buộc này tồn tại để
+bắt. Thêm nữa nó không viết được thành ràng buộc tuyến tính, tức bỏ luôn H0.
+
+**Cùng một bit chi phối CẢ HAI đẳng thức B02.** Trước tu chính này, mã 11 chạy
+quy ước trừ còn mã 51 chạy quy ước tổng — ngay trong cùng một file gold. Thấy
+rõ ở `DGC_2025Q2_TT200`: mã 11 lưu **dương** (dạng trừ) trong khi mã 51 lưu
+**âm** (dạng tổng), mà `notes` của chính file đó ghi trên giấy **cả hai đều in
+trong ngoặc**. Đó là cùng một lỗi, chỉ chưa ai gọi tên.
+
+**Không mất gì về khả năng định vị, đã đo chứ không đoán.** Dựng ma trận cho
+cả bốn tổ hợp (hai chuẩn × hai quy ước) cho ra cùng `rank(A)` bằng 9, cùng
+`dim null(A)` (17 với TT200, 18 với TT99), cùng 7 chỉ tiêu định vị được, và
+cùng **danh sách** cặp không phân biệt được — trùng từng phần tử chứ không chỉ
+trùng số đếm. Phép kiểm này nay chạy lại mỗi lần sinh
+`data/output/identifiability_*.md`.
+
+**Giới hạn mới, phải khai trong bài.** Ràng buộc B02 nay phụ thuộc một bit đọc
+từ tờ giấy. Sai chữ số vẫn bị bắt như cũ; riêng **lỗi đọc nhầm dấu ngoặc ở mã
+11** sẽ lật cả hai đẳng thức B02 của tài liệu đó. Đây là lý do công thức in
+trong nhãn dòng giữ quyền ưu tiên khi có — hai nguồn độc lập kiểm chéo nhau —
+và là lý do ca `mau_thuan` được đếm riêng trong metrics.
 
 ### 01/09/2026 — Phạm vi loại thêm chứng khoán, bảo hiểm, quản lý quỹ
 

@@ -10,9 +10,10 @@ import json
 import re
 from pathlib import Path
 
+import pypdfium2 as pdfium
 import pytest
 
-from tai_bctc import doc_danh_muc, tai_mot
+from tai_bctc import doc_danh_muc, mo_duoc, tai_mot
 
 DANH_MUC = Path("data/nguon_gold.json")
 BAT_BUOC = ("doc_id", "ticker", "period", "san", "loai_bao_cao",
@@ -113,3 +114,58 @@ def test_danh_muc_khong_chua_con_so_tai_chinh():
             if khoa in ("da_kiem", "chua_kiem"):
                 continue
             assert not tien.search(str(gt)), f"{muc['doc_id']}.{khoa} có số tiền"
+
+
+def test_tu_choi_pdf_cut_du_dung_chu_ky_pdf(tmp_path, monkeypatch):
+    """
+    Chế độ lỗi có thật, `FLC_2021Q4_TT200.pdf` ngày 01/09/2026: bản Vietstock
+    phục vụ chỉ 8,0 MB trong khi dict linearization của chính nó khai 13,5 MB,
+    hết file giữa một stream, không có `startxref` lẫn `%%EOF`. Nó bắt đầu
+    bằng `%PDF` và nặng vài megabyte nên lọt qua cả phép kiểm chữ ký lẫn
+    ngưỡng 50 KB, rồi mới nổ ở công cụ gán nhãn — cách nguyên nhân thật rất
+    xa. Ghi nó ra đĩa còn tệ hơn: lượt chạy sau đếm nó là "đã có".
+    """
+    class GiaMao:
+        status_code = 200
+        content = b"%PDF-1.4\n" + b"x" * 60_000
+
+    monkeypatch.setattr("tai_bctc.requests.get", lambda *a, **k: GiaMao())
+    ok, ly_do = tai_mot({"doc_id": "X", "source_url": "https://vi.du/x.pdf"}, tmp_path)
+
+    assert ok is False
+    assert "PDF hỏng" in ly_do
+    assert not (tmp_path / "X.pdf").exists()
+
+
+def test_file_da_co_nhung_hong_thi_tai_lai_chu_khong_bao_da_co(tmp_path, monkeypatch):
+    """
+    Ngưỡng 50 KB vốn để nhận ra trang lỗi HTML; nó không nói gì về một PDF
+    cụt vài megabyte. Nếu đường tắt "đã có" chỉ đo kích thước thì lượt chạy
+    nào cũng báo xanh cho đúng cái file không mở nổi, và người dùng không có
+    cách nào để script tự sửa ngoài việc tự tay đi xoá file.
+    """
+    hong = tmp_path / "X.pdf"
+    hong.write_bytes(b"%PDF-1.4\n" + b"x" * 60_000)
+
+    class GiaMao:
+        status_code = 200
+        content = _pdf_that_byte()
+
+    monkeypatch.setattr("tai_bctc.requests.get", lambda *a, **k: GiaMao())
+    ok, ly_do = tai_mot({"doc_id": "X", "source_url": "https://vi.du/x.pdf"}, tmp_path)
+
+    assert ok is True
+    assert ly_do != "đã có"
+    assert mo_duoc(hong) is None
+
+
+def _pdf_that_byte() -> bytes:
+    """Một PDF hợp lệ nhỏ nhất, dựng bằng chính thư viện dùng để kiểm."""
+    import io
+
+    tai_lieu = pdfium.PdfDocument.new()
+    tai_lieu.new_page(200, 300)
+    dem = io.BytesIO()
+    tai_lieu.save(dem)
+    tai_lieu.close()
+    return dem.getvalue()

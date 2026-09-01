@@ -27,6 +27,7 @@ import sys
 import time
 from pathlib import Path
 
+import pypdfium2 as pdfium
 import requests
 
 # Ép stdout/stderr về UTF-8. Máy Windows này chạy bảng mã cp1252, và cp1252
@@ -51,6 +52,31 @@ def doc_danh_muc(duong_dan: Path = DANH_MUC) -> list[dict]:
     return json.loads(duong_dan.read_text(encoding="utf-8"))["tai_lieu"]
 
 
+def mo_duoc(noi_dung: bytes | Path) -> str | None:
+    """
+    Lý do PDF không mở được, hay `None` nếu mở tốt.
+
+    VÌ SAO KHÔNG DỪNG Ở PHÉP KIỂM `%PDF`: một PDF bị cắt cụt vẫn bắt đầu
+    bằng `%PDF` và vẫn nặng vài megabyte, nên nó lọt qua cả phép kiểm chữ ký
+    lẫn ngưỡng kích thước, rồi mới nổ lúc người gán nhãn mở tài liệu ra.
+    Chuyện này đã xảy ra thật với `FLC_2021Q4_TT200.pdf`: bản Vietstock phục
+    vụ chỉ có 8,0 MB trong khi chính dict linearization của nó khai 13,5 MB,
+    và tải lại bao nhiêu lần cũng ra đúng file hỏng đó. Mở thử ngay lúc tải
+    là chỗ rẻ nhất để bắt, vì lúc đó còn đang đứng cạnh URL để đi tìm nguồn
+    thay thế.
+    """
+    try:
+        tai_lieu = pdfium.PdfDocument(noi_dung)
+    except Exception as e:
+        return f"{type(e).__name__}: {e}"
+    try:
+        if len(tai_lieu) == 0:
+            return "PDF không có trang nào"
+    finally:
+        tai_lieu.close()
+    return None
+
+
 def tai_mot(muc: dict, thu_muc: Path, ghi_de: bool = False) -> tuple[bool, str]:
     """
     Tải một tài liệu. Trả về (thành công, lý do).
@@ -58,10 +84,17 @@ def tai_mot(muc: dict, thu_muc: Path, ghi_de: bool = False) -> tuple[bool, str]:
     Kiểm `%PDF` ở đầu nội dung chứ không tin mã 200: khi tài liệu bị gỡ,
     Vietstock trả về trang lỗi HTML kèm mã 200, và một file HTML mang đuôi
     `.pdf` sẽ làm công cụ gán nhãn nổ ở chỗ khác hẳn nguyên nhân thật.
+
+    File đã nằm sẵn trên đĩa cũng phải MỞ THỬ chứ không chỉ đo kích thước:
+    ngưỡng 50 KB vốn để nhận ra trang lỗi HTML, nó không nói gì về một PDF
+    cụt vài megabyte, nên nếu chỉ đo kích thước thì lượt chạy nào cũng báo
+    "đã có" cho đúng cái file mà công cụ gán nhãn không mở nổi.
     """
     dich = thu_muc / f"{muc['doc_id']}.pdf"
     if dich.is_file() and dich.stat().st_size > 50_000 and not ghi_de:
-        return True, "đã có"
+        if (ly_do := mo_duoc(dich)) is None:
+            return True, "đã có"
+        print(f"    {dich.name} đã có nhưng hỏng ({ly_do}) — tải lại")
 
     try:
         r = requests.get(muc["source_url"], headers=DAU, timeout=180)
@@ -72,6 +105,10 @@ def tai_mot(muc: dict, thu_muc: Path, ghi_de: bool = False) -> tuple[bool, str]:
         return False, f"HTTP {r.status_code}"
     if not r.content.startswith(b"%PDF"):
         return False, f"không phải PDF ({len(r.content)} byte, có thể tài liệu đã bị gỡ)"
+    if (ly_do := mo_duoc(r.content)) is not None:
+        # KHÔNG ghi ra đĩa. Một file hỏng nằm trong thư mục sẽ được lượt chạy
+        # sau đếm là tài liệu đã có, và tập gold lặng lẽ thiếu một tài liệu.
+        return False, f"PDF hỏng, nguồn phục vụ bản lỗi ({len(r.content)} byte): {ly_do}"
 
     dich.parent.mkdir(parents=True, exist_ok=True)
     dich.write_bytes(r.content)

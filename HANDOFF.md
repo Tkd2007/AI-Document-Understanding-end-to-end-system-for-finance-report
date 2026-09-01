@@ -98,6 +98,13 @@ ra chuyện đó**, và ràng buộc kế toán chứng minh được là không
 lật dấu trọn một hệ con nhất quán vẫn cân. Chi tiết và hai đường ra ở mục
 20.4b. *Chặn mọi phân tích gộp qua tài liệu.*
 
+> **Tu chính 01/09/2026 KHÔNG giải quyết câu này.** `quy_uoc_dau` chỉ chi
+> phối hai dòng khấu trừ của B02 (mã 11, và cặp 51/52 qua đẳng thức mã 60).
+> Mã 30 không phải dòng khấu trừ — dấu của nó là số liệu — nên ca HNG, nơi
+> NHÃN DÒNG mang dấu còn con số chỉ mang độ lớn, vẫn nguyên vẹn là một câu
+> hỏi mở. Luật mới chỉ làm chỗ này nhất quán hơn: chép như in nay là quy
+> tắc chung chứ không còn là ngoại lệ của riêng mã 30.
+
 **Câu 3 — NỘI DUNG CÂU ĐÃ MẤT.** Câu này được liệt kê là đang chờ nhưng nguyên
 văn không còn ở bất kỳ file nào trong repo — chỉ còn cái tên; nó nằm trong phần
 "giữ lại nguyên văn từng câu" đã bị xoá trong một lần nén tài liệu. Vì không thể
@@ -122,11 +129,12 @@ mục Sửa đổi của `PREREGISTRATION.md` hoặc `ANNOTATION-GUIDELINE.md`.
 | 10 | 26/08 | Nhóm Stress thứ ba = **độ phân giải**, biến liên tục | Không được dùng để loại tài liệu khỏi phân tích chính — mục 19.5 |
 | 11 | 26/08 | Bỏ ký hiệu mẫu khỏi bảng dấu hiệu nhận diện chuẩn | Hậu tố `a`/`b` là **kỳ báo cáo**; SBT và HNG giữ nhãn TT200 |
 | 12 | 28/08 | Tài liệu **đã chạy pipeline bị loại vĩnh viễn** khỏi tập gán nhãn đôi | Hiện **0/11** đủ điều kiện; lượt gán nhãn đôi chờ tập gold vượt mốc 11 — mục 19.3 |
-| 13 | 28/08 | **Nhãn gold đúng, guideline sai** — mã 51 và 52 giữ nguyên dấu như in | `chuan_hoa_dau()` không bao giờ đụng mã 52; chỗ vênh còn lại ở mã 51 — xem docstring hàm đó |
+| 13 | 28/08 | **Nhãn gold đúng, guideline sai** — mã 51 và 52 giữ nguyên dấu như in | Còn hiệu lực và nay là luật CHUNG: mã 51/52 KHÔNG có luật dấu riêng, chỉ bị ràng buộc bởi đẳng thức mã 60. `chuan_hoa_dau()` đã bị xoá 01/09 — xem `kiem_dau_ma_11()` |
 | — | 26/08 | **Không có người gán nhãn thứ hai**; người chủ trì tự gán lại sau ≥ 2 tuần | Bài phải nói rõ đây là bản thay thế kèm giới hạn |
 | — | 26/08 | Quy mô tập gold theo mốc **10 → 60 → 100** | Đừng gộp ba mốc thành "gán nhãn cho tới khi đủ 100" |
 | — | 25/08 | Chỉ số chính của H3 trên tầng XBRL tính ở **mức LƯỢT** | Tầng gold giữ mức trường |
 | — | 01/09 | **Loại khỏi tổng thể mọi tổ chức tài chính** — ngân hàng, chứng khoán, bảo hiểm, quản lý quỹ | 9 tài liệu bị thay bằng 9 tài liệu phi tài chính cùng kỳ; tu chính ở `PREREGISTRATION.md` và `ANNOTATION-GUIDELINE.md` 01/09 — mục 19.6 |
+| — | 01/09 | **Bỏ ràng buộc 31/08 về TT99.** Quy ước dấu B02 là thuộc tính của TÀI LIỆU, đọc từ trang giấy, không suy từ Thông tư | Nhãn chép NGUYÊN VĂN; file gold có khoá bắt buộc `quy_uoc_dau`; tập gold **gán nhãn lại từ đầu** — tu chính 01/09 (muộn hơn) ở cả hai file |
 
 ---
 
@@ -837,6 +845,10 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
 2. **Chẩn đoán SBT** — 10/24 lỗi câm, nghi lỗi **chọn nguồn** (mục 20.4). Đây
    là khoản lớn nhất còn lại, và luật dấu **chứng minh được là không chạm tới
    nó**: bộ số lấy từ bảng khác tự nó cũng cân nên residual bằng 0 tuyệt đối.
+3. **Gán nhãn lại tập gold từ đầu** theo guideline mới — chép nguyên văn, ghi
+   `quy_uoc_dau` đọc từ tờ giấy (tu chính 01/09/2026). Đây là việc đang chạy và
+   nó chặn mọi phép đo trên tầng gold, kể cả việc dẫn lại con số *8/24 lỗi câm*
+   mà `chuan_hoa_dau()` — nay đã bị xoá — từng sinh ra.
 4. **Gán nhãn thêm 2 tài liệu có đồng hồ chạy thật** (mục 19.3 bước 1).
 5. **Chọn mã cho mốc 60** rồi thêm vào `data/nguon_gold.json`.
 6. **Bước D của phương án C** — nhận diện chuẩn mẫu biểu (Phụ lục B). Cùng họ
@@ -917,6 +929,19 @@ Hiện trạng của tầng gold. **Lý do và số đo của từng thay đổi
 > `docs/lich-su/HANDOFF-da-dong.md`,** giữ nguyên văn và nguyên số mục.
 
 ### 19.3 Việc còn lại của tầng gold, theo thứ tự chặn nhau
+
+> **ĐỌC TRƯỚC — 01/09/2026: tập gold đang được GÁN NHÃN LẠI TỪ ĐẦU.** Mười một
+> file trong `data/gold/` đều thiếu khoá bắt buộc `quy_uoc_dau` nên
+> `GroundTruthDoc.load()` từ chối chúng kèm câu giải thích. Đây là chủ đích:
+> giá trị trong chúng đã qua nhiều lượt lật dấu cơ học khi quy tắc đổi — chính
+> `notes` của bốn file ghi *"LẬT DẤU CƠ HỌC… KHÔNG phải đọc lại tờ giấy"* — nên
+> chúng không còn là bản sao trung thực của trang giấy và không được dùng làm
+> căn cứ về việc báo cáo in thế nào.
+>
+> **Hệ quả cho mọi con số dưới đây:** số đo đồng hồ, tiến độ, và mọi mốc so
+> tính trên 11 file ấy đều thuộc về đợt gán nhãn cũ. Đừng cộng dồn chúng với
+> đợt mới; ghi lại làm hồ sơ rồi đếm lại từ 0.
+
 
 1. **Chạy đồng hồ thật trên 10 tài liệu — CÒN THIẾU 2.** `data/gold/` có 11
    file nhưng chỉ **8** mang `trang_thai_dong_ho = da_do`: 361, 416, 433, 438,
@@ -1146,9 +1171,13 @@ Lượt chạy HNG ở trên được chấm **trước** khi lật, nên con s�
 dấu với gold mới `+431.500.000`.
 
 **Con số dùng khi so với lượt sau là 20/26**, không phải 21/26. Chênh lệch một
-ô này thuần tuý do đổi quy ước, không phải do cơ chế đơn vị theo bảng — và cũng
-chưa nói được pipeline sẽ đọc ra gì sau khi `chuan_hoa_dau()` đảo chiều lật, vì
-việc đó phải chạy lại mới biết.
+ô này thuần tuý do đổi quy ước, không phải do cơ chế đơn vị theo bảng.
+
+**Bổ sung 01/09/2026: cả hai con số trên nay đều là mốc CHẾT.** Quy ước dấu
+đã đổi lần nữa — nhãn chép nguyên văn, dạng đẳng thức đọc từ tài liệu — và
+`chuan_hoa_dau()` đã bị xoá, nên không lượt chạy nào sau ngày này so thẳng
+được với 21/26 lẫn 20/26. Tập gold cũng đang được gán nhãn lại từ đầu. Giữ
+hai con số ở đây làm hồ sơ, đừng dùng chúng làm mốc so.
 
 ## Phụ lục A — MỐC 1: hồ sơ đối chiếu ma trận ràng buộc với Thông tư
 

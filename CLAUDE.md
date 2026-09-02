@@ -67,7 +67,7 @@ thời. Một sự thật có **đúng một nhà**:
 | Sửa đơn vị tính, bậc độ lớn | `HANDOFF.md` mục 20.8; `src/fields_config.py` quanh `UNIT_KEY` |
 | Sửa tầng repair, sinh ứng viên, định vị | `HANDOFF.md` mục 5.8, 13 |
 | Sửa nhánh OCR, dừng sớm, probe dò dòng | `HANDOFF.md` mục 12.2, Phụ lục B |
-| Chạy chấm tập gold | kỹ năng `chay-tap-gold` (`.claude/skills/`) |
+| Chạy chấm tập gold | **chạy thẳng hai lệnh ở mục Lệnh hay dùng**; cần tham chiếu thì kỹ năng `chay-tap-gold` |
 | Gán nhãn tập gold | `ANNOTATION-GUIDELINE.md`; `HANDOFF.md` mục 19 |
 | Đọc / dựng bảng kết quả cho bài | `HANDOFF.md` mục 13.2, 20.4; `CHANGELOG.md` |
 | Đụng vào tầng XBRL Mỹ | `HANDOFF.md` mục 5.2, 13 |
@@ -136,6 +136,12 @@ viết kèm) → `ANNOTATION-GUIDELINE.md`.
 python -m ruff check src tests && python -m pytest -q   # sau MỖI thay đổi
 python src/router.py data/samples/<file>.pdf            # chạy pipeline một tài liệu
 python chay_gan_nhan.py --pdf-dir data/bctc             # công cụ gán nhãn, cổng 8100
+
+# Chấm tập gold — hai lệnh này là ĐỦ, không cần đọc tài liệu nào trước.
+# Lệnh đầu miễn phí: sao lưu kết quả cũ, tiền kiểm tập gold, in hiện trạng;
+# thoát mã 1 thì DỪNG, đừng chạy lệnh sau. Lệnh sau tốn tiền API, chạy hàng giờ.
+python .claude/skills/chay-tap-gold/tien_kiem.py
+PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/chay_tap_gold.py --chuan-tu-gold
 ```
 
 Danh mục lệnh đầy đủ — chấm tập gold, đo luật dấu, tầng XBRL, đo độ phân giải

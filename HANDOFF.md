@@ -30,12 +30,18 @@ chép lại vào đây:
 - **Bộ chỉ tiêu:** **27 với TT99, 26 với TT200; 9 đẳng thức** — kịch bản E
   (`f1c2738`). MỐC 1 đã đóng, MỐC 3 chưa đóng nhưng điều kiện dừng không kích
   hoạt.
-- **Tập gold:** **11 / khoảng 100** tài liệu đã gán nhãn. `VNM_2026Q1_TT99`
-  **không có PDF** trong `data/bctc/` nên mọi lượt chạy pipeline chỉ chấm được
-  **10**. Chỉ **8/11** có đồng hồ chạy thật.
-- **Số thật mới nhất:** 81,5% trường đúng, lỗi câm 10,0% (lượt gold 27/08); sau
-  bản vá dấu `a0cd5ab` là **83,8%** và **7,5%**. **Lỗi câm không quy giản được
-  chỉ 1,25%** — 21/24 lỗi câm là hai con bug. Mục 20.
+- **Tập gold:** đợt gán nhãn lại theo tu chính 01/09 **đã xong** — mọi file
+  trong `data/gold/` đều có `quy_uoc_dau` đọc từ tờ giấy, đều có PDF trong
+  `data/bctc/`, và đều có đồng hồ chạy thật. **Đừng chép số lượng vào đây;**
+  lấy bằng máy trong vài giây: `python .claude/skills/chay-tap-gold/tien_kiem.py`
+  in số file, tỷ lệ TT99/TT200, phân bố quy ước dấu và mọi vấn đề chặn lượt
+  chấm. Chỗ còn hở: `data/nguon_gold.json` mới khai một phần nhỏ (mục 19.6).
+- **Số thật mới nhất — THUỘC ĐỢT NHÃN CŨ.** 81,5% trường đúng, lỗi câm 10,0%
+  (lượt gold 27/08); sau bản vá dấu `a0cd5ab` là **83,8%** và **7,5%**; lỗi câm
+  không quy giản được **1,25%**, vì 21/24 lỗi câm là hai con bug (mục 20). Cả
+  ba con số đo trên 11 tài liệu của đợt nhãn CŨ, trước khi đổi quy ước dấu.
+  **Chưa có lượt chấm nào trên tập gold hiện tại**, nên đừng cộng dồn hay dẫn
+  lại chúng như số của tập mới.
 
 ---
 
@@ -767,7 +773,12 @@ python src/tai_bctc.py
 python src/do_do_phan_giai.py            # chỉ in bảng
 python src/do_do_phan_giai.py --ghi      # ghi vào data/nguon_gold.json
 
-# CHẤM PIPELINE trên tập gold (mục 20). Tốn tiền gọi API thật, 5-50 phút
+# TIỀN KIỂM + SAO LƯU trước mọi lượt chấm. Không gọi API, vài giây. Sao lưu
+# kết quả lượt trước, nạp thử mọi file gold, in hiện trạng tập gold. Thoát mã
+# 1 thì DỪNG. Chạy nó là đủ để bắt đầu, không cần đọc tài liệu nào khác.
+python .claude/skills/chay-tap-gold/tien_kiem.py
+
+# CHẤM PIPELINE trên tập gold (mục 20). Tốn tiền gọi API thật, hàng chục phút
 # một tài liệu. Kết quả ghi sau MỖI tài liệu nên đứt gánh không mất.
 PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/chay_tap_gold.py --chuan-tu-gold
 PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/chay_tap_gold.py --tiep-tuc --chuan-tu-gold
@@ -845,12 +856,16 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
 2. **Chẩn đoán SBT** — 10/24 lỗi câm, nghi lỗi **chọn nguồn** (mục 20.4). Đây
    là khoản lớn nhất còn lại, và luật dấu **chứng minh được là không chạm tới
    nó**: bộ số lấy từ bảng khác tự nó cũng cân nên residual bằng 0 tuyệt đối.
-3. **Gán nhãn lại tập gold từ đầu** theo guideline mới — chép nguyên văn, ghi
-   `quy_uoc_dau` đọc từ tờ giấy (tu chính 01/09/2026). Đây là việc đang chạy và
-   nó chặn mọi phép đo trên tầng gold, kể cả việc dẫn lại con số *8/24 lỗi câm*
-   mà `chuan_hoa_dau()` — nay đã bị xoá — từng sinh ra.
-4. **Gán nhãn thêm 2 tài liệu có đồng hồ chạy thật** (mục 19.3 bước 1).
-5. **Chọn mã cho mốc 60** rồi thêm vào `data/nguon_gold.json`.
+3. **XONG 02/09/2026 — gán nhãn lại tập gold từ đầu** theo guideline mới, chép
+   nguyên văn kèm `quy_uoc_dau` đọc từ tờ giấy (tu chính 01/09/2026). Tầng gold
+   vì thế **không còn bị chặn**, và chưa có lượt chấm nào chạy trên tập mới.
+   Con số *8/24 lỗi câm* mà `chuan_hoa_dau()` — nay đã bị xoá — từng sinh ra
+   thuộc đợt nhãn cũ, đừng dẫn lại.
+4. **XONG 02/09/2026 — đồng hồ chạy thật trên mọi tài liệu** trong `data/gold/`
+   (mục 19.3 bước 1). Trần người tính lại được ngay, không còn chờ đủ mẫu.
+5. **Khai vào `data/nguon_gold.json`** những tài liệu tải 31/08 và 01/09, gồm cả
+   `python src/do_do_phan_giai.py --ghi` để điền dpi. Không còn là việc *chọn*
+   mã — file đã nằm sẵn trên đĩa; xem mục 19.6.
 6. **Bước D của phương án C** — nhận diện chuẩn mẫu biểu (Phụ lục B). Cùng họ
    với việc 2: cả hai là "thứ cần đọc nằm ngoài vùng bảng đã cắt". Chạy lại
    `tieu_de_trong_vung_cat` trên 10 tài liệu thay vì một.
@@ -930,35 +945,26 @@ Hiện trạng của tầng gold. **Lý do và số đo của từng thay đổi
 
 ### 19.3 Việc còn lại của tầng gold, theo thứ tự chặn nhau
 
-> **ĐỌC TRƯỚC — 01/09/2026: tập gold đang được GÁN NHÃN LẠI TỪ ĐẦU.** Mười một
-> file trong `data/gold/` đều thiếu khoá bắt buộc `quy_uoc_dau` nên
-> `GroundTruthDoc.load()` từ chối chúng kèm câu giải thích. Đây là chủ đích:
-> giá trị trong chúng đã qua nhiều lượt lật dấu cơ học khi quy tắc đổi — chính
+> **ĐỌC TRƯỚC — đợt gán nhãn lại đã XONG 02/09/2026.** Mọi file trong
+> `data/gold/` nay có `quy_uoc_dau` đọc từ tờ giấy. Ràng buộc còn hiệu lực:
+> nhãn của **đợt cũ** đã qua nhiều lượt lật dấu cơ học khi quy tắc đổi — chính
 > `notes` của bốn file ghi *"LẬT DẤU CƠ HỌC… KHÔNG phải đọc lại tờ giấy"* — nên
-> chúng không còn là bản sao trung thực của trang giấy và không được dùng làm
-> căn cứ về việc báo cáo in thế nào.
->
-> **Hệ quả cho mọi con số dưới đây:** số đo đồng hồ, tiến độ, và mọi mốc so
-> tính trên 11 file ấy đều thuộc về đợt gán nhãn cũ. Đừng cộng dồn chúng với
-> đợt mới; ghi lại làm hồ sơ rồi đếm lại từ 0.
+> chúng không phải bản sao trung thực của trang giấy, không dùng làm căn cứ về
+> việc báo cáo in thế nào, và **không cộng dồn** với số của đợt mới.
 
 
-1. **Chạy đồng hồ thật trên 10 tài liệu — CÒN THIẾU 2.** `data/gold/` có 11
-   file nhưng chỉ **8** mang `trang_thai_dong_ho = da_do`: 361, 416, 433, 438,
-   446, 461, 506, 579 giây. Ba file không tính: `VNM_2026Q1_TT99` (thiếu hẳn
-   khoá), `DGC_2025Q2_TT200` và `TTF_2026Q1_TT99` (`khong_do`). Hai tài liệu bù
-   phải nằm **ngoài** 11 file đã có — gán nhãn lại một file cũ thì đo nhịp của
-   lần thứ hai.
+1. **XONG — đồng hồ chạy thật trên mọi tài liệu.** Đợt cũ chỉ có 8 số (361,
+   416, 433, 438, 446, 461, 506, 579 giây) nên bước này từng chặn việc chốt
+   trần người; đợt mới đo đủ, và số nằm ở khoá `thoi_gian_giay` của từng file
+   gold. Trung vị đọc bằng máy chứ đừng chép vào đây.
 
-   > **Kết quả đã cố định về mặt số học, nhưng vẫn phải đo đủ 10 rồi mới
-   > tuyên.** Trung vị của 10 số chỉ chạy được trong dải 435,5–453,5 giây, nhân
-   > 0,6 ra 4,36–4,54 phút — toàn dải dưới sàn 5 phút, nên đồng hồ trần người
-   > **sẽ là 5 phút**. Tuyên sớm vì "đằng nào cũng ra 5 phút" thì con số vẫn
-   > đúng nhưng cam kết thì hỏng, và lần sau không còn cách nào phân biệt một
-   > suy luận số học với một lần tự cho phép mình bỏ bước.
+   > **Cách chốt vẫn nguyên:** trung vị nhân 0,6, rồi so với sàn 5 phút. Suy ra
+   > kết quả từ số học mà bỏ bước đo là thứ không được phép — lần sau sẽ không
+   > còn cách nào phân biệt một suy luận với một lần tự cho phép mình bỏ bước.
 
-2. **Chọn mã cho mốc 60** rồi thêm vào `data/nguon_gold.json`. Lộ trình
-   10 → 60 → 100 chốt 26/08. Nay là việc chọn, không còn là việc dò nguồn.
+2. **Khai tài liệu vào `data/nguon_gold.json`.** Lộ trình 10 → 60 → 100 chốt
+   26/08. Nay không còn là việc dò nguồn hay việc chọn: file đã trên đĩa và đã
+   có nhãn, còn thiếu đúng phần khai báo — xem mục 19.6.
 3. **Chốt 20 hay 33 tài liệu gán nhãn đôi — CÒN MỞ.** `ADDENDUM` mục 5 viết
    "một phần ba tập gold", chốt khi tập là 60 nên ra 20; tập đích nay khoảng
    100 nên cách diễn đạt đó tự thành 33. Câu hỏi thật: một phần ba của MỐC NÀO.
@@ -974,7 +980,9 @@ Hiện trạng của tầng gold. **Lý do và số đo của từng thay đổi
 
 ### 19.6 Kho tài liệu thô `data/bctc/` — 70 PDF, và chỗ nó CHƯA khớp danh mục
 
-Thư mục có **70 PDF: 35 TT200 và 35 TT99**, tất cả là bản quét không lớp text.
+Thư mục có **70 PDF: 36 TT200 và 34 TT99** (đếm lại 02/09/2026 — bản trước
+ghi 35/35 là con số dự kiến lúc chọn, không phải con số đã đếm), tất cả là bản
+quét không lớp text.
 Nguồn của từng file ở `data/bctc/NGUON.md` — file này **nằm ngoài git** (dính
 `data/bctc/*` trong `.gitignore`) nên nó chỉ có trên máy người chủ trì; bảng
 sắp theo mã cổ phiếu từ 01/09/2026.
@@ -1036,8 +1044,16 @@ những gì chưa làm.
    model tiếng Việt.
 5. **Chế độ đầu-cuối chưa chạy.** Chỉ khác ở 5 tài liệu TT200, nên `--chi`
    trên đúng 5 mã đó là đủ.
-6. **`VNM_2026Q1_TT99` thiếu PDF.** Hoặc bổ sung vào `data/bctc/`, hoặc rút
-   nhãn khỏi `data/gold/`.
+6. **XONG — `VNM_2026Q1_TT99` đã rút khỏi `data/gold/`,** nên không còn tài
+   liệu nào có nhãn mà thiếu PDF. `tien_kiem.py` kiểm lại điều này mỗi lượt.
+7. **Nhịp chạy không ổn định, chưa truy ra nguyên nhân.** Lượt chạy thử
+   02/09/2026 trên `VHC_2025Q1_TT200` chậm khoảng **ba lần** so với lượt 30/08
+   trên đúng tài liệu ấy — layout 7,9–11 giây mỗi trang so với 3,2 giây — và
+   không giải thích được bằng tranh CPU (các tiến trình nặng khác đứng im).
+   Lượt thử bị dừng tay ở trang 3/40 nên **không có dòng `metrics.jsonl`** để
+   tách xem chậm nằm ở `pdf_convert`, `layout`, `ocr` hay `vlm`. Việc cần làm
+   là chạy trọn MỘT tài liệu rồi so `stages` với lượt 30/08. Chuyện này đổi
+   hẳn dự trù thời gian cho lượt chấm trọn bộ, nên đáng làm trước khi bấm.
 
 ---
 

@@ -3,6 +3,7 @@
   "ticker": "TTF",
   "period": "2026Q1",
   "standard": "TT99",
+  "quy_uoc_dau": "tru",
   "unit_declared": "Đơn vị tính: VND",
   "unit_multiplier": 1,
   "values": {
@@ -34,16 +35,16 @@
     "tien_dau_ky": 48773526852,
     "anh_huong_ty_gia": 132768610
   },
-  "source_url": "https://static2.vietstock.vn/vietstock/2026/4/28/20260428___ttf___bctc_rieng_q1_26.pdf",
-  "downloaded_at": "2026-08-26",
+  "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%201/TTF_Baocaotaichinh_Q1_2026_Congtyme.pdf",
+  "downloaded_at": "2026-09-02",
   "annotator": "Danh",
-  "annotated_at": "2026-08-26T10:38:05.937379+00:00",
+  "annotated_at": "2026-09-02T16:04:15.727665+00:00",
   "adjudicated": false,
   "notes": "",
-  "so_lan_ghi": 2,
-  "thoi_gian_giay": 0,
-  "so_lan_kiem_dang_thuc": 0,
+  "so_lan_ghi": 1,
+  "thoi_gian_giay": 291,
+  "so_lan_kiem_dang_thuc": 2,
   "sua_gia_tri_sau_khi_kiem": false,
-  "trang_thai_dong_ho": "khong_do",
-  "so_lan_tam_dung": 0
+  "trang_thai_dong_ho": "da_do",
+  "so_lan_tam_dung": 1
 }

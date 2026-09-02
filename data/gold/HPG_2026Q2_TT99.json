@@ -3,6 +3,7 @@
   "ticker": "HPG",
   "period": "2026Q2",
   "standard": "TT99",
+  "quy_uoc_dau": "tru",
   "unit_declared": "Đơn vị tính: VND",
   "unit_multiplier": 1,
   "values": {
@@ -34,16 +35,16 @@
     "tien_dau_ky": 484137929006,
     "anh_huong_ty_gia": 0
   },
-  "source_url": "https://file.hoaphat.com.vn/hoaphat-com-vn/2026/08/20260730-hpg-bctc-cong-ty-me-quy-2-2026-va-giai-trinh-2.pdf",
-  "downloaded_at": "2026-08-26",
+  "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/HPG_Baocaotaichinh_Q2_2026_Congtyme.pdf?ver=fc4c80c2",
+  "downloaded_at": "2026-09-01",
   "annotator": "Danh",
-  "annotated_at": "2026-08-26T10:02:19.253960+00:00",
+  "annotated_at": "2026-09-01T14:35:40.408946+00:00",
   "adjudicated": false,
   "notes": "",
   "so_lan_ghi": 1,
-  "thoi_gian_giay": 416,
-  "so_lan_kiem_dang_thuc": 3,
-  "sua_gia_tri_sau_khi_kiem": true,
+  "thoi_gian_giay": 303,
+  "so_lan_kiem_dang_thuc": 1,
+  "sua_gia_tri_sau_khi_kiem": false,
   "trang_thai_dong_ho": "da_do",
   "so_lan_tam_dung": 0
 }

@@ -1,8 +1,9 @@
 {
   "doc_id": "MWG_2025Q1_TT200",
-  "ticker": "NWG",
+  "ticker": "MWG",
   "period": "2025Q1",
   "standard": "TT200",
+  "quy_uoc_dau": "tong",
   "unit_declared": "Đơn vị tính: VND",
   "unit_multiplier": 1,
   "values": {
@@ -18,7 +19,7 @@
     "von_chu_so_huu": 29669133577791,
     "tong_nguon_von": 72679224714947,
     "doanh_thu_thuan": 36134958418209,
-    "gia_von_hang_ban": 28934547803004,
+    "gia_von_hang_ban": -28934547803004,
     "loi_nhuan_gop": 7200410615205,
     "ln_thuan_hdkd": 1940204764365,
     "ln_khac": -5543377145,
@@ -33,16 +34,16 @@
     "tien_dau_ky": 4897331540730,
     "anh_huong_ty_gia": 48240903
   },
-  "source_url": "https://cdnv2.tgdd.vn/mwgvn/investorrelations/files/posts/2025/4/0/e1/3b/e13b25d4dac28f0b8de68b1efd12152f.pdf",
-  "downloaded_at": "2026-08-26",
+  "source_url": "https://static2.vietstock.vn/data/HOSE/2025/BCTC/VN/QUY%201/MWG_Baocaotaichinh_Q1_2025_Hopnhat.pdf",
+  "downloaded_at": "2026-09-02",
   "annotator": "Danh",
-  "annotated_at": "2026-08-26T10:15:02.496169+00:00",
+  "annotated_at": "2026-09-02T12:42:14.704866+00:00",
   "adjudicated": false,
-  "notes": "31/08/2026: mã 51 và 52 đã LẬT DẤU CƠ HỌC khi đổi sang quy ước dấu có hướng (chi phí thuế lưu âm) — xem ANNOTATION-GUIDELINE mục Sửa đổi. KHÔNG phải đọc lại tờ giấy.",
+  "notes": "",
   "so_lan_ghi": 1,
-  "thoi_gian_giay": 579,
-  "so_lan_kiem_dang_thuc": 10,
+  "thoi_gian_giay": 300,
+  "so_lan_kiem_dang_thuc": 2,
   "sua_gia_tri_sau_khi_kiem": true,
   "trang_thai_dong_ho": "da_do",
-  "so_lan_tam_dung": 0
+  "so_lan_tam_dung": 1
 }

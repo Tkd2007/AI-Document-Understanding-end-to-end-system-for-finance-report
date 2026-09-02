@@ -3,6 +3,7 @@
   "ticker": "BMP",
   "period": "2026Q1",
   "standard": "TT99",
+  "quy_uoc_dau": "tru",
   "unit_declared": "Đơn vị tính: VND",
   "unit_multiplier": 1,
   "values": {
@@ -16,7 +17,7 @@
     "tai_san_dai_han": 735900312482,
     "tong_tai_san": 3534288483226,
     "no_phai_tra": 609699918525,
-    "von_chu_so_huu": 2924588564701,
+    "von_chu_so_huu": 2924588567701,
     "tong_nguon_von": 3534288483226,
     "doanh_thu_thuan": 1395354808270,
     "gia_von_hang_ban": 734432949033,
@@ -35,15 +36,15 @@
     "anh_huong_ty_gia": 0
   },
   "source_url": "https://static2.vietstock.vn/vietstock/2026/4/17/20260417___bmp___bctc_rieng_q1_2026.pdf",
-  "downloaded_at": "2026-08-26",
+  "downloaded_at": "2026-09-01",
   "annotator": "Danh",
-  "annotated_at": "2026-08-26T05:09:22.120709+00:00",
+  "annotated_at": "2026-09-01T09:49:15.945194+00:00",
   "adjudicated": false,
   "notes": "",
   "so_lan_ghi": 1,
-  "thoi_gian_giay": 446,
-  "so_lan_kiem_dang_thuc": 3,
-  "sua_gia_tri_sau_khi_kiem": true,
+  "thoi_gian_giay": 256,
+  "so_lan_kiem_dang_thuc": 2,
+  "sua_gia_tri_sau_khi_kiem": false,
   "trang_thai_dong_ho": "da_do",
   "so_lan_tam_dung": 0
 }

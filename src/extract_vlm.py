@@ -23,12 +23,14 @@ from openai import (
 )
 from PIL import Image
 
+import chan_ung_vien
 from extraction_types import ExtractionResult, FieldResult, Provenance
 from fields_config import (
     DEFAULT_STANDARD,
     FIELD_MAP,
     FIELD_RULES,
     UNIT_KEY,
+    QuyUocDau,
     Standard,
     empty_result,
     fields_for,
@@ -730,6 +732,14 @@ def extract_fields_from_regions(
     }
     da_du_het = False
 
+    # Biểu mẫu đã cho ít nhất một chỉ tiêu, và sổ ghi ứng viên bị từ chối.
+    # Sổ này là certificate của cơ chế chặn: không có nó thì một chỉ tiêu bị
+    # bỏ trống vì CHẶN trông y hệt một chỉ tiêu bỏ trống vì ĐỌC KHÔNG RA, mà
+    # hai chuyện đó khác hẳn nhau khi đọc kết quả. Cùng bài học với
+    # `don_vi_theo_vung` ở trên.
+    trang_cuoi_theo_bieu_mau: dict[str, int] = {}
+    ung_vien_bi_chan: list[dict] = []
+
     for page in pages:
         page_no = page["page"]
         found_new_field = False
@@ -794,9 +804,50 @@ def extract_fields_from_regions(
                         final_result[khoa] = ket_qua
                     continue
 
+                # HAI PHÉP CHẶN, chạy TRƯỚC khi nhận. Xem
+                # `src/chan_ung_vien.py` cho ca GVR đã dẫn tới chúng. Bị chặn
+                # thì chỉ tiêu ở nguyên trạng thái trống — tức lỗi ỒN thay vì
+                # lỗi CÂM, và đó là toàn bộ điểm của cơ chế này.
+                da_chot = {
+                    ten: kq.value
+                    for ten, kq in final_result.items()
+                    if kq.value is not None
+                }
+                ly_do_chan = chan_ung_vien.da_di_qua_bieu_mau(
+                    khoa, page_no, trang_cuoi_theo_bieu_mau
+                ) or chan_ung_vien.vi_pham_dang_thuc(
+                    khoa,
+                    ket_qua.value,
+                    da_chot,
+                    standard,
+                    # Quy ước dấu chưa chốt được lúc đang trích xuất, và
+                    # `identities_for()` xử lý đúng ca đó bằng cách bỏ hai
+                    # đẳng thức B02 phụ thuộc quy ước — chạy nhầm dạng còn
+                    # tệ hơn không chạy vì nó BỊA ra vi phạm.
+                    QuyUocDau.KHONG_XAC_DINH,
+                )
+                if ly_do_chan is not None:
+                    loi_chan = (
+                        f"Trang {page_no}: từ chối ứng viên {khoa}="
+                        f"{ket_qua.value} — {ly_do_chan}"
+                    )
+                    print(f"--- CHẶN: {loi_chan} ---")
+                    warnings.append(loi_chan)
+                    ung_vien_bi_chan.append({
+                        "trang": page_no,
+                        "vung": region_index,
+                        "khoa": khoa,
+                        "gia_tri": ket_qua.value,
+                        "ly_do": ly_do_chan,
+                    })
+                    continue
+
                 ket_qua.provenance = nguon
                 final_result[khoa] = ket_qua
                 found_new_field = True
+                bieu_mau_moi = chan_ung_vien.bieu_mau_cua(khoa)
+                if bieu_mau_moi is not None:
+                    trang_cuoi_theo_bieu_mau[bieu_mau_moi] = page_no
                 # Đóng dấu hệ số của ĐÚNG vùng vừa sinh ra con số này. Ghi ngay
                 # tại chỗ gán chứ không tra ngược từ provenance về sau: tra
                 # ngược thì phải giữ thêm một bảng vùng->hệ số và giữ cho nó
@@ -889,6 +940,11 @@ def extract_fields_from_regions(
             # bản đòi con người nhớ tăng nó, và người ta không nhớ.
             "prompt_hash": bam_prompt(prompt),
             "early_stop": dung_som,
+            # Ứng viên bị `chan_ung_vien` từ chối. LUÔN có mặt, kể cả rỗng:
+            # một chỉ tiêu trống vì BỊ CHẶN và một chỉ tiêu trống vì ĐỌC KHÔNG
+            # RA trông y hệt nhau trong `data`, mà hai chuyện đó khác hẳn nhau
+            # khi đọc kết quả — và chỉ khoá này phân biệt được.
+            "ung_vien_bi_chan": ung_vien_bi_chan,
         },
         warnings=warnings,
         n_samples=n_samples,

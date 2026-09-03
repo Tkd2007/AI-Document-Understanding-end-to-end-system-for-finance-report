@@ -52,9 +52,43 @@ def _lap_vlm_gia(monkeypatch, cac_phan_hoi: list) -> list:
     return da_goi
 
 
+# Các chỉ tiêu cộng lại thành Tài sản ngắn hạn. Viết ra ở đây thay vì tra
+# ngược từ bộ đẳng thức: fixture cần một bộ số nhất quán, không cần một bản sao
+# thứ hai của cấu hình ràng buộc.
+_LA_TSNH = [
+    "tien_va_tuong_duong_tien",
+    "dau_tu_tc_ngan_han",
+    "phai_thu_ngan_han",
+    "hang_ton_kho",
+    "tai_san_sinh_hoc_ngan_han",
+    "tsnh_khac",
+]
+
+
+def _bo_so_nhat_quan(cac_field) -> dict:
+    """
+    Bộ giá trị lấp đầy mọi chỉ tiêu và KHÔNG tự mâu thuẫn.
+
+    Fixture cũ dùng 100 cho mọi chỉ tiêu. Từ khi `src/chan_ung_vien.py` chặn
+    ứng viên vi phạm cận suy từ dấu, bộ ấy bị pipeline từ chối — và từ chối
+    ĐÚNG: tổng tài sản 100 không thể nhỏ hơn tài sản ngắn hạn 100 cộng tài sản
+    dài hạn 100. Test ở file này đo ĐIỀU KIỆN DỪNG SỚM, nên giá trị chỉ là chất
+    độn; nhưng chất độn tự mâu thuẫn thì nay chặn mất đúng thứ đang đo.
+    """
+    gia_tri = {khoa: 100 for khoa in cac_field}
+    tsnh = sum(gia_tri[khoa] for khoa in _LA_TSNH if khoa in gia_tri)
+    if "tai_san_ngan_han" in gia_tri:
+        gia_tri["tai_san_ngan_han"] = tsnh
+    if "tong_tai_san" in gia_tri:
+        gia_tri["tong_tai_san"] = tsnh + gia_tri.get("tai_san_dai_han", 0)
+    if "tong_nguon_von" in gia_tri:
+        gia_tri["tong_nguon_von"] = gia_tri.get("tong_tai_san", 100)
+    return gia_tri
+
+
 def _du_het_field() -> dict:
     """Một phản hồi lấp đầy mọi chỉ tiêu trong FIELD_MAP cùng lúc."""
-    return {khoa: 100 for khoa in FIELD_MAP}
+    return _bo_so_nhat_quan(FIELD_MAP)
 
 
 # --- Nhánh 1: đủ hết field -------------------------------------------------
@@ -206,7 +240,7 @@ def test_bao_cao_TT200_van_dung_som_duoc_o_nhanh_du_het_field(monkeypatch):
     Phản hồi giả dưới đây mô phỏng đúng một báo cáo TT200 thật: đủ cả 20
     chỉ tiêu của TT200, và KHÔNG có Tài sản sinh học ngắn hạn.
     """
-    du_het_TT200 = {khoa: 100 for khoa in fields_for(Standard.TT200)}
+    du_het_TT200 = _bo_so_nhat_quan(fields_for(Standard.TT200))
     assert "tai_san_sinh_hoc_ngan_han" not in du_het_TT200
 
     trang = [{"page": 1, "regions": [_vung()]}, {"page": 2, "regions": [_vung()]}]

@@ -29,6 +29,13 @@ GVR_TSNH = 37_897_604_212_888
 GVR_TONG_TAI_SAN_THAT = 90_263_949_529_178
 GVR_TONG_TAI_SAN_BIA = 406_588_902_083
 
+# Số thật của REE_2023Q2_TT200 — ca phép số học bác nhầm số đúng. Neo hỏng vì
+# rụng một chữ số (thật là 8.931.147.990.438), rồi hai số hạng đúng bên dưới
+# trở thành "lớn hơn tổng".
+REE_TSNH_RUNG_CHU_SO = 893_147_990_438
+REE_TIEN = 1_620_169_594_145
+REE_PHAI_THU = 4_291_784_442_129
+
 
 def _khong_xac_dinh(khoa, gia_tri, da_biet):
     """Gọi phép kiểm số học ở quy ước dấu mà lúc trích xuất thật sự có."""
@@ -165,12 +172,31 @@ def _lap_vlm_gia(monkeypatch, theo_trang: dict):
     return trang_gia
 
 
-def test_vong_lap_vlm_khong_nhan_ung_vien_bi_chan(monkeypatch):
-    trang_gia = _lap_vlm_gia(monkeypatch, {
+def _gvr_ba_trang(monkeypatch):
+    """
+    Ca GVR dựng đúng như tờ giấy: B03 đọc trọn ở trang 12, ứng viên bịa ở 78.
+
+    B03 phải cho ĐỦ `TOI_THIEU_FIELD` chỉ tiêu, vì đó là điều kiện để phép
+    chặn vị trí coi là đã thật sự đi qua biểu mẫu — và ở GVR thật thì B03 cho
+    trọn cả sáu.
+    """
+    return _lap_vlm_gia(monkeypatch, {
         6: {"tai_san_ngan_han": GVR_TSNH},
-        12: {"lctt_thuan": 38_605_564_362},
+        12: {"lctt_hdkd": 12_000_000_000, "lctt_dau_tu": -3_000_000_000,
+             "lctt_thuan": 38_605_564_362},
         78: {"tong_tai_san": GVR_TONG_TAI_SAN_BIA},
     })
+
+
+def test_vong_lap_vlm_khong_nhan_ung_vien_bi_chan(monkeypatch):
+    """
+    Ca GVR vẫn phải bị chặn SAU KHI phép số học mất quyền từ chối.
+
+    Đây là test giữ cho thay đổi ngày 03/09/2026 khỏi lặng lẽ mở lại ca GVR:
+    phép số học giờ chỉ chẩn đoán, nên nếu phép VỊ TRÍ không tự mình bắt được
+    thì con số sai 222 lần lại đi vào kết quả.
+    """
+    trang_gia = _gvr_ba_trang(monkeypatch)
     ket_qua = extract_vlm.extract_fields_from_regions(
         (trang_gia(so) for so in (6, 12, 78)), standard=Standard.TT99
     )
@@ -189,18 +215,73 @@ def test_vong_lap_vlm_ghi_lai_ung_vien_bi_chan(monkeypatch):
     Không có sổ này thì "trống vì bị chặn" và "trống vì đọc không ra" trông y
     hệt nhau trong `data`, mà hai chuyện đó khác hẳn nhau khi đọc kết quả.
     """
-    trang_gia = _lap_vlm_gia(monkeypatch, {
-        6: {"tai_san_ngan_han": GVR_TSNH},
-        78: {"tong_tai_san": GVR_TONG_TAI_SAN_BIA},
-    })
+    trang_gia = _gvr_ba_trang(monkeypatch)
     ket_qua = extract_vlm.extract_fields_from_regions(
-        (trang_gia(so) for so in (6, 78)), standard=Standard.TT99
+        (trang_gia(so) for so in (6, 12, 78)), standard=Standard.TT99
     )
 
     bi_chan = ket_qua.meta["ung_vien_bi_chan"]
     assert [m["khoa"] for m in bi_chan] == ["tong_tai_san"]
     assert bi_chan[0]["gia_tri"] == GVR_TONG_TAI_SAN_BIA
     assert bi_chan[0]["trang"] == 78
+
+
+# --- Phép số học CHỈ BÁO, không từ chối -----------------------------------
+
+
+def test_mau_thuan_so_hoc_van_duoc_nhan_va_bi_ghi_lai(monkeypatch):
+    """
+    Mâu thuẫn số học phải vào `ung_vien_mau_thuan` và `warnings`, không bị vứt.
+
+    Cùng bộ số GVR nhưng KHÔNG có biểu mẫu sau nào đi qua, nên phép vị trí im
+    lặng và chỉ còn phép số học lên tiếng. Trước 03/09/2026 ứng viên này bị
+    vứt; giờ nó phải được nhận kèm một lời cảnh báo, vì cận số học không nói
+    được thành viên nào trong nhóm là thành viên sai.
+    """
+    trang_gia = _lap_vlm_gia(monkeypatch, {
+        6: {"tai_san_ngan_han": GVR_TSNH},
+        7: {"tong_tai_san": GVR_TONG_TAI_SAN_BIA},
+    })
+    ket_qua = extract_vlm.extract_fields_from_regions(
+        (trang_gia(so) for so in (6, 7)), standard=Standard.TT99
+    )
+
+    assert ket_qua.data["tong_tai_san"].value == GVR_TONG_TAI_SAN_BIA
+    assert ket_qua.meta["ung_vien_bi_chan"] == []
+
+    mau_thuan = ket_qua.meta["ung_vien_mau_thuan"]
+    assert [m["khoa"] for m in mau_thuan] == ["tong_tai_san"]
+    assert mau_thuan[0]["gia_tri"] == GVR_TONG_TAI_SAN_BIA
+    assert mau_thuan[0]["trang"] == 7
+    assert any("mâu thuẫn" in c for c in ket_qua.warnings)
+
+
+def test_neo_sai_khong_duoc_lam_mat_so_dung(monkeypatch):
+    """
+    Ca REE/VHC ngày 03/09/2026 — lý do phép số học mất quyền từ chối.
+
+    `REE_2023Q2_TT200` đọc `tai_san_ngan_han` thành 893.147.990.438 trong khi
+    giá trị thật là 8.931.147.990.438: rụng một chữ số. Từ cái neo hỏng ấy,
+    bản cũ của phép số học bác sạch bốn số hạng ĐÚNG TỚI TỪNG ĐỒNG vì chúng
+    "lớn hơn tổng", và hai trong bốn ô mất vĩnh viễn.
+
+    Test này chốt rằng một giá trị đã nhận nhưng SAI không còn quyền vứt bỏ
+    những giá trị đúng đến sau. Số lấy nguyên từ tài liệu đó.
+    """
+    trang_gia = _lap_vlm_gia(monkeypatch, {
+        2: {"tai_san_ngan_han": REE_TSNH_RUNG_CHU_SO},
+        3: {"tien_va_tuong_duong_tien": REE_TIEN,
+            "phai_thu_ngan_han": REE_PHAI_THU},
+    })
+    ket_qua = extract_vlm.extract_fields_from_regions(
+        (trang_gia(so) for so in (2, 3)), standard=Standard.TT200
+    )
+
+    assert ket_qua.data["tien_va_tuong_duong_tien"].value == REE_TIEN
+    assert ket_qua.data["phai_thu_ngan_han"].value == REE_PHAI_THU
+    assert ket_qua.meta["ung_vien_bi_chan"] == []
+    # Mâu thuẫn vẫn phải được BÁO — mất quyền từ chối không có nghĩa là im.
+    assert len(ket_qua.meta["ung_vien_mau_thuan"]) == 2
 
 
 def test_tai_lieu_binh_thuong_khong_bi_chan_gi(monkeypatch):

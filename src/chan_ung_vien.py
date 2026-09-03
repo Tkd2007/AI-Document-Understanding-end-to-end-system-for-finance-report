@@ -17,12 +17,27 @@ trang thuyết minh và tới trang 78 thì nhận một con số của bảng k
 kéo theo ba lỗi câm nữa ở cùng biểu mẫu. Trước tài liệu đó, bảng cân đối chưa
 có một lỗi câm nào trong 18 tài liệu.
 
-HAI PHÉP CHẶN Ở ĐÂY ĐỀU CHỈ TỪ CHỐI, KHÔNG BAO GIỜ SỬA. Ứng viên bị chặn thì
-chỉ tiêu ở nguyên trạng thái trống, tức lỗi ỒN. Đó là lựa chọn có chủ đích và
-là lý do hai phép này an toàn cho phép đo: chúng chỉ chuyển lỗi câm thành lỗi
-ồn chứ không sinh ra giá trị mới, nên không có đường nào để chúng làm đẹp con
-số một cách giả tạo. Xem `src/eval/metrics.py` về vì sao lỗi ồn nhẹ hơn hẳn
-lỗi câm.
+HAI PHÉP Ở ĐÂY KHÔNG BAO GIỜ SỬA, VÀ CHỈ MỘT TRONG HAI ĐƯỢC TỪ CHỐI.
+`da_di_qua_bieu_mau()` từ chối; `vi_pham_dang_thuc()` chỉ chẩn đoán. Ứng viên
+bị từ chối thì chỉ tiêu ở nguyên trạng thái trống, tức lỗi ỒN — cả module này
+chỉ chuyển lỗi câm thành lỗi ồn chứ không sinh ra giá trị mới, nên không có
+đường nào để nó làm đẹp con số một cách giả tạo. Xem `src/eval/metrics.py` về
+vì sao lỗi ồn nhẹ hơn hẳn lỗi câm.
+
+VÌ SAO PHÉP SỐ HỌC MẤT QUYỀN TỪ CHỐI, đo được ở lượt chấm 70 tài liệu ngày
+03/09/2026. Nó ra tay 8 lần: đúng 1 lần (PLX, bác một `tong_tai_san` rụng chữ
+số) và **sai 7 lần**, trong đó 6 lần vứt đi giá trị đúng tới từng đồng. Cả 6
+lần đều cùng một cơ chế: cận suy từ dấu neo vào các giá trị ĐÃ NHẬN, nên khi
+chính giá trị đã nhận là thứ sai thì cận trở thành thước hỏng. Ở REE,
+`tai_san_ngan_han` vào trước với 893 tỷ trong khi giá trị thật là 8.931 tỷ —
+rụng một chữ số — và từ cái neo ấy phép chặn bác sạch bốn số hạng đúng phía
+sau, hai trong số đó mất vĩnh viễn. Ở VHC, `tai_san_ngan_han` nhận nhầm giá
+trị của `tien_va_tuong_duong_tien`, rồi hai số hạng đúng bị bác và hai con số
+SAI được nhận thay.
+
+Ca GVR đã dẫn tới module này KHÔNG mất đi vì thay đổi ấy: ứng viên 406 tỷ đến
+ở trang 78 trong khi B03 xong từ trang 12, nên `da_di_qua_bieu_mau()` bắt được
+nó một mình.
 
 QUAN HỆ VỚI `validate_result()`: không thay thế, và cố ý đặt ngưỡng khác hẳn.
 Phép kiểm ở đây là lưới thưa, chỉ bắt mâu thuẫn THÔ BẠO — sai vài trăm lần,
@@ -197,7 +212,13 @@ def vi_pham_dang_thuc(
     nguong: float = NGUONG_VI_PHAM,
 ) -> str | None:
     """
-    Lý do từ chối theo SỐ HỌC, hoặc None nếu ứng viên còn hợp lệ.
+    Lý do MÂU THUẪN số học, hoặc None nếu ứng viên không mâu thuẫn với gì.
+
+    KHÔNG DÙNG ĐỂ TỪ CHỐI. Người gọi phải nhận ứng viên rồi ghi lý do này vào
+    `warnings`; xem đoạn "VÌ SAO PHÉP SỐ HỌC MẤT QUYỀN TỪ CHỐI" ở docstring
+    module cho bảy ca đo được, và `src/extract_vlm.py` cho chỗ dùng thật. Lý
+    do gốc thì đã nằm ngay dưới đây, ở đoạn về H2: cận này nói "nhóm chỉ tiêu
+    này mâu thuẫn nhau", nó KHÔNG nói thành viên nào sai.
 
     Dùng chính bộ đẳng thức của `fields_config.identities_for()` — không dựng
     một bộ ràng buộc thứ hai, vì hai nguồn sự thật cho cùng một dữ kiện là cách

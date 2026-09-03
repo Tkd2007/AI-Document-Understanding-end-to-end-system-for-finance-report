@@ -739,6 +739,11 @@ def extract_fields_from_regions(
     # `don_vi_theo_vung` ở trên.
     bieu_mau_da_thay: dict[str, dict] = {}
     ung_vien_bi_chan: list[dict] = []
+    # Ứng viên mâu thuẫn số học nhưng VẪN ĐƯỢC NHẬN. Tách hẳn khỏi
+    # `ung_vien_bi_chan` vì hai sổ ghi hai chuyện ngược nhau: một sổ là những
+    # con số đã bị vứt, sổ này là những con số đã vào kết quả kèm một lời
+    # cảnh báo. Trộn hai sổ thì không còn đọc ra được cơ chế nào đã ra tay.
+    ung_vien_mau_thuan: list[dict] = []
 
     for page in pages:
         page_no = page["page"]
@@ -804,27 +809,12 @@ def extract_fields_from_regions(
                         final_result[khoa] = ket_qua
                     continue
 
-                # HAI PHÉP CHẶN, chạy TRƯỚC khi nhận. Xem
-                # `src/chan_ung_vien.py` cho ca GVR đã dẫn tới chúng. Bị chặn
+                # PHÉP CHẶN THEO VỊ TRÍ, chạy TRƯỚC khi nhận. Xem
+                # `src/chan_ung_vien.py` cho ca GVR đã dẫn tới nó. Bị chặn
                 # thì chỉ tiêu ở nguyên trạng thái trống — tức lỗi ỒN thay vì
                 # lỗi CÂM, và đó là toàn bộ điểm của cơ chế này.
-                da_chot = {
-                    ten: kq.value
-                    for ten, kq in final_result.items()
-                    if kq.value is not None
-                }
                 ly_do_chan = chan_ung_vien.da_di_qua_bieu_mau(
                     khoa, page_no, bieu_mau_da_thay
-                ) or chan_ung_vien.vi_pham_dang_thuc(
-                    khoa,
-                    ket_qua.value,
-                    da_chot,
-                    standard,
-                    # Quy ước dấu chưa chốt được lúc đang trích xuất, và
-                    # `identities_for()` xử lý đúng ca đó bằng cách bỏ hai
-                    # đẳng thức B02 phụ thuộc quy ước — chạy nhầm dạng còn
-                    # tệ hơn không chạy vì nó BỊA ra vi phạm.
-                    QuyUocDau.KHONG_XAC_DINH,
                 )
                 if ly_do_chan is not None:
                     loi_chan = (
@@ -841,6 +831,44 @@ def extract_fields_from_regions(
                         "ly_do": ly_do_chan,
                     })
                     continue
+
+                # MÂU THUẪN SỐ HỌC THÌ CHỈ BÁO, KHÔNG TỪ CHỐI. Cận suy từ dấu
+                # neo vào các giá trị đã nhận, và khi một giá trị đã nhận là
+                # thứ sai thì cận ấy bác đúng những con số đúng — đo được ở
+                # REE và VHC ngày 03/09/2026, xem `vi_pham_dang_thuc()`. Cận
+                # vẫn nói lên một điều thật: nhóm chỉ tiêu này mâu thuẫn nhau.
+                # Nên nó đi vào `warnings` (biến của H1) chứ không đi vào
+                # quyết định nhận hay bỏ.
+                da_chot = {
+                    ten: kq.value
+                    for ten, kq in final_result.items()
+                    if kq.value is not None
+                }
+                ly_do_mau_thuan = chan_ung_vien.vi_pham_dang_thuc(
+                    khoa,
+                    ket_qua.value,
+                    da_chot,
+                    standard,
+                    # Quy ước dấu chưa chốt được lúc đang trích xuất, và
+                    # `identities_for()` xử lý đúng ca đó bằng cách bỏ hai
+                    # đẳng thức B02 phụ thuộc quy ước — chạy nhầm dạng còn
+                    # tệ hơn không chạy vì nó BỊA ra vi phạm.
+                    QuyUocDau.KHONG_XAC_DINH,
+                )
+                if ly_do_mau_thuan is not None:
+                    loi_mau_thuan = (
+                        f"Trang {page_no}: nhận ứng viên {khoa}="
+                        f"{ket_qua.value} DÙ mâu thuẫn — {ly_do_mau_thuan}"
+                    )
+                    print(f"--- MÂU THUẪN (vẫn nhận): {loi_mau_thuan} ---")
+                    warnings.append(loi_mau_thuan)
+                    ung_vien_mau_thuan.append({
+                        "trang": page_no,
+                        "vung": region_index,
+                        "khoa": khoa,
+                        "gia_tri": ket_qua.value,
+                        "ly_do": ly_do_mau_thuan,
+                    })
 
                 ket_qua.provenance = nguon
                 final_result[khoa] = ket_qua
@@ -988,6 +1016,10 @@ def extract_fields_from_regions(
             # RA trông y hệt nhau trong `data`, mà hai chuyện đó khác hẳn nhau
             # khi đọc kết quả — và chỉ khoá này phân biệt được.
             "ung_vien_bi_chan": ung_vien_bi_chan,
+            # Ứng viên mâu thuẫn số học mà vẫn được nhận. Cũng LUÔN có mặt, và
+            # cùng một lý do: rỗng nghĩa là "đã kiểm, không thấy mâu thuẫn",
+            # còn vắng khoá thì chẳng nghĩa là gì cả.
+            "ung_vien_mau_thuan": ung_vien_mau_thuan,
         },
         warnings=warnings,
         n_samples=n_samples,

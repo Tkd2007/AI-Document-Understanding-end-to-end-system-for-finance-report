@@ -78,7 +78,15 @@ from eval.metrics import (  # noqa: E402
     silent_error_rate,
 )
 from fields_config import Standard  # noqa: E402
-from router import route_document  # noqa: E402
+from ocr_baseline import PDF_BACKEND  # noqa: E402
+from router import (  # noqa: E402
+    BAT_TANG_REPAIR,
+    DISABLE_CONSTRAINT_GATE,
+    DISABLE_LINE_PROBE,
+    PATIENCE_PAGES_OCR,
+    USE_OCR_FIRST,
+    route_document,
+)
 
 THU_MUC_GOLD = Path("data/gold")
 THU_MUC_PDF = Path("data/bctc")
@@ -219,6 +227,29 @@ def in_bang(cac_diem: list[dict], tong_hop: dict, hong: list[tuple[str, str]]) -
             print(f"  {doc_id}: {ly_do}")
 
 
+def cau_hinh_luot_chay() -> dict:
+    """
+    Những cờ định hình lượt chạy, đọc thẳng từ module đã nạp.
+
+    VÌ SAO PHẢI GHI RA. Các cờ này đến từ `.env`, tức từ MÁY chứ không từ
+    dòng lệnh, nên hai lượt chạy cùng một lệnh trên hai máy có thể đo hai
+    thứ khác nhau. Riêng `pdf_backend` đổi thẳng pixel đưa vào OCR và VLM,
+    còn `ocr_first` từng chiếm 77% thời gian chạy — so hai file kết quả mà
+    không biết chúng thì so nhầm.
+
+    `router.py` có in các cờ này, nhưng chỉ trong khối `__main__` của nó;
+    lượt gold import `route_document` nên những dòng ấy không bao giờ chạy.
+    """
+    return {
+        "pdf_backend": PDF_BACKEND,
+        "ocr_first": USE_OCR_FIRST,
+        "patience_pages_ocr": PATIENCE_PAGES_OCR,
+        "tang_repair": BAT_TANG_REPAIR,
+        "tat_cong_rang_buoc": DISABLE_CONSTRAINT_GATE,
+        "tat_probe_dong": DISABLE_LINE_PROBE,
+    }
+
+
 def ghi_ket_qua(duong_dan, che_do, cac_diem, hong, thieu_pdf) -> None:
     """
     Ghi đè file kết quả bằng mọi thứ đã chấm tới lúc này.
@@ -232,6 +263,7 @@ def ghi_ket_qua(duong_dan, che_do, cac_diem, hong, thieu_pdf) -> None:
         json.dumps(
             {
                 "che_do": che_do,
+                "cau_hinh": cau_hinh_luot_chay(),
                 "tong_hop": gop(cac_diem) if cac_diem else {},
                 "tung_tai_lieu": cac_diem,
                 "khong_chay_duoc": hong,
@@ -299,6 +331,13 @@ def main() -> int:
     nhat_ky = duong_dan_nhat_ky.open(
         "a" if tham_so.tiep_tuc else "w", buffering=1, encoding="utf-8"
     )
+
+    # Cấu hình đứng ở ĐẦU nhật ký, không chỉ trong file JSON: người theo dõi
+    # lượt chạy bằng `tail -f` nhìn thấy nó ngay giây đầu, nên bắt được một
+    # cờ đặt sai trước khi tiêu vài giờ gọi API chứ không phải sau.
+    print(f"=== chế độ: {che_do} ===", file=nhat_ky)
+    for ten, gia_tri in cau_hinh_luot_chay().items():
+        print(f"=== {ten}: {gia_tri} ===", file=nhat_ky)
 
     for i, duong_dan_gold in enumerate(cac_gold, 1):
         gold = doc_gold(duong_dan_gold)

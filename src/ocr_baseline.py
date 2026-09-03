@@ -30,6 +30,35 @@ load_dotenv()
 LANGUAGES = ["vi", "en"]
 PDF_DPI = 300
 
+# Bộ dựng ảnh trang PDF. Khai báo TƯỜNG MINH bằng biến môi trường
+# `PDF_BACKEND`, và KHÔNG tự lùi sang bộ kia khi bộ đang chọn hỏng: hai bộ
+# dựng cho ra pixel khác nhau, nên một lượt chấm âm thầm đổi bộ dựng là một
+# lượt chấm không so được với lượt trước — mà không một con số nào trong kết
+# quả nói ra điều đó. Hỏng thì phải nổ ngay và nêu tên bộ dựng.
+#
+#   "poppler" (mặc định) — `pdf2image` gọi nhị phân Poppler ở ngoài. Đây là
+#       bộ dựng đứng sau MỌI số đo tới lượt gold 27/08/2026, nên nó giữ chỗ
+#       mặc định để lịch sử không bị viết lại sau lưng.
+#   "pdfium" — `pypdfium2`, wheel thuần, không cần nhị phân ngoài. Dùng khi
+#       máy không cài nổi Poppler. Cùng lý do `src/gan_nhan/trang.py` đã
+#       chọn `pypdfium2` từ 25/08/2026.
+#
+# CHUYỆN ĐÃ DẪN TỚI CỜ NÀY, giữ lại vì nó chỉ thẳng chỗ phải kiểm khi
+# Poppler "hỏng không rõ lý do". Ngày 03/09/2026 cả hai bản Poppler Windows
+# 25.12.0 và 26.02.0 đều segfault ngay khâu khởi tạo — nổ cả khi truyền vào
+# một đường dẫn KHÔNG tồn tại, tức hỏng trước lúc chạm tới PDF. Thủ phạm
+# không nằm ở Poppler mà ở máy: thiếu Visual C++ 2015–2022 Redistributable
+# x64, `vcruntime140_1.dll` vắng mặt khỏi `System32`. Cùng một thiếu sót ấy
+# làm torch ném `WinError 1114` lúc nạp `c10.dll`. Cài redist là cả hai
+# cùng hết, nên `poppler` lại chạy được và giữ nguyên chỗ mặc định.
+#
+# Cả hai đều dựng ở PDF_DPI: `pdf2image` nhận thẳng `dpi`, còn pypdfium2
+# nhận hệ số phóng so với 72 dpi của PDF, nên `scale = PDF_DPI / 72` cho ra
+# đúng cùng cỡ ảnh tính bằng pixel.
+BACKEND_MAC_DINH = "poppler"
+BACKEND_HOP_LE = {"poppler", "pdfium"}
+PDF_BACKEND = os.getenv("PDF_BACKEND", BACKEND_MAC_DINH).strip().lower()
+
 _reader = None
 
 try:
@@ -54,6 +83,35 @@ def _require_pdf2image() -> None:
         )
 
 
+def _pdfium():
+    """
+    Module `pypdfium2`, nạp ở lần dùng đầu tiên.
+
+    Nạp lười chứ không import ở đầu file vì backend mặc định là Poppler:
+    một máy chỉ chạy đường Poppler không có lý do gì phải nạp thêm một thư
+    viện nó không gọi tới. Đây cũng là lối mà `get_reader()` đã dùng cho
+    EasyOCR ngay bên dưới.
+    """
+    import pypdfium2 as pdfium
+
+    return pdfium
+
+
+def _kiem_backend() -> None:
+    """
+    Chặn sớm khi `PDF_BACKEND` mang một giá trị không ai cài đặt.
+
+    Không có phép kiểm này thì một lỗi gõ như `PDF_BACKEND=pdfum` sẽ rơi
+    xuống nhánh Poppler một cách im lặng — máy vẫn chạy, kết quả vẫn ra, và
+    lượt chấm dùng một bộ dựng khác hẳn cái người chạy tưởng mình đã chọn.
+    """
+    if PDF_BACKEND not in BACKEND_HOP_LE:
+        raise RuntimeError(
+            f"PDF_BACKEND={PDF_BACKEND!r} không hợp lệ. "
+            f"Chọn một trong: {', '.join(sorted(BACKEND_HOP_LE))}."
+        )
+
+
 def count_pages(file_path: str) -> int:
     """
     Số trang của tài liệu, KHÔNG convert ảnh.
@@ -67,8 +125,20 @@ def count_pages(file_path: str) -> int:
         return 1
 
     # count_pages() chạy TRƯỚC load_page() trong iter_table_regions(), nên
-    # đây mới là chỗ đầu tiên chạm tới pdf2image — check phải nằm ở đây,
+    # đây mới là chỗ đầu tiên chạm tới bộ dựng ảnh — check phải nằm ở đây,
     # không phải chỉ ở load_page().
+    _kiem_backend()
+
+    if PDF_BACKEND == "pdfium":
+        tai_lieu = _pdfium().PdfDocument(str(path))
+        try:
+            return len(tai_lieu)
+        finally:
+            # Đóng tay chứ không đợi bộ thu gom rác: pypdfium2 giữ một handle
+            # của thư viện C, và một lượt gold quét hàng nghìn trang mở lại
+            # tài liệu rất nhiều lần.
+            tai_lieu.close()
+
     _require_pdf2image()
 
     info = pdfinfo_from_path(str(path), poppler_path=os.getenv("POPPLER_PATH"))
@@ -88,6 +158,22 @@ def load_page(file_path: str, page_no: int) -> Image.Image:
     path = Path(file_path)
     if path.suffix.lower() != ".pdf":
         return Image.open(path)
+
+    _kiem_backend()
+
+    if PDF_BACKEND == "pdfium":
+        tai_lieu = _pdfium().PdfDocument(str(path))
+        try:
+            anh = tai_lieu[page_no - 1].render(scale=PDF_DPI / 72).to_pil()
+        finally:
+            tai_lieu.close()
+        # Chốt mode về RGB, đúng thứ pdf2image vẫn trả ra. Với tuỳ chọn
+        # mặc định pypdfium2 đã cho RGB, nhưng mode của nó SUY RA từ định
+        # dạng bitmap mà `render()` chọn, nên nó đổi theo tuỳ chọn và theo
+        # phiên bản. Phía sau còn mã hoá JPEG để gửi cho VLM, mà JPEG không
+        # nhận RGBA — để mode trôi tự do là đặt một quả mìn nổ giữa lượt
+        # chạy dài. `convert()` trên ảnh vốn đã RGB không tốn gì.
+        return anh.convert("RGB")
 
     _require_pdf2image()
 

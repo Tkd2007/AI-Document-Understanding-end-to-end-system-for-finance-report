@@ -1066,47 +1066,62 @@ Chỉ dùng giá trị dự đoán, không đụng gold, rồi mới lấy gold 
 **KHÔNG phải phép đo H1 đã đăng ký** — H1 đòi AUROC so với confidence và
 conformal, bootstrap theo cụm tài liệu.
 
-| | chỉ 5 đẳng thức | đủ 7 đẳng thức |
-|---|---|---|
-| Tài liệu CÓ lỗi câm → ràng buộc kêu | 12/25 (48%) | 23/25 (92%) |
-| Tài liệu SẠCH → kêu oan | **0/18** | 13/18 |
-| Ô sai nằm trong tập nghi can | 27/59 (46%) | 48/59 (81%) |
+| Cách chọn quy ước dấu | tài liệu có lỗi câm → kêu | tài liệu sạch → kêu OAN | ô sai trong nghi can |
+|---|---:|---:|---:|
+| Coi như KHÔNG XÁC ĐỊNH (bỏ 2 đẳng thức B02) | 16/35 = 46% | **0/35** | 28/71 = 39% |
+| **Suy từ mã 11 — bộ dò pipeline ĐANG có** | **29/35 = 83%** | 1/35 | **51/71 = 72%** |
+| Quy ước GOLD — trần trên | 30/35 = 86% | 1/35 | 54/71 = 76% |
 
-Hai điều đáng giá ở đây. Thứ nhất, **0/18 kêu oan**: khi ràng buộc kêu, nó
-chưa kêu oan lần nào. Thứ hai, chênh lệch giữa hai cột là **quy ước dấu** —
-hai đẳng thức mạnh nhất của B02 bị bỏ khi pipeline không đọc được quy ước, và
-bật bừa cả hai thì recall 48% → 92% nhưng false alarm 0 → 13. **Xác định quy
-ước dấu cho từng tài liệu là đòn bẩy lớn nhất hiện có cho H1**, và nó không
-phải chuyện thuật toán mà là chuyện đọc cho ra dòng công thức trên tờ giấy.
+**Hai điều phải đọc kỹ ở bảng này, vì bản trước của mục này nói SAI cả hai.**
 
-Ghi chú phụ nhưng đáng theo: quy ước mỗi tài liệu chốt được là gì **không
-được ghi vào file kết quả**, trái quy ước "trạng thái tường minh" — chính phép
-đo này phải đoán nó.
+*Thứ nhất, bộ dò quy ước ĐÃ TỐT SẴN.* `quy_uoc_tu_ma_11()` chạy trên chính
+giá trị pipeline đọc ra cho **66/70 tài liệu đúng**, 3 sai, 1 không suy
+được — và dòng giữa cho thấy nó đạt 83% trên 86% của trần. Bản trước của
+mục này ghi *"xác định quy ước dấu là đòn bẩy lớn nhất cho H1, 48% lên
+92%"*. Con số ấy đo dưới một giả định sai: nó ép TONG cho MỌI tài liệu và
+so với việc bỏ hẳn hai đẳng thức. Ép bừa thì đúng là được 92% nhưng kèm
+24/35 báo động oan; dùng bộ dò thật thì được 83% với **1** báo động oan.
+Đòn bẩy còn lại vì thế nhỏ hơn hẳn: khoảng 3 điểm, không phải 44 điểm.
+
+*Thứ hai, vì sao phép đo cũ phải đoán.* Quy ước mà pipeline thật sự chốt
+cho từng tài liệu **có** được ghi — `validate_result()` đặt nó ở
+`meta["quy_uoc_dau"]` — nhưng `chay_tap_gold.py` không chép sang bảng
+điểm. Nên mọi phân tích hậu kỳ phải giả định, và tôi đã giả định ca xấu
+nhất. Cùng đúng một lớp lỗi với `_ghi_lai_luot_vlm` ở `01e0dcb`: cơ chế
+chạy đúng, nhưng bằng chứng của nó không đi ra tới nơi đọc được.
+
+*Ba ca bộ dò sai, và chúng là cùng một lỗi:* `DGC_2025Q2`, `DGC_2026Q2`,
+`SBT_2025Q2` — cả ba đọc `gia_von_hang_ban` thành **số dương** trong khi
+tờ giấy in số âm. Một ô đọc rơi dấu ngoặc làm bộ dò lật quy ước từ TONG
+sang TRU, rồi hai đẳng thức B02 chạy nhầm dạng — đúng cái giới hạn mà
+docstring của `xac_dinh_quy_uoc()` đã khai từ trước, nay đo được là 3/70.
 
 #### Ba việc còn treo, xếp theo giá trị
 
-1. **Xác định quy ước dấu từng tài liệu.** Đòn bẩy lớn nhất cho H1, xem bảng
-   trên. Kèm theo: ghi quy ước đã chốt vào file kết quả.
-2. **Dấu mẫu biểu (`fields_config.FORM_MARKERS`) làm bằng chứng vị trí thay
-   cho đếm ô.** Hiện `chan_ung_vien.TOI_THIEU_FIELD = 3` là cách vá vòng vo:
-   vấn đề thật của ca HAG không phải "ít ô" mà là "trang bìa không phải biểu
-   mẫu B02", và trang bìa **không bao giờ in "Mẫu số B 03 - DN"**. Router đã
-   giữ text từng trang trong `bo_nho_text`, nên dựng bản đồ `{biểu mẫu → trang
-   thấy dấu}` là **miễn phí**, không thêm một lần OCR hay gọi API nào. Có bản
-   đồ đó thì hạ được `TOI_THIEU_FIELD` và bịt chỗ hở trang bìa. Hai chỗ phải
-   cẩn thận: lấy lần thấy ĐẦU TIÊN (thuyết minh hay dẫn chiếu sang biểu mẫu
-   khác), và test phải dùng text OCR thật vì EasyOCR đọc "Mẫu B 01a" thành
-   "Mâu B Ola".
-3. **Kiểm giả thuyết "lệch quy ước gán nhãn".** `DGC_2025Q2_TT200` và
-   `SBT_2025Q2_TT200` đều có `gia_von_hang_ban` và `thue_tndn_hien_hanh` bằng
-   đúng `−gold`. Nhưng vector dự đoán của chúng **thoả mọi đẳng thức tới từng
-   đồng** dưới quy ước TRỪ — ví dụ SBT: `6.733.581.463.563 − 6.210.741.439.366
-   = 522.840.024.197`, khớp `loi_nhuan_gop` đọc được. Nên hoặc tờ giấy viết dấu
-   dương và **gold dùng quy ước ngược lại** (tức không phải lỗi đọc), hoặc tờ
-   giấy viết trong ngoặc đơn và pipeline đánh rơi ngoặc. Tập gold **đã có sẵn
-   khoá quy ước** (`tien_kiem.py` in ra: `trừ` 50, `tổng` 20), nên kiểm được
-   bằng dữ liệu có sẵn, không cần mở PDF. Nếu là khả năng thứ nhất thì một
-   phần tỷ lệ lỗi câm đang bị thổi lên bởi quy ước chứ không phải bởi model.
+1. **Ghi quy ước dấu đã chốt vào bảng điểm.** Một dòng ở
+   `chay_tap_gold.py`, lấy `meta["quy_uoc_dau"]`. Không có nó thì mọi phân
+   tích hậu kỳ phải đoán, và lần đoán vừa rồi lệch 37 điểm phần trăm.
+2. **Sửa ba ca đọc rơi dấu âm ở mã 11** (`DGC` ×2, `SBT`). Đây là đòn bẩy
+   thật sự còn lại, và nó đánh trúng hai chỗ cùng lúc: ba ô ấy tự chúng là
+   lỗi câm, VÀ chúng lật quy ước làm hỏng hai đẳng thức B02 của cùng tài
+   liệu. Hướng đi có sẵn: `quy_uoc_tu_cong_thuc()` đọc công thức mã 60 in
+   trong nhãn dòng, là nguồn MẠNH HƠN mã 11 và không dính vào việc đọc dấu
+   của một ô. Chưa đo được nó phủ bao nhiêu vì text OCR không được lưu.
+3. **Dấu mẫu biểu (`fields_config.FORM_MARKERS`) làm bằng chứng vị trí thay
+   cho đếm ô.** Hiện `chan_ung_vien.TOI_THIEU_FIELD = 3` là cách vá vòng
+   vo: vấn đề thật của ca HAG không phải "ít ô" mà là "trang bìa không
+   phải biểu mẫu B02", và trang bìa **không bao giờ in "Mẫu số B 03 - DN"**.
+   Router đã giữ text từng trang trong `bo_nho_text`, nên dựng bản đồ
+   `{biểu mẫu → trang thấy dấu}` là **miễn phí**. Hai chỗ phải cẩn thận:
+   lấy lần thấy ĐẦU TIÊN (thuyết minh hay dẫn chiếu sang biểu mẫu khác), và
+   test phải dùng text OCR thật vì EasyOCR đọc "Mẫu B 01a" thành "Mâu B Ola".
+
+**ĐÃ ĐÓNG — giả thuyết "gold lệch quy ước gán nhãn" là SAI.** Mục này
+trước đây treo việc kiểm xem `DGC`/`SBT` có phải do nhãn gold dùng quy ước
+ngược hay không. Đã kiểm trên cả 70 tài liệu: **gold tự nhất quán 70/70** —
+mọi tài liệu có `quy_uoc_dau` khớp đúng dấu của `gia_von_hang_ban` trong
+nhãn. Vậy tờ giấy in số âm và **pipeline đánh rơi dấu**, chứ nhãn không
+sai. Ba ô ấy là lỗi đọc thật, đã gộp vào việc 2 ở trên.
 
 #### Ba chế độ lỗi câm có cấu trúc, đã đặt tên
 

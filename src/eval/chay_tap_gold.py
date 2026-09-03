@@ -171,6 +171,10 @@ def chay_mot_tai_lieu(gold: dict, pdf: Path, chuan_tu_gold: bool, nhat_ky) -> di
     # ô bằng 0 vì probe khẳng định dòng vắng với ô bằng 0 vì đọc ra đúng số 0.
     # Lượt chấm 03/09/2026 phải đi lần lại từ file log để biết những điều đó,
     # và log thì chỉ có một bản cho cả lượt.
+    # Quy ước dấu ĐÃ CHỐT cho tài liệu này. Thiếu khoá này thì mọi phân
+    # tích hậu kỳ phải đoán pipeline đã chạy 5 hay 7 đẳng thức, và lần đoán
+    # ngày 04/09/2026 lệch 37 điểm phần trăm — xem HANDOFF mục 17.4.
+    diem["quy_uoc_dau"] = ket_qua.meta.get("quy_uoc_dau")
     diem["trang_thai_chi_tieu"] = ket_qua.meta.get("trang_thai_chi_tieu")
     diem["ung_vien_bi_chan"] = ket_qua.meta.get("ung_vien_bi_chan")
     diem["ung_vien_mau_thuan"] = ket_qua.meta.get("ung_vien_mau_thuan")

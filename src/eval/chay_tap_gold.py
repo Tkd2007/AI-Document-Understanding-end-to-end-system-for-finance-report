@@ -61,6 +61,7 @@ Chạy:
 import argparse
 import contextlib
 import json
+import subprocess
 import sys
 import traceback
 from pathlib import Path
@@ -128,6 +129,8 @@ def chay_mot_tai_lieu(gold: dict, pdf: Path, chuan_tu_gold: bool, nhat_ky) -> di
 
     diem = cham_mot_tai_lieu(gold, du_doan)
     diem["doc_id"] = gold["doc_id"]
+    # Mã commit của code đã sinh ra ĐÚNG tài liệu này — xem commit_hien_tai().
+    diem["commit"] = commit_hien_tai()
     diem["chuan_that"] = gold["standard"]
     diem["chuan_da_dung"] = ket_qua.meta.get("standard")
     # Nguồn của kết luận chuẩn, không chỉ kết luận: "TT99 vì người chỉ định"
@@ -225,6 +228,28 @@ def in_bang(cac_diem: list[dict], tong_hop: dict, hong: list[tuple[str, str]]) -
         print("\nKHÔNG CHẠY ĐƯỢC — mẫu số đã trừ những tài liệu này:")
         for doc_id, ly_do in hong:
             print(f"  {doc_id}: {ly_do}")
+
+
+def commit_hien_tai() -> str:
+    """
+    Mã commit của code đang chạy, hoặc "khong-biet".
+
+    VÌ SAO GHI VÀO TỪNG TÀI LIỆU chứ không một lần cho cả lượt: `--tiep-tuc`
+    cho phép nối một lượt bị đứt, và giữa hai lần chạy code hoàn toàn có thể
+    đã đổi. Lượt 03/09/2026 làm đúng thế — 19 tài liệu đầu chạy trước khi có
+    tầng chặn ứng viên, phần còn lại chạy sau. Ghi một mã cho cả file thì file
+    khai sai về 19 tài liệu ấy, và không còn cách nào nhận ra.
+
+    Không nổ khi không có git: một lượt chấm không được chết vì siêu dữ liệu.
+    """
+    try:
+        ket_qua = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True, text=True, timeout=10, check=True,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "khong-biet"
+    return ket_qua.stdout.strip() or "khong-biet"
 
 
 def _thiet_bi_tinh() -> str:

@@ -169,3 +169,31 @@ def test_thiet_bi_khong_co_torch_thi_noi_ra(monkeypatch):
 
     monkeypatch.setattr(builtins, "__import__", gia)
     assert chay_tap_gold._thiet_bi_tinh() == "khong-co-torch"
+
+
+def test_commit_hien_tai_khong_no_khi_khong_co_git(monkeypatch):
+    """
+    Thiếu git phải ra "khong-biet", không được giết lượt chấm.
+
+    Siêu dữ liệu về code KHÔNG được phép làm hỏng một lượt chạy tốn hàng giờ
+    gọi API. Đây cũng là ca thật trên máy chỉ cài Python mà không cài git.
+    """
+    import subprocess
+
+    from eval import chay_tap_gold
+
+    def no(*_args, **_kwargs):
+        raise OSError("giả vờ như không có git")
+
+    monkeypatch.setattr(subprocess, "run", no)
+    assert chay_tap_gold.commit_hien_tai() == "khong-biet"
+
+
+def test_commit_hien_tai_doc_duoc_ma_that():
+    """Có git thì phải ra một mã hex ngắn, không phải chuỗi rỗng."""
+    from eval import chay_tap_gold
+
+    ma = chay_tap_gold.commit_hien_tai()
+    assert ma != ""
+    if ma != "khong-biet":
+        assert all(c in "0123456789abcdef" for c in ma), ma

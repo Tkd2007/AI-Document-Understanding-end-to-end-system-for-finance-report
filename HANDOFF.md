@@ -936,7 +936,7 @@ H2/H3 thì **mở rộng tầng XBRL rẻ hơn hẳn** so với gán nhãn thêm
 
 ---
 
-### 17.3 Chặn "đi tìm tiếp rồi vớ nhầm bảng sau" — bốn hướng, CHƯA thi công
+### 17.3 Chặn "đi tìm tiếp rồi vớ nhầm bảng sau" — 1 và 2 XONG, 3 và 4 chưa
 
 Phát hiện trong lượt chấm tập gold 03/09/2026, tài liệu `GVR_2026Q2_TT99`
 (105 trang). Đây là chế độ lỗi **sinh lỗi câm và đốt tiền API cùng lúc**, nên
@@ -981,16 +981,48 @@ Bốn hướng chặn, xếp theo sức mạnh:
    từ trang mang ký hiệu B01. Hướng này dài nhất vì phần đọc ký hiệu hiện hay
    trả `nguon: 'khong_doc_duoc'` — phải sửa nó trước.
 
-**RÀNG BUỘC BẮT BUỘC TRƯỚC KHI THI CÔNG.** Bốn hướng này nghĩ ra **sau khi đã
-nhìn kết quả trên tập gold**, nên thi công thẳng là tinh chỉnh pipeline lên
-chính tập dùng để đo, và tập gold thôi không còn là phép đo độc lập. Trình tự
-đúng: ghi tu chính vào mục **Sửa đổi** của `PREREGISTRATION.md` TRƯỚC, rồi
-chạy như một **điều kiện thứ hai** trên đúng 70 tài liệu, và báo cáo **hiệu
-số** giữa hai lượt. Lượt 03/09/2026 giữ nguyên vai trò baseline.
+**HƯỚNG 1 VÀ 2 ĐÃ THI CÔNG** ngày 03/09/2026, commit `4372bdd`, ở module mới
+`src/chan_ung_vien.py` nối vào điểm nhận ứng viên của `extract_vlm.py`. Cả hai
+CHỈ TỪ CHỐI, không bao giờ sửa giá trị, nên chúng chỉ chuyển lỗi câm thành lỗi
+ồn. Ứng viên bị từ chối ghi vào meta dưới khoá `ung_vien_bi_chan`.
 
-Hướng 1 và 2 rẻ, độc lập nhau, và cả hai chỉ chuyển lỗi câm thành lỗi ồn chứ
-không tạo giá trị mới — tức không có đường nào làm đẹp chỉ số một cách giả
-tạo. Bắt đầu từ đó.
+Hai bài học từ lúc thi công, đừng làm lại:
+
+- **Bản đầu còn kiểm cả đẳng thức khi đã biết đủ mọi thành viên. Đó là sai.**
+  Đẳng thức lệch chỉ nói "có gì đó sai trong nhóm này", không nói thành viên
+  nào sai — thủ phạm có thể là giá trị đã nhận từ trước, nên bác ứng viên là
+  chọn bừa. Nặng hơn: quyết định thành viên nào sai CHÍNH LÀ bài toán định vị
+  của H2, làm nó tham lam trong lúc trích xuất là giẫm lên thứ đang đem đi đo.
+- **Phép chặn vị trí phải có điều kiện KHOẢNG CÁCH TRANG.** Bản đầu bác một
+  chỉ tiêu B01 ngay khi đã thấy bất kỳ chỉ tiêu B02 nào, và `test_don_vi_theo_bang`
+  bắt được: thứ tự vùng do khâu cắt quyết định chứ không do tờ giấy, nên hai
+  biểu mẫu kề nhau ra ngược thứ tự trong vài trang là chuyện thường.
+
+**HƯỚNG 3 VÀ 4 CHƯA LÀM, và chặn ở chỗ khác hẳn hai hướng trên:**
+
+- *Hướng 3* chỉ có ích nếu lần đọc lại KHÁC lần trước — GVR trang 7 nhả ra
+  rỗng với một lượt gọi API thành công, nên thử lại y hệt sẽ ra y hệt. Đọc lại
+  nguyên trang thì vướng bộ nhớ: dict trang chỉ mang vùng đã cắt, giữ thêm ảnh
+  trang gốc tốn ~26 MB mỗi trang ở 300 DPI mà `cached_pages` tích luỹ, tức
+  ~2,7 GB cho tài liệu 105 trang. Còn prompt nhắm riêng field còn thiếu thì
+  đổi `prompt_hash`, tức đổi định danh phép đo ở mức mạnh hơn hai phép chặn.
+- *Hướng 4* cần text OCR của từng vùng, mà nhánh VLM không OCR vùng của nó —
+  `bo_nho_text` do nhánh OCR đổ vào và nhánh ấy chỉ chạy khi `USE_OCR_FIRST`.
+  Làm được thì phải OCR mọi vùng VLM nhìn thấy, tăng chi phí thật và dính hai
+  nhánh vào nhau. Thêm nữa `ky_hieu_mau.py` tự ghi rằng ký hiệu KHÔNG đọc được
+  trên trang xoay ngang (đo trên SBT trang 8, DGC trang 7), nên độ phủ thủng.
+
+**RÀNG BUỘC VỀ PHÉP ĐO, vẫn còn nguyên hiệu lực.** Bốn hướng này nghĩ ra **sau
+khi đã nhìn kết quả trên tập gold**, nên chúng là tinh chỉnh pipeline lên chính
+tập dùng để đo. Người dùng đã quyết ngày 03/09/2026: thi công ngay và chạy tiếp
+bằng `--tiep-tuc`, **chấp nhận lượt chạy không đồng nhất**. Hệ quả phải nói ra
+khi đọc kết quả: `data/output/tap_gold_chuan_tu_gold.json` là một lượt TRỘN —
+19 tài liệu đầu chạy ở `b479017` (chưa có tầng chặn), phần còn lại ở `4372bdd`
+trở đi. Mỗi tài liệu tự khai mã commit sinh ra nó ở khoá `commit`; **đừng gộp
+hai nhóm lại thành một con số mà không nói ra điều này.**
+
+Muốn có một phép đo sạch thì phải chạy lại trọn 70 tài liệu trên một mã commit
+duy nhất, sau khi ghi tu chính vào mục **Sửa đổi** của `PREREGISTRATION.md`.
 
 ---
 

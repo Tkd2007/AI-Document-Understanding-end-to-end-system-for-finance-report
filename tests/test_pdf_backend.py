@@ -145,5 +145,27 @@ def test_cau_hinh_luot_chay_ghi_ra_backend(monkeypatch):
     assert cau_hinh["pdf_backend"] == "pdfium"
     # Trạng thái tường minh: các cờ định hình lượt chạy đều phải có mặt bằng
     # khoá riêng, không để người đọc suy ra từ sự vắng mặt của khoá khác.
-    for khoa in ("ocr_first", "tang_repair", "tat_cong_rang_buoc", "tat_probe_dong"):
+    for khoa in ("thiet_bi", "ocr_first", "tang_repair", "tat_cong_rang_buoc", "tat_probe_dong"):
         assert khoa in cau_hinh
+
+
+def test_thiet_bi_khong_co_torch_thi_noi_ra(monkeypatch):
+    """
+    Thiếu torch phải ra một chuỗi nói rõ điều đó, không được ném ImportError.
+
+    CI không cài torch (xem CLAUDE.md), nên `cau_hinh_luot_chay()` mà nổ vì
+    thiếu torch là làm hỏng cả lượt chấm ở đúng dòng đầu tiên.
+    """
+    import builtins
+
+    from eval import chay_tap_gold
+
+    that = builtins.__import__
+
+    def gia(ten, *args, **kwargs):
+        if ten == "torch":
+            raise ImportError("gia vo nhu khong co torch")
+        return that(ten, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", gia)
+    assert chay_tap_gold._thiet_bi_tinh() == "khong-co-torch"

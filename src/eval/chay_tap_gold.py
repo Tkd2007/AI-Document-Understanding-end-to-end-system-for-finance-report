@@ -227,6 +227,37 @@ def in_bang(cac_diem: list[dict], tong_hop: dict, hong: list[tuple[str, str]]) -
             print(f"  {doc_id}: {ly_do}")
 
 
+def _thiet_bi_tinh() -> str:
+    """
+    Thiết bị mà tầng OCR và tầng layout sẽ chạy trên đó.
+
+    KHÔNG hỏi code của dự án mà hỏi thẳng torch, vì dự án không hề chọn
+    thiết bị: `ocr_baseline.get_reader()` gọi `easyocr.Reader()` để mặc định
+    `gpu=True`, còn `layout_detection` gọi `predict()` không truyền `device`.
+    Cả hai đều tự lấy CUDA khi có. Nghĩa là thiết bị do MÔI TRƯỜNG quyết —
+    cụ thể là bản torch nào đang cài — chứ không do dòng lệnh hay `.env`.
+
+    Đúng vì thế mà nó phải được ghi lại. Bản torch mặc định trên PyPI cho
+    Windows là bản CPU, nên một môi trường dựng bằng
+    `pip install -r requirements.txt` sẽ chạy CPU trên cả máy có GPU mà
+    không báo gì; dấu hiệu duy nhất là một dòng cảnh báo của easyocr lẫn
+    giữa hàng chục dòng khác. Hai lượt chạy khác thiết bị cũng khác nhau ở
+    số học dấu phẩy động, nên đây là một phần của phép đo.
+
+    Bọc trong try vì CI không cài torch — xem `CLAUDE.md`.
+    """
+    try:
+        import torch
+    except ImportError:
+        return "khong-co-torch"
+
+    if not torch.cuda.is_available():
+        return "cpu"
+    # Kèm tên GPU: "cuda" một mình không phân biệt nổi hai máy có card khác
+    # nhau, mà tốc độ và cả kết quả số học đều phụ thuộc vào card.
+    return f"cuda ({torch.cuda.get_device_name(0)})"
+
+
 def cau_hinh_luot_chay() -> dict:
     """
     Những cờ định hình lượt chạy, đọc thẳng từ module đã nạp.
@@ -241,6 +272,7 @@ def cau_hinh_luot_chay() -> dict:
     lượt gold import `route_document` nên những dòng ấy không bao giờ chạy.
     """
     return {
+        "thiet_bi": _thiet_bi_tinh(),
         "pdf_backend": PDF_BACKEND,
         "ocr_first": USE_OCR_FIRST,
         "patience_pages_ocr": PATIENCE_PAGES_OCR,

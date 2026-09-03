@@ -62,7 +62,7 @@ theo NỘI DUNG, dùng khi đã biết mình cần gì.
 | 15 | Lệnh hay dùng | cần một lệnh không có trong `CLAUDE.md` |
 | **16** | **Bước kế tiếp** | chọn việc |
 | 17.2 | Quy mô tập gold — chưa cập nhật tài liệu | tránh làm lại việc đã quyết |
-| **17.4** | **Lượt chấm 70 tài liệu đầy đủ: kết quả, bốn bản vá, ba việc còn treo** | **đọc trước mọi việc khác** |
+| **17.4** | **Hai lượt chấm 70 tài liệu: kết quả, bốn bản vá, ba việc còn treo** | **đọc trước mọi việc khác** |
 | 19.3 | **Việc còn lại của tầng gold**, theo thứ tự chặn nhau | việc đang làm |
 | 20.6 · 20.8 | **Việc lượt chạy lộ ra, chưa làm** · đơn vị theo bảng | việc đang làm |
 | B | Phương án C, **bước D chưa làm** | làm tiếp nhận diện chuẩn |
@@ -849,8 +849,8 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
 Đường găng đi qua **tầng gold**, không còn qua Mốc 3.
 
 > **Trạng thái 03/09/2026 tối.** Lượt chấm ĐẦY ĐỦ 70 tài liệu đã chạy xong
-> một lần, và lộ ra bốn khuyết tật của chính pipeline; cả bốn đã vá, và một
-> lượt chạy SẠCH trên một commit duy nhất đang chạy lại. **Đọc mục 17.4
+> một lần rồi chạy lại lần hai sau khi vá bốn khuyết tật nó lộ ra. **Lượt 2
+> là mốc dùng được: lỗi câm 4,05%, trường đúng 90,67%.** **Đọc mục 17.4
 > trước mọi việc khác** — nó có kết quả, bốn bản vá kèm số đo, ba việc còn
 > treo xếp theo giá trị, và ba chế độ lỗi câm đã đặt tên. Việc 1 và 2 dưới
 > đây viết khi tập gold còn 11 tài liệu; lượt đầy đủ thay thế cả hai.
@@ -946,21 +946,43 @@ thức để BÁC ứng viên) đã bị rút quyền từ chối vì nó bác n
 `src/chan_ung_vien.py`. Hướng 3 (tìm LÙI) và hướng 4 (chặn theo ký hiệu
 mẫu) chưa làm, và mục 17.4 nêu một đường vào rẻ hơn cho hướng 4.
 
-### 17.4 Lượt chấm 70 tài liệu ĐẦY ĐỦ đầu tiên, và bốn khuyết tật nó lộ ra
+### 17.4 Hai lượt chấm 70 tài liệu, bốn khuyết tật, và mốc dùng được
 
-Ngày 03/09/2026. Đây là lượt đầu tiên chấm trọn 70 tài liệu của tập gold mới.
-Nó chạy xong, **và giá trị lớn nhất của nó không phải con số mà là bốn khuyết
-tật nó phơi ra** — ba trong bốn nằm ở chính cơ chế vừa thi công cùng ngày.
+Đêm 03–04/09/2026. Lượt đầu tiên chấm trọn 70 tài liệu của tập gold mới chạy
+xong, **và giá trị lớn nhất của nó không phải con số mà là bốn khuyết tật nó
+phơi ra** — ba trong bốn nằm ở chính cơ chế vừa thi công cùng ngày. Vá xong
+rồi chấm lại trọn 70 tài liệu; lượt thứ hai mới là mốc dùng được.
 
-**Kết quả lượt đó, đọc kèm cảnh báo bên dưới:** trường đúng 1674/1854 =
-90,29%; lỗi câm 97/1771 = 5,48%; trọn vẹn 16/70; nhận đúng chuẩn 70/70; nhận
-đúng đơn vị 67/70. File đã sao lưu ở `data/output/sao_luu_tu_dong/` với dấu
-thời gian `2026-09-03-2141`.
+**Hai lượt chạy, và chỉ lượt thứ hai dùng được.**
 
-**Cảnh báo bắt buộc khi trích số này:** lượt đó TRỘN hai commit — 19 tài liệu
-ở `b479017`, 51 tài liệu ở `6e666d9` — và ít nhất 19 lỗi câm trong 97 là do
-chính cơ chế của pipeline gây ra chứ không phải model đọc sai. Nó **không dùng
-được làm mốc "trước" cho H3**.
+| Chỉ số | Lượt 1 (03/09) | Lượt 2 (04/09, SẠCH) |
+|---|---:|---:|
+| Trường đúng | 1674/1854 = 90,29% | **1681/1854 = 90,67%** |
+| **Lỗi câm** | 97/1771 = **5,48%** | **71/1752 = 4,05%** |
+| Trọn vẹn | 16/70 | **17/70** |
+| Nhận đúng chuẩn / đơn vị | 70/70 · 67/70 | 70/70 · 67/70 |
+
+**Lượt 1 KHÔNG dùng được làm mốc H3:** nó trộn hai commit (19 tài liệu ở
+`b479017`, 51 ở `6e666d9`) và ít nhất 19 lỗi câm trong 97 là do chính cơ
+chế của pipeline gây ra. File sao lưu `...2026-09-03-2141`.
+
+**Lượt 2 là mốc dùng được.** Cả 70 tài liệu chạy trên đúng một ảnh mã, nạp
+lúc khởi động ở `7f7401f`. Bảng điểm ghi ra BỐN mã commit khác nhau vì tôi
+commit trong lúc nó chạy, nhưng `commit_hien_tai()` ghi mã lúc CHẤM XONG
+một tài liệu chứ không phải mã đã nạp — Python không nạp lại module khi
+file trên đĩa đổi. **Đừng đọc bốn mã ấy thành một lượt trộn**, và lần sau
+thì đừng commit trong lúc chấm.
+
+So từng tài liệu: **8 tài liệu đổi, không tài liệu nào xấu đi**, tổng
+trường đúng +7 và lỗi câm −26. Phần lớn mức giảm là chuyển lỗi CÂM thành
+lỗi ỒN chứ không phải đọc đúng thêm — trường đúng chỉ nhích 0,38 điểm
+trong khi lỗi câm giảm 1,43 điểm. Đó đúng là thứ bốn bản vá được thiết kế
+để làm. Bảng ai-cứu-ca-nào ở `CHANGELOG.md` mục 04/09/2026.
+
+**Số lần ra tay, đo trên log lượt 2:** trần nhánh OCR 2 lần (`DLG`,
+`FLC`); chặn theo vị trí 0 lần; mâu thuẫn số học ghi nhận 9 lần; cổng
+`CO_THE_VANG_MAT` bác kết luận của probe ở 15 ô; đẳng thức không kiểm
+được 77 lần.
 
 #### Bốn khuyết tật, và bản vá
 
@@ -1087,6 +1109,13 @@ Ghi chú phụ nhưng đáng theo: quy ước mỗi tài liệu chốt được 
    phần tỷ lệ lỗi câm đang bị thổi lên bởi quy ước chứ không phải bởi model.
 
 #### Ba chế độ lỗi câm có cấu trúc, đã đặt tên
+
+> **Sau lượt 2:** chế độ *điền 0 cả cụm* đã bị cổng `CO_THE_VANG_MAT` chặn
+> gần hết. Hai chế độ còn lại nguyên vẹn, và **lệch dòng giờ là chế độ lỗi
+> câm lớn nhất còn lại** — `HVG`, `MWG`, `VHC` đều lặp lại y hệt ở lượt 2.
+> Không cơ chế nào chạm được nó, và đó là kết quả có ý nghĩa chứ không phải
+> thất bại: bộ số lấy từ hàng kế bên tự nó vẫn cân, nên nó nằm trong
+> `null(A)` mà H0 mô tả.
 
 Dùng để phân loại khi đọc kết quả, và để biết ràng buộc nào bắt được cái nào:
 

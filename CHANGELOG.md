@@ -18,6 +18,68 @@ mục Sửa đổi.
 
 ---
 
+## 04/09/2026
+
+### Bốn bản vá sau lượt chấm đầy đủ đầu tiên — lỗi câm 5,48% xuống 4,05%
+
+Lượt chấm 70 tài liệu ngày 03/09 lộ ra bốn khuyết tật, ba trong bốn nằm ở
+chính cơ chế thi công cùng ngày. Vá xong rồi chấm lại trọn 70 tài liệu.
+
+| Chỉ số | Trước | Sau |
+|---|---:|---:|
+| Trường đúng | 1674/1854 = 90,29% | **1681/1854 = 90,67%** |
+| **Lỗi câm** | 97/1771 = **5,48%** | **71/1752 = 4,05%** |
+| Tài liệu trọn vẹn | 16/70 | **17/70** |
+| Nhận đúng đơn vị | 67/70 | 67/70 |
+
+**Tám tài liệu đổi, không tài liệu nào xấu đi.** Đây là bảng đáng đọc hơn
+bảng gộp, vì nó cho biết cơ chế nào ra tay ở đâu:
+
+| Tài liệu | Trước | Sau | Cơ chế đã ra tay |
+|---|---|---|---|
+| `VHC_2025Q1_TT200` | 14/26, cam 11 | **17/26, cam 4** | cổng điền 0 + rút quyền từ chối |
+| `GVR_2026Q2_TT99` | 23/27, cam 4 | 23/27, **cam 0** | trần biểu mẫu (`bieu_mau_da_di_qua`) |
+| `MSN_2020Q3_TT200` | 21/26, cam 5 | 21/26, **cam 1** | cổng `CO_THE_VANG_MAT` |
+| `VNM_2023Q2_TT200` | 17/26, cam 9 | 17/26, **cam 5** | cổng `CO_THE_VANG_MAT` |
+| `VJC_2022Q1_TT200` | 22/26, cam 4 | 22/26, **cam 1** | cổng `CO_THE_VANG_MAT` |
+| `FPT_2023Q3_TT200` | 24/26, cam 2 | **26/26, cam 0** | rút quyền từ chối |
+| `REE_2023Q2_TT200` | 23/26, cam 1 | **25/26**, cam 1 | rút quyền từ chối |
+| `FLC_2021Q4_TT200` | 12/26, cam 2 | 12/26, **cam 0** | trần nhánh OCR |
+
+Tổng: **trường đúng +7, lỗi câm −26**.
+
+**Phần lớn mức giảm là chuyển lỗi CÂM thành lỗi ỒN, không phải đọc đúng
+thêm.** Trường đúng chỉ nhích 0,38 điểm trong khi lỗi câm giảm 1,43 điểm —
+đúng như thiết kế, và đúng thứ tự ưu tiên mà `src/eval/metrics.py` tuyên bố:
+một ô trống thì người ta biết mà đi tra, một con số sai thì không.
+
+**Bốn bản vá:**
+
+- `de62355` — phép số học của `chan_ung_vien` **mất quyền từ chối**, chỉ còn
+  chẩn đoán. Nó ra tay 8 lần ở lượt trước: đúng 1, sai 7, trong đó 6 lần vứt
+  đi giá trị đúng tới từng đồng. Nguyên nhân: cận suy từ dấu neo vào giá trị
+  ĐÃ NHẬN, nên khi giá trị đã nhận là thứ sai thì cận thành thước hỏng.
+- `028ff25` — `CO_THE_VANG_MAT`, danh sách trắng tám dòng chi tiết được phép
+  vắng mặt. Trước đó probe bảo "không thấy dòng" là điền 0 vô điều kiện, cho
+  ra 27 ô đúng và 22 ô sai; 22 ô sai đều ở dòng xương sống của biểu mẫu.
+- `5d4fc86` — ghi ra `dang_thuc_khong_kiem_duoc` thay vì bỏ qua im lặng.
+  Lượt này đo được **77 lần** đẳng thức không kiểm được.
+- `7f7401f` — trần nhánh VLM = trang nhánh OCR đã dừng. Ra tay **2 lần**
+  (`DLG`, `FLC`), không làm mất ô đúng nào.
+
+**Một lỗi câm trong chính hệ ghi chép, vá ở `01e0dcb`.** `_ghi_lai_luot_vlm()`
+là allowlist, và `cad32fc` thêm khoá vào `chay_tap_gold.py` mà quên thêm vào
+đó: cơ chế chạy, log in ra, cột tồn tại, nhưng cột nhận `None` ở mọi tài liệu.
+Phát hiện vì bảng điểm nói "mâu thuẫn 0" trong khi log của cùng lượt chạy ghi
+9 dòng. Lượt này đã nạp mã cũ nên hai cột ấy vẫn rỗng — số tra ở log.
+
+**Cạm bẫy đã trả giá, ghi lại kẻo lặp:** `commit_hien_tai()` ghi mã commit
+lúc CHẤM XONG một tài liệu, không phải mã đã nạp vào tiến trình. Lượt này ghi
+ra bốn mã khác nhau vì tôi commit trong lúc nó chạy, nhưng cả 70 tài liệu đều
+chạy trên đúng một ảnh mã đã nạp lúc khởi động (`7f7401f`) — Python không nạp
+lại module khi file trên đĩa đổi. **Đừng đọc bốn mã ấy thành một lượt trộn.**
+Muốn tránh hẳn thì đừng commit trong lúc chấm.
+
 ## 31/08/2026
 
 ### Đơn vị tính buộc theo BẢNG, không buộc theo tài liệu

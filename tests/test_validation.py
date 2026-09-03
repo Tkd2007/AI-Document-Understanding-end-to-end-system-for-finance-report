@@ -217,3 +217,55 @@ def test_meta_ghi_dung_chuan_da_dung():
     meta_200 = validate_result(VNM_Q1_2026, Standard.TT200, QuyUocDau.TRU)["meta"]
     assert meta_200["standard"] == "TT200"
     assert validate_result(VNM_Q1_2026, Standard.TT99, QuyUocDau.TRU)["meta"]["standard"] == "TT99"
+
+
+# --- Đẳng thức KHÔNG kiểm được phải ghi ra, không bỏ qua im lặng -----------
+#
+# Thêm 03/09/2026. Thiếu một thành viên thì đẳng thức bị bỏ — đúng, nhưng nếu
+# không ai ghi lại thì `warnings` rỗng của một tài liệu KHÔNG kiểm được gì
+# trông y hệt `warnings` rỗng của một tài liệu đã qua trọn bảy phép kiểm.
+# Docstring `validate_result()` kể một ca 500 tỷ đi qua đúng vì lý do ấy.
+
+
+def test_dang_thuc_thieu_thanh_vien_duoc_ghi_thanh_khoa_tuong_minh():
+    ket_qua = validate_result(
+        {
+            "don_vi_tinh": "đồng",
+            "tai_san_ngan_han": 30_000,
+            # tai_san_dai_han THIẾU -> đẳng thức tổng tài sản không cộng được
+            "tong_tai_san": 100_000,
+        },
+        Standard.TT200,
+        QuyUocDau.TRU,
+    )
+
+    khong_kiem = ket_qua["meta"]["dang_thuc_khong_kiem_duoc"]
+    tong_tai_san = [
+        m for m in khong_kiem if "Tổng tài sản" in m["dang_thuc"]
+    ]
+    assert len(tong_tai_san) == 1
+    # Phải nói RÕ thiếu ô nào, không chỉ nói "không kiểm được": tên ô thiếu là
+    # thứ duy nhất cho biết nên đi đọc lại chỗ nào.
+    assert tong_tai_san[0]["thieu"] == ["tai_san_dai_han"]
+
+
+def test_du_thanh_vien_thi_khoa_khong_kiem_duoc_khong_chua_dang_thuc_do():
+    """
+    Đẳng thức chạy được thì không được nằm trong sổ "không kiểm được".
+
+    Nếu không chốt chiều này thì một bản cài đặt ghi mọi đẳng thức vào sổ vẫn
+    làm test trên xanh, và cái sổ mất hết ý nghĩa.
+    """
+    ket_qua = validate_result(
+        {
+            "don_vi_tinh": "đồng",
+            "tai_san_ngan_han": 30_000,
+            "tai_san_dai_han": 70_000,
+            "tong_tai_san": 100_000,
+        },
+        Standard.TT200,
+        QuyUocDau.TRU,
+    )
+
+    khong_kiem = ket_qua["meta"]["dang_thuc_khong_kiem_duoc"]
+    assert not any("Tổng tài sản" in m["dang_thuc"] for m in khong_kiem)

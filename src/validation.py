@@ -224,11 +224,22 @@ def validate_result(
     #    chữ số ở BẤT KỲ field nào trong nhóm là lộ ngay. Đây là thứ bắt
     #    được kiểu sai nguy hiểm nhất: giá trị đọc ra trông hợp lý, đúng
     #    thứ bậc, nhưng thực ra lấy nhầm dòng.
+    #
+    #    ĐẲNG THỨC KHÔNG KIỂM ĐƯỢC PHẢI GHI RA, KHÔNG ĐƯỢC BỎ QUA IM LẶNG.
+    #    Thiếu một thành viên thì không cộng được, nên đẳng thức bị bỏ — đó là
+    #    hành vi đúng, nhưng nếu không ai ghi lại thì `warnings` rỗng của một
+    #    tài liệu KHÔNG kiểm được gì trông y hệt `warnings` rỗng của một tài
+    #    liệu đã qua trọn bảy phép kiểm. Docstring hàm này đã kể một ca 500 tỷ
+    #    đi qua đúng vì lý do ấy. Lượt chấm 70 tài liệu ngày 03/09/2026 đo
+    #    được 55 lần bỏ qua, trong đó 47 lần chỉ thiếu ĐÚNG MỘT thành viên.
+    khong_kiem_duoc = []
     for parts, total_key, message in identities_for(standard, quy_uoc):
         total = data.get(total_key)
         values = [data.get(key) for key in parts]
 
         if total is None or any(value is None for value in values):
+            thieu = [key for key in [*parts, total_key] if data.get(key) is None]
+            khong_kiem_duoc.append({"dang_thuc": message, "thieu": thieu})
             continue
 
         actual = sum(values)
@@ -314,6 +325,11 @@ def validate_result(
             # ô nào quy đổi được; một hệ số duy nhất cho mọi ô nghĩa là tài
             # liệu thuần một đơn vị.
             "he_so_don_vi_theo_truong": he_so_da_dung,
+            # Đẳng thức bị bỏ qua vì thiếu thành viên, kèm tên các ô thiếu.
+            # LUÔN có mặt, kể cả rỗng — rỗng nghĩa là "cả bảy đẳng thức đều
+            # chạy", và đó là một thông tin, không phải sự vắng mặt của thông
+            # tin. Xem khối 4 ở trên.
+            "dang_thuc_khong_kiem_duoc": khong_kiem_duoc,
             "standard": standard.value,
             # Quy ước dấu đã dùng để chọn hai đẳng thức B02. LUÔN có mặt, kể
             # cả khi là `khong_xac_dinh`: hai đẳng thức ấy khi đó KHÔNG chạy,

@@ -67,7 +67,7 @@ theo NỘI DUNG, dùng khi đã biết mình cần gì.
 | 20.6 · 20.8 | **Việc lượt chạy lộ ra, chưa làm** · đơn vị theo bảng | việc đang làm |
 | B | Phương án C, **bước D chưa làm** | làm tiếp nhận diện chuẩn |
 
-**Mục 1, 10, 14, 18, 19.1–19.2, 19.4–19.5, 20.1–20.5, 20.7, Phụ lục A và ba mục
+**Mục 1, 10, 14, 17.3, 18, 19.1–19.2, 19.4–19.5, 20.1–20.5, 20.7, 20.8, Phụ lục A và ba mục
 đầu của Phụ lục B không còn nội dung ở đây** — mỗi chỗ để lại một dòng trỏ. Quy
 ước bắt buộc và bẫy môi trường sang `CLAUDE.md`; phần còn lại sang
 `docs/lich-su/HANDOFF-da-dong.md`, **giữ nguyên văn và nguyên số mục** nên mọi
@@ -936,98 +936,15 @@ H2/H3 thì **mở rộng tầng XBRL rẻ hơn hẳn** so với gán nhãn thêm
 
 ---
 
-### 17.3 Chặn "đi tìm tiếp rồi vớ nhầm bảng sau" — ĐÃ SỬA LẠI, đọc kèm 17.4
+### 17.3 Chặn "đi tìm tiếp rồi vớ nhầm bảng sau" — ĐÃ ĐÓNG
 
-> **Cập nhật 03/09/2026 tối:** hướng 1 đã bị RÚT quyền từ chối vì nó bác
-> nhầm giá trị đúng 6 trên 8 lần — lý do và số đo ở **mục 17.4**. Hướng 2
-> giữ nguyên. Hướng 3 và 4 vẫn chưa làm. Đoạn dưới đây giữ nguyên văn để
-> tra lại lập luận gốc; chỗ nào nói hướng 1 chặn được thì đọc kèm 17.4.
+Nguyên văn ở `docs/lich-su/HANDOFF-da-dong.md`, **giữ nguyên số mục**.
 
-Phát hiện trong lượt chấm tập gold 03/09/2026, tài liệu `GVR_2026Q2_TT99`
-(105 trang). Đây là chế độ lỗi **sinh lỗi câm và đốt tiền API cùng lúc**, nên
-nó đáng sửa hơn vẻ ngoài của một ca lẻ.
-
-**Chuyện đã xảy ra.** Điều kiện dừng sớm của nhánh VLM là
-`has_required_fields(...) and pages_without_new_field >= PATIENCE_PAGES`. Chỉ
-có ba field bắt buộc: `tong_tai_san`, `doanh_thu_thuan`, `loi_nhuan_sau_thue`.
-Ở GVR, hai field sau đọc được ở trang 10, còn `tong_tai_san` thì không — nên
-vế đầu luôn sai và **bộ đếm ba trang không bao giờ được xét tới**. VLM cày từ
-trang 10 tới trang 78 mới "tìm thấy" `tong_tai_san`.
-
-**Nhưng B01 không hề nằm muộn.** Nó ở trang 6–8, đúng thứ tự biểu mẫu bắt
-buộc B01 → B02 → B03 → thuyết minh. Trang 6 đọc được phần Tài sản nhưng thiếu
-`tai_san_dai_han` và `tong_tai_san`; trang 7 **không nhả ra gì**; trang 8 chỉ
-lấy được `no_phai_tra`. Tới trang 12 là hết cả ba báo cáo, nên **trang 13–78
-toàn là thuyết minh** — pipeline đi tìm một thứ đã đi qua mất rồi, và nhặt
-phải một con số của bảng khác.
-
-**Cái giá, đo được:** 4 lỗi câm, tất cả ở B01 — `tong_tai_san` sai 222 lần
-(406.588.902.083 so với 90.263.949.529.178), `tai_san_dai_han` ra `0` trong
-khi thật là 52.366.345.316.291, `von_chu_so_huu` và `tong_nguon_von` cũng
-sai. Cộng khoảng 65 lượt gọi VLM thừa. Trước GVR, B01 chưa có một lỗi câm nào
-trong 18 tài liệu đầu.
-
-Bốn hướng chặn, xếp theo sức mạnh:
-
-1. **Dùng đẳng thức kế toán để BÁC ứng viên, không chỉ để gắn cờ.** Trang 6
-   đã cho `tai_san_ngan_han = 37.897 tỷ`, nên ứng viên `tong_tai_san = 406 tỷ`
-   nhỏ hơn cả tài sản ngắn hạn — vi phạm `tổng tài sản = TSNH + TSDH` với
-   `TSDH >= 0`. Hiện tầng ràng buộc chạy SAU khi trích xuất xong: nó gắn cờ
-   chứ không lọc ứng viên lúc đang thu. Chỗ hở nằm đúng đó. Bác ứng viên rồi
-   để trống thì **lỗi câm thành lỗi ồn**, đúng thứ tự ưu tiên mà
-   `src/eval/metrics.py` tuyên bố.
-2. **Dừng theo VỊ TRÍ, không chỉ theo patience.** Khi B03 đã đủ thì đã đi qua
-   cả ba báo cáo; đi tiếp để tìm một chỉ tiêu B01 là bất khả về cấu trúc. Với
-   GVR điều kiện này cắt ở trang ~13 thay vì 78.
-3. **Tìm LÙI thay vì tìm tiến.** Thiếu chỉ tiêu B01 mà B02 đã xong thì chỗ cần
-   đọc lại là các trang TRƯỚC trang B02 — ở GVR là trang 7, trang chưa bao giờ
-   nhả ra gì. Rẻ hơn hẳn 65 trang thuyết minh và nhắm đúng chỗ.
-4. **Chặn theo ký hiệu mẫu** (`src/ky_hieu_mau.py`): chỉ nhận `tong_tai_san`
-   từ trang mang ký hiệu B01. Hướng này dài nhất vì phần đọc ký hiệu hiện hay
-   trả `nguon: 'khong_doc_duoc'` — phải sửa nó trước.
-
-**HƯỚNG 1 VÀ 2 ĐÃ THI CÔNG** ngày 03/09/2026, commit `4372bdd`, ở module mới
-`src/chan_ung_vien.py` nối vào điểm nhận ứng viên của `extract_vlm.py`. Cả hai
-CHỈ TỪ CHỐI, không bao giờ sửa giá trị, nên chúng chỉ chuyển lỗi câm thành lỗi
-ồn. Ứng viên bị từ chối ghi vào meta dưới khoá `ung_vien_bi_chan`.
-
-Hai bài học từ lúc thi công, đừng làm lại:
-
-- **Bản đầu còn kiểm cả đẳng thức khi đã biết đủ mọi thành viên. Đó là sai.**
-  Đẳng thức lệch chỉ nói "có gì đó sai trong nhóm này", không nói thành viên
-  nào sai — thủ phạm có thể là giá trị đã nhận từ trước, nên bác ứng viên là
-  chọn bừa. Nặng hơn: quyết định thành viên nào sai CHÍNH LÀ bài toán định vị
-  của H2, làm nó tham lam trong lúc trích xuất là giẫm lên thứ đang đem đi đo.
-- **Phép chặn vị trí phải có điều kiện KHOẢNG CÁCH TRANG.** Bản đầu bác một
-  chỉ tiêu B01 ngay khi đã thấy bất kỳ chỉ tiêu B02 nào, và `test_don_vi_theo_bang`
-  bắt được: thứ tự vùng do khâu cắt quyết định chứ không do tờ giấy, nên hai
-  biểu mẫu kề nhau ra ngược thứ tự trong vài trang là chuyện thường.
-
-**HƯỚNG 3 VÀ 4 CHƯA LÀM, và chặn ở chỗ khác hẳn hai hướng trên:**
-
-- *Hướng 3* chỉ có ích nếu lần đọc lại KHÁC lần trước — GVR trang 7 nhả ra
-  rỗng với một lượt gọi API thành công, nên thử lại y hệt sẽ ra y hệt. Đọc lại
-  nguyên trang thì vướng bộ nhớ: dict trang chỉ mang vùng đã cắt, giữ thêm ảnh
-  trang gốc tốn ~26 MB mỗi trang ở 300 DPI mà `cached_pages` tích luỹ, tức
-  ~2,7 GB cho tài liệu 105 trang. Còn prompt nhắm riêng field còn thiếu thì
-  đổi `prompt_hash`, tức đổi định danh phép đo ở mức mạnh hơn hai phép chặn.
-- *Hướng 4* cần text OCR của từng vùng, mà nhánh VLM không OCR vùng của nó —
-  `bo_nho_text` do nhánh OCR đổ vào và nhánh ấy chỉ chạy khi `USE_OCR_FIRST`.
-  Làm được thì phải OCR mọi vùng VLM nhìn thấy, tăng chi phí thật và dính hai
-  nhánh vào nhau. Thêm nữa `ky_hieu_mau.py` tự ghi rằng ký hiệu KHÔNG đọc được
-  trên trang xoay ngang (đo trên SBT trang 8, DGC trang 7), nên độ phủ thủng.
-
-**RÀNG BUỘC VỀ PHÉP ĐO, vẫn còn nguyên hiệu lực.** Bốn hướng này nghĩ ra **sau
-khi đã nhìn kết quả trên tập gold**, nên chúng là tinh chỉnh pipeline lên chính
-tập dùng để đo. Người dùng đã quyết ngày 03/09/2026: thi công ngay và chạy tiếp
-bằng `--tiep-tuc`, **chấp nhận lượt chạy không đồng nhất**. Hệ quả phải nói ra
-khi đọc kết quả: `data/output/tap_gold_chuan_tu_gold.json` là một lượt TRỘN —
-19 tài liệu đầu chạy ở `b479017` (chưa có tầng chặn), phần còn lại ở `4372bdd`
-trở đi. Mỗi tài liệu tự khai mã commit sinh ra nó ở khoá `commit`; **đừng gộp
-hai nhóm lại thành một con số mà không nói ra điều này.**
-
-Muốn có một phép đo sạch thì phải chạy lại trọn 70 tài liệu trên một mã commit
-duy nhất, sau khi ghi tu chính vào mục **Sửa đổi** của `PREREGISTRATION.md`.
+Phần còn ràng buộc việc đang làm, gói trong bốn dòng: hướng 1 (dùng đẳng
+thức để BÁC ứng viên) đã bị rút quyền từ chối vì nó bác nhầm giá trị đúng
+6 trên 8 lần — xem 17.4. Hướng 2 (dừng theo VỊ TRÍ) còn hiệu lực ở
+`src/chan_ung_vien.py`. Hướng 3 (tìm LÙI) và hướng 4 (chặn theo ký hiệu
+mẫu) chưa làm, và mục 17.4 nêu một đường vào rẻ hơn cho hướng 4.
 
 ### 17.4 Lượt chấm 70 tài liệu ĐẦY ĐỦ đầu tiên, và bốn khuyết tật nó lộ ra
 
@@ -1345,136 +1262,15 @@ những gì chưa làm.
 
 ---
 
-### 20.8 Đơn vị tính buộc theo BẢNG — thi công và chạy lại HNG, 31/08/2026
+### 20.8 Đơn vị tính buộc theo BẢNG — ĐÃ ĐÓNG
 
-**Tiền đề "mỗi tài liệu một đơn vị tính" đã bị bác bỏ trên hồ sơ thật.**
-`HNG_2025H1_TT200` là công văn giải trình gửi HNX kèm BCTC soát xét bán niên:
-trang 1 khai `ĐVT: tỷ đồng` cho một bảng hai dòng, các trang sau là BCTC khai
-`Ngàn VND`. Pipeline cũ đối xử với đơn vị như một chỉ tiêu bình thường — vùng
-đầu tiên đọc được thì chốt cho cả tài liệu và không bao giờ đọc lại — nên công
-văn trang 1 thắng bảng cân đối trang 10.
+Nguyên văn ở `docs/lich-su/HANDOFF-da-dong.md`, **giữ nguyên số mục**.
 
-**Mọi chữ số đọc ra đều đúng tuyệt đối; 24/26 ô sai đúng 1e6 lần.** Hai ô đúng
-ở lượt 30/08 là hai ô bằng `0`, tức hai ô bất biến với phép nhân. Đây là ca
-sách giáo khoa của mệnh đề `Aδ = (c−1)Ax* = 0`.
-
-**Mỏ neo biên độ lớn có báo nhưng KHÔNG phân xử được.** Với tổng tài sản thô
-`18.281.308.818`, `×1e9` cho `1,8e19` (ngoài biên, bắt được) nhưng cả `×1e3`
-(`1,8e13`) lẫn `×1` (`1,8e10`) đều nằm trong `[1e10; 1e15]`. Mỏ neo thu bốn ứng
-viên xuống hai — nó là **bộ lọc, không phải bộ sửa**. Đừng trông vào nó để tự
-chữa ca sai đơn vị.
-
-**Và không hệ số toàn cục nào ĐÚNG được cho tài liệu này.** `loi_nhuan_sau_thue`
-được đọc ra từ đúng bảng trang 1, nên chọn `nghìn đồng` sẽ làm ô đó sai 1e6 lần
-theo chiều ngược lại. Đó là lập luận quyết định: hệ số phải buộc theo **bảng**
-đã sinh ra con số.
-
-#### Cơ chế (`e28b9db`, `b35fdd7`, `fed96af`)
-
-- `extract_vlm` bỏ phiếu đơn vị ở **mọi** vùng. **Đọc được thắng kế thừa**; chỉ
-  vùng không tự khai mới lấy đơn vị của vùng trước. Không mua thêm lời gọi VLM
-  nào — prompt vốn đã bắt model trả `don_vi_tinh` cho mọi vùng, bản trước chỉ
-  vứt nó đi từ vùng thứ hai.
-- Ngưỡng quá bán (`NGUONG_DON_VI_VUNG`) chặn ghi đè bằng phiếu yếu. **Ở
-  `n_samples=1` nó không có tác dụng** — đừng đọc `0,5` như tham số đã hiệu chỉnh.
-- `validate_result(..., he_so_theo_truong)` quy đổi theo từng ô; mỏ neo biên độ
-  lớn gác theo hệ số đã dùng cho **chính** `tong_tai_san`.
-- Kết luận mức tài liệu = hệ số áp cho **đa số** chỉ tiêu. Định nghĩa này đổi vì
-  gold chỉ có một `unit_multiplier`/tài liệu; lấy vùng đầu tiên sẽ báo sai đơn vị
-  trong khi 25/26 con số đã quy đổi đúng.
-- `meta["don_vi_theo_vung"]` là certificate: mỗi vùng khai đọc ra gì, tin bao
-  nhiêu, áp hệ số nào, nguồn là `doc_duoc` / `ke_thua` / `chua_biet`.
-
-**KHÔNG sao chép ba ràng buộc của `ky_hieu_mau.py`** dù khuôn mẫu trông giống
-hệt. Ký hiệu mẫu thật sự thuần nhất trong một hồ sơ nên ở đó "chốt một lần" là
-đúng và "vùng sau khác vùng trước" là dấu hiệu hỏng; đơn vị tính thì không, nên
-cùng một sự kiện lại là chuyện bình thường và phải được phép ghi đè.
-
-**Một lỗi đã sửa trước khi chạy (`fed96af`).** Nhánh VLM đọc được một chỉ tiêu
-không có nghĩa là giá trị cuối cùng đến từ đó: với `USE_OCR_FIRST=true`,
-`run_vlm()` chỉ ghi đè khi ô còn trống hoặc validate đã báo warning. Dùng thẳng
-bản đồ hệ số thì con số của OCR bị nhân bằng hệ số của một vùng nó chưa từng
-được đọc ra — bịa xuất xứ, và bịa theo kiểu vẫn ra một con số hợp lệ nên không
-gì báo. Lọc bằng `provenance`.
-
-#### Lượt chạy HNG 31/08/2026
-
-Chế độ `--chuan-tu-gold --chi HNG`, `BAT_TANG_REPAIR=true`, `USE_OCR_FIRST=true`,
-`n_samples=1`, `temperature=0.0`, model `google/gemma-4-31b-it:free`. Kết quả:
-`data/output/tap_gold_chuan_tu_gold_HNG_2026-08-31.json`.
-
-| | 30/08 | 31/08 |
-|---|---:|---:|
-| Trường đúng | 2/26 = 0,077 | **21/26 = 0,808** |
-| Lỗi câm | 24/26 | **5/26** |
-| Hệ số đơn vị | ✗ (1e9) | **✓ (1e3)** |
-| Số cảnh báo | 2 | 1 |
-
-Certificate: **18 vùng, 8 đọc được đơn vị, 10 kế thừa.** Trang 1 vùng 0 đọc
-`tỷ đồng`; trang 10, 11, 12, 13, 14, 15, 17 đọc `Ngàn VND`. Hệ số theo trường:
-25 ô mang `1000`, một ô (`loi_nhuan_sau_thue`) mang `1e9`. Đúng hình dạng đã
-dự đoán.
-
-#### Năm ô còn sai — KHÔNG ô nào do đơn vị
-
-| Chỉ tiêu | Dự đoán | Gold |
-|---|---:|---:|
-| `ln_thuan_hdkd` | −154.594.725.000 | +154.594.725.000 |
-| `ln_khac` | −103.872.097.000 | +103.872.097.000 |
-| `loi_nhuan_truoc_thue` | −258.466.822.000 | +258.466.822.000 |
-| `loi_nhuan_sau_thue` | −258.900.000.000 | +258.898.322.000 |
-| `thue_tndn_hien_hanh` | 233.893.000 | 0 |
-
-**Bốn ô đầu chỉ lệch DẤU** — đúng Câu 14, quy ước dấu ngược của HNG, và Câu 14
-vẫn đang chờ người chủ trì. Riêng `loi_nhuan_sau_thue` lệch cả độ lớn 0,00065%,
-nằm sâu trong biên 0,1%, nên nếu Câu 14 được giải thì ô này tự đúng.
-
-**Ô thứ năm: đẳng thức mã 60 phân xử, và nó chỉ về phía GOLD.** Gold ghi
-`thue_tndn_hien_hanh = 0`, pipeline đọc `233.893.000`. Cho trước ba giá trị kia
-— mã 50, mã 52 và mã 60, trong đó mã 52 pipeline đọc trùng khít gold — đẳng
-thức **bắt buộc** mã 51 phải bằng 0; gold cân tới từng đồng còn pipeline lệch
-`630.785.000`. Certificate cũng loại trừ khả năng tầng repair đẻ ra con số đó:
-verdict là `ABSTAIN` (`vuot_tran_thay_doi`), tức `233.893.000` đến thẳng từ VLM.
-Mở PDF giờ chỉ còn để biết VLM bắt trúng con số của dòng nào — hữu ích cho chẩn
-đoán, không còn cần để phân xử.
-
-#### Chỗ lượt chạy này KHÔNG kết luận được
-
-**Mới chạy MỘT tài liệu, nên chưa biết cơ chế có làm hỏng 9 tài liệu kia
-không.** Buộc đơn vị theo bảng mở ra một chế độ lỗi mới: trước đây cả tài liệu
-chỉ có một lần đọc đơn vị có thể sai, giờ mỗi bảng là một cơ hội, và một đơn vị
-bịa trên trang tiếp nối làm hỏng trọn bảng đó mà không đẳng thức nào bắt được.
-Chín tài liệu kia đều khai `VND` (×1) và đều đúng đơn vị ở lượt 30/08, nên
-chúng là phép thử hồi quy đúng nghĩa.
-
-Nếu chúng không đổi thì gộp sẽ là **232/265 = 0,875** so với 0,804 — nhưng đó
-là **phép ngoại suy, chưa phải số đo**. Việc kế tiếp: chạy trọn bộ 10 tài liệu,
-và **sao lưu `tap_gold_chuan_tu_gold.json` trước khi chạy** (bẫy 3, mục 20.2).
-
-> **File `tap_gold_chuan_tu_gold.json` hiện đang giữ kết quả của ĐÚNG MỘT tài
-> liệu** vì lượt `--chi HNG` này. Bản 10 tài liệu của lượt 30/08 vẫn còn ở
-> `..._2026-08-30.json`.
-
-#### Điểm số 21/26 đo dưới quy ước dấu CŨ — không so thẳng với lượt sau
-
-Cùng ngày 31/08/2026, quy ước lưu dấu mã 51/52 đổi sang **dấu có hướng** (chi
-phí âm, thu nhập thuế dương) và đẳng thức thành `Mã 60 = Mã 50 + Mã 51 + Mã 52`
-— xem `ANNOTATION-GUIDELINE.md` mục Sửa đổi. Mười một file gold đã lật dấu hai
-ô ấy.
-
-Lượt chạy HNG ở trên được chấm **trước** khi lật, nên con số 21/26 thuộc quy
-ước cũ. Chấm lại chính bộ dự đoán đã lưu với gold mới cho **20/26**: ô
-`thue_tndn_hoan_lai` (pipeline đọc `−431.500.000`) trước khớp gold, nay lệch
-dấu với gold mới `+431.500.000`.
-
-**Con số dùng khi so với lượt sau là 20/26**, không phải 21/26. Chênh lệch một
-ô này thuần tuý do đổi quy ước, không phải do cơ chế đơn vị theo bảng.
-
-**Bổ sung 01/09/2026: cả hai con số trên nay đều là mốc CHẾT.** Quy ước dấu
-đã đổi lần nữa — nhãn chép nguyên văn, dạng đẳng thức đọc từ tài liệu — và
-`chuan_hoa_dau()` đã bị xoá, nên không lượt chạy nào sau ngày này so thẳng
-được với 21/26 lẫn 20/26. Tập gold cũng đang được gán nhãn lại từ đầu. Giữ
-hai con số ở đây làm hồ sơ, đừng dùng chúng làm mốc so.
+Ràng buộc còn hiệu lực: hệ số đơn vị buộc theo **BẢNG** sinh ra con số,
+không buộc theo tài liệu — một tài liệu có thể khai hai đơn vị khác nhau ở
+hai bảng, đo được trên `HNG_2025H1_TT200`. Lý do và ba khoá certificate
+(`he_so_don_vi_theo_truong`, `don_vi_theo_vung`, `don_vi_tinh`) ghi tại chỗ
+trong `src/validation.py` và `src/extract_vlm.py`.
 
 ## Phụ lục A — MỐC 1: hồ sơ đối chiếu ma trận ràng buộc với Thông tư
 

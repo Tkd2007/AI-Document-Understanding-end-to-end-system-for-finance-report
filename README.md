@@ -74,30 +74,18 @@ Khi chưa đạt thì gọi VLM. Nếu lý do chưa đạt là *có warning* (gi
 sai) thì VLM được phép **ghi đè**, chứ không chỉ lấp chỗ `None` — nếu không thì con
 số sai vẫn nằm nguyên đó và cả validation gate thành vô nghĩa.
 
-### Vì sao nhánh OCR đang tắt mặc định
+### Nhánh OCR — bật hay tắt, và vì sao
 
-`USE_OCR_FIRST=false`. Đo trên báo cáo VNM Q1/2026:
+`USE_OCR_FIRST` trong `.env`. Nhánh OCR rẻ tiền hơn VLM nhưng chậm hơn
+nhiều (EasyOCR chạy CPU), và nó đọc **số** rất chuẩn trong khi đọc **chữ
+tiếng Việt có dấu** thì hỏng — `TỔNG TÀI SẢN` ra `TỖNG TÀISẢN` — nên nhánh
+regex phải dò theo **mã số dòng** chứ không theo tên chỉ tiêu.
 
-- EasyOCR đọc **số** rất chuẩn nhưng đọc **chữ tiếng Việt có dấu** thì hỏng
-  (`TỔNG TÀI SẢN` → `TỖNG TÀISẢN`), trong khi regex lại phải khớp đúng tên chỉ tiêu.
-- Lúc bị tắt, nhánh OCR quét hết 55 trang (chậm, EasyOCR chạy CPU) rồi vẫn thiếu
-  field, sau đó mới gọi VLM — người dùng phải chờ trọn một nhánh vô ích.
-- Nhánh VLM một mình trả đúng cả 11/11 field và dừng ở trang 10.
-
-Từ đó regex đã khá lên nhiều nhờ dò theo **mã số dòng** và luật loại trừ hai chiều:
-trên đúng OCR text ấy, nhánh regex trích đúng **11/11 chỉ tiêu** và không sinh
-warning nào — tức là sẽ không cần fallback VLM nữa. Nhưng mặc định vẫn để `false`
-cho tới khi đo được trên nhiều báo cáo khác, vì đây mới là **một** tài liệu và
-regex vốn nhạy với cách OCR cắt chữ ở từng bản in.
-
-> **Mọi con số 11/11 ở trên đo dưới bộ chỉ tiêu CŨ (11 chỉ tiêu).** Mốc 1 ngày
-> 23/08/2026 và kịch bản E ngày 25/08 đã mở bộ chỉ tiêu lên 27 với TT99 và 26
-> với TT200, và **chưa đo lại**.
-> Mười chỉ tiêu mới đều là dòng chi tiết nằm sâu hơn trong bảng, nên đừng suy ra
-> rằng tỷ lệ sẽ giữ nguyên — nhất là với nhánh regex, vốn nhạy với cách OCR cắt
-> chữ. Đo lại là một phần của pilot ở MỐC 2.
-
-Code nhánh OCR được **giữ nguyên**, bật lại bằng `USE_OCR_FIRST=true` trong `.env`.
+Hậu quả của việc bật hay tắt cờ này ghi ngay tại chỗ khai báo nó trong
+`src/router.py`; số đo trước–sau ở [CHANGELOG.md](CHANGELOG.md). Không chép
+lại ở đây — đoạn cũ tại chỗ này từng giữ một bảng `11/11 chỉ tiêu` đo dưới
+bộ chỉ tiêu CŨ gồm 11 dòng, kèm chính lời cảnh báo rằng nó chưa đo lại sau
+khi bộ chỉ tiêu mở lên 26–27 dòng.
 
 ## Project structure
 
@@ -200,150 +188,10 @@ container dừng (do cờ `--rm`). Muốn giữ lại trên máy thì gắn volu
 docker run --rm -p 8000:8000 -v "${PWD}/data:/app/data" --env-file .env.docker doc-ai
 ```
 
-#### Chạy kèm monitoring (docker compose)
+#### Chạy kèm monitoring
 
-```bash
-docker compose up                            # chỉ app
-docker compose --profile monitoring up       # app + Prometheus
-```
-
-Prometheus nằm sau `profiles` nên **không** khởi động mặc định. Lý do: nó chạy
-nền và scrape `/metrics` mỗi 15 giây bất kể có ai dùng hay không, mà project này
-chạy theo phiên làm việc chứ không phải 24/7 — bật khi cần xem số là đủ.
-
-Kiểm tra theo đúng thứ tự này, mỗi bước xanh mới sang bước sau:
-
-1. `curl 127.0.0.1:8000/metrics` — app có trả metric không
-2. `127.0.0.1:9090/targets` — job `doc-ai` phải hiện **UP**
-3. `127.0.0.1:9090/graph`, gõ `doc_ai_documents_total` — Prometheus có lưu được không
-
-Ở bước 1, ba counter `doc_ai_documents_total`, `doc_ai_documents_ok_total` và
-`doc_ai_documents_error_total` phải hiện ra ngay cả khi chưa xử lý tài liệu nào —
-cả ba bằng 0. Tỷ lệ lỗi trong 5 phút gần nhất:
-
-```promql
-rate(doc_ai_documents_error_total[5m]) / rate(doc_ai_documents_total[5m])
-```
-
-Lúc không có request nào thì cả tử lẫn mẫu đều bằng 0 và biểu thức trả rỗng, nên
-alert dựng trên nó nhớ kèm điều kiện có lưu lượng, ví dụ
-`rate(doc_ai_documents_total[5m]) > 0`.
-
-Bước 2 là chỗ bắt lỗi phổ biến nhất: `targets` trong `monitoring/prometheus.yml`
-phải là **tên service** (`app:8000`), không phải `localhost:8000`. Mỗi container
-là một network namespace riêng nên `localhost` trỏ về chính Prometheus.
-
-Dừng và dọn:
-
-| Lệnh | Tác dụng |
-|---|---|
-| `docker compose stop prometheus` | Ngừng scrape, giữ nguyên dữ liệu |
-| `docker compose down` | Xoá container, **giữ** volume |
-| `docker compose down -v` | Xoá cả volume — mất sạch lịch sử, không phục hồi được |
-
-Dữ liệu Prometheus nằm trong named volume `prometheus_data` và tự xoá theo
-`--storage.tsdb.retention.time=15d`, nên không phình vô hạn. Lúc hệ thống rảnh
-thì gần như miễn phí: counter không đổi được nén theo độ lệch, một đêm 8 tiếng
-không hoạt động chỉ tốn vài KB.
-
-Đừng "tiết kiệm" bằng cách nới `scrape_interval` lên hàng giờ: `rate()` cần ít
-nhất hai điểm trong cửa sổ truy vấn mới tính được độ lệch, nên interval quá thưa
-khiến mọi truy vấn trả rỗng — hệ thống vẫn chạy, vẫn tốn RAM, và không nói gì.
-Muốn tắt thì tắt hẳn container.
-
-#### Grafana — dashboard
-
-Grafana **không lưu số liệu**, nó chỉ gửi PromQL sang Prometheus rồi vẽ. Thứ
-duy nhất nó sở hữu là định nghĩa dashboard và tài khoản đăng nhập — nên câu
-hỏi kiến trúc duy nhất là: định nghĩa dashboard sống ở đâu?
-
-Ở đây chọn **provisioning** (file trong repo) thay vì click trong UI (lưu vào
-SQLite nội bộ container). Lý do: `docker compose down -v` rồi `up` lại vẫn ra
-đúng dashboard đó, và thay đổi review được bằng `git diff`.
-
-Ba loại file, hai cái đầu rất dễ nhầm nhau:
-
-| File | Vai trò |
-|---|---|
-| `provisioning/datasources/prometheus.yml` | Prometheus nằm ở đâu |
-| `provisioning/dashboards/dashboards.yml` | **không phải dashboard** — chỉ cho Grafana biết đi tìm file `.json` ở thư mục nào |
-| `dashboards/*.json` | dashboard thật |
-
-`/etc/grafana/provisioning` là đường dẫn **cố định** của image, không đổi được
-bằng config. Còn `options.path` trong file thứ hai phải **khớp từng ký tự** với
-vế phải của bind mount `dashboards` trong `docker-compose.yml` — lệch một ký tự
-thì Grafana lên xanh, datasource có, dashboard rỗng, và không lỗi nào. Cùng loại
-bẫy với `--config.file` của Prometheus.
-
-Datasource trỏ `http://prometheus:9090` — **tên service**, không phải
-`localhost`, và là cổng TRONG container. Cùng lý do đã ghi ở `prometheus.yml`.
-Grafana không bao giờ nói chuyện với `app`: luồng là
-`app → Prometheus → Grafana`, và FastAPI không hiểu PromQL.
-
-##### Biến môi trường
-
-Thêm vào `.env` (KHÔNG phải `.env.docker`):
-GRAFANA_USER=admin
-GRAFANA_PASSWORD=<tự đặt>
-
-
-Nghe ngược nhưng đúng: cú pháp `${...}` trong `docker-compose.yml` được
-**Compose** thay thế lúc đọc file, nên nó đọc `.env` của thư mục chạy lệnh.
-`env_file:` là chuyện khác — thứ đó truyền biến vào *trong* container.
-
-Biến thiếu thì Compose mặc định thay bằng chuỗi rỗng và chỉ cảnh báo: Grafana
-lên bình thường rồi không đăng nhập được bằng bất cứ thứ gì. Nên dùng cú pháp
-`${GRAFANA_PASSWORD:?...}` để Compose chết ngay kèm câu giải thích — cùng tinh
-thần với `require_config()`.
-
-##### Kiểm tra, mỗi bước xanh mới sang bước sau
-
-1. `docker compose --profile monitoring up` — 3 container lên, không cái nào restart lặp
-2. `127.0.0.1:3000` — đăng nhập bằng `GRAFANA_USER` / `GRAFANA_PASSWORD`
-3. `Connections → Data sources` — Prometheus **đã có sẵn**, không phải tự thêm
-4. `Explore` → gõ `doc_ai_documents_total` → ra series phẳng ở 0
-5. Chạy một tài liệu thật, đợi 15–30s, xem số nhích lên
-
-Bước 3 là chỗ phân biệt "provisioning chạy được" với "tự click thêm datasource".
-Phải thêm tay nghĩa là mount `provisioning` sai — log Grafana lúc khởi động có
-dòng cho biết nó đọc được mấy file.
-
-Kiểm cấu trúc YAML mà chưa cần pull image:
-
-```bash
-docker compose --profile monitoring config --services
-```
-
-Dùng `--services`, đừng dùng `config` trần: lệnh trần resolve luôn `env_file`
-và **in `OPENROUTER_API_KEY` ra dạng thô**.
-
-##### PromQL cho panel
-
-| Panel | Query |
-|---|---|
-| Service sống? | `up{job="doc-ai"}` |
-| Throughput | `increase(doc_ai_documents_total[1h])` |
-| Tỷ lệ lỗi | `rate(doc_ai_documents_error_total[5m]) / rate(doc_ai_documents_total[5m])` |
-| Thời gian TB / tài liệu | `rate(doc_ai_seconds_total[5m]) / rate(doc_ai_documents_total[5m])` |
-| Thời gian TB theo stage | `rate(doc_ai_stage_vlm_seconds_total[5m]) / rate(doc_ai_documents_total[5m])` |
-| Tỷ lệ gọi VLM hỏng | `rate(doc_ai_vlm_failures_total[5m]) / rate(doc_ai_vlm_calls_total[5m])` |
-
-Chỉ có **trung bình**, chưa có p95/p99: `metrics.py` cộng dồn `seconds_total`
-chứ không có histogram bucket. Muốn phân vị thật thì phải đổi kiến trúc bộ đếm.
-
-##### Ba thứ trông như dashboard hỏng nhưng không phải
-
-- **Panel trống ≠ sai query.** Project chạy theo phiên, mỗi lượt mất vài phút,
-  nên cửa sổ `[5m]` nhiều khi chỉ ôm được một điểm và `rate()` trả rỗng. Với
-  throughput dùng `increase(...[1h])` cho dễ đọc.
-- **Counter reset về 0 mỗi lần restart container.** `rate()` tự xử lý được,
-  nhưng panel Stat gõ thẳng `doc_ai_documents_total` sẽ tụt về 0 sau mỗi
-  `docker compose up`. Muốn tổng tích luỹ thì `increase(doc_ai_documents_total[30d])`.
-- **Sửa panel trong UI KHÔNG cập nhật file trong repo.** `allowUiUpdates: true`
-  cho phép lưu, nhưng lưu vào SQLite nội bộ. Sau vài lần chỉnh, cái nhìn thấy và
-  cái trong git là hai thứ khác nhau mà `git diff` vẫn sạch. Quy trình bắt buộc:
-  chỉnh UI → `Dashboard settings → JSON Model` → dán về
-  `monitoring/grafana/dashboards/` → commit.
+`docker compose up` dựng thêm Prometheus và Grafana. Cách dựng, cấu hình,
+và bốn cái bẫy đã cắn thật khi làm dashboard: [docs/docker-va-monitoring.md](docs/docker-va-monitoring.md).
 
 #### Checkpoint được tải sẵn vào image
 
@@ -559,51 +407,26 @@ Chín đẳng thức kế toán nối chúng lại, khai báo ở `FIELD_IDENTIT
 
 - **Layout Detection** (DocLayout-YOLO): working — lọc trang không có bảng
   và cắt riêng từng vùng bảng trước khi đưa vào OCR/VLM.
-- **OCR Pipeline** (EasyOCR + regex): working, **tắt mặc định trong code**
-  (`USE_OCR_FIRST=false`) nhưng bật được qua `.env`. Bật thì nó là khoản đắt
-  nhất của cả lượt chạy: trên lượt chấm gold, OCR chiếm **77% tổng thời gian**
-  (~27,6 giây một trang, quét 100% số trang), vì EasyOCR chạy CPU và
-  `run_ocr_first()` **không có bộ đếm kiên nhẫn** — nó chỉ dừng khi
-  `is_acceptable()` đúng, mà nhánh regex đọc hỏng chữ Việt có dấu nên điều đó
-  gần như không xảy ra.
-
-  > **Cảnh báo: `.env` trên máy phát triển đang đặt `USE_OCR_FIRST=true`**,
-  > tức ngược với mặc định tài liệu mô tả. Chốt cấu hình trước khi trích dẫn
-  > bất kỳ số đo nào — xem `HANDOFF.md` mục 12.2.
+- **OCR Pipeline** (EasyOCR + regex): working, bật/tắt bằng `USE_OCR_FIRST`
+  trong `.env`. Nó là khoản đắt nhất của một lượt chạy, nên `run_ocr_first()`
+  có bộ đếm kiên nhẫn `PATIENCE_PAGES_OCR` — dừng khi đã ngần ấy trang liên
+  tiếp không trích thêm được chỉ tiêu nào. Trang nó dừng cũng là **trần của
+  nhánh VLM**; lý do ở comment trong `src/extract_vlm.py`.
 - **VLM Pipeline** (Gemma 4 31B via OpenRouter): working. Chạy ở
   `n_samples=1, temperature=0.0`, nên confidence trả về là **1,0 ở mọi
   trường** và con số đó nghĩa là *không đo được*, không phải *chắc chắn* —
   muốn đo H1 phải bật `n_samples > 1`. Có retry với exponential backoff khi
   gặp 429, và dừng sớm theo `PATIENCE_PAGES`.
 
-### Đo trên tập gold — số thật đầu tiên, 27/08/2026
+### Số đo trên tập gold
 
-`python src/eval/chay_tap_gold.py --chuan-tu-gold` chấm pipeline với nhãn tay
-trên **10 tài liệu của 10 công ty**. Bảng đầy đủ ở `HANDOFF.md` mục 20.3.
+**Không chép số vào đây.** Mọi con số trước–sau sống ở [CHANGELOG.md](CHANGELOG.md); hiện trạng lượt chấm mới nhất và các chế độ
+lỗi đã đặt tên ở `HANDOFF.md` mục 17.4. Một bản sao số đo trong README là
+một bản sao sẽ cũ đi mà không ai biết: đoạn cũ ở đây còn mô tả tập gold
+lúc mới có mười tài liệu.
 
-| | Lượt chạy 27/08 | Sau bản vá dấu `a0cd5ab` |
-|---|---:|---:|
-| Trường đúng | 216/265 = **81,5%** | **222/265 = 83,8%** |
-| Lỗi câm | 24/240 = **10,0%** | **18/240 = 7,5%** |
-| Đơn vị tính đúng | 8/10 | 8/10 |
-| Tài liệu đúng trọn vẹn | 0/10 | 0/10 |
+Chạy phép chấm: xem `CLAUDE.md` mục **Lệnh hay dùng**.
 
-**Con số đáng đọc nhất không nằm trong bảng: 21 trong 24 lỗi câm là hai con
-bug chứ không phải giới hạn của mô hình**, nên tỷ lệ lỗi câm không quy giản
-được chỉ là **1,25%**. `DLG_2026Q2_TT99` — bản quét kém nhất lô, 100 dpi — cho
-**lỗi câm bằng 0**: ảnh xấu thì hệ không đọc được, và nó **biết** mình không
-đọc được.
-
-**Hai chỗ hỏng đã biết:**
-
-- **Dòng "Đơn vị tính" nằm ngoài vùng bảng YOLO cắt** — YOLO nhận ra nó với
-  conf 0,86 rồi `get_table_regions()` vứt đi vì không thuộc lớp `table`. Với
-  báo cáo ghi "Triệu VND" hay "Ngàn VND" thì hụt dòng này làm sai **toàn bộ**
-  chỉ tiêu 10⁶ hoặc 10³ lần, mà **không đẳng thức kế toán nào phát hiện được**.
-  Đã vá `05d00d0`, nhưng **mới kiểm hình học** — chưa chạy lại pipeline.
-- **`SBT_2025Q2_TT200` điền B02 bằng số của một bảng khác** trong khi B01 đúng
-  sạch. 10/24 lỗi câm nằm ở đây. Nghi lỗi **chọn nguồn** trong hồ sơ 62 trang;
-  bộ số kia tự nó cũng cân nên không ràng buộc nào bắt được. Chưa vá.
 - **Document Classifier & Router**: implemented — gọi VLM khi kết quả chưa đủ
   field bắt buộc **hoặc** validation còn warning. Layout detection và convert
   PDF chỉ chạy một lần, dùng chung cho cả hai nhánh.
@@ -643,14 +466,11 @@ bug chứ không phải giới hạn của mô hình**, nên tỷ lệ lỗi câ
   **Prometheus** scrape `/metrics` mỗi 15s, giữ 15 ngày. Grafana dựng qua
   provisioning nên dashboard nằm trong repo. Chưa có Alertmanager (cảnh báo)
   và Loki (log).
-- **Unit test**: 510 test với `pytest`, không cần model hay mạng nên chạy
-  trong vài giây. Đáng chú ý là test đẳng thức kế toán: sửa một chỉ tiêu
-  lệch 10 triệu đồng trên tổng tài sản 47 nghìn tỷ vẫn bị bắt — kiểm chứng
-  được lựa chọn `IDENTITY_TOLERANCE_RATIO=1e-7`. `test_router.py` phủ cổng
-  quyết định fallback, gồm ca mọi field đều CÓ giá trị nhưng một con số bị
-  đọc nhầm dòng — nếu cổng chỉ đếm field thì lỗi đó lọt qua âm thầm.
-  `test_metrics.py` chốt việc counter lỗi của `/metrics` có sẵn từ lúc khởi
-  động, vì đó là điều kiện để alert bắn được.
+- **Unit test**: `pytest`, không cần model hay mạng nên chạy trong vài giây.
+  Đáng chú ý là test đẳng thức kế toán: sửa một chỉ tiêu lệch 10 triệu đồng
+  trên tổng tài sản 47 nghìn tỷ vẫn bị bắt, tức `IDENTITY_TOLERANCE_RATIO=1e-7`
+  làm đúng việc của nó. Số test hiện tại lấy bằng `pytest -q`, không chép
+  vào đây.
 - **CI**: GitHub Actions chạy hai job mỗi lần push và pull request.
   - `test` — `ruff check` + `pytest`. Cố tình KHÔNG cài `requirements.txt`
     mà chỉ cài phần nhẹ: `easyocr` và `doclayout-yolo` được import lười bên
@@ -663,21 +483,20 @@ bug chứ không phải giới hạn của mô hình**, nên tỷ lệ lỗi câ
     gọi `/metrics`. Build xong không đảm bảo chạy được; cả ba bug ở mục
     "Vài thứ chỉ lộ ra khi chạy thật" bên dưới đều chỉ lộ lúc runtime.
 
-### Not yet done
+### Chưa làm — phần thuộc tầng repo
 
-- Đánh giá có hệ thống: **đã có** — 11 tài liệu gán nhãn tay ở `data/gold/`,
-  10 trong số đó đã chấm (mục Status ở trên). Còn thiếu: chế độ đầu-cuối (mới
-  chạy chế độ oracle chuẩn mẫu biểu), và mới **một** model (`:free`) trong khi
-  thiết kế đòi ít nhất ba.
-- Unit test mới phủ phần logic thuần (parse số, validation, cổng fallback
-  của router, bộ đếm `/metrics`). Chưa có test cho OCR và VLM — những phần cần model hoặc gọi
-  mạng, sẽ cần mock/fixture ảnh thay vì gọi thật.
-- Monitoring: đã có thu thập per-run ra file, endpoint `/metrics` (kèm
-  histogram latency) và Prometheus scrape + lưu lịch sử. Chưa có Alertmanager
+Việc đang dở của phần NGHIÊN CỨU nằm ở `HANDOFF.md` mục 16 và 17.4, không
+chép lại ở đây.
+
+- Monitoring: đã có thu thập per-run ra file, endpoint `/metrics` kèm
+  histogram latency, Prometheus scrape và lưu lịch sử. Chưa có Alertmanager
   (cảnh báo), chưa có Loki cho log.
-- Chặn upload lớn mới làm ở tầng ứng dụng (`MAX_UPLOAD_BYTES` trong `api.py`).
-  Nó ngăn được việc nạp cả file vào RAM, nhưng KHÔNG ngăn được việc truyền dữ
-  liệu lên — chỗ chặn đúng là reverse proxy, tầng repo này chưa có.
+- Chặn upload lớn mới làm ở tầng ứng dụng (`MAX_UPLOAD_BYTES` trong
+  `api.py`). Nó ngăn được việc nạp cả file vào RAM, nhưng KHÔNG ngăn được
+  việc truyền dữ liệu lên — chỗ chặn đúng là reverse proxy, tầng repo này
+  chưa có.
+- Chưa có test cho OCR và VLM — những phần cần model hoặc gọi mạng, sẽ cần
+  mock hoặc fixture ảnh thay vì gọi thật.
 
 Nhật ký thay đổi kèm số đo trước và sau: [CHANGELOG.md](CHANGELOG.md).
 

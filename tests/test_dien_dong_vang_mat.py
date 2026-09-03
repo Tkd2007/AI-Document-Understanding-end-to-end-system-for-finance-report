@@ -243,3 +243,70 @@ def test_tat_probe_thi_khong_ai_bi_dien_0(monkeypatch):
         "khong_doc_duoc"
     )
     assert ket_qua.meta["line_probe"] is False
+
+
+# --- Cổng CO_THE_VANG_MAT: probe nói vắng vẫn có thể bị bác ----------------
+#
+# Thêm 03/09/2026 sau lượt chấm 70 tài liệu. Kết luận `khong_thay_dong` của
+# probe chỉ nói "không thấy mã số trong text OCR", và câu đó cũng đúng khi OCR
+# đọc hụt một dòng vẫn in trên giấy. Trên 70 tài liệu, tin nó vô điều kiện cho
+# 27 ô đúng và 22 ô SAI.
+
+# Số thật của PLX_2026Q2_TT99 — ca đắt nhất của cả lượt.
+PLX_TONG_TAI_SAN_THAT = 87_876_314_405_848
+
+
+def test_dong_bat_buoc_thi_probe_noi_vang_cung_KHONG_duoc_dien_0():
+    """
+    Ca PLX: probe không thấy dòng "TỔNG CỘNG TÀI SẢN" nên bảo nó vắng mặt.
+
+    Không bảng cân đối nào thiếu dòng ấy, nên kết luận của probe chắc chắn
+    sai và giá trị phải giữ None. Bản cũ điền 0 vào đây, biến một lỗi ỒN
+    thành lỗi CÂM trên chỉ tiêu quan trọng nhất của cả tài liệu — đúng chiều
+    ngược với mục tiêu của dự án.
+    """
+    gia_tri, trang_thai = router.dien_dong_vang_mat(
+        {"tong_tai_san": None}, {"tong_tai_san": VANG_MAT}
+    )
+
+    assert gia_tri["tong_tai_san"] is None
+    # Trạng thái RIÊNG, không gộp vào "khong_doc_duoc": probe không biết gì và
+    # probe biết sai là hai chuyện khác nhau, và chỉ khoá này phân biệt được.
+    assert trang_thai["tong_tai_san"] == "probe_noi_vang_nhung_dong_bat_buoc"
+
+
+def test_dong_chi_tiet_duoc_phep_vang_thi_van_dien_0():
+    """
+    Chiều ngược lại phải còn nguyên, nếu không thì mất 27 ô đúng.
+
+    Thuế hoãn lại rất thường không phát sinh, và khi ấy dòng vắng hẳn khỏi
+    biểu mẫu — giá trị đúng là 0, đúng như guideline gán nhãn mục 3.4 quy định.
+    """
+    gia_tri, trang_thai = router.dien_dong_vang_mat(
+        {"thue_tndn_hoan_lai": None}, {"thue_tndn_hoan_lai": VANG_MAT}
+    )
+
+    assert gia_tri["thue_tndn_hoan_lai"] == 0
+    assert trang_thai["thue_tndn_hoan_lai"] == "vang_mat"
+
+
+def test_khong_dong_TONG_nao_duoc_phep_vang_mat():
+    """
+    Bất biến cấu hình: dòng tổng của một đẳng thức không bao giờ vào danh sách.
+
+    Đây là tiêu chí chọn `CO_THE_VANG_MAT`, viết thành test để nó không bị nới
+    ra bằng một lần thêm khoá cho tiện. Dòng tổng là bộ xương của biểu mẫu:
+    luôn được in, và giá trị 0 ở đó bất khả với doanh nghiệp đang hoạt động.
+    Điền 0 vào một dòng tổng còn phá luôn chính đẳng thức chứa nó.
+    """
+    from fields_config import CO_THE_VANG_MAT, identities_for
+
+    cac_dong_tong = {
+        tong
+        for chuan in Standard
+        for quy_uoc in QuyUocDau
+        for _so_hang, tong, _mo_ta in identities_for(chuan, quy_uoc)
+    }
+
+    assert cac_dong_tong, "phải có đẳng thức, kẻo test này rỗng mà vẫn xanh"
+    assert not (CO_THE_VANG_MAT & cac_dong_tong)

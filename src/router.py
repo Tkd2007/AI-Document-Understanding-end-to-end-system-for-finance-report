@@ -41,6 +41,7 @@ from extract_baseline import extract_all_fields, tim_theo_ma_so, tong_hop_dau_ve
 from extract_vlm import extract_fields_from_regions, require_config
 from extraction_types import ExtractionResult, FieldResult
 from fields_config import (
+    CO_THE_VANG_MAT,
     DEFAULT_STANDARD,
     UNIT_KEY,
     QuyUocDau,
@@ -345,11 +346,18 @@ def dien_dong_vang_mat(gia_tri: dict, dau_vet: dict) -> tuple[dict, dict]:
     """
     Điền 0 cho dòng VẮNG MẶT, giữ None cho dòng chưa biết. Trả (giá trị, trạng thái).
 
-    Ba trạng thái đi ra, tập ĐÓNG:
+    Bốn trạng thái đi ra, tập ĐÓNG:
       "co_gia_tri"     — đọc được số.
       "vang_mat"       — biểu mẫu không có dòng đó, nên giá trị là 0.
       "khong_doc_duoc" — có dòng mà không đọc ra, hoặc probe không kết luận
                          được. Giá trị giữ None, nghĩa là CHƯA BIẾT.
+      "probe_noi_vang_nhung_dong_bat_buoc"
+                       — probe bảo dòng vắng, nhưng chỉ tiêu này không nằm
+                         trong `CO_THE_VANG_MAT` nên kết luận ấy bị bác. Giá
+                         trị giữ None. Trạng thái này ghi TƯỜNG MINH thay vì
+                         gộp vào "khong_doc_duoc", vì đó là hai chuyện khác
+                         nhau: một cái là probe không biết gì, cái này là
+                         probe biết sai và ta đã chặn nó lại.
 
     VÌ SAO VẮNG MẶT LÀ 0 CHỨ KHÔNG PHẢI None. TT99 mục 1.2.3 bảo đảm "các
     chỉ tiêu không có số liệu được miễn trình bày", tức văn bản pháp quy
@@ -366,6 +374,15 @@ def dien_dong_vang_mat(gia_tri: dict, dau_vet: dict) -> tuple[dict, dict]:
     ĐỊNH dòng vắng. Gán 0 cho ca "chưa biết" là bịa ra một con số, và nó
     không dừng ở đó — đẳng thức sẽ lệch đúng bằng giá trị thật bị mất, rồi
     C1/C2 đi tìm ứng viên sửa cho nhầm chỉ tiêu.
+
+    VÀ ĐÚNG CHỖ NGUY HIỂM ẤY ĐÃ CẮN THẬT. `khong_thay_dong` của probe KHÔNG
+    phải một khẳng định đủ mạnh: nó chỉ nói "không thấy mã số trong text OCR",
+    câu đó cũng đúng khi OCR đọc hụt một dòng vẫn in trên giấy. Lượt chấm 70
+    tài liệu ngày 03/09/2026 điền 0 cho 27 ô đúng và **22 ô sai**, trong đó
+    `PLX_2026Q2_TT99` bị điền `tong_tai_san = 0` trong khi thật là 87.876 tỷ.
+    Vì thế kết luận của probe giờ còn phải qua cổng `CO_THE_VANG_MAT` —
+    danh sách các dòng CHI TIẾT mà doanh nghiệp có thể thật sự không có. Tiêu
+    chí và lý do từng chỉ tiêu ghi tại chỗ khai báo trong `fields_config.py`.
     """
     ra_gia_tri = dict(gia_tri)
     ra_trang_thai = {}
@@ -381,11 +398,16 @@ def dien_dong_vang_mat(gia_tri: dict, dau_vet: dict) -> tuple[dict, dict]:
         # Không có dấu vết nghĩa là probe chưa chạy hoặc không phủ tới chỉ
         # tiêu này. Mặc định phải là "chưa biết", không phải "vắng mặt".
         ket_luan = dau_vet.get(khoa)
-        if ket_luan is not None and ket_luan.trang_thai == "khong_thay_dong":
+        if ket_luan is None or ket_luan.trang_thai != "khong_thay_dong":
+            ra_trang_thai[khoa] = "khong_doc_duoc"
+        elif khoa in CO_THE_VANG_MAT:
             ra_gia_tri[khoa] = 0
             ra_trang_thai[khoa] = "vang_mat"
         else:
-            ra_trang_thai[khoa] = "khong_doc_duoc"
+            # Probe bảo vắng, nhưng đây là dòng xương sống của biểu mẫu. Tin
+            # nó ở đây là biến một lỗi ỒN thành lỗi CÂM — đúng chiều ngược
+            # với mục tiêu của cả dự án.
+            ra_trang_thai[khoa] = "probe_noi_vang_nhung_dong_bat_buoc"
 
     return ra_gia_tri, ra_trang_thai
 

@@ -162,6 +162,57 @@ FIELDS_ONLY_IN: dict[Standard, set[str]] = {
     Standard.TT99: {"tai_san_sinh_hoc_ngan_han"},
 }
 
+# Chỉ tiêu mà một doanh nghiệp thật có thể KHÔNG CÓ, nên dòng ấy vắng hẳn khỏi
+# tờ giấy và giá trị đúng là 0. Chỉ những chỉ tiêu ở đây được
+# `router.dien_dong_vang_mat()` điền 0; mọi chỉ tiêu khác không đọc được thì
+# phải giữ None, nghĩa là CHƯA BIẾT.
+#
+# VÌ SAO PHẢI LÀ DANH SÁCH TRẮNG CHỨ KHÔNG PHẢI "cứ probe nói vắng thì điền".
+# TT99 mục 1.2.3 cho phép miễn trình bày MỌI chỉ tiêu không có số liệu, nên
+# xét về pháp lý thì dòng nào cũng vắng được — văn bản không phân loại giúp ta.
+# Nhưng probe dò dòng chỉ trả lời "không thấy mã số này trong text OCR", và câu
+# đó có hai nghĩa hoàn toàn khác nhau: dòng vắng thật, hoặc OCR đọc hụt. Với
+# một dòng mà doanh nghiệp đang hoạt động không thể không có, nghĩa thứ hai là
+# nghĩa gần như chắc chắn.
+#
+# Ca đã cắn, lượt chấm 70 tài liệu ngày 03/09/2026: `PLX_2026Q2_TT99` bị điền
+# `tong_tai_san = 0` trong khi giá trị thật là 87.876 tỷ, chỉ vì probe không
+# thấy dòng "TỔNG CỘNG TÀI SẢN". Không bảng cân đối nào thiếu dòng đó. Tổng
+# cộng trên 70 tài liệu, cơ chế điền 0 cho ra 27 ô ĐÚNG và 22 ô SAI, và 22 ô
+# sai dồn vào đúng các dòng xương sống của biểu mẫu: 11 ô ở các dòng tổng của
+# B03, còn lại là `tong_tai_san`, `tong_nguon_von`, `tai_san_ngan_han`,
+# `von_chu_so_huu`.
+#
+# TIÊU CHÍ CHỌN, thuần theo CẤU TRÚC biểu mẫu chứ không theo tập gold: một
+# dòng TỔNG hay TỔNG CỘNG là bộ xương của biểu mẫu, luôn được in, và giá trị 0
+# ở đó là bất khả với một doanh nghiệp đang hoạt động. Chỉ các dòng CHI TIẾT mà
+# doanh nghiệp có thể không có khoản mục tương ứng mới vào danh sách này. Lý do
+# từng chỉ tiêu:
+#
+#   dau_tu_tc_ngan_han        — có thể không đầu tư tài chính ngắn hạn nào
+#   hang_ton_kho              — doanh nghiệp dịch vụ có thể không có tồn kho
+#   tai_san_sinh_hoc_ngan_han — chỉ nông nghiệp mới có (và chỉ TT99 có dòng này)
+#   tsnh_khac                 — dòng vét phần dư, vắng khi không còn gì để vét
+#   ln_khac                   — không phát sinh thu nhập/chi phí khác
+#   thue_tndn_hien_hanh       — lỗ hoặc được miễn thì không phát sinh
+#   thue_tndn_hoan_lai        — rất thường không phát sinh
+#   anh_huong_ty_gia          — chỉ doanh nghiệp có gốc ngoại tệ mới có
+#
+# Đối chiếu trên lượt 03/09/2026: danh sách này giữ trọn 27 ô đúng và loại 20
+# trong 22 ô sai. Hai ô còn sai nằm ở `tsnh_khac` và `ln_khac` — vẫn nhận, vì
+# tiêu chí là cấu trúc biểu mẫu, và chỉnh danh sách theo đáp án của tập gold
+# thì mất luôn giá trị của phép đo.
+CO_THE_VANG_MAT: set[str] = {
+    "dau_tu_tc_ngan_han",
+    "hang_ton_kho",
+    "tai_san_sinh_hoc_ngan_han",
+    "tsnh_khac",
+    "ln_khac",
+    "thue_tndn_hien_hanh",
+    "thue_tndn_hoan_lai",
+    "anh_huong_ty_gia",
+}
+
 # Quy tắc kiểm tra gắn với từng field.
 #
 #   allow_negative — số âm có phải dấu hiệu đọc sai không? Lợi nhuận âm

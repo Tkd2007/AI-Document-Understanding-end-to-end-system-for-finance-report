@@ -286,7 +286,19 @@ def main() -> int:
     # Nhật ký mở ở chế độ nối thêm khi tiếp tục, để kết xuất của lượt trước
     # không bị xoá mất — nó là thứ duy nhất tra cứu được khi một tài liệu ra
     # số lạ.
-    nhat_ky = duong_dan_nhat_ky.open("a" if tham_so.tiep_tuc else "w", encoding="utf-8")
+    #
+    # `buffering=1` là đệm THEO DÒNG, không phải theo khối. Một lượt 70 tài
+    # liệu chạy hàng giờ, và với đệm khối mặc định (8 KiB) những dòng ghi lúc
+    # xử lý từng trang chỉ hiện ra khi khối đầy — `tail -f` vì thế đứng im
+    # từng mảng dài rồi nhảy một cục, đúng lúc người ta cần biết lượt chạy có
+    # còn sống không. Đệm theo dòng đánh đổi một ít throughput ghi đĩa lấy
+    # tiến độ nhìn thấy được theo trang; ở đây thời gian đều nằm ở gọi API
+    # nên cái giá ấy không đo nổi. `nhat_ky.flush()` cuối mỗi tài liệu vẫn
+    # giữ: nó vô hại, và nó là thứ còn đúng nếu sau này ai đó đổi lại chế độ
+    # đệm.
+    nhat_ky = duong_dan_nhat_ky.open(
+        "a" if tham_so.tiep_tuc else "w", buffering=1, encoding="utf-8"
+    )
 
     for i, duong_dan_gold in enumerate(cac_gold, 1):
         gold = doc_gold(duong_dan_gold)

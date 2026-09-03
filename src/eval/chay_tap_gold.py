@@ -175,6 +175,12 @@ def chay_mot_tai_lieu(gold: dict, pdf: Path, chuan_tu_gold: bool, nhat_ky) -> di
     # tích hậu kỳ phải đoán pipeline đã chạy 5 hay 7 đẳng thức, và lần đoán
     # ngày 04/09/2026 lệch 37 điểm phần trăm — xem HANDOFF mục 17.4.
     diem["quy_uoc_dau"] = ket_qua.meta.get("quy_uoc_dau")
+    # NGUỒN của kết luận ấy, không chỉ kết luận. Bốn nguồn cho bốn mức tin
+    # cậy khác hẳn nhau — công thức in mạnh nhất, dấu mã 11 yếu hơn vì nó
+    # phụ thuộc việc đọc đúng dấu của MỘT ô, và ba tài liệu đã hỏng đúng vì
+    # chỗ đó (DGC ×2, SBT). Không ghi nguồn thì không biết ca hỏng là do
+    # công thức không đọc được hay do nó đọc được mà vẫn sai.
+    diem["nguon_quy_uoc_dau"] = ket_qua.meta.get("nguon_quy_uoc_dau")
     diem["trang_thai_chi_tieu"] = ket_qua.meta.get("trang_thai_chi_tieu")
     diem["ung_vien_bi_chan"] = ket_qua.meta.get("ung_vien_bi_chan")
     diem["ung_vien_mau_thuan"] = ket_qua.meta.get("ung_vien_mau_thuan")

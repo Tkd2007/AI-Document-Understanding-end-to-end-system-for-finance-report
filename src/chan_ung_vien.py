@@ -95,6 +95,23 @@ NGUONG_VI_PHAM = 0.25
 # đã lạc vào thuyết minh. 5 trang chừa biên rộng cho mọi kiểu đảo vùng.
 KHOANG_CACH_TRANG = 5
 
+# Số chỉ tiêu tối thiểu phải đọc được từ một biểu mẫu thì mới coi là ĐÃ THẤY nó.
+#
+# VÌ SAO KHÔNG TIN MỘT CHỈ TIÊU ĐƠN LẺ. Bản đầu coi bất kỳ chỉ tiêu nào cũng là
+# bằng chứng đã đi qua biểu mẫu của nó, và nó phá dữ liệu đúng ngay trong lượt
+# chạy đầu tiên. Ca `HAG_2026Q2_TT99` ngày 03/09/2026: TRANG BÌA có một ô tóm
+# tắt in "Lợi nhuận sau thuế 1.126 Tỷ đồng". Đúng một chỉ tiêu B02, ở trang 1,
+# thuộc một bảng tóm tắt chứ không thuộc biểu mẫu B02 nào. Nó đặt "B02 kết thúc
+# ở trang 1", và tới trang 6 thì `no_phai_tra`, `von_chu_so_huu`,
+# `tong_nguon_von` — ba con số của bảng cân đối thật, cộng khớp nhau tuyệt đối
+# — bị bác sạch.
+#
+# Trang bìa và trang tóm tắt "chỉ số nổi bật" là chuyện thường trong báo cáo
+# niêm yết, nên đây không phải ca hiếm. Đòi vài chỉ tiêu mới coi là đã thấy
+# biểu mẫu thì một ô lạc không đủ sức đầu độc cả tài liệu, trong khi một biểu
+# mẫu đọc thật bao giờ cũng cho nhiều hơn thế — ở GVR, B03 cho trọn cả sáu.
+TOI_THIEU_FIELD = 3
+
 
 def bieu_mau_cua(khoa: str) -> str | None:
     """Biểu mẫu in ra chỉ tiêu này, hoặc None với khoá không phải chỉ tiêu."""
@@ -106,42 +123,66 @@ def _khong_am(khoa: str) -> bool:
     return not FIELD_RULES.get(khoa, {}).get("allow_negative", False)
 
 
+def ghi_nhan_bieu_mau(da_thay: dict, khoa: str, trang: int) -> None:
+    """
+    Ghi một chỉ tiêu vừa được nhận vào sổ biểu mẫu, tại chỗ.
+
+    `da_thay` có dạng {biểu mẫu: {"so_field": n, "trang_cuoi": trang}}. Đếm số
+    chỉ tiêu chứ không chỉ giữ trang cuối, vì số đếm mới là thứ phân biệt "đã
+    đọc biểu mẫu này" với "vớ được một ô lạc" — xem `TOI_THIEU_FIELD`.
+    """
+    bieu_mau = bieu_mau_cua(khoa)
+    if bieu_mau is None:
+        return
+    muc = da_thay.setdefault(bieu_mau, {"so_field": 0, "trang_cuoi": trang})
+    muc["so_field"] += 1
+    muc["trang_cuoi"] = trang
+
+
 def da_di_qua_bieu_mau(
     khoa: str,
     trang_hien_tai: int,
-    trang_cuoi_theo_bieu_mau: dict,
+    da_thay: dict,
     khoang_cach: int = KHOANG_CACH_TRANG,
+    toi_thieu: int = TOI_THIEU_FIELD,
 ) -> str | None:
     """
     Lý do từ chối theo VỊ TRÍ, hoặc None nếu ứng viên còn hợp lệ.
 
     Thứ tự B01 → B02 → B03 → thuyết minh là bắt buộc trên tờ giấy. Nên khi một
-    chỉ tiêu của biểu mẫu SAU đã đọc được từ lâu, mà giờ mới có ứng viên cho
-    một chỉ tiêu của biểu mẫu TRƯỚC, thì bảng ấy đã đi qua mất rồi và con số
-    này đến từ chỗ khác — gần như luôn là một bảng trong thuyết minh.
+    biểu mẫu SAU đã thật sự được đọc từ lâu, mà giờ mới có ứng viên cho một chỉ
+    tiêu của biểu mẫu TRƯỚC, thì bảng ấy đã đi qua mất rồi và con số này đến từ
+    chỗ khác — gần như luôn là một bảng trong thuyết minh.
 
-    "Từ lâu" đo bằng `khoang_cach` trang, không phải bằng "đã từng thấy". Xem
-    lý do ở chỗ khai `KHOANG_CACH_TRANG`.
+    Hai điều kiện, và THIẾU MỘT TRONG HAI LÀ CƠ CHẾ HỎNG THEO HAI KIỂU NGƯỢC
+    NHAU:
 
-    `trang_cuoi_theo_bieu_mau` là {biểu mẫu -> trang gần nhất cho ra chỉ tiêu
-    của biểu mẫu đó}.
+      * `khoang_cach` trang — thiếu nó thì thứ tự vùng đảo lộn trong vài trang
+        liền cũng bị coi là đã đi qua (`test_don_vi_theo_bang` bắt được).
+      * `toi_thieu` chỉ tiêu — thiếu nó thì một ô lạc trên trang bìa đủ sức
+        đầu độc cả tài liệu (ca HAG, xem `TOI_THIEU_FIELD`).
+
+    `da_thay` là sổ do `ghi_nhan_bieu_mau()` dựng.
     """
     cua_khoa = bieu_mau_cua(khoa)
     if cua_khoa is None:
         return None
 
     vi_tri = THU_TU_BIEU_MAU.index(cua_khoa)
-    for bieu_mau, trang_cuoi in trang_cuoi_theo_bieu_mau.items():
+    for bieu_mau, muc in da_thay.items():
         if bieu_mau not in THU_TU_BIEU_MAU:
             continue
         if THU_TU_BIEU_MAU.index(bieu_mau) <= vi_tri:
             continue
-        if trang_hien_tai - trang_cuoi >= khoang_cach:
+        if muc["so_field"] < toi_thieu:
+            continue
+        if trang_hien_tai - muc["trang_cuoi"] >= khoang_cach:
             return (
-                f"{cua_khoa} đã đi qua từ lâu: {bieu_mau} kết thúc ở trang "
-                f"{trang_cuoi}, ứng viên này ở trang {trang_hien_tai} — cách "
-                f"{trang_hien_tai - trang_cuoi} trang, gần như chắc chắn là "
-                f"một bảng trong thuyết minh"
+                f"{cua_khoa} đã đi qua từ lâu: {bieu_mau} đọc được "
+                f"{muc['so_field']} chỉ tiêu và kết thúc ở trang "
+                f"{muc['trang_cuoi']}, ứng viên này ở trang {trang_hien_tai} — "
+                f"cách {trang_hien_tai - muc['trang_cuoi']} trang, gần như "
+                f"chắc chắn là một bảng trong thuyết minh"
             )
 
     return None

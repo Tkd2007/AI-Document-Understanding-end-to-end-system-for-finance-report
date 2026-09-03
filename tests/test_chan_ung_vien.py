@@ -105,9 +105,17 @@ def test_gia_tri_khong_phai_so_thi_bo_qua():
 # --- Phép chặn theo vị trí ------------------------------------------------
 
 
+def _da_thay(theo_bieu_mau: dict) -> dict:
+    """Dựng sổ biểu mẫu từ {biểu mẫu: (số chỉ tiêu, trang cuối)}."""
+    return {
+        bm: {"so_field": n, "trang_cuoi": t}
+        for bm, (n, t) in theo_bieu_mau.items()
+    }
+
+
 def test_bac_chi_tieu_B01_den_qua_muon():
     """Đúng khoảng cách của ca GVR: B03 xong ở trang 12, ứng viên ở trang 78."""
-    ly_do = da_di_qua_bieu_mau("tong_tai_san", 78, {"B02": 10, "B03": 12})
+    ly_do = da_di_qua_bieu_mau("tong_tai_san", 78, _da_thay({"B02": (9, 10), "B03": (6, 12)}))
     assert ly_do is not None
     assert "thuyết minh" in ly_do
 
@@ -121,17 +129,17 @@ def test_khong_bac_khi_hai_bieu_mau_ke_nhau_dao_thu_tu():
     sạch B01 của một tài liệu hoàn toàn bình thường — bộ test
     `test_don_vi_theo_bang` bắt được. Đừng bỏ điều kiện khoảng cách đi.
     """
-    assert da_di_qua_bieu_mau("tai_san_ngan_han", 5, {"B02": 3}) is None
+    assert da_di_qua_bieu_mau("tai_san_ngan_han", 5, _da_thay({"B02": (9, 3)})) is None
 
 
 def test_khong_bac_chi_tieu_cua_chinh_bieu_mau_muon_nhat():
     """B03 tới muộn là bình thường — nó vốn là biểu mẫu cuối."""
-    assert da_di_qua_bieu_mau("lctt_thuan", 80, {"B02": 10, "B03": 12}) is None
+    assert da_di_qua_bieu_mau("lctt_thuan", 80, _da_thay({"B02": (9, 10), "B03": (6, 12)})) is None
 
 
 def test_khoa_khong_phai_chi_tieu_thi_bo_qua():
     """`don_vi_tinh` đi cùng đường nhưng không thuộc biểu mẫu nào."""
-    assert da_di_qua_bieu_mau("don_vi_tinh", 90, {"B03": 12}) is None
+    assert da_di_qua_bieu_mau("don_vi_tinh", 90, _da_thay({"B03": (6, 12)})) is None
 
 
 # --- Nối vào vòng lặp VLM -------------------------------------------------
@@ -316,3 +324,59 @@ def test_khong_dung_khi_con_thieu_chi_tieu_cua_bieu_mau_cuoi(monkeypatch):
 
     extract_vlm.extract_fields_from_regions(cac_trang(), standard=Standard.TT99)
     assert max(da_doc) == 30
+
+
+# --- Hồi quy: ô lạc trên trang bìa không được đầu độc cả tài liệu ----------
+
+# Số thật của HAG_2026Q2_TT99, đơn vị Ngàn VND. Ba con số của trang 6 cộng
+# khớp nhau tuyệt đối: 10.921.848.692 + 17.343.788.490 = 28.265.637.182.
+HAG_NO_PHAI_TRA = 10_921_848_692
+HAG_VON_CHU = 17_343_788_490
+HAG_TONG_NGUON_VON = 28_265_637_182
+
+
+def test_mot_o_lac_tren_trang_bia_khong_chan_duoc_bang_can_doi(monkeypatch):
+    """
+    Ca HAG_2026Q2_TT99 — bản đầu của phép chặn vị trí đã PHÁ dữ liệu đúng ở đây.
+
+    TRANG BÌA của HAG in một ô tóm tắt "Lợi nhuận sau thuế 1.126 Tỷ đồng".
+    Đúng một chỉ tiêu B02, ở trang 1, thuộc bảng tóm tắt chứ không thuộc biểu
+    mẫu B02 nào. Bản đầu coi đó là bằng chứng "đã đi qua B02", nên tới trang 6
+    nó bác sạch ba chỉ tiêu của bảng cân đối THẬT — ba con số cộng khớp nhau
+    tuyệt đối.
+
+    Trang bìa và trang "chỉ số nổi bật" là chuyện thường ở báo cáo niêm yết,
+    nên đây không phải ca hiếm. Nếu test này đỏ thì cơ chế đang lấy đi nhiều
+    hơn thứ nó cứu được.
+    """
+    trang_gia = _lap_vlm_gia(monkeypatch, {
+        1: {"loi_nhuan_sau_thue": 1_126},
+        4: {"tai_san_ngan_han": 8_486_537_246},
+        6: {
+            "no_phai_tra": HAG_NO_PHAI_TRA,
+            "von_chu_so_huu": HAG_VON_CHU,
+            "tong_nguon_von": HAG_TONG_NGUON_VON,
+        },
+    })
+    ket_qua = extract_vlm.extract_fields_from_regions(
+        (trang_gia(so) for so in (1, 4, 6)), standard=Standard.TT99
+    )
+
+    assert ket_qua.meta["ung_vien_bi_chan"] == []
+    assert ket_qua.data["no_phai_tra"].value == HAG_NO_PHAI_TRA
+    assert ket_qua.data["von_chu_so_huu"].value == HAG_VON_CHU
+    assert ket_qua.data["tong_nguon_von"].value == HAG_TONG_NGUON_VON
+
+
+def test_van_chan_khi_bieu_mau_sau_duoc_doc_that_su():
+    """
+    Nửa còn lại: đủ chỉ tiêu thì vẫn phải chặn, nếu không cơ chế thành vô dụng.
+
+    Khác ca trang bìa đúng ở một chỗ — số chỉ tiêu đọc được của biểu mẫu sau.
+    """
+    assert (
+        da_di_qua_bieu_mau("tong_tai_san", 78, _da_thay({"B03": (1, 12)})) is None
+    )
+    assert (
+        da_di_qua_bieu_mau("tong_tai_san", 78, _da_thay({"B03": (6, 12)})) is not None
+    )

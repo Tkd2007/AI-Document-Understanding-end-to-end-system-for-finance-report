@@ -737,7 +737,7 @@ def extract_fields_from_regions(
     # bỏ trống vì CHẶN trông y hệt một chỉ tiêu bỏ trống vì ĐỌC KHÔNG RA, mà
     # hai chuyện đó khác hẳn nhau khi đọc kết quả. Cùng bài học với
     # `don_vi_theo_vung` ở trên.
-    trang_cuoi_theo_bieu_mau: dict[str, int] = {}
+    bieu_mau_da_thay: dict[str, dict] = {}
     ung_vien_bi_chan: list[dict] = []
 
     for page in pages:
@@ -814,7 +814,7 @@ def extract_fields_from_regions(
                     if kq.value is not None
                 }
                 ly_do_chan = chan_ung_vien.da_di_qua_bieu_mau(
-                    khoa, page_no, trang_cuoi_theo_bieu_mau
+                    khoa, page_no, bieu_mau_da_thay
                 ) or chan_ung_vien.vi_pham_dang_thuc(
                     khoa,
                     ket_qua.value,
@@ -845,9 +845,7 @@ def extract_fields_from_regions(
                 ket_qua.provenance = nguon
                 final_result[khoa] = ket_qua
                 found_new_field = True
-                bieu_mau_moi = chan_ung_vien.bieu_mau_cua(khoa)
-                if bieu_mau_moi is not None:
-                    trang_cuoi_theo_bieu_mau[bieu_mau_moi] = page_no
+                chan_ung_vien.ghi_nhan_bieu_mau(bieu_mau_da_thay, khoa, page_no)
                 # Đóng dấu hệ số của ĐÚNG vùng vừa sinh ra con số này. Ghi ngay
                 # tại chỗ gán chứ không tra ngược từ provenance về sau: tra
                 # ngược thì phải giữ thêm một bảng vùng->hệ số và giữ cho nó
@@ -948,9 +946,7 @@ def extract_fields_from_regions(
             not DISABLE_EARLY_STOP
             and con_thieu_co_bieu_mau
             and all(
-                chan_ung_vien.da_di_qua_bieu_mau(
-                    khoa, page_no, trang_cuoi_theo_bieu_mau
-                )
+                chan_ung_vien.da_di_qua_bieu_mau(khoa, page_no, bieu_mau_da_thay)
                 for khoa in con_thieu_co_bieu_mau
             )
         ):

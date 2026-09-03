@@ -920,6 +920,53 @@ def extract_fields_from_regions(
             }
             break
 
+        # 3. Mọi chỉ tiêu còn thiếu đều thuộc biểu mẫu ĐÃ ĐI QUA.
+        #
+        # Nhánh này bù đúng chỗ hai nhánh trên để hở. Nhánh 1 đòi đủ HẾT field,
+        # nhánh 2 bị gác bởi `has_required_fields()` — nên chỉ cần một field
+        # bắt buộc không đọc được là cả hai đều câm, và vòng lặp cày tới hết
+        # tài liệu. Ca `GVR_2026Q2_TT99` ngày 03/09/2026 chạy tới trang 78 trên
+        # 105 vì đúng lý do đó, rồi nhặt một con số của bảng thuyết minh.
+        #
+        # `chan_ung_vien` một mình KHÔNG cứu được chuyện này: nó từ chối con số
+        # sai, nhưng từ chối không phải là dừng, nên tiền gọi API vẫn tiêu. Phải
+        # có nhánh này thì cái trần mới thật sự tồn tại.
+        #
+        # Điều kiện: còn thiếu ít nhất một chỉ tiêu, và MỌI chỉ tiêu còn thiếu
+        # đều đã bị `da_di_qua_bieu_mau()` coi là quá muộn. Lúc đó đọc tiếp
+        # không thể tìm được gì hợp lệ nữa — mọi ứng viên sắp tới đều sẽ bị
+        # chính hàm ấy bác. Chỉ xét chỉ tiêu CÓ biểu mẫu: `don_vi_tinh` đi cùng
+        # đường nhưng không thuộc biểu mẫu nào, và để nó chặn nhánh này thì
+        # gặp báo cáo không khai đơn vị là trần biến mất.
+        con_thieu_co_bieu_mau = [
+            khoa
+            for khoa in cac_field_can
+            if final_result[khoa].value is None
+            and chan_ung_vien.bieu_mau_cua(khoa) is not None
+        ]
+        if (
+            not DISABLE_EARLY_STOP
+            and con_thieu_co_bieu_mau
+            and all(
+                chan_ung_vien.da_di_qua_bieu_mau(
+                    khoa, page_no, trang_cuoi_theo_bieu_mau
+                )
+                for khoa in con_thieu_co_bieu_mau
+            )
+        ):
+            print(
+                f"--- Mọi chỉ tiêu còn thiếu đều thuộc biểu mẫu đã đi qua -> "
+                f"dừng ở trang {page_no}. Không tìm được: "
+                f"{con_thieu_co_bieu_mau} ---"
+            )
+            dung_som = {
+                "da_dung_som": True,
+                "ly_do": "bieu_mau_da_di_qua",
+                "trang_cuoi": page_no,
+                "field_con_thieu": con_thieu_co_bieu_mau,
+            }
+            break
+
     # Đơn vị tính đi ra ở tầng meta chứ không nằm chung với các chỉ tiêu:
     # nó là dữ liệu về CÁCH ĐỌC cả bảng, và mọi hàm hạ nguồn đều giả định
     # data chỉ chứa số.

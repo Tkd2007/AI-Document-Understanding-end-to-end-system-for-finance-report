@@ -216,3 +216,103 @@ def test_tai_lieu_binh_thuong_khong_bi_chan_gi(monkeypatch):
     assert ket_qua.data["tong_tai_san"].value == 100_000
     assert ket_qua.data["doanh_thu_thuan"].value == 50_000
     assert ket_qua.data["lctt_thuan"].value == -1_000
+
+
+# --- Trần đọc: dừng khi mọi thứ còn thiếu đều đã đi qua --------------------
+
+
+def test_dung_khi_moi_chi_tieu_con_thieu_deu_da_di_qua(monkeypatch):
+    """
+    Cái TRẦN thật sự, và vì sao `chan_ung_vien` một mình không đủ.
+
+    Phép từ chối ứng viên cứu được con số sai nhưng KHÔNG dừng vòng lặp, nên
+    tiền gọi API vẫn tiêu đúng như cũ. Ca GVR đọc tới trang 78 trên 105 vì
+    nhánh 1 đòi đủ hết field còn nhánh 2 bị `has_required_fields()` gác —
+    thiếu đúng một field bắt buộc là cả hai cùng câm.
+
+    Dựng lại đúng hình dạng ấy: B01 ra một phần ở trang 6, TRỌN VẸN B03 ở trang
+    12 — đúng như GVR thật, nơi cả sáu chỉ tiêu lưu chuyển tiền tệ đọc được ở
+    trang 11–12 — rồi từ đó không trang nào cho thêm gì. Vòng lặp phải dừng ở
+    trang 17 (12 + KHOANG_CACH_TRANG) chứ không đi hết 40 trang.
+
+    B03 phải TRỌN VẸN thì luật mới kết luận được, và đó là giới hạn thật của
+    nó: sau B03 không còn biểu mẫu nào, nên một chỉ tiêu B03 còn thiếu không
+    bao giờ bị coi là "đã đi qua". Xem test kế tiếp.
+    """
+    da_doc: list = []
+    trang_gia = _lap_vlm_gia(monkeypatch, {
+        6: {"tai_san_ngan_han": GVR_TSNH},
+        12: {
+            "lctt_hdkd": 5_151_615_462_077,
+            "lctt_dau_tu": -4_703_647_420_275,
+            "lctt_tai_chinh": -409_362_477_440,
+            "lctt_thuan": 38_605_564_362,
+            "tien_dau_ky": 8_237_433_366_831,
+            "anh_huong_ty_gia": -3_522_923_402,
+        },
+    })
+
+    def cac_trang():
+        for so in [6, 12] + list(range(13, 41)):
+            da_doc.append(so)
+            yield trang_gia(so)
+
+    ket_qua = extract_vlm.extract_fields_from_regions(
+        cac_trang(), standard=Standard.TT99
+    )
+
+    assert ket_qua.meta["early_stop"]["ly_do"] == "bieu_mau_da_di_qua"
+    assert ket_qua.meta["early_stop"]["trang_cuoi"] == 17
+    # Thứ phải chốt là SỐ TRANG ĐÃ ĐỌC, không phải giá trị đi ra: một vòng lặp
+    # quét hết rồi mới dừng cho ra cùng kết quả, chỉ khác ở hoá đơn API.
+    assert max(da_doc) == 17
+
+
+def test_khong_dung_khi_van_con_bieu_mau_chua_toi(monkeypatch):
+    """
+    Chưa thấy biểu mẫu sau thì KHÔNG được dừng — thứ còn thiếu có thể ở phía trước.
+
+    Đây là nửa còn lại của cái trần, và là nửa dễ làm hỏng: một điều kiện dừng
+    quá hăng sẽ cắt trước khi tới bảng lưu chuyển tiền tệ, và mọi chỉ tiêu B03
+    biến mất trên mọi tài liệu.
+    """
+    da_doc: list = []
+    trang_gia = _lap_vlm_gia(monkeypatch, {5: {"tai_san_ngan_han": GVR_TSNH}})
+
+    def cac_trang():
+        for so in range(5, 20):
+            da_doc.append(so)
+            yield trang_gia(so)
+
+    extract_vlm.extract_fields_from_regions(cac_trang(), standard=Standard.TT99)
+
+    # Chưa có chỉ tiêu B02 hay B03 nào, nên không biểu mẫu nào "đã đi qua" —
+    # phải đọc hết.
+    assert max(da_doc) == 19
+
+
+def test_khong_dung_khi_con_thieu_chi_tieu_cua_bieu_mau_cuoi(monkeypatch):
+    """
+    GIỚI HẠN ĐÃ BIẾT của cái trần, chốt lại để không ai tưởng nó rộng hơn thật.
+
+    Luật kết luận "đã đi qua" bằng cách nhìn một biểu mẫu SAU. B03 là biểu mẫu
+    cuối, nên một chỉ tiêu B03 còn thiếu không bao giờ có gì để so — và vòng
+    lặp vẫn cày hết tài liệu. Đây đúng là ca `HAG_2026Q2_TT99` ngày 03/09/2026:
+    `loi_nhuan_sau_thue` không đọc được, tài liệu chạy rất lâu.
+
+    Muốn bịt nốt thì phải có tín hiệu "đã sang phần thuyết minh" độc lập với
+    các chỉ tiêu — tức hướng 4 ở HANDOFF mục 17.3, đọc ký hiệu mẫu biểu.
+    """
+    da_doc: list = []
+    trang_gia = _lap_vlm_gia(monkeypatch, {
+        6: {"tai_san_ngan_han": GVR_TSNH},
+        12: {"lctt_hdkd": 1_000},
+    })
+
+    def cac_trang():
+        for so in [6, 12] + list(range(13, 31)):
+            da_doc.append(so)
+            yield trang_gia(so)
+
+    extract_vlm.extract_fields_from_regions(cac_trang(), standard=Standard.TT99)
+    assert max(da_doc) == 30

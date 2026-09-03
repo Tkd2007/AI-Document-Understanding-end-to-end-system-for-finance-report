@@ -669,6 +669,7 @@ def run_unconstrained(
 def run_vlm(
     pages_iter, cached_pages: list, result: dict, standard: Standard,
     quy_uoc: QuyUocDau, metrics=None, ghi_lai=None,
+    trang_toi_da: int | None = None,
 ) -> dict:
     """
     Chạy nhánh VLM và trộn kết quả vào result.
@@ -679,11 +680,17 @@ def run_vlm(
          phải cho VLM ghi đè. Nếu chỉ lấp chỗ None, con số sai vẫn nằm
          nguyên đó và cả validation gate thành vô nghĩa: tốn tiền gọi VLM
          rồi vứt kết quả đúng đi.
+
+    `trang_toi_da` là TRẦN theo trang mà nhánh OCR đã dừng — nhánh VLM không
+    đọc quá mốc đó. Truyền `None` khi không có mốc nào để lấy, ví dụ lượt
+    chạy không bật nhánh OCR. Lý do và phép đo ghi tại chỗ dùng nó trong
+    `extract_vlm.extract_fields_from_regions()`.
     """
     has_warnings = bool(validate_result(gia_tri_tran(result), standard, quy_uoc)["warnings"])
 
     extraction = extract_fields_from_regions(
-        _remaining_pages(pages_iter, cached_pages), metrics, standard
+        _remaining_pages(pages_iter, cached_pages), metrics, standard,
+        trang_toi_da=trang_toi_da,
     )
     _ghi_lai_luot_vlm(ghi_lai, extraction)
     tu_vlm = _tu_extraction(extraction)
@@ -900,6 +907,13 @@ def route_document(
                 result = run_vlm(
                     pages_iter, cached_pages, result, standard, quy_uoc_cong, metrics,
                     thong_tin_vlm,
+                    # Trần nhánh VLM = trang nhánh OCR đã dừng. Lấy từ chính
+                    # certificate của nhánh OCR chứ không từ `len(cached_pages)`:
+                    # hai con số bằng nhau ở đường thường nhưng lệch nhau ngay
+                    # khi nhánh OCR không chạy, và khi ấy `trang_cuoi` là None —
+                    # đúng nghĩa "không có trần" — còn độ dài cache thì bằng 0
+                    # và sẽ chặn sạch nhánh VLM.
+                    trang_toi_da=dung_som_ocr["trang_cuoi"],
                 )
 
         # Ép kiểu số TRƯỚC khi lưu và trả về. VLM đôi khi trả số dưới dạng

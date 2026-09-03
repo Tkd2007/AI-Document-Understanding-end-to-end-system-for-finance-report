@@ -631,6 +631,7 @@ def extract_fields_from_regions(
     n_samples: int = 1,
     temperature: float = 0.0,
     crop_dir: str | Path | None = None,
+    trang_toi_da: int | None = None,
 ) -> ExtractionResult:
     """
     Chạy VLM trên từng vùng bảng đã cắt sẵn, gộp thành một ExtractionResult.
@@ -656,21 +657,27 @@ def extract_fields_from_regions(
     confidence 1.0 ở mọi field có giá trị. Con số 1.0 đó KHÔNG có nghĩa là
     chắc chắn, nó có nghĩa là không đo được — xem FieldResult.khong_do().
 
-    Điều kiện dừng sớm gồm hai nhánh, vì mục tiêu là lấy ĐỦ field nhưng
-    không quét vô ích tới hết tài liệu:
-      1. Đủ cả field trong FIELD_MAP -> chắc chắn không còn gì để tìm.
-         Kiểm sau mỗi VÙNG, không đợi hết trang.
+    Điều kiện dừng sớm gồm BỐN nhánh, vì mục tiêu là lấy ĐỦ field nhưng
+    không quét vô ích tới hết tài liệu. Xếp theo thứ tự được kiểm:
+      0. `trang_toi_da` — trần theo trang mà nhánh OCR đã dừng. Kiểm TRƯỚC
+         khi xử lý một trang, nên trang ngoài trần không tốn lần gọi API nào.
+         `None` là không có trần, và đó là mặc định.
+      1. Đủ cả field của chuẩn -> chắc chắn không còn gì để tìm. Kiểm sau
+         mỗi VÙNG, không đợi hết trang.
       2. Đủ field BẮT BUỘC và đã PATIENCE_PAGES trang liên tiếp không có
          thêm field mới -> gần như chắc chắn đã qua hết phần bảng biểu.
          Kiểm ở cuối mỗi trang, vì bộ đếm kiên nhẫn đếm theo trang.
+      3. Mọi field còn thiếu đều thuộc biểu mẫu mà `chan_ung_vien` coi là đã
+         đi qua -> đọc tiếp không thể tìm được gì hợp lệ nữa.
     Nếu chỉ dùng nhánh 1, chỉ cần một field không bao giờ đọc được là phải
     gọi API cho cả 55 trang.
 
-    Cả hai nhánh tắt được bằng DISABLE_EARLY_STOP=true, và dù bật hay tắt
+    Cả bốn nhánh tắt được bằng DISABLE_EARLY_STOP=true, và dù bật hay tắt
     thì `meta["early_stop"]` luôn ghi lại đã dừng hay chưa, vì lý do gì, ở
-    trang nào, và những field nào còn thiếu lúc đó. Nhánh 2 mới là nhánh
-    đáng ngờ khi ĐO: nó dừng lúc chưa đủ field, nên field còn thiếu có thể
-    chưa từng được nhìn tới chứ không phải model đọc hỏng.
+    trang nào, và những field nào còn thiếu lúc đó — mỗi nhánh một `ly_do`
+    riêng, không nhánh nào dùng chung. Nhánh 2 mới là nhánh đáng ngờ khi ĐO:
+    nó dừng lúc chưa đủ field, nên field còn thiếu có thể chưa từng được nhìn
+    tới chứ không phải model đọc hỏng.
     """
     if n_samples > 1 and temperature == 0:
         raise ValueError(
@@ -747,6 +754,53 @@ def extract_fields_from_regions(
 
     for page in pages:
         page_no = page["page"]
+
+        # 0. TRẦN THEO NHÁNH OCR — kiểm TRƯỚC mọi việc, kẻo đã tiêu tiền gọi
+        #    API cho một trang nằm ngoài trần rồi mới dừng.
+        #
+        #    Nhánh OCR đi trước và dừng ở một trang nào đó. Trang ấy là một dữ
+        #    kiện về TỜ GIẤY: OCR dừng vì đã 10 trang liền không trích thêm
+        #    được chỉ tiêu nào, tức phần bảng biểu đã đi qua. Đọc quá mốc đó
+        #    là đang lục trong thuyết minh.
+        #
+        #    ĐO ĐƯỢC, trên log lượt chấm 70 tài liệu ngày 03/09/2026, 69 đoạn
+        #    tài liệu: trần này diệt 5 ô SAI và làm mất 0 ô ĐÚNG. Năm ô sai gồm
+        #    ba ô của `GVR_2026Q2_TT99` đọc ở trang 78 (`tong_tai_san` =
+        #    406 tỷ trong khi thật là 90.263 tỷ) và hai ô của
+        #    `FLC_2021Q4_TT200` đọc ở trang 54.
+        #
+        #    VÌ SAO ĐÚNG MỐC ĐÓ, KHÔNG LÙI THÊM. Cùng phép đo, với luật "dừng
+        #    ở trang OCR dừng TRỪ n": n = 0, 1, 2 đều mất 0 ô đúng; n = 3 mất
+        #    3 ô; n = 5 mất 13 ô. Mười ba ô ấy là của `DLG_2026Q2_TT99`, một
+        #    PDF ảnh scan mà OCR không đọc được ô nào nên bỏ cuộc ngay ở trang
+        #    10 — trong khi B02 của nó bắt đầu ở trang 6 và VLM đọc đúng cả 13
+        #    ô ở trang 6–8. Bài học: trang OCR dừng KHÔNG đo bảng nằm ở đâu, nó
+        #    đo chỗ OCR bỏ cuộc, nên lùi thêm là cắt vào vùng còn bảng thật.
+        #
+        #    `trang_toi_da=None` nghĩa là KHÔNG có trần, và đó là mặc định:
+        #    nhánh OCR có thể không chạy (`USE_OCR_FIRST=false`), và khi ấy
+        #    không có mốc nào để lấy.
+        if (
+            not DISABLE_EARLY_STOP
+            and trang_toi_da is not None
+            and page_no > trang_toi_da
+        ):
+            missing = [khoa for khoa, kq in final_result.items() if kq.value is None]
+            print(
+                f"--- Trần nhánh OCR: trang {page_no} đã quá mốc OCR dừng "
+                f"({trang_toi_da}) -> dừng. Không tìm được: {missing} ---"
+            )
+            # Lý do RIÊNG, không gộp vào `het_bang_de_doc`: dừng vì hết kiên
+            # nhẫn và dừng vì đụng trần là hai chuyện khác nhau khi đối chiếu
+            # chi phí, và chỉ khoá này phân biệt được.
+            dung_som = {
+                "da_dung_som": True,
+                "ly_do": "tran_ocr",
+                "trang_cuoi": page_no - 1,
+                "field_con_thieu": missing,
+            }
+            break
+
         found_new_field = False
 
         for region_index, region in enumerate(page["regions"]):

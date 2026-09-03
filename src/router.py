@@ -55,7 +55,7 @@ from ky_hieu_mau import lan_ky_hieu
 from metrics import RunMetrics, merge_into_totals, thong_tin_tai_lap, timer
 from ocr_baseline import iter_table_regions, ocr_page_regions
 from repair.candidates import generate as sinh_ung_vien
-from repair.diagnose import diagnose
+from repair.diagnose import diagnose, diagnose_fellegi_holt_donor
 from repair.neo import neo_bbox
 from validation import has_required_fields, validate_result
 
@@ -743,6 +743,56 @@ def quy_uoc_cua_luot(gia_tri: dict, bo_nho_text: dict) -> tuple[QuyUocDau, str]:
     return xac_dinh_quy_uoc(van_ban_da_ocr(bo_nho_text), gia_tri)
 
 
+def chay_baseline9(
+    data: dict, standard: Standard, quy_uoc: QuyUocDau, donor_values: dict,
+) -> tuple[dict, dict]:
+    """
+    Chạy BASELINE 9 trên cùng bộ số, trả `(giá trị sau sửa, certificate)`.
+
+    Baseline 9 là đối chứng quyết định của H3: giống phương pháp đề xuất ở
+    MỌI thứ — cùng ràng buộc, cùng thuật toán chọn trường, cùng ngân sách gọi
+    model — và khác đúng MỘT biến số, là ứng viên đến từ đâu. Ở đây ứng viên
+    đến từ `donor_values`, tức từ phân phối của chính chỉ tiêu ấy trên các
+    công ty khác; ở `chay_tang_repair()` thì ứng viên đến từ tờ giấy.
+
+    KHÔNG DÙNG LẠI `sinh_ung_vien()` của phe mình, và đó là điều kiện để phép
+    so có nghĩa: tập ứng viên của baseline 9 phải CHỈ gồm giá trị donor, nếu
+    lẫn một ứng viên đọc từ tài liệu vào thì nó không còn là baseline nữa.
+
+    Chỉ tiêu không có trong `donor_values` thì vắng mặt khỏi tập ứng viên;
+    `diagnose_fellegi_holt_donor()` xử lý ca đó bằng cách lấy chính giá trị
+    hiện tại làm mốc, nên nó không bị thua oan vì thiếu donor.
+    """
+    co_gia_tri = [k for k, v in data.items() if v is not None and k != UNIT_KEY]
+    A, field_order = build_matrix(co_gia_tri, identities_for(standard, quy_uoc))
+    if A.shape[0] == 0:
+        return dict(data), {"da_chay": True, "verdict": "ABSTAIN",
+                            "ma_ly_do": "thieu_gia_tri",
+                            "ly_do": "không dựng được đẳng thức nào"}
+
+    gia_tri = {k: data[k] for k in field_order}
+    ung_vien = {k: [donor_values[k]] for k in field_order if k in donor_values}
+
+    do = diagnose_fellegi_holt_donor(
+        gia_tri, ung_vien, A, field_order, donor_values=donor_values,
+    )
+
+    ra = dict(data)
+    for khoa, gt in do.changed_fields.items():
+        ra[khoa] = gt
+
+    return ra, {
+        "da_chay": True,
+        "verdict": do.verdict,
+        "n_changed": do.n_changed,
+        "changed_fields": do.changed_fields,
+        "ma_ly_do": do.ma_ly_do,
+        "ly_do": do.ly_do_abstain,
+        "so_o_co_donor": len(ung_vien),
+        "so_o_xet": len(field_order),
+    }
+
+
 def chay_tang_repair(
     data: dict, result: dict, standard: Standard, quy_uoc: QuyUocDau,
     vung_theo_khoa: dict | None = None
@@ -851,7 +901,8 @@ def chay_tang_repair(
 
 
 def route_document(
-    file_path: str, save: bool = True, standard: Standard | None = None
+    file_path: str, save: bool = True, standard: Standard | None = None,
+    donor_values: dict | None = None,
 ) -> ExtractionResult:
     """
     Chạy trọn pipeline cho một tài liệu.
@@ -1004,7 +1055,28 @@ def route_document(
         # bật nghĩa là lượt chạy đang phục vụ phép đo H1, và ở đó mọi thứ đọc
         # ràng buộc đều phải im.
         chung_chi_repair = {"da_chay": False, "ly_do": "tang_repair_dang_tat"}
+        chung_chi_baseline9 = {"da_chay": False, "ly_do": "khong_co_donor"}
+        gia_tri_baseline9: dict | None = None
         if BAT_TANG_REPAIR and not DISABLE_CONSTRAINT_GATE:
+            # HAI PHE CHẠY TRÊN CÙNG MỘT `data`, và đó là toàn bộ lý do phép so
+            # H3 làm được trong MỘT lượt trích xuất. Cả `chay_tang_repair()` lẫn
+            # `diagnose_fellegi_holt_donor()` đều nhận bộ số ĐÃ đọc xong rồi mới
+            # sinh ứng viên, nên chúng tự động dùng chung đầu vào — không cần cơ
+            # chế đóng băng và phát lại nào cả.
+            #
+            # Thứ tự BẮT BUỘC: baseline 9 chạy TRƯỚC, trên `data` chưa bị phe
+            # mình đụng vào. Chạy sau thì nó nhận đầu vào đã được sửa và cả phép
+            # so mất nghĩa — đây đúng là lỗi "nối tiếp thay vì song song" mà
+            # `PREREGISTRATION.md` mục 2 cảnh báo.
+            #
+            # Và không phe nào gọi thêm model: phe mình đọc lại từ vùng OCR đã
+            # cache, phe đối thủ lấy từ donor. Ràng buộc "cùng ngân sách gọi
+            # model" của H3 vì thế thoả một cách tầm thường, không cần trần cứng.
+            if donor_values is not None:
+                gia_tri_baseline9, chung_chi_baseline9 = chay_baseline9(
+                    data, standard, quy_uoc, donor_values
+                )
+
             data, chung_chi_repair = chay_tang_repair(
                 data, result, standard, quy_uoc,
                 gom_vung(cached_pages, bo_nho_text, metrics),
@@ -1054,6 +1126,12 @@ def route_document(
                 # riêng ở log: một con số đã bị sửa mà người đọc kết quả không
                 # thấy dấu vết thì đúng bằng một con số bịa.
                 "chung_chi_repair": chung_chi_repair,
+                # Certificate và giá trị của BASELINE 9, đi ra cùng kết quả.
+                # LUÔN có mặt: một lượt chạy không truyền donor và một lượt
+                # truyền donor mà đối chứng bỏ cuộc phải phân biệt được, và
+                # `da_chay` kèm `ly_do` là chỗ phân biệt.
+                "chung_chi_baseline9": chung_chi_baseline9,
+                "gia_tri_baseline9": gia_tri_baseline9,
             },
             warnings=da_kiem["warnings"],
         )

@@ -461,3 +461,50 @@ def test_van_chan_khi_bieu_mau_sau_duoc_doc_that_su():
     assert (
         da_di_qua_bieu_mau("tong_tai_san", 78, _da_thay({"B03": (6, 12)})) is not None
     )
+
+
+# --- Hai sổ phải đi được tới route_document ---------------------------------
+
+
+def test_hai_so_di_duoc_qua_ghi_lai_luot_vlm():
+    """
+    `_ghi_lai_luot_vlm()` là allowlist, nên khoá mới rất dễ bị bỏ quên ở đó.
+
+    Bỏ quên ngày 03/09/2026 là một lỗi CÂM đúng nghĩa: cơ chế vẫn chạy, log
+    vẫn in, `chay_tap_gold.py` vẫn có khoá để ghi — nhưng khoá ấy nhận `None`
+    ở mọi tài liệu, nên bảng điểm nói "chưa cơ chế nào ra tay" trong khi log
+    của cùng lượt chạy ghi hai lần. Đo được trên `PLX_2026Q2_TT99`.
+    """
+    import router
+    from extraction_types import ExtractionResult
+
+    ghi_lai: dict = {}
+    router._ghi_lai_luot_vlm(ghi_lai, ExtractionResult(
+        data={},
+        meta={
+            "ung_vien_bi_chan": [{"khoa": "tong_tai_san"}],
+            "ung_vien_mau_thuan": [{"khoa": "tong_nguon_von"}],
+        },
+    ))
+
+    mang_theo = ghi_lai[router.META_VLM]
+    assert mang_theo["ung_vien_bi_chan"] == [{"khoa": "tong_tai_san"}]
+    assert mang_theo["ung_vien_mau_thuan"] == [{"khoa": "tong_nguon_von"}]
+
+
+def test_hai_so_rong_van_la_LIST_khong_phai_None():
+    """
+    Rỗng và vắng mặt phải phân biệt được ở đầu ra, không chỉ ở trong hàm.
+
+    `[]` nghĩa là "đã kiểm, không có gì"; `None` nghĩa là "không ai kiểm cả".
+    Trộn hai thứ đó lại là xoá mất đúng thông tin mà hai sổ sinh ra để mang.
+    """
+    import router
+    from extraction_types import ExtractionResult
+
+    ghi_lai: dict = {}
+    router._ghi_lai_luot_vlm(ghi_lai, ExtractionResult(data={}, meta={}))
+
+    mang_theo = ghi_lai[router.META_VLM]
+    assert mang_theo["ung_vien_bi_chan"] == []
+    assert mang_theo["ung_vien_mau_thuan"] == []

@@ -482,10 +482,23 @@ def _ghi_lai_luot_vlm(ghi_lai, extraction: ExtractionResult) -> None:
     # route_document() phải lấy được nó TRƯỚC khi gọi validate_result(), nếu
     # không thì mọi ô lại bị nhân bằng đúng một hệ số mức tài liệu và cả cơ
     # chế buộc đơn vị theo bảng không có đường nào chạm tới con số.
+    # Hai sổ của `chan_ung_vien` cũng phải đi đường này. Bỏ sót chúng ngày
+    # 03/09/2026 là một lỗi CÂM đúng nghĩa: cơ chế vẫn chạy và vẫn in ra log,
+    # `chay_tap_gold.py` vẫn có khoá để ghi, nhưng khoá ấy nhận `None` ở mọi
+    # tài liệu — nên bảng điểm nói "chưa cơ chế nào ra tay" trong khi log của
+    # cùng lượt chạy ghi hai lần. Đo được trên `PLX_2026Q2_TT99`.
+    #
+    # Danh sách này là ALLOWLIST chứ không phải `**extraction.meta`, và giữ
+    # nguyên như vậy: nhét trọn meta vào đây sẽ kéo theo cả `standard` lẫn
+    # `prompt_hash` vốn đã đi đường khác ở trên, rồi hai bản sao lệch nhau mà
+    # không ai thấy. Cái giá là thêm một khoá mới phải nhớ thêm vào đây — và
+    # `tests/test_chan_ung_vien.py` có test chốt đúng chỗ quên ấy.
     ghi_lai[META_VLM] = {
         "early_stop": extraction.meta.get("early_stop"),
         "he_so_don_vi_theo_truong": extraction.meta.get("he_so_don_vi_theo_truong", {}),
         "don_vi_theo_vung": extraction.meta.get("don_vi_theo_vung", []),
+        "ung_vien_bi_chan": extraction.meta.get("ung_vien_bi_chan", []),
+        "ung_vien_mau_thuan": extraction.meta.get("ung_vien_mau_thuan", []),
     }
 
 

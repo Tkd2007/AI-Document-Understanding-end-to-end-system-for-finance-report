@@ -847,6 +847,14 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
 
 Đường găng đi qua **tầng gold**, không còn qua Mốc 3.
 
+> **Đang chạy 03/09/2026:** lượt chấm ĐẦY ĐỦ 70 tài liệu của tập gold mới,
+> chế độ `--chuan-tu-gold`, trên GPU. Việc 1 và 2 dưới đây viết khi tập gold
+> còn 11 tài liệu và chỉ chạy được vài mã — lượt đầy đủ này thay thế cả hai,
+> nên **đọc kết quả của nó trước** rồi mới quyết còn phải chẩn đoán riêng mã
+> nào. Số ghi ở `CHANGELOG.md`. Việc kế tiếp sau lượt này đã ghi ở **mục
+> 17.3** (bốn hướng chặn lỗi "đi tìm tiếp rồi vớ nhầm bảng sau"), kèm ràng
+> buộc phải ghi tu chính vào `PREREGISTRATION.md` trước khi thi công.
+
 1. **Chạy lại `--chi BMP SBT`** — một lượt chạy trả lời được BA câu cùng lúc,
    nên nó là việc rẻ nhất trên bàn:
    *(a)* bản vá nới mép có đọc ra dòng "Đơn vị tính" không (mục 20.5b);
@@ -925,6 +933,64 @@ giúp **H1**. H2 và H3 đo trên **số lỗi**, không phải số trường �
 số lỗi rơi vào 75–225, lên 100 cũng chỉ thành 125–375. Đó đúng là lý do
 `ADDENDUM` mục 4 kết luận tầng XBRL là **bắt buộc**. Muốn thêm số liệu cho
 H2/H3 thì **mở rộng tầng XBRL rẻ hơn hẳn** so với gán nhãn thêm tài liệu tay.
+
+---
+
+### 17.3 Chặn "đi tìm tiếp rồi vớ nhầm bảng sau" — bốn hướng, CHƯA thi công
+
+Phát hiện trong lượt chấm tập gold 03/09/2026, tài liệu `GVR_2026Q2_TT99`
+(105 trang). Đây là chế độ lỗi **sinh lỗi câm và đốt tiền API cùng lúc**, nên
+nó đáng sửa hơn vẻ ngoài của một ca lẻ.
+
+**Chuyện đã xảy ra.** Điều kiện dừng sớm của nhánh VLM là
+`has_required_fields(...) and pages_without_new_field >= PATIENCE_PAGES`. Chỉ
+có ba field bắt buộc: `tong_tai_san`, `doanh_thu_thuan`, `loi_nhuan_sau_thue`.
+Ở GVR, hai field sau đọc được ở trang 10, còn `tong_tai_san` thì không — nên
+vế đầu luôn sai và **bộ đếm ba trang không bao giờ được xét tới**. VLM cày từ
+trang 10 tới trang 78 mới "tìm thấy" `tong_tai_san`.
+
+**Nhưng B01 không hề nằm muộn.** Nó ở trang 6–8, đúng thứ tự biểu mẫu bắt
+buộc B01 → B02 → B03 → thuyết minh. Trang 6 đọc được phần Tài sản nhưng thiếu
+`tai_san_dai_han` và `tong_tai_san`; trang 7 **không nhả ra gì**; trang 8 chỉ
+lấy được `no_phai_tra`. Tới trang 12 là hết cả ba báo cáo, nên **trang 13–78
+toàn là thuyết minh** — pipeline đi tìm một thứ đã đi qua mất rồi, và nhặt
+phải một con số của bảng khác.
+
+**Cái giá, đo được:** 4 lỗi câm, tất cả ở B01 — `tong_tai_san` sai 222 lần
+(406.588.902.083 so với 90.263.949.529.178), `tai_san_dai_han` ra `0` trong
+khi thật là 52.366.345.316.291, `von_chu_so_huu` và `tong_nguon_von` cũng
+sai. Cộng khoảng 65 lượt gọi VLM thừa. Trước GVR, B01 chưa có một lỗi câm nào
+trong 18 tài liệu đầu.
+
+Bốn hướng chặn, xếp theo sức mạnh:
+
+1. **Dùng đẳng thức kế toán để BÁC ứng viên, không chỉ để gắn cờ.** Trang 6
+   đã cho `tai_san_ngan_han = 37.897 tỷ`, nên ứng viên `tong_tai_san = 406 tỷ`
+   nhỏ hơn cả tài sản ngắn hạn — vi phạm `tổng tài sản = TSNH + TSDH` với
+   `TSDH >= 0`. Hiện tầng ràng buộc chạy SAU khi trích xuất xong: nó gắn cờ
+   chứ không lọc ứng viên lúc đang thu. Chỗ hở nằm đúng đó. Bác ứng viên rồi
+   để trống thì **lỗi câm thành lỗi ồn**, đúng thứ tự ưu tiên mà
+   `src/eval/metrics.py` tuyên bố.
+2. **Dừng theo VỊ TRÍ, không chỉ theo patience.** Khi B03 đã đủ thì đã đi qua
+   cả ba báo cáo; đi tiếp để tìm một chỉ tiêu B01 là bất khả về cấu trúc. Với
+   GVR điều kiện này cắt ở trang ~13 thay vì 78.
+3. **Tìm LÙI thay vì tìm tiến.** Thiếu chỉ tiêu B01 mà B02 đã xong thì chỗ cần
+   đọc lại là các trang TRƯỚC trang B02 — ở GVR là trang 7, trang chưa bao giờ
+   nhả ra gì. Rẻ hơn hẳn 65 trang thuyết minh và nhắm đúng chỗ.
+4. **Chặn theo ký hiệu mẫu** (`src/ky_hieu_mau.py`): chỉ nhận `tong_tai_san`
+   từ trang mang ký hiệu B01. Hướng này dài nhất vì phần đọc ký hiệu hiện hay
+   trả `nguon: 'khong_doc_duoc'` — phải sửa nó trước.
+
+**RÀNG BUỘC BẮT BUỘC TRƯỚC KHI THI CÔNG.** Bốn hướng này nghĩ ra **sau khi đã
+nhìn kết quả trên tập gold**, nên thi công thẳng là tinh chỉnh pipeline lên
+chính tập dùng để đo, và tập gold thôi không còn là phép đo độc lập. Trình tự
+đúng: ghi tu chính vào mục **Sửa đổi** của `PREREGISTRATION.md` TRƯỚC, rồi
+chạy như một **điều kiện thứ hai** trên đúng 70 tài liệu, và báo cáo **hiệu
+số** giữa hai lượt. Lượt 03/09/2026 giữ nguyên vai trò baseline.
+
+Hướng 1 và 2 rẻ, độc lập nhau, và cả hai chỉ chuyển lỗi câm thành lỗi ồn chứ
+không tạo giá trị mới — tức không có đường nào làm đẹp chỉ số một cách giả
+tạo. Bắt đầu từ đó.
 
 ---
 

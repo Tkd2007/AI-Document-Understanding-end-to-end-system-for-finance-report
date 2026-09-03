@@ -62,6 +62,7 @@ theo NỘI DUNG, dùng khi đã biết mình cần gì.
 | 15 | Lệnh hay dùng | cần một lệnh không có trong `CLAUDE.md` |
 | **16** | **Bước kế tiếp** | chọn việc |
 | 17.2 | Quy mô tập gold — chưa cập nhật tài liệu | tránh làm lại việc đã quyết |
+| **17.4** | **Lượt chấm 70 tài liệu đầy đủ: kết quả, bốn bản vá, ba việc còn treo** | **đọc trước mọi việc khác** |
 | 19.3 | **Việc còn lại của tầng gold**, theo thứ tự chặn nhau | việc đang làm |
 | 20.6 · 20.8 | **Việc lượt chạy lộ ra, chưa làm** · đơn vị theo bảng | việc đang làm |
 | B | Phương án C, **bước D chưa làm** | làm tiếp nhận diện chuẩn |
@@ -847,13 +848,12 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
 
 Đường găng đi qua **tầng gold**, không còn qua Mốc 3.
 
-> **Đang chạy 03/09/2026:** lượt chấm ĐẦY ĐỦ 70 tài liệu của tập gold mới,
-> chế độ `--chuan-tu-gold`, trên GPU. Việc 1 và 2 dưới đây viết khi tập gold
-> còn 11 tài liệu và chỉ chạy được vài mã — lượt đầy đủ này thay thế cả hai,
-> nên **đọc kết quả của nó trước** rồi mới quyết còn phải chẩn đoán riêng mã
-> nào. Số ghi ở `CHANGELOG.md`. Việc kế tiếp sau lượt này đã ghi ở **mục
-> 17.3** (bốn hướng chặn lỗi "đi tìm tiếp rồi vớ nhầm bảng sau"), kèm ràng
-> buộc phải ghi tu chính vào `PREREGISTRATION.md` trước khi thi công.
+> **Trạng thái 03/09/2026 tối.** Lượt chấm ĐẦY ĐỦ 70 tài liệu đã chạy xong
+> một lần, và lộ ra bốn khuyết tật của chính pipeline; cả bốn đã vá, và một
+> lượt chạy SẠCH trên một commit duy nhất đang chạy lại. **Đọc mục 17.4
+> trước mọi việc khác** — nó có kết quả, bốn bản vá kèm số đo, ba việc còn
+> treo xếp theo giá trị, và ba chế độ lỗi câm đã đặt tên. Việc 1 và 2 dưới
+> đây viết khi tập gold còn 11 tài liệu; lượt đầy đủ thay thế cả hai.
 
 1. **Chạy lại `--chi BMP SBT`** — một lượt chạy trả lời được BA câu cùng lúc,
    nên nó là việc rẻ nhất trên bàn:
@@ -936,7 +936,12 @@ H2/H3 thì **mở rộng tầng XBRL rẻ hơn hẳn** so với gán nhãn thêm
 
 ---
 
-### 17.3 Chặn "đi tìm tiếp rồi vớ nhầm bảng sau" — 1 và 2 XONG, 3 và 4 chưa
+### 17.3 Chặn "đi tìm tiếp rồi vớ nhầm bảng sau" — ĐÃ SỬA LẠI, đọc kèm 17.4
+
+> **Cập nhật 03/09/2026 tối:** hướng 1 đã bị RÚT quyền từ chối vì nó bác
+> nhầm giá trị đúng 6 trên 8 lần — lý do và số đo ở **mục 17.4**. Hướng 2
+> giữ nguyên. Hướng 3 và 4 vẫn chưa làm. Đoạn dưới đây giữ nguyên văn để
+> tra lại lập luận gốc; chỗ nào nói hướng 1 chặn được thì đọc kèm 17.4.
 
 Phát hiện trong lượt chấm tập gold 03/09/2026, tài liệu `GVR_2026Q2_TT99`
 (105 trang). Đây là chế độ lỗi **sinh lỗi câm và đốt tiền API cùng lúc**, nên
@@ -1023,6 +1028,184 @@ hai nhóm lại thành một con số mà không nói ra điều này.**
 
 Muốn có một phép đo sạch thì phải chạy lại trọn 70 tài liệu trên một mã commit
 duy nhất, sau khi ghi tu chính vào mục **Sửa đổi** của `PREREGISTRATION.md`.
+
+### 17.4 Lượt chấm 70 tài liệu ĐẦY ĐỦ đầu tiên, và bốn khuyết tật nó lộ ra
+
+Ngày 03/09/2026. Đây là lượt đầu tiên chấm trọn 70 tài liệu của tập gold mới.
+Nó chạy xong, **và giá trị lớn nhất của nó không phải con số mà là bốn khuyết
+tật nó phơi ra** — ba trong bốn nằm ở chính cơ chế vừa thi công cùng ngày.
+
+**Kết quả lượt đó, đọc kèm cảnh báo bên dưới:** trường đúng 1674/1854 =
+90,29%; lỗi câm 97/1771 = 5,48%; trọn vẹn 16/70; nhận đúng chuẩn 70/70; nhận
+đúng đơn vị 67/70. File đã sao lưu ở `data/output/sao_luu_tu_dong/` với dấu
+thời gian `2026-09-03-2141`.
+
+**Cảnh báo bắt buộc khi trích số này:** lượt đó TRỘN hai commit — 19 tài liệu
+ở `b479017`, 51 tài liệu ở `6e666d9` — và ít nhất 19 lỗi câm trong 97 là do
+chính cơ chế của pipeline gây ra chứ không phải model đọc sai. Nó **không dùng
+được làm mốc "trước" cho H3**.
+
+#### Bốn khuyết tật, và bản vá
+
+**(1) Phép số học của `chan_ung_vien` bác nhầm giá trị ĐÚNG.** Nó ra tay 8
+lần: đúng 1 lần, sai 7 lần, trong đó 6 lần vứt đi giá trị đúng tới từng đồng.
+Cơ chế: cận suy từ dấu neo vào các giá trị ĐÃ NHẬN, nên khi chính giá trị đã
+nhận là thứ sai thì cận thành thước hỏng. Ở `REE_2023Q2_TT200`,
+`tai_san_ngan_han` vào trước với 893 tỷ trong khi thật là 8.931 tỷ — rụng một
+chữ số — rồi từ neo ấy nó bác sạch bốn số hạng đúng phía sau, hai ô mất vĩnh
+viễn. Ở `VHC_2025Q1_TT200`, neo nhận nhầm giá trị của `tien_va_tuong_duong_tien`,
+hai số hạng đúng bị bác và hai con số SAI được nhận thay.
+
+*Đã vá, commit `de62355`:* phép số học **mất quyền từ chối**, chỉ còn chẩn
+đoán. Ứng viên vẫn được nhận, mâu thuẫn đi vào `warnings` và sổ mới
+`ung_vien_mau_thuan`. Lý do sâu đã nằm sẵn trong docstring của chính hàm ấy,
+viết cho phép kiểm đẳng thức chính xác: nó nói "có gì đó sai trong nhóm này",
+KHÔNG nói thành viên nào sai — mà quyết định thành viên nào sai chính là H2.
+Bản đầu bỏ phiên bản đẳng thức vì lý do đó nhưng để lại phiên bản bất đẳng
+thức; cùng một lỗi, mặc áo khác. Ca GVR không mất đi: phép VỊ TRÍ bắt được nó
+một mình, có test chốt.
+
+**(2) Cơ chế điền 0 biến lỗi ồn thành lỗi câm.** Kết luận `khong_thay_dong`
+của probe dò dòng chỉ nói "không thấy mã số trong text OCR", câu đó cũng đúng
+khi OCR đọc hụt một dòng vẫn in trên giấy. Tin nó vô điều kiện cho ra 27 ô
+ĐÚNG và **22 ô SAI**. Ca đắt nhất là `PLX_2026Q2_TT99`: bị điền
+`tong_tai_san = 0` trong khi thật là 87.876 tỷ. Cả 22 ô sai dồn vào các dòng
+xương sống của biểu mẫu — 11 ô ở các dòng tổng của B03, còn lại là
+`tong_tai_san`, `tong_nguon_von`, `tai_san_ngan_han`, `von_chu_so_huu`.
+
+*Đã vá, commit `028ff25`:* thêm `fields_config.CO_THE_VANG_MAT`, danh sách
+trắng tám dòng CHI TIẾT mà doanh nghiệp có thể thật sự không có. Tiêu chí
+thuần theo CẤU TRÚC biểu mẫu, **không theo tập gold** — dòng TỔNG là bộ xương
+biểu mẫu, luôn được in — và có test bất biến khẳng định không dòng tổng nào
+lọt vào. Probe bảo vắng mà chỉ tiêu ngoài danh sách thì giữ `None` kèm trạng
+thái riêng `probe_noi_vang_nhung_dong_bat_buoc`. Mô phỏng trên lượt vừa chạy:
+giữ trọn 27 ô đúng, loại 20 trong 22 ô sai; hai ô còn sót là `tsnh_khac` và
+`ln_khac`, **cố ý để lại** vì chỉnh danh sách theo đáp án là mất giá trị phép
+đo.
+
+**(3) Đẳng thức thiếu thành viên bị bỏ qua IM LẶNG.** `warnings` rỗng của một
+tài liệu không kiểm được gì trông y hệt `warnings` rỗng của một tài liệu đã
+qua trọn bảy phép kiểm. Đo được **55 lần bỏ qua, trong đó 47 lần chỉ thiếu
+ĐÚNG MỘT thành viên**.
+
+*Đã vá, commit `5d4fc86`:* khoá mới `dang_thuc_khong_kiem_duoc` trong meta của
+`validate_result()`, ghi cả tên các ô còn thiếu.
+
+**(4) Nhánh VLM không có trần khi thiếu ô bắt buộc.** `has_required_fields()`
+không nới rộng giới hạn, nó **tháo giới hạn ra**. `BKG_2026Q2_TT99` cày trọn
+41 trang, gọi VLM 42 lần (11 lần thất bại), tốn 23 phút — gấp gần năm lần một
+tài liệu thường.
+
+*Đã vá, commit `7f7401f`:* nhánh VLM không đọc quá trang mà nhánh OCR đã dừng.
+Kiểm TRƯỚC khi xử lý một trang nên trang ngoài trần không tốn lần gọi API nào;
+`ly_do` riêng là `tran_ocr`; tắt được bằng `DISABLE_EARLY_STOP` như ba phanh
+kia. Ba phanh cũ giữ nguyên, không bỏ cái nào.
+
+#### Vì sao trần đặt ĐÚNG mốc OCR dừng, không lùi thêm
+
+Đo trên log lượt trước, 69 đoạn tài liệu, với luật "dừng ở trang OCR dừng TRỪ
+n":
+
+| n | ô ĐÚNG mất | ô SAI diệt |
+|---|---:|---:|
+| 0, 1, 2 | **0** | 5 |
+| 3 | 3 | 5 |
+| 5 | 13 | 5 |
+
+Năm ô sai gồm ba ô của GVR đọc ở trang 78 và hai ô của `FLC_2021Q4_TT200` đọc
+ở trang 54. Mười ba ô mất ở n=5 là của `DLG_2026Q2_TT99`, một PDF ảnh scan mà
+OCR không đọc được ô nào nên bỏ cuộc ngay ở trang 10, trong khi B02 của nó bắt
+đầu ở trang 6 và VLM đọc đúng cả 13 ô ở trang 6–8.
+
+**Định luật rút ra, đáng nhớ hơn con số:** trang OCR dừng KHÔNG đo bảng nằm ở
+đâu — nó đo chỗ OCR bỏ cuộc. Dùng nó làm trần thì được; lùi thêm là cắt vào
+vùng còn bảng thật.
+
+#### Phép đo thăm dò về H1, làm trên dữ liệu đã có
+
+Chỉ dùng giá trị dự đoán, không đụng gold, rồi mới lấy gold ra đối chiếu.
+**KHÔNG phải phép đo H1 đã đăng ký** — H1 đòi AUROC so với confidence và
+conformal, bootstrap theo cụm tài liệu.
+
+| | chỉ 5 đẳng thức | đủ 7 đẳng thức |
+|---|---|---|
+| Tài liệu CÓ lỗi câm → ràng buộc kêu | 12/25 (48%) | 23/25 (92%) |
+| Tài liệu SẠCH → kêu oan | **0/18** | 13/18 |
+| Ô sai nằm trong tập nghi can | 27/59 (46%) | 48/59 (81%) |
+
+Hai điều đáng giá ở đây. Thứ nhất, **0/18 kêu oan**: khi ràng buộc kêu, nó
+chưa kêu oan lần nào. Thứ hai, chênh lệch giữa hai cột là **quy ước dấu** —
+hai đẳng thức mạnh nhất của B02 bị bỏ khi pipeline không đọc được quy ước, và
+bật bừa cả hai thì recall 48% → 92% nhưng false alarm 0 → 13. **Xác định quy
+ước dấu cho từng tài liệu là đòn bẩy lớn nhất hiện có cho H1**, và nó không
+phải chuyện thuật toán mà là chuyện đọc cho ra dòng công thức trên tờ giấy.
+
+Ghi chú phụ nhưng đáng theo: quy ước mỗi tài liệu chốt được là gì **không
+được ghi vào file kết quả**, trái quy ước "trạng thái tường minh" — chính phép
+đo này phải đoán nó.
+
+#### Ba việc còn treo, xếp theo giá trị
+
+1. **Xác định quy ước dấu từng tài liệu.** Đòn bẩy lớn nhất cho H1, xem bảng
+   trên. Kèm theo: ghi quy ước đã chốt vào file kết quả.
+2. **Dấu mẫu biểu (`fields_config.FORM_MARKERS`) làm bằng chứng vị trí thay
+   cho đếm ô.** Hiện `chan_ung_vien.TOI_THIEU_FIELD = 3` là cách vá vòng vo:
+   vấn đề thật của ca HAG không phải "ít ô" mà là "trang bìa không phải biểu
+   mẫu B02", và trang bìa **không bao giờ in "Mẫu số B 03 - DN"**. Router đã
+   giữ text từng trang trong `bo_nho_text`, nên dựng bản đồ `{biểu mẫu → trang
+   thấy dấu}` là **miễn phí**, không thêm một lần OCR hay gọi API nào. Có bản
+   đồ đó thì hạ được `TOI_THIEU_FIELD` và bịt chỗ hở trang bìa. Hai chỗ phải
+   cẩn thận: lấy lần thấy ĐẦU TIÊN (thuyết minh hay dẫn chiếu sang biểu mẫu
+   khác), và test phải dùng text OCR thật vì EasyOCR đọc "Mẫu B 01a" thành
+   "Mâu B Ola".
+3. **Kiểm giả thuyết "lệch quy ước gán nhãn".** `DGC_2025Q2_TT200` và
+   `SBT_2025Q2_TT200` đều có `gia_von_hang_ban` và `thue_tndn_hien_hanh` bằng
+   đúng `−gold`. Nhưng vector dự đoán của chúng **thoả mọi đẳng thức tới từng
+   đồng** dưới quy ước TRỪ — ví dụ SBT: `6.733.581.463.563 − 6.210.741.439.366
+   = 522.840.024.197`, khớp `loi_nhuan_gop` đọc được. Nên hoặc tờ giấy viết dấu
+   dương và **gold dùng quy ước ngược lại** (tức không phải lỗi đọc), hoặc tờ
+   giấy viết trong ngoặc đơn và pipeline đánh rơi ngoặc. Tập gold **đã có sẵn
+   khoá quy ước** (`tien_kiem.py` in ra: `trừ` 50, `tổng` 20), nên kiểm được
+   bằng dữ liệu có sẵn, không cần mở PDF. Nếu là khả năng thứ nhất thì một
+   phần tỷ lệ lỗi câm đang bị thổi lên bởi quy ước chứ không phải bởi model.
+
+#### Ba chế độ lỗi câm có cấu trúc, đã đặt tên
+
+Dùng để phân loại khi đọc kết quả, và để biết ràng buộc nào bắt được cái nào:
+
+- **Lệch dòng / hoán vị.** Giá trị gán cho ô X bằng đúng gold của ô liền kề.
+  Thấy ở `MWG_2023Q4_TT200` (B02 trượt một hàng, ô cuối cùng còn `None` vì
+  không còn gì để trượt vào — đó là một chữ ký nhận ra được mà **không cần
+  nhãn**, hiện chưa có gì trong hệ khai thác nó), `HVG_2020Q1_TT200` (B03),
+  `VHC_2025Q1_TT200` (B01), `BKG_2026Q2_TT99` (hoán vị hai dòng thuế).
+- **Điền 0 cả cụm.** `MSN_2020Q3_TT200` mất trọn B03. Nguy hiểm nhất vì `0` là
+  giá trị hợp lệ về kế toán; nếu CẢ cụm bằng 0 thì đẳng thức thuần nhất vẫn
+  khớp và **không ràng buộc nào bắt được** — đó đúng là `null(A)` của H0. MSN
+  bắt được chỉ vì `lctt_hdkd` đọc đúng, tức ranh giới giữa thấy và không thấy
+  cách nhau đúng một trường.
+- **Rụng/đảo chữ số.** `MCH` (2.597 tỷ → 259 tỷ), `PLX` `no_phai_tra`, `REE`,
+  `OGC`, `PVS`. Đây là loại ràng buộc bắt tốt nhất khi ô đó nằm trong một
+  đẳng thức, và bắt kém nhất khi lệch nhỏ.
+
+Ngoài ra một chế độ lặp đi lặp lại: **gold = 0 mà pipeline điền một con số**,
+tám ca, gần như toàn bộ ở cặp `thue_tndn_hoan_lai` / `thue_tndn_hien_hanh`.
+Luật `loi_nhuan_truoc_thue − thue_* = loi_nhuan_sau_thue` bắt được họ này.
+
+#### Script đo, để phiên sau khỏi dựng lại
+
+Ba script viết trong phiên này nằm ở scratchpad nên **sẽ mất**. Chúng chỉ đọc
+`data/output/tap_gold_*.json`, `data/gold/*.json` và file log, không tốn API:
+
+- báo cáo mốc N tài liệu: bảng theo tài liệu + danh sách lỗi câm + phân bố
+  theo biểu mẫu, dùng `eval.metrics.khop_so` để so cho khớp con số chính thức;
+- đo phát hiện của ràng buộc: chạy `identities_for()` trên riêng giá trị dự
+  đoán rồi mới đối chiếu gold;
+- đo tính khả thi của trần: quét log lấy trang OCR dừng và trang VLM lần đầu
+  thấy mỗi chỉ tiêu.
+
+Cả ba đều ngắn. Chỗ dễ sai duy nhất: log bị **nối thêm** qua mọi lần
+`--tiep-tuc`, nên phải cắt đoạn theo dòng `^ok |` chứ đừng coi cả file là một
+lượt chạy.
 
 ---
 

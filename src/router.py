@@ -777,15 +777,25 @@ def chay_baseline9(
         gia_tri, ung_vien, A, field_order, donor_values=donor_values,
     )
 
+    # `changed_fields` ánh xạ tên -> `Candidate`, KHÔNG phải -> số. Quên
+    # `.value` ở đây thì Candidate lọt vào bộ giá trị và khâu chấm điểm nổ
+    # `TypeError: unsupported operand type(s) for -` — đã cắn thật ngày
+    # 04/09/2026 trên `BKG` và `DGC_2026Q2`.
     ra = dict(data)
-    for khoa, gt in do.changed_fields.items():
-        ra[khoa] = gt
+    for khoa, uv in do.changed_fields.items():
+        ra[khoa] = uv.value
 
     return ra, {
         "da_chay": True,
         "verdict": do.verdict,
         "n_changed": do.n_changed,
-        "changed_fields": do.changed_fields,
+        # Ghi CẢ giá trị trước và sau, cùng lý do với `da_doi` của phe đề
+        # xuất: chỉ ghi tên chỉ tiêu thì về sau không dựng lại được cột "thô",
+        # mà cột ấy là mốc để đo cả hai phe.
+        "da_doi": {
+            ten: {"truoc": gia_tri[ten], "sau": uv.value, "donor": donor_values.get(ten)}
+            for ten, uv in do.changed_fields.items()
+        },
         "ma_ly_do": do.ma_ly_do,
         "ly_do": do.ly_do_abstain,
         "so_o_co_donor": len(ung_vien),

@@ -100,8 +100,8 @@ def chay_mot_tai_lieu(gold: dict, pdf: Path, donor: dict, nhat_ky) -> dict:
     # đề xuất đã đổi. Làm vậy thay vì chạy lại pipeline lần hai: chạy lại là
     # trả tiền API hai lần VÀ nhận một bộ số khác vì VLM ngẫu nhiên.
     tho = dict(de_xuat)
-    for khoa, doi in (cc_dx.get("changed_fields") or {}).items():
-        tho[khoa] = doi[0] if isinstance(doi, (list, tuple)) else doi
+    for khoa, doi in (cc_dx.get("da_doi") or {}).items():
+        tho[khoa] = doi["truoc"]
 
     diem = {
         "doc_id": gold["doc_id"],

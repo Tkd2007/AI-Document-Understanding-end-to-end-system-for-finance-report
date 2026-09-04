@@ -59,6 +59,17 @@ BACKEND_MAC_DINH = "poppler"
 BACKEND_HOP_LE = {"poppler", "pdfium"}
 PDF_BACKEND = os.getenv("PDF_BACKEND", BACKEND_MAC_DINH).strip().lower()
 
+# Góc thử lại khi một vùng không bóc được ô số nào, THEO ĐÚNG THỨ TỰ NÀY.
+#
+# ĐO NGÀY 04/09/2026 trên bốn trang kết quả kinh doanh mà pipeline bóc được 0
+# ô số. Cả ba trang cứu được đều cứu ở 270°: `DGC_2025Q2` 0 -> 55 ô số,
+# `BKG_2026Q2` 0 -> 51, `DGC_2026Q2` 0 -> 86 — đúng dải của trang đọc tốt
+# (52–74). Nên 270° đứng trước.
+#
+# 180° KHÔNG có trong danh sách vì nó chưa từng giúp: ở cả bốn trang, 180°
+# cho số ký tự xấp xỉ 0° và vẫn 0 ô số.
+GOC_THU_LAI = (270, 90)
+
 _reader = None
 
 try:
@@ -328,6 +339,64 @@ def o_so_trong_vung(region, chi_tiet: list) -> list[tuple[int, tuple[int, int, i
     return loc_o_so(o_trong_vung(region, chi_tiet))
 
 
+def _ocr_mot_vung(region, region_index: int, so_trang: int) -> dict:
+    """
+    OCR một vùng, XOAY LẠI rồi đọc lần nữa nếu không bóc được ô số nào.
+
+    VÌ SAO CẦN, đo ngày 04/09/2026 trên 10 tài liệu đầu của lượt chấm hai phe.
+    Một phần các trang kết quả kinh doanh được quét NẰM NGANG. EasyOCR đọc chữ
+    xoay 90° thì gần như mù: 554–812 ký tự thay vì 2300–2900, và **0 ô số**.
+    Không ô số thì `repair.neo` không neo được chỉ tiêu vào toạ độ nào, tập ứng
+    viên rỗng, và tầng sửa lỗi bỏ cuộc — đúng ba tài liệu `BKG_2026Q2`,
+    `DGC_2025Q2`, `DGC_2026Q2`, và cũng đúng ba tài liệu mang lỗi câm.
+
+    TIÊU CHÍ LÀ SỐ Ô SỐ, KHÔNG PHẢI SỐ KÝ TỰ, và đây là chỗ trực giác sai.
+    `DGC_2025Q2` trang 7 cho 1808 ký tự ở 90° và 1821 ký tự ở 270° — chênh 13
+    ký tự — nhưng 0 ô số so với 55. Chọn góc theo số ký tự ở ca đó là tung
+    đồng xu. Chữ xoay sai chiều vẫn ra hộp text và vẫn ra chuỗi dài tương
+    đương, chỉ có điều không chuỗi nào parse thành số.
+
+    KHÔNG ĐỌC CỜ `/Rotate` CỦA PDF. Ba trang hỏng đều ghi 270° và đúng là cần
+    270°, nhưng `DRH_2026Q2` cũng ghi 270° mà đọc tốt ở 0° — tin cờ thì xoay
+    hỏng đúng tài liệu đang chạy được.
+
+    THAY LUÔN `region.image`, không chỉ dùng ảnh xoay cho riêng OCR: nhánh VLM
+    đọc chính thuộc tính ấy sau đó, và nó cũng đang phải đọc chữ nằm ngang.
+    Sáu trong mười một lỗi câm của lượt chấm là MẤT DẤU ÂM — tờ giấy in
+    `(107.515.846.476)` mà pipeline lưu thành dương — và cả sáu đều nằm trên
+    trang xoay. Prompt đã dặn giữ dấu ngoặc từ trước, nên chỗ sửa là cái ảnh
+    gửi đi chứ không phải câu dặn.
+    """
+    chi_tiet = ocr_image_chi_tiet(region.image)
+    o = o_trong_vung(region, chi_tiet)
+    o_so = loc_o_so(o)
+
+    if not o_so:
+        for goc in GOC_THU_LAI:
+            anh = region.image.rotate(goc, expand=True)
+            chi_tiet_thu = ocr_image_chi_tiet(anh)
+            o_thu = o_trong_vung(region, chi_tiet_thu)
+            o_so_thu = loc_o_so(o_thu)
+            if not o_so_thu:
+                continue
+
+            region.image, region.goc_xoay = anh, goc
+            chi_tiet, o, o_so = chi_tiet_thu, o_thu, o_so_thu
+            print(f"--- Xoay {goc}°: page {so_trang} vùng {region_index} "
+                  f"từ 0 lên {len(o_so)} ô số ---")
+            break
+
+    return {
+        "region_index": region_index,
+        "text": "\n".join(chu for chu, _ in chi_tiet),
+        "o": o,
+        "o_so": o_so,
+        # Khai tường minh kể cả khi bằng 0: bảng điểm phải phân biệt được
+        # "vùng này không cần xoay" với "vùng này chưa bao giờ được xét".
+        "goc_xoay": region.goc_xoay,
+    }
+
+
 def ocr_page_regions(page: dict) -> dict:
     """
     OCR các vùng bảng của MỘT trang.
@@ -348,22 +417,17 @@ def ocr_page_regions(page: dict) -> dict:
     Mọi thứ ở đây đến từ ĐÚNG MỘT lượt OCR, mà OCR là khâu đắt nhất còn lại
     sau khi convert PDF và YOLO đã được cache.
     """
-    vung = []
-    for region_index, region in enumerate(page["regions"]):
-        chi_tiet = ocr_image_chi_tiet(region.image)
-        o = o_trong_vung(region, chi_tiet)
-        vung.append(
-            {
-                "region_index": region_index,
-                "text": "\n".join(chu for chu, _ in chi_tiet),
-                "o": o,
-                "o_so": loc_o_so(o),
-            }
-        )
+    vung = [
+        _ocr_mot_vung(region, region_index, page["page"])
+        for region_index, region in enumerate(page["regions"])
+    ]
 
     text = "\n".join(v["text"] for v in vung)
     tong_o_so = sum(len(v["o_so"]) for v in vung)
-    print(f"--- OCR page {page['page']}: {len(text)} ký tự, {tong_o_so} ô số ---")
+    da_xoay = [f"vùng {v['region_index']} xoay {v['goc_xoay']}°"
+               for v in vung if v["goc_xoay"]]
+    hau_to = f" ({', '.join(da_xoay)})" if da_xoay else ""
+    print(f"--- OCR page {page['page']}: {len(text)} ký tự, {tong_o_so} ô số{hau_to} ---")
     return {"page": page["page"], "text": text, "vung": vung}
 
 

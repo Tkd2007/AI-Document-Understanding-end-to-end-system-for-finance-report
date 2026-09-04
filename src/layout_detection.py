@@ -95,6 +95,17 @@ class TableRegion:
     bbox: tuple[int, int, int, int]
     confidence: float
 
+    # Góc mà `image` đã bị xoay đi so với vùng cắt ra từ trang, tính bằng độ
+    # ngược chiều kim đồng hồ. 0 nghĩa là chưa xoay, và bất biến ở docstring
+    # trên giữ nguyên. Khác 0 thì bất biến ấy đọc là: cắt trang theo `bbox`
+    # RỒI xoay `goc_xoay` độ mới ra `image`.
+    #
+    # `ocr_baseline.ocr_page_regions()` đặt trường này khi phải xoay mới đọc
+    # được. Ghi lại thay vì xoay lặng lẽ vì hai lý do: toạ độ ô OCR sau đó
+    # nằm trong hệ ĐÃ XOAY chứ không còn cùng hệ với `bbox`, và người đọc log
+    # phải biết vùng nào đã bị can thiệp.
+    goc_xoay: int = 0
+
 
 def _iou(a: tuple[int, int, int, int], b: tuple[int, int, int, int]) -> float:
     """Tỷ lệ giao trên hợp của hai hình chữ nhật (x1, y1, x2, y2)."""

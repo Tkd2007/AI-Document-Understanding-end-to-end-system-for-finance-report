@@ -18,6 +18,63 @@ mục Sửa đổi.
 
 ---
 
+## 05/09/2026
+
+### H3 lượt đầu có đủ ba phe — phe đề xuất THUA tổng thể, THẮNG trên loại lỗi của nó
+
+Lượt chấm đầu tiên chạy cả phương pháp đề xuất lẫn HAI bản baseline 9 trong
+cùng một lượt trích xuất, trên bộ số đã có phép xoay vùng.
+
+**Chỉ chạy 28 tài liệu, không phải 70.** 42 tài liệu còn lại có bảng cân đối
+khớp sẵn nên cả ba phe cùng VERIFIED và không phe nào được động vào; loại
+chúng ra không đổi hiệu số giữa các phe, chỉ đổi mẫu số. Vì vậy **mọi tỷ lệ
+dưới đây KHÔNG so trực tiếp được với các lượt 70 tài liệu** — 28 tài liệu này
+là phần khó nhất của tập.
+
+| Phe | Trường đúng | Lỗi câm | Ô đang đúng bị làm hỏng | Ra tay |
+|---|---:|---:|---:|---:|
+| Máy đọc thô, chưa ai sửa | 662/742 = 89,22% | 49/711 = 6,89% | — | — |
+| Đề xuất — đọc lại tờ giấy | 663/742 = 89,35% | 48/711 = 6,75% | 4 | 8/28 |
+| Baseline 9 bản neo — chiếu donor lên nghiệm | 667/742 = 89,89% | 44/711 = 6,19% | 11 | 27/28 |
+| Baseline 9 bản thuần — thay thẳng donor | **669/742 = 90,16%** | **42/711 = 5,91%** | 1 | 9/28 |
+
+Đọc trần trụi thì phe đề xuất thua cả hai baseline. **Kết quả tiêu cực này
+phải giữ nguyên trong bài**, đúng điều kiện phản chứng đã đăng ký trước.
+
+Nhưng tách 49 ô sai của bộ thô theo LOẠI LỖI thì hiệu số đảo chiều, và đây mới
+là con số trả lời câu hỏi của H3:
+
+| Loại lỗi | Số ô | Đề xuất chữa được | Bản neo | Bản thuần |
+|---|---:|---:|---:|---:|
+| Số CÓ IN trên giấy mà đọc sai | 35 | **5** | 7 | **0** |
+| Dòng TRỐNG bị điền số (thật = 0) | 14 | **0** | 9 | 8 |
+
+Trên loại lỗi mà phương pháp sinh ra để giải, phe đề xuất chữa được 5 ô còn
+donor thô chữa được **không ô nào** — mượn phân phối ngành không phục hồi nổi
+một con số cụ thể của một doanh nghiệp cụ thể. Cả 5 ca đều là đọc rơi một chữ
+số: `MCH.lctt_dau_tu`, `PLX.tong_tai_san`, `PLX.no_phai_tra`,
+`REE.tai_san_ngan_han`, `VJC.doanh_thu_thuan`.
+
+Trên loại lỗi thứ hai, phe đề xuất chữa được 0 ô, và đó là TẤT YẾU chứ không
+phải yếu kém: không thể đọc lại một con số chưa từng được in ra. Trạng thái
+neo của chính những ô ấy là `khong_co_vung`. Donor thắng ở đây vì trung vị
+ngành của `thue_tndn_hoan_lai`, `thue_tndn_hien_hanh`,
+`tai_san_sinh_hoc_ngan_han`, `anh_huong_ty_gia` đúng bằng 0.
+
+**Cả 4 ô mà phe đề xuất làm hỏng đều nằm ở loại lỗi thứ hai** — 2 ô
+`thue_tndn_hoan_lai`, 2 ô `thue_tndn_hien_hanh`. Không đọc lại được nên nó chỉ
+còn cách lật dấu hoặc mượn số lân cận, và lần nào cũng hỏng. Toàn bộ thiệt hại
+của phe đề xuất vì vậy đến từ việc nó ra tay ở nơi nó không có gì để đọc.
+
+HAI ĐIỂM PHẢN BIỆN PHẢI TRẢ LỜI TRONG BÀI, không được lờ:
+
+  * Bản neo chữa được 7 ô loại một, NHIỀU HƠN phe đề xuất, mà không đọc lại
+    tài liệu — ở những ca ràng buộc xác định nghiệm duy nhất thì giải phương
+    trình ra đúng con số. Cái phe đề xuất có mà nó không có là giá phải trả:
+    4 ô bịa so với 11.
+  * n = 5 quá nhỏ để dựng khoảng tin cậy. Kết luận "5 so với 0" là hướng, chưa
+    phải bằng chứng đủ mạnh.
+
 ## 04/09/2026
 
 ### Xoay lại vùng OCR nằm ngang — lỗi câm 4,05% xuống 2,94%

@@ -552,9 +552,22 @@ def diagnose_fellegi_holt_donor(
     dễ thắng hơn.
 
     Cách điền giá trị: trong tập trường được thả, chọn bộ giá trị GẦN DONOR
-    NHẤT mà vẫn thoả ràng buộc. Đây là phiên bản trung thực của Fellegi-Holt
-    kinh điển — nó không bị thua oan chỉ vì giá trị donor thô ngẫu nhiên
-    không cân bảng.
+    NHẤT mà vẫn thoả ràng buộc. Chọn thế để baseline không thua oan chỉ vì
+    giá trị donor thô không cân bảng.
+
+    NHƯNG PHẢI GỌI ĐÚNG TÊN NÓ, và đây là chỗ dễ viết sai trong bài. Đây
+    KHÔNG phải donor substitution kinh điển của Fellegi-Holt 1976; y văn
+    thống kê chính thức gọi nó là `imputation under edit constraints`
+    (Pannekoek & Scholtus) — donor chỉ là điểm neo, còn giá trị điền ra do
+    ràng buộc quyết định. Đo ngày 04/09/2026 trên 10 tài liệu: trong 17 ô hàm
+    này sửa, chỉ 3 ô rơi đúng vào giá trị donor, lệch trung vị 55,9%.
+
+    HỆ QUẢ PHẢI BÁO CÁO, KHÔNG ĐƯỢC GIẤU: khi ràng buộc xác định nghiệm duy
+    nhất thì donor không đóng góp gì, nên hai phe của H3 ra kết quả TRÙNG
+    KHÍT tới từng chữ số — đã xảy ra ở `PLX_2026Q2_TT99` và
+    `REE_2023Q2_TT200`. Ở những ca ấy thí nghiệm không đo được biến số nào.
+    Vì vậy `diagnose_fellegi_holt_donor_thuan()` chạy song song và bài báo
+    cáo cả hai: bản thuần mới là bản thật sự đo được câu hỏi của H3.
 
     Cách chọn TẬP TRƯỜNG cũng phải trung thực như vậy, và đó là lý do vòng
     lặp dưới đây duyệt HẾT mọi tập trường ở một cardinality rồi mới phân xử
@@ -683,5 +696,139 @@ def diagnose_fellegi_holt_donor(
             "không tập trường nào cho nghiệm"
             if het_moi_tap
             else f"không tập từ {max_changes} trường trở xuống nào cho nghiệm"
+        ),
+    )
+
+
+def diagnose_fellegi_holt_donor_thuan(
+    values: dict,
+    A: np.ndarray,
+    field_order: list,
+    donor_values: dict,
+    tolerance_ratio: float = RESIDUAL_TOL,
+    max_changes: int | None = MAX_CHANGES_MAC_DINH,
+    time_limit_s: float = TIME_LIMIT_S,
+) -> Diagnosis:
+    """
+    BASELINE 9-THUẦN — thay thẳng giá trị donor, không giải phương trình.
+
+    VÌ SAO CẦN BIẾN THỂ NÀY, ĐO ĐƯỢC NGÀY 04/09/2026. Lượt thử 10 tài liệu
+    cho thấy `diagnose_fellegi_holt_donor()` hầu như KHÔNG dùng số donor:
+    trong 17 ô nó sửa, chỉ 3 ô rơi đúng vào giá trị donor, còn lệch trung vị
+    55,9% so với donor. Lý do là nó chiếu donor lên không gian nghiệm, nên
+    khi ràng buộc xác định nghiệm duy nhất thì donor không đóng góp gì — và
+    hai phe của H3 ra kết quả TRÙNG KHÍT tới từng chữ số, đo được ở
+    `PLX_2026Q2_TT99` và `REE_2023Q2_TT200`. Khi ấy thí nghiệm không còn đo
+    được biến số nào cả.
+
+    Hàm này là đầu kia của cùng một trục, và tồn tại để bài báo cáo cả hai
+    chứ không phải chọn một:
+
+      bản chiếu (`diagnose_fellegi_holt_donor`) — donor chỉ là điểm neo, giá
+        trị điền ra do ràng buộc quyết định. Đây là `imputation under edit
+        constraints` của Pannekoek & Scholtus, KHÔNG phải donor substitution
+        kinh điển, và phải gọi đúng tên ấy trong bài.
+      bản thuần (hàm này) — donor là giá trị điền ra, đúng nghĩa hot-deck của
+        Fellegi-Holt 1976: giá trị đến từ một bản ghi đã thoả mọi ràng buộc.
+
+    Bản thuần yếu hơn hẳn và điều đó nằm trong dự kiến: donor thô gần như
+    không bao giờ làm bảng cân đối khớp. Nhưng nó là bản mà người phản biện
+    sẽ đòi, vì nó là thứ duy nhất trong hai bản thực sự đo được câu hỏi của
+    H3 — giá trị lấy từ tổng thể có thay được giá trị đọc từ tờ giấy không.
+
+    Chỉ duyệt những trường CÓ donor: không có donor thì không có gì để thay,
+    và đưa trường ấy vào tổ hợp chỉ làm baseline thua vì một lý do không liên
+    quan tới nguồn giá trị.
+
+    Phân xử giữa các tập cùng cardinality bằng TỔNG THAY ĐỔI nhỏ nhất — đúng
+    nguyên tắc minimum change của chính Fellegi-Holt, và cùng tiêu chí mà
+    `diagnose()` dùng cho ứng viên đọc từ tài liệu.
+    """
+    bat_dau = time.perf_counter()
+
+    thieu = [ten for ten in field_order if values.get(ten) is None]
+    if thieu:
+        return Diagnosis(
+            verdict="ABSTAIN",
+            solve_time_s=time.perf_counter() - bat_dau,
+            ma_ly_do="thieu_gia_tri",
+            ly_do_abstain=f"thiếu giá trị cho: {', '.join(thieu)}",
+        )
+
+    x = _vector(values, field_order)
+    residual_truoc = A @ x
+    do_lon = float(np.linalg.norm(x))
+
+    if _thoa_rang_buoc(residual_truoc, do_lon, tolerance_ratio):
+        return Diagnosis(
+            verdict="VERIFIED",
+            residual_before=residual_truoc,
+            residual_after=residual_truoc,
+            solve_time_s=time.perf_counter() - bat_dau,
+        )
+
+    co_donor = [i for i, ten in enumerate(field_order) if ten in donor_values]
+    tran_k = len(co_donor) if max_changes is None else min(max_changes, len(co_donor))
+
+    for k in range(1, tran_k + 1):
+        tot_nhat = None
+        het_gio = False
+
+        for cac_truong in combinations(co_donor, k):
+            if time.perf_counter() - bat_dau > time_limit_s:
+                het_gio = True
+                break
+
+            chi_so = list(cac_truong)
+            x_moi = x.copy()
+            for i in chi_so:
+                x_moi[i] = float(donor_values[field_order[i]])
+
+            if not _thoa_rang_buoc(A @ x_moi, do_lon, tolerance_ratio):
+                continue
+
+            thay_doi = float(np.abs(x_moi[chi_so] - x[chi_so]).sum())
+            if tot_nhat is None or thay_doi < tot_nhat[0]:
+                tot_nhat = (thay_doi, chi_so, x_moi)
+
+        if tot_nhat is not None:
+            _, chi_so, x_moi = tot_nhat
+            da_sua = {
+                field_order[i]: Candidate(
+                    value=float(x_moi[i]),
+                    source="donor_thuan",
+                    cost=abs(float(x_moi[i] - x[i])),
+                    evidence={"donor": donor_values[field_order[i]]},
+                )
+                for i in chi_so
+            }
+            return Diagnosis(
+                verdict="REPAIRED",
+                changed_fields=da_sua,
+                residual_before=residual_truoc,
+                residual_after=A @ x_moi,
+                n_changed=len(da_sua),
+                solve_time_s=time.perf_counter() - bat_dau,
+            )
+
+        if het_gio:
+            return Diagnosis(
+                verdict="ABSTAIN",
+                residual_before=residual_truoc,
+                solve_time_s=time.perf_counter() - bat_dau,
+                ma_ly_do="het_gio",
+                ly_do_abstain=f"hết {time_limit_s}s",
+            )
+
+    het_moi_tap = max_changes is None or max_changes >= len(co_donor)
+    return Diagnosis(
+        verdict="ABSTAIN",
+        residual_before=residual_truoc,
+        solve_time_s=time.perf_counter() - bat_dau,
+        ma_ly_do="vo_nghiem" if het_moi_tap else "vuot_tran_thay_doi",
+        ly_do_abstain=(
+            "không tập trường có donor nào cho nghiệm"
+            if het_moi_tap
+            else f"không tập từ {max_changes} trường có donor trở xuống nào cho nghiệm"
         ),
     )

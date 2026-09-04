@@ -55,7 +55,11 @@ from ky_hieu_mau import lan_ky_hieu
 from metrics import RunMetrics, merge_into_totals, thong_tin_tai_lap, timer
 from ocr_baseline import iter_table_regions, ocr_page_regions
 from repair.candidates import generate as sinh_ung_vien
-from repair.diagnose import diagnose, diagnose_fellegi_holt_donor
+from repair.diagnose import (
+    diagnose,
+    diagnose_fellegi_holt_donor,
+    diagnose_fellegi_holt_donor_thuan,
+)
 from repair.neo import neo_bbox
 from validation import has_required_fields, validate_result
 
@@ -747,7 +751,16 @@ def chay_baseline9(
     data: dict, standard: Standard, quy_uoc: QuyUocDau, donor_values: dict,
 ) -> tuple[dict, dict]:
     """
-    Chạy BASELINE 9 trên cùng bộ số, trả `(giá trị sau sửa, certificate)`.
+    Chạy CẢ HAI BẢN của baseline 9 trên cùng bộ số.
+
+    Trả `(giá trị theo phe, certificate theo phe)`, cả hai cùng khoá:
+    `"chieu"` cho bản chiếu donor lên không gian nghiệm, `"thuan"` cho bản
+    thay thẳng giá trị donor. Hai bản là hai đầu của cùng một trục và bài
+    báo cáo cả hai — lý do đầy đủ ở docstring hai hàm trong
+    `repair/diagnose.py`, tóm tắt: bản chiếu mạnh nhưng ở những ca ràng buộc
+    xác định nghiệm duy nhất thì nó ra kết quả TRÙNG KHÍT với phe đề xuất và
+    khi ấy không đo được biến số nào; bản thuần yếu hơn nhưng là bản duy nhất
+    thật sự đo được câu hỏi của H3.
 
     Baseline 9 là đối chứng quyết định của H3: giống phương pháp đề xuất ở
     MỌI thứ — cùng ràng buộc, cùng thuật toán chọn trường, cùng ngân sách gọi
@@ -759,48 +772,62 @@ def chay_baseline9(
     so có nghĩa: tập ứng viên của baseline 9 phải CHỈ gồm giá trị donor, nếu
     lẫn một ứng viên đọc từ tài liệu vào thì nó không còn là baseline nữa.
 
-    Chỉ tiêu không có trong `donor_values` thì vắng mặt khỏi tập ứng viên;
-    `diagnose_fellegi_holt_donor()` xử lý ca đó bằng cách lấy chính giá trị
-    hiện tại làm mốc, nên nó không bị thua oan vì thiếu donor.
+    Chỉ tiêu không có trong `donor_values` thì vắng mặt khỏi tập ứng viên.
+    Bản chiếu xử lý ca đó bằng cách lấy chính giá trị hiện tại làm mốc; bản
+    thuần loại hẳn trường ấy khỏi tổ hợp vì không có gì để thay vào. Cả hai
+    cách đều tránh cho baseline thua vì một lý do không dính tới nguồn giá trị.
     """
     co_gia_tri = [k for k, v in data.items() if v is not None and k != UNIT_KEY]
     A, field_order = build_matrix(co_gia_tri, identities_for(standard, quy_uoc))
     if A.shape[0] == 0:
-        return dict(data), {"da_chay": True, "verdict": "ABSTAIN",
-                            "ma_ly_do": "thieu_gia_tri",
-                            "ly_do": "không dựng được đẳng thức nào"}
+        bo_cuoc = {"da_chay": True, "verdict": "ABSTAIN",
+                   "ma_ly_do": "thieu_gia_tri",
+                   "ly_do": "không dựng được đẳng thức nào"}
+        return ({"chieu": dict(data), "thuan": dict(data)},
+                {"chieu": bo_cuoc, "thuan": dict(bo_cuoc)})
 
     gia_tri = {k: data[k] for k in field_order}
     ung_vien = {k: [donor_values[k]] for k in field_order if k in donor_values}
 
-    do = diagnose_fellegi_holt_donor(
-        gia_tri, ung_vien, A, field_order, donor_values=donor_values,
-    )
-
-    # `changed_fields` ánh xạ tên -> `Candidate`, KHÔNG phải -> số. Quên
-    # `.value` ở đây thì Candidate lọt vào bộ giá trị và khâu chấm điểm nổ
-    # `TypeError: unsupported operand type(s) for -` — đã cắn thật ngày
-    # 04/09/2026 trên `BKG` và `DGC_2026Q2`.
-    ra = dict(data)
-    for khoa, uv in do.changed_fields.items():
-        ra[khoa] = uv.value
-
-    return ra, {
-        "da_chay": True,
-        "verdict": do.verdict,
-        "n_changed": do.n_changed,
-        # Ghi CẢ giá trị trước và sau, cùng lý do với `da_doi` của phe đề
-        # xuất: chỉ ghi tên chỉ tiêu thì về sau không dựng lại được cột "thô",
-        # mà cột ấy là mốc để đo cả hai phe.
-        "da_doi": {
-            ten: {"truoc": gia_tri[ten], "sau": uv.value, "donor": donor_values.get(ten)}
-            for ten, uv in do.changed_fields.items()
-        },
-        "ma_ly_do": do.ma_ly_do,
-        "ly_do": do.ly_do_abstain,
-        "so_o_co_donor": len(ung_vien),
-        "so_o_xet": len(field_order),
+    ket = {
+        "chieu": diagnose_fellegi_holt_donor(
+            gia_tri, ung_vien, A, field_order, donor_values=donor_values,
+        ),
+        "thuan": diagnose_fellegi_holt_donor_thuan(
+            gia_tri, A, field_order, donor_values,
+        ),
     }
+
+    gia_tri_ra, chung_chi_ra = {}, {}
+    for phe, do in ket.items():
+        # `changed_fields` ánh xạ tên -> `Candidate`, KHÔNG phải -> số. Quên
+        # `.value` ở đây thì Candidate lọt vào bộ giá trị và khâu chấm điểm nổ
+        # `TypeError: unsupported operand type(s) for -` — đã cắn thật ngày
+        # 04/09/2026 trên `BKG` và `DGC_2026Q2`.
+        ra = dict(data)
+        for khoa, uv in do.changed_fields.items():
+            ra[khoa] = uv.value
+        gia_tri_ra[phe] = ra
+
+        chung_chi_ra[phe] = {
+            "da_chay": True,
+            "verdict": do.verdict,
+            "n_changed": do.n_changed,
+            # Ghi CẢ giá trị trước và sau, cùng lý do với `da_doi` của phe đề
+            # xuất: chỉ ghi tên chỉ tiêu thì về sau không dựng lại được cột
+            # "thô", mà cột ấy là mốc để đo mọi phe.
+            "da_doi": {
+                ten: {"truoc": gia_tri[ten], "sau": uv.value,
+                      "donor": donor_values.get(ten)}
+                for ten, uv in do.changed_fields.items()
+            },
+            "ma_ly_do": do.ma_ly_do,
+            "ly_do": do.ly_do_abstain,
+            "so_o_co_donor": len(ung_vien),
+            "so_o_xet": len(field_order),
+        }
+
+    return gia_tri_ra, chung_chi_ra
 
 
 def chay_tang_repair(
@@ -1065,8 +1092,11 @@ def route_document(
         # bật nghĩa là lượt chạy đang phục vụ phép đo H1, và ở đó mọi thứ đọc
         # ràng buộc đều phải im.
         chung_chi_repair = {"da_chay": False, "ly_do": "tang_repair_dang_tat"}
-        chung_chi_baseline9 = {"da_chay": False, "ly_do": "khong_co_donor"}
+        chua_chay_b9 = {"da_chay": False, "ly_do": "khong_co_donor"}
+        chung_chi_baseline9 = dict(chua_chay_b9)
+        chung_chi_baseline9_thuan = dict(chua_chay_b9)
         gia_tri_baseline9: dict | None = None
+        gia_tri_baseline9_thuan: dict | None = None
         if BAT_TANG_REPAIR and not DISABLE_CONSTRAINT_GATE:
             # HAI PHE CHẠY TRÊN CÙNG MỘT `data`, và đó là toàn bộ lý do phép so
             # H3 làm được trong MỘT lượt trích xuất. Cả `chay_tang_repair()` lẫn
@@ -1083,9 +1113,13 @@ def route_document(
             # cache, phe đối thủ lấy từ donor. Ràng buộc "cùng ngân sách gọi
             # model" của H3 vì thế thoả một cách tầm thường, không cần trần cứng.
             if donor_values is not None:
-                gia_tri_baseline9, chung_chi_baseline9 = chay_baseline9(
+                gia_tri_b9, chung_chi_b9 = chay_baseline9(
                     data, standard, quy_uoc, donor_values
                 )
+                gia_tri_baseline9 = gia_tri_b9["chieu"]
+                gia_tri_baseline9_thuan = gia_tri_b9["thuan"]
+                chung_chi_baseline9 = chung_chi_b9["chieu"]
+                chung_chi_baseline9_thuan = chung_chi_b9["thuan"]
 
             data, chung_chi_repair = chay_tang_repair(
                 data, result, standard, quy_uoc,
@@ -1142,6 +1176,10 @@ def route_document(
                 # `da_chay` kèm `ly_do` là chỗ phân biệt.
                 "chung_chi_baseline9": chung_chi_baseline9,
                 "gia_tri_baseline9": gia_tri_baseline9,
+                # Bản THUẦN của baseline 9 — thay thẳng giá trị donor. Đi ra
+                # song song chứ không thay thế bản chiếu: bài báo cáo cả hai.
+                "chung_chi_baseline9_thuan": chung_chi_baseline9_thuan,
+                "gia_tri_baseline9_thuan": gia_tri_baseline9_thuan,
             },
             warnings=da_kiem["warnings"],
         )

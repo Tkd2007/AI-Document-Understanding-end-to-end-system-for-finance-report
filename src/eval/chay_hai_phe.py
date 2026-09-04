@@ -10,14 +10,26 @@ lần gọi ở lượt này, 15 lần ở lượt kia, kết quả khác nhau. 
 thì hai phe nhận đúng cùng một `data`, và hiệu số giữa chúng đo đúng cái cần
 đo.
 
-BA CỘT ĐI RA, và phải giữ cả ba:
+BỐN CỘT ĐI RA, và phải giữ cả bốn:
 
-    tho        đầu ra tầng 1, chưa phe nào đụng vào — mốc "trước"
-    de_xuat    sau `chay_tang_repair()`, ứng viên sinh từ TÀI LIỆU
-    baseline9  sau `diagnose_fellegi_holt_donor()`, ứng viên từ DONOR
+    tho              đầu ra tầng 1, chưa phe nào đụng vào — mốc "trước"
+    de_xuat          sau `chay_tang_repair()`, ứng viên sinh từ TÀI LIỆU
+    baseline9        `diagnose_fellegi_holt_donor()` — donor làm ĐIỂM NEO,
+                     giá trị điền ra do ràng buộc quyết định
+    baseline9_thuan  `diagnose_fellegi_holt_donor_thuan()` — thay THẲNG giá
+                     trị donor, không giải phương trình
 
-Bỏ cột `tho` đi thì không biết phe nào cải thiện được bao nhiêu; bỏ một
-trong hai phe thì không có phép so.
+Bỏ cột `tho` đi thì không biết phe nào cải thiện được bao nhiêu. Hai cột
+baseline là hai đầu của cùng một trục, đo ngày 04/09/2026 mới biết là cần cả
+hai: bản neo hầu như không dùng số donor (17 ô sửa, chỉ 3 ô rơi đúng donor),
+và ở những ca ràng buộc xác định nghiệm duy nhất nó ra kết quả TRÙNG KHÍT với
+`de_xuat` tới từng chữ số — khi ấy phép so không đo được biến số nào. Bản
+thuần yếu hơn nhưng là bản duy nhất thật sự đo được câu hỏi của H3.
+
+LƯU CẢ BỘ SỐ THÔ, không chỉ lưu điểm. Một lượt trích xuất 70 tài liệu tốn
+hàng giờ và tiền API; nếu file kết quả chỉ có điểm thì mỗi biến thể donor mới
+lại phải trả từ đầu. Có bộ số thô kèm `standard` và `quy_uoc_dau` thì mọi biến
+thể donor và mọi biến thể baseline chấm lại được offline, miễn phí.
 
 HAI CHIỀU ĐỀU PHẢI BÁO CÁO, `PREREGISTRATION.md` H3 chốt trước:
 
@@ -93,8 +105,10 @@ def chay_mot_tai_lieu(gold: dict, pdf: Path, donor: dict, nhat_ky) -> dict:
     # `values()` là bộ số SAU khi phe đề xuất đã chạy — đó là cột `de_xuat`.
     de_xuat = ket_qua.values()
     baseline9 = ket_qua.meta.get("gia_tri_baseline9")
+    baseline9_thuan = ket_qua.meta.get("gia_tri_baseline9_thuan")
     cc_dx = ket_qua.meta.get("chung_chi_repair") or {}
     cc_b9 = ket_qua.meta.get("chung_chi_baseline9") or {}
+    cc_b9t = ket_qua.meta.get("chung_chi_baseline9_thuan") or {}
 
     # Cột `tho` dựng ngược từ `de_xuat` bằng cách hoàn tác đúng những ô phe
     # đề xuất đã đổi. Làm vậy thay vì chạy lại pipeline lần hai: chạy lại là
@@ -105,18 +119,31 @@ def chay_mot_tai_lieu(gold: dict, pdf: Path, donor: dict, nhat_ky) -> dict:
 
     diem = {
         "doc_id": gold["doc_id"],
+        "standard": gold["standard"],
         "quy_uoc_dau": ket_qua.meta.get("quy_uoc_dau"),
         "nguon_quy_uoc_dau": ket_qua.meta.get("nguon_quy_uoc_dau"),
         "chung_chi_de_xuat": cc_dx,
         "chung_chi_baseline9": cc_b9,
+        "chung_chi_baseline9_thuan": cc_b9t,
         "so_o_co_donor": cc_b9.get("so_o_co_donor"),
+        # BỘ SỐ THÔ, chỗ đắt nhất của cả lượt chạy. Kèm `standard` và
+        # `quy_uoc_dau` ở trên là đủ dựng lại ma trận ràng buộc, nên mọi biến
+        # thể donor và mọi biến thể baseline chấm lại được offline mà không
+        # phải trích xuất lần nữa.
+        "gia_tri": {
+            "tho": tho,
+            "de_xuat": dict(de_xuat),
+            "baseline9": baseline9,
+            "baseline9_thuan": baseline9_thuan,
+        },
         "tho": cham_mot_cot(tho, that),
         "de_xuat": cham_mot_cot(de_xuat, that),
         "bia_de_xuat": dem_bia(tho, de_xuat, that),
     }
-    if baseline9 is not None:
-        diem["baseline9"] = cham_mot_cot(baseline9, that)
-        diem["bia_baseline9"] = dem_bia(tho, baseline9, that)
+    for cot, gt in (("baseline9", baseline9), ("baseline9_thuan", baseline9_thuan)):
+        if gt is not None:
+            diem[cot] = cham_mot_cot(gt, that)
+            diem["bia_" + cot] = dem_bia(tho, gt, that)
     return diem
 
 
@@ -186,13 +213,13 @@ def main() -> None:
             }, ensure_ascii=False, indent=2), encoding="utf-8")
 
     print(f"\nĐã chấm {len(cac_diem)}/{len(chon)} | hỏng {len(hong)}")
-    print(f"{'cột':<12} {'trường đúng':>20} {'lỗi câm':>20} {'ô bịa':>8}")
-    for cot in ("tho", "de_xuat", "baseline9"):
+    print(f"{'cột':<16} {'trường đúng':>20} {'lỗi câm':>20} {'ô bịa':>8}")
+    for cot in ("tho", "de_xuat", "baseline9", "baseline9_thuan"):
         g = gop(cac_diem, cot)
         if not g["truong_tong"]:
             continue
         bia = "—" if cot == "tho" else sum(d.get(f"bia_{cot}", 0) for d in cac_diem)
-        print(f"{cot:<12} {g['truong_dung']:>6}/{g['truong_tong']:<4} = {g['do_chinh_xac']:.4f}"
+        print(f"{cot:<16} {g['truong_dung']:>6}/{g['truong_tong']:<4} = {g['do_chinh_xac']:.4f}"
               f"  {g['loi_cam_sai']:>5}/{g['loi_cam_co_gia_tri']:<4} = {g['ty_le_loi_cam']:.4f}"
               f"  {bia:>8}")
 

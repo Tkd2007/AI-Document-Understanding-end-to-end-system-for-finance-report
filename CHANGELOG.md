@@ -20,6 +20,51 @@ mục Sửa đổi.
 
 ## 04/09/2026
 
+### Xoay lại vùng OCR nằm ngang — lỗi câm 4,05% xuống 2,94%
+
+Một phần trang báo cáo được quét NẰM NGANG. EasyOCR đọc chữ xoay 90° thì gần
+như mù — 554–812 ký tự thay vì 2300–2900, và **0 ô số**. Không ô số thì
+`repair.neo` không neo được chỉ tiêu vào toạ độ nào, nên tầng sửa lỗi mất sạch
+ứng viên; và nhánh VLM cũng phải đọc chữ nằm ngang, nên nó đánh rơi dấu ngoặc
+âm. Chi tiết chẩn đoán ở commit `2d05551`.
+
+Vá: vùng nào bóc được 0 ô số thì OCR lại ở 270°, rồi 90°, giữ góc cho nhiều ô
+số nhất, và THAY LUÔN `region.image` để nhánh VLM cũng nhận ảnh đã xoay.
+
+Đo trên trọn 70 tài liệu tập gold, **tầng 2 TẮT ở cả hai lượt**, cùng tập nhãn,
+cùng cấu hình (`ocr_first` bật, cuda, poppler). Lượt trước là `7f7401f`.
+
+| Chỉ số | Trước | Sau |
+|---|---:|---:|
+| Trường đúng | 1681/1854 = 90,67% | **1719/1854 = 92,72%** |
+| Lỗi câm | 71/1752 = 4,05% | **52/1771 = 2,94%** |
+| Ô đọc ra được (không null) | 1752 | **1771** |
+| Tài liệu đúng trọn vẹn | 17/70 | **19/70** |
+
+31 vùng phải xoay, tất cả đều ở 270°; 12 tài liệu đổi kết quả, **không tài liệu
+nào tệ đi**.
+
+Sổ chuyển trạng thái từng ô nói rõ hơn hai dòng tỷ lệ trên, vì phép vá lấy lại
+HAI loại thiệt hại chứ không phải một:
+
+| Chuyển | Số ô |
+|---|---:|
+| sai → đúng | 21 |
+| null → đúng | 18 |
+| đúng → sai | 1 |
+| null → sai | 1 |
+
+39 ô được lợi, 2 ô bị hại. Cả hai ô bị hại cùng một kiểu: dòng để TRỐNG trên
+tờ giấy mà máy điền số vào (`DGC_2025Q2.thue_tndn_hoan_lai` và
+`HPG_2026Q2.thue_tndn_hien_hanh`). Trang đọc rõ hơn thì model mạnh dạn hơn, và
+ở dòng trống nó mạnh dạn nhầm chỗ.
+
+Kiểu lỗi câm còn lại, đếm theo chỉ tiêu trên 52 ca: `thue_tndn_hoan_lai` 7 ca,
+`anh_huong_ty_gia` 5, `loi_nhuan_sau_thue` 5, `thue_tndn_hien_hanh` 4. Nhóm
+"dòng trống bị điền số" chiếm khoảng một phần tư tổng số lỗi câm và là việc
+đáng làm tiếp theo.
+
+
 ### Bốn bản vá sau lượt chấm đầy đủ đầu tiên — lỗi câm 5,48% xuống 4,05%
 
 Lượt chấm 70 tài liệu ngày 03/09 lộ ra bốn khuyết tật, ba trong bốn nằm ở

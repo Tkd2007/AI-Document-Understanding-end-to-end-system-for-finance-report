@@ -36,12 +36,11 @@ chép lại vào đây:
   lấy bằng máy trong vài giây: `python .claude/skills/chay-tap-gold/tien_kiem.py`
   in số file, tỷ lệ TT99/TT200, phân bố quy ước dấu và mọi vấn đề chặn lượt
   chấm. Chỗ còn hở: `data/nguon_gold.json` mới khai một phần nhỏ (mục 19.6).
-- **Số thật mới nhất — THUỘC ĐỢT NHÃN CŨ.** 81,5% trường đúng, lỗi câm 10,0%
-  (lượt gold 27/08); sau bản vá dấu `a0cd5ab` là **83,8%** và **7,5%**; lỗi câm
-  không quy giản được **1,25%**, vì 21/24 lỗi câm là hai con bug (mục 20). Cả
-  ba con số đo trên 11 tài liệu của đợt nhãn CŨ, trước khi đổi quy ước dấu.
-  **Chưa có lượt chấm nào trên tập gold hiện tại**, nên đừng cộng dồn hay dẫn
-  lại chúng như số của tập mới.
+- **Số đo mới nhất KHÔNG chép ở đây — đọc `CHANGELOG.md`, hai mục đầu.**
+  Tính tới 05/09/2026 đã có ba lượt chấm trên tập gold hiện tại: hai lượt 70
+  tài liệu với tầng 2 TẮT (trước và sau phép xoay vùng), và một lượt H3 đủ ba
+  phe trên 28 tài liệu. Mọi con số cũ đo trên 11 tài liệu của đợt nhãn CŨ đều
+  đã lỗi thời — **đừng dẫn lại chúng**.
 
 ---
 
@@ -86,8 +85,31 @@ thì **hỏi lại đúng những câu dưới đây chứ đừng tự chọn**
 khoa học chứ không phải chi tiết cài đặt. Người dùng trả lời được bằng một tin
 nhắn duy nhất, dạng "Câu 8 chọn ...".
 
-**Đang chờ: Câu 3 (nội dung đã mất), Câu 8, và Câu 14 (MỚI 28/08).** Không câu
-nào chặn việc gán nhãn, nhưng **Câu 14 chặn mọi bảng kết quả gộp qua tài liệu**.
+**Đang chờ: Câu 3 (nội dung đã mất), Câu 8, Câu 14 (28/08), và Câu 15 (MỚI
+05/09).** Không câu nào chặn việc gán nhãn, nhưng **Câu 14 chặn mọi bảng kết
+quả gộp qua tài liệu**, còn **Câu 15 chặn lượt H3 kế tiếp**.
+
+**Câu 15 — MỚI: chỉ tiêu KHÔNG CÓ VÙNG trên trang thì ứng viên của nó có phải
+là 0 không?** Lượt H3 ngày 05/09 (`CHANGELOG.md`, mục đầu) tách 49 ô sai làm
+hai loại và cho thấy: trên 14 ô mà tờ giấy để TRỐNG còn máy bịa ra số, phe đề
+xuất chữa được **0 ô** — tất yếu, vì không đọc lại được một con số chưa từng
+in ra — và **cả 4 ô nó làm hỏng đều nằm ở đúng loại này**. Trạng thái neo của
+chúng là `khong_co_vung`.
+
+Đề xuất: khi một chỉ tiêu không neo được vào vùng nào, ứng viên duy nhất của
+nó là **0**, vì tờ giấy không in gì cho dòng ấy. Lập luận bênh: đó vẫn là một
+kết luận rút từ TỜ GIẤY (dòng trống là một quan sát), không phải mượn từ phân
+phối ngành. Lập luận chống: nó làm phe đề xuất bắt chước đúng cơ chế thắng của
+donor thô, và người phản biện có thể đọc là vay mượn.
+
+Kèm theo, câu phụ: **có nới trần `max_changes` từ 2 lên 3–4 không?** Đo được
+ngày 05/09: trần chỉ thực sự chặn ĐÚNG 2 tài liệu (`HPG_2022Q2` sai 3 ô,
+`HVG_2020Q1` sai 5 ô); 8 tài liệu còn lại phe đề xuất bỏ qua vì thiếu ứng viên
+chứ không vì trần. Nới trần vì vậy là khoản nhỏ, và mục 5.3 đã chốt trần là
+HẠN CHẾ CỦA PHƯƠNG PHÁP chứ không phải tham số tinh chỉnh.
+
+Cả hai đều là thay đổi thiết kế thí nghiệm nên phải vào mục Sửa đổi của
+`PREREGISTRATION.md` **TRƯỚC** khi chạy. *Chặn lượt H3 kế tiếp.*
 
 **Câu 8 — có tiêm nhiều hơn một lỗi mỗi lượt ở tầng XBRL không?** Phép đo
 `do_nghich_dao_mot_loi.py` cho thấy tầng XBRL tiêm đúng một lỗi mỗi lượt, mà lỗi
@@ -848,22 +870,35 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
 
 Đường găng đi qua **tầng gold**, không còn qua Mốc 3.
 
-> **Trạng thái 03/09/2026 tối.** Lượt chấm ĐẦY ĐỦ 70 tài liệu đã chạy xong
-> một lần rồi chạy lại lần hai sau khi vá bốn khuyết tật nó lộ ra. **Lượt 2
-> là mốc dùng được: lỗi câm 4,05%, trường đúng 90,67%.** **Đọc mục 17.4
-> trước mọi việc khác** — nó có kết quả, bốn bản vá kèm số đo, ba việc còn
-> treo xếp theo giá trị, và ba chế độ lỗi câm đã đặt tên. Việc 1 và 2 dưới
-> đây viết khi tập gold còn 11 tài liệu; lượt đầy đủ thay thế cả hai.
+> **Trạng thái 05/09/2026.** Phiên 04–05/09 đã chạy ba lượt chấm và đóng
+> được hai việc lớn. **Số đo ở `CHANGELOG.md`, hai mục đầu — không chép lại
+> vào đây.** Tóm tắt trạng thái:
+>
+> - **Phép xoay vùng OCR đã thi công và đo xong** (`2d05551`). Một phần trang
+>   được quét nằm ngang; EasyOCR đọc chữ xoay thì bóc được 0 ô số, kéo theo
+>   `repair.neo` mất sạch ứng viên VÀ nhánh VLM đánh rơi dấu ngoặc âm. Vá bằng
+>   cách OCR lại ở 270° rồi 90° khi một vùng ra 0 ô số, và THAY LUÔN
+>   `region.image` để nhánh VLM cũng nhận ảnh thẳng.
+> - **Lượt H3 đầu tiên có đủ ba phe đã chạy** trên 28 tài liệu — 42 tài liệu
+>   còn lại có bảng cân đối khớp sẵn nên cả ba phe cùng VERIFIED. Kết quả tổng
+>   thể là **tiêu cực cho H3** và phải giữ nguyên; nhưng tách theo LOẠI LỖI thì
+>   hiệu số đảo chiều. Đọc mục đầu `CHANGELOG.md` trước mọi việc khác.
+> - **Bảng điểm nay lưu cả BỘ SỐ THÔ** (`014ffa1`), nên mọi biến thể donor và
+>   mọi biến thể baseline chấm lại được offline, miễn phí. Hai phe đối thủ
+>   không cần đọc tài liệu — chỉ phe đề xuất mới phải chạy lại pipeline.
+> - **Một lượt 70 tài liệu tốn ~9,5 giờ**, đo thật: 12:41 tới 22:06 ngày
+>   04/09, khoảng 8 phút một tài liệu. Thời gian nằm trọn ở hàng đợi API tầng
+>   miễn phí, không ở máy.
 
-1. **Chạy lại `--chi BMP SBT`** — một lượt chạy trả lời được BA câu cùng lúc,
-   nên nó là việc rẻ nhất trên bàn:
-   *(a)* bản vá nới mép có đọc ra dòng "Đơn vị tính" không (mục 20.5b);
-   *(b)* bộ đếm kiên nhẫn của nhánh OCR tiết kiệm được bao nhiêu giờ (mục 12.2);
-   *(c)* probe mất bao nhiêu trang vì bộ đếm ấy — so `probe_so_trang` với
-   lượt 27/08. Xem bẫy `--tiep-tuc` ở 20.2.
-2. **Chẩn đoán SBT** — 10/24 lỗi câm, nghi lỗi **chọn nguồn** (mục 20.4). Đây
-   là khoản lớn nhất còn lại, và luật dấu **chứng minh được là không chạm tới
-   nó**: bộ số lấy từ bảng khác tự nó cũng cân nên residual bằng 0 tuyệt đối.
+1. **Trả lời Câu 15 rồi thi công chốt chặn dòng trống** (mục 0). Đây là khoản
+   lớn nhất còn lại của phe đề xuất: nó xoá được cả 4 ô bịa và có thể biến vài
+   ca thành sửa đúng. Phải ghi tu chính `PREREGISTRATION.md` trước.
+2. **Gán nhãn 50 tài liệu mới ở `data/bctc/new/`** (mục 19.6). Lượt H3 kết luận
+   "5 ô so với 0 ô" trên loại lỗi đọc rơi chữ số — **n = 5 quá nhỏ để dựng
+   khoảng tin cậy**, và 50 tài liệu mới là chỗ lấy thêm ca thuộc loại ấy.
+3. **Mổ `VHC_2025Q1`** — 17/26, tài liệu tệ nhất tập gold. Sai 4 ô lớn của bảng
+   cân đối CÙNG LÚC nên không phe nào chạm tới được, và nó không có trang nằm
+   ngang nên phép xoay không giúp gì. Chưa rõ chế độ lỗi.
 3. **XONG 02/09/2026 — gán nhãn lại tập gold từ đầu** theo guideline mới, chép
    nguyên văn kèm `quy_uoc_dau` đọc từ tờ giấy (tu chính 01/09/2026). Tầng gold
    vì thế **không còn bị chặn**, và chưa có lượt chấm nào chạy trên tập mới.
@@ -1228,6 +1263,24 @@ quét không lớp text.
 Nguồn của từng file ở `data/bctc/NGUON.md` — file này **nằm ngoài git** (dính
 `data/bctc/*` trong `.gitignore`) nên nó chỉ có trên máy người chủ trì; bảng
 sắp theo mã cổ phiếu từ 01/09/2026.
+
+**ĐỢT TẢI 04/09/2026 — 50 PDF CHƯA GÁN NHÃN ở `data/bctc/new/`.** Để riêng
+thư mục con vì `data/bctc/` là đầu vào của lượt chấm: mọi file ngoài đó đều đã
+có nhãn tay tương ứng, nên thêm file chưa nhãn vào sẽ làm khâu tiền kiểm báo
+thiếu. Gán nhãn xong file nào thì chuyển file ấy ra ngoài và chép dòng link
+sang bảng của `NGUON.md` ngoài kia.
+
+Thành phần: 25 TT99 và 25 TT200, trải các năm 2021–2026, 45 báo cáo hợp nhất
+và 5 báo cáo riêng của công ty mẹ; **cả 50 mã đều khác 65 mã đã có**, và đều
+là doanh nghiệp phi tài chính. Link ở `data/bctc/new/NGUON.md`, cũng nằm ngoài
+git theo đúng lệ trên.
+
+**Chuẩn kế toán trong tên file mới là SUY RA từ mốc hiệu lực của Thông tư
+99/2025 (01/01/2026), chưa phải bằng chứng.** Đã kiểm bằng số hiệu thông tư in
+trong tài liệu và **chỉ 3/50 file xác nhận được** — 41 file là bản quét không
+có lớp text, 6 file có text nhưng không in số hiệu. Người gán nhãn phải tự xác
+nhận chuẩn khi mở tài liệu và đổi tên file nếu lệch; mục này đã có tiền lệ
+đúng chỗ đó với 30 file TT99 của đợt trước.
 
 **Chín tài liệu bị loại 01/09/2026 vì tổ chức phát hành là tổ chức tài chính**
 — `MBB`, `STB`, `TCB`, `VCB`, `VPB`, `KLB`, `VIB`, `SSI`, `BVH`. Lý do đầy đủ

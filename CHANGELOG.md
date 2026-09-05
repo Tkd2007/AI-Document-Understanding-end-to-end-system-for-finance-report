@@ -20,6 +20,51 @@ mục Sửa đổi.
 
 ## 05/09/2026
 
+### Nhãn gold: 4 tài liệu KHÔNG CÂN, 15 tài liệu lệch cỡ làm tròn
+
+*Đã đo,* `src/eval/do_lech_gold.py` → `docs/nhan-gold-khong-can.md`.
+
+Chấm chín đẳng thức kế toán trên chính NHÃN GOLD, tức trên đáp án. Đây là phép
+đo chưa từng chạy, và nó đổi cách đọc mọi con số của tầng gold: khi đáp án
+không cân, phương pháp nào cũng thấy bảng lệch rồi đi sửa một ô vốn đã đúng, và
+bị chấm là làm hỏng.
+
+| Nhóm | Số tài liệu | Nguyên nhân | Xử lý |
+|---|---:|---|---|
+| Thiếu mã 62 của B03 trong code | 2 | B03 hợp nhất có hai dòng tỷ giá, bộ chỉ tiêu chỉ có một | Câu 16, chờ quyết |
+| Chính bản in đã không cân | 2 | `FLC`, `DVD` — ghi chú của người gán nhãn xác nhận | Không sửa; phải khai trong bài và loại khỏi mẫu số |
+| Lệch cỡ làm tròn | 15 | 10 đồng tới 1 triệu trên bộ số cỡ nghìn tỷ | Câu 17, chờ quyết |
+
+Khoảng trống giữa hai nhóm cuối rất rộng — nhóm làm tròn lớn nhất 1 triệu,
+nhóm lệch thật nhỏ nhất 51,7 triệu — nên ranh giới không phải chuyện chọn
+ngưỡng tuỳ tiện. Chi tiết từng mã số và biểu mẫu ở `HANDOFF.md` mục 19.7.
+
+### Câu 14 đóng — ràng buộc "chặn mọi phân tích gộp qua tài liệu" được GỠ
+
+*Không đo được* (đổi kết luận, không đổi con số).
+
+Câu 14 cho rằng `HNG_2025H1` in số dương dưới nhãn "Lỗ thuần" nên quy ước dấu
+của nó ngược với phần còn lại của tập. Người chủ trì mở tờ giấy ra kiểm: tài
+liệu mang dấu ở CẢ HAI chỗ — tên dòng "Lỗ thuần" VÀ ngoặc đơn quanh con số.
+Luật chép-nguyên-văn đã xử lý đúng, nhãn đang lưu là âm, chín đẳng thức cân với
+phần dư bằng 0.
+
+**Không có xung đột quy ước giữa các tài liệu.** Ràng buộc chặn mọi bảng kết
+quả gộp qua tài liệu, có hiệu lực từ 28/08, nay được gỡ.
+
+### Baseline 7 và chỗ đo H2 — CHƯA đo
+
+*CHƯA đo.* `src/repair/ged.py` và `src/eval/h2.py`. Baseline bắt buộc của H2
+theo `PREREGISTRATION.md`, và chỗ đo Top-1/Top-3 cho bốn phương pháp. Lượt thử
+3 hồ sơ ở `HANDOFF.md` mục 16.1 — **không phải kết quả H2**, chỉ để xác nhận
+chỗ đo chạy. Lượt đủ 26 hồ sơ đang xếp lịch.
+
+### Luật dòng trống và trần sửa 3 — CHƯA đo
+
+*CHƯA đo.* Tu chính `PREREGISTRATION.md` 05/09. Hai thay đổi này sẽ đổi con số
+của tầng gold nhưng **chưa có lượt chạy nào sau khi thi công**, nên không được
+viết vào bài như một cải thiện.
+
 ### H3 lượt đầu có đủ ba phe — phe đề xuất THUA tổng thể, THẮNG trên loại lỗi của nó
 
 Lượt chấm đầu tiên chạy cả phương pháp đề xuất lẫn HAI bản baseline 9 trong

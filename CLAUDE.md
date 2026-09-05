@@ -67,7 +67,8 @@ thời. Một sự thật có **đúng một nhà**:
 | Sửa đơn vị tính, bậc độ lớn | `HANDOFF.md` mục 20.8; `src/fields_config.py` quanh `UNIT_KEY` |
 | Sửa tầng repair, sinh ứng viên, định vị | `HANDOFF.md` mục 5.8, 13 |
 | Sửa nhánh OCR, dừng sớm, probe dò dòng | `HANDOFF.md` mục 12.2, Phụ lục B |
-| Chạy chấm tập gold | **chạy thẳng hai lệnh ở mục Lệnh hay dùng**; cần tham chiếu thì kỹ năng `chay-tap-gold` |
+| Chạy chấm tập gold | **Câu 17 đang chặn** — đọc `HANDOFF.md` mục 0 trước. Hết chặn thì chạy thẳng hai lệnh ở mục Lệnh hay dùng; cần tham chiếu thì kỹ năng `chay-tap-gold` |
+| Đụng vào nhãn gold, hay đọc chỗ nhãn không cân | **`HANDOFF.md` mục 19.7** — và ĐỌC `notes` của chính file gold trước khi kết luận, 10/70 file có ghi chú giải thích sẵn |
 | Gán nhãn tập gold | `ANNOTATION-GUIDELINE.md`; `HANDOFF.md` mục 19 |
 | Đọc / dựng bảng kết quả cho bài | `HANDOFF.md` mục 13.2, 20.4; `CHANGELOG.md` |
 | Đụng vào tầng XBRL Mỹ | `HANDOFF.md` mục 5.2, 13 |
@@ -137,7 +138,11 @@ python -m ruff check src tests && python -m pytest -q   # sau MỖI thay đổi
 python src/router.py data/samples/<file>.pdf            # chạy pipeline một tài liệu
 python chay_gan_nhan.py --pdf-dir data/bctc             # công cụ gán nhãn, cổng 8100
 
-# Chấm tập gold — hai lệnh này là ĐỦ, không cần đọc tài liệu nào trước.
+# Dò nhãn gold không cân. Miễn phí, offline, vài giây. Chạy lại sau MỖI lần
+# sửa nhãn. In kèm `notes` của người gán nhãn — ĐỌC nó trước khi kết luận.
+PYTHONIOENCODING=utf-8 PYTHONPATH=src     python src/eval/do_lech_gold.py > docs/nhan-gold-khong-can.md
+
+# Chấm tập gold. CÂU 17 ĐANG CHẶN lượt kế tiếp — đọc HANDOFF.md mục 0 trước.
 # Lệnh đầu miễn phí: sao lưu kết quả cũ, tiền kiểm tập gold, in hiện trạng;
 # thoát mã 1 thì DỪNG, đừng chạy lệnh sau. Lệnh sau tốn tiền API, chạy hàng giờ.
 python .claude/skills/chay-tap-gold/tien_kiem.py

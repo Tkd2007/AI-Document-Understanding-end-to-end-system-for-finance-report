@@ -94,8 +94,17 @@ thì **hỏi lại đúng những câu dưới đây chứ đừng tự chọn**
 khoa học chứ không phải chi tiết cài đặt. Người dùng trả lời được bằng một tin
 nhắn duy nhất, dạng "Câu 8 chọn ...".
 
-**Đang chờ: Câu 3 (nội dung đã mất) và Câu 14 (28/08).** Câu 14 chặn mọi bảng
-kết quả gộp qua tài liệu.
+**Đang chờ: chỉ còn Câu 3 (nội dung đã mất), và nó không chặn việc gì.**
+
+**Câu 14 ĐÓNG ngày 05/09/2026 — tiền đề sai, không phải được giải quyết.** Nó
+cho rằng `HNG_2025H1` in số DƯƠNG dưới nhãn "Lỗ thuần", nên quy ước dấu của
+HNG ngược với phần còn lại của tập gold. Người chủ trì mở tờ giấy ra kiểm ngày
+05/09: tài liệu mang dấu ở **cả hai chỗ** — tên dòng ghi "Lỗ thuần" VÀ con số
+in trong ngoặc đơn `(154.594.725)`. Luật chép-nguyên-văn của mục 3.3 đã xử lý
+đúng ca này, nhãn đang lưu là `-154.594.725.000`, và chín đẳng thức của nó cân
+với phần dư bằng 0. **Không có xung đột quy ước giữa các tài liệu, nên ràng
+buộc "chặn mọi phân tích gộp qua tài liệu" được GỠ.** Lý do đầy đủ ở mục Sửa
+đổi 05/09/2026 của `ANNOTATION-GUIDELINE.md`.
 
 **Câu 8 và Câu 15 ĐÃ ĐÓNG ngày 05/09/2026**, cả hai đã ghi tu chính vào
 `PREREGISTRATION.md` và đã thi công — nội dung nguyên văn của hai câu chuyển
@@ -113,22 +122,6 @@ sang `docs/lich-su/HANDOFF-da-dong.md`, giữ nguyên số câu. Tóm tắt quy�
 > ngày 05/09/2026.** Nội dung nguyên văn — gồm cả lập luận bênh và chống
 > từng phương án — ở `docs/lich-su/HANDOFF-da-dong.md`, giữ nguyên số câu.
 > Quyết định và lý do đầy đủ ở hai mục 05/09/2026 của `PREREGISTRATION.md`.
-
-**Câu 14 — MỚI: quy ước dấu của HNG ngược với phần còn lại của tập gold.**
-`HNG_2025H1_TT200` lỗ, và báo cáo đổi tên dòng thành "Lỗ thuần từ hoạt động
-kinh doanh" rồi in số DƯƠNG — nhãn mang dấu, con số chỉ mang độ lớn. Gold chép
-đúng như in theo guideline mục 3.3, nên `ln_thuan_hdkd` của HNG dương trong khi
-cùng chỉ tiêu ở tài liệu khác âm khi lỗ. **Không khoá nào trong file gold khai
-ra chuyện đó**, và ràng buộc kế toán chứng minh được là không phân xử được —
-lật dấu trọn một hệ con nhất quán vẫn cân. Chi tiết và hai đường ra ở mục
-20.4b. *Chặn mọi phân tích gộp qua tài liệu.*
-
-> **Tu chính 01/09/2026 KHÔNG giải quyết câu này.** `quy_uoc_dau` chỉ chi
-> phối hai dòng khấu trừ của B02 (mã 11, và cặp 51/52 qua đẳng thức mã 60).
-> Mã 30 không phải dòng khấu trừ — dấu của nó là số liệu — nên ca HNG, nơi
-> NHÃN DÒNG mang dấu còn con số chỉ mang độ lớn, vẫn nguyên vẹn là một câu
-> hỏi mở. Luật mới chỉ làm chỗ này nhất quán hơn: chép như in nay là quy
-> tắc chung chứ không còn là ngoại lệ của riêng mã 30.
 
 **Câu 3 — NỘI DUNG CÂU ĐÃ MẤT.** Câu này được liệt kê là đang chờ nhưng nguyên
 văn không còn ở bất kỳ file nào trong repo — chỉ còn cái tên; nó nằm trong phần

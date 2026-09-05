@@ -585,6 +585,33 @@ small-cap thì đó là bằng chứng rò rỉ dữ liệu và **phải báo c�
 > Mọi thay đổi guideline ghi vào đây kèm **ngày** và **lý do**, và ghi rõ
 > **những tài liệu nào phải gán nhãn lại**. Không sửa đè lên nội dung trên.
 
+### 05/09/2026 — Tài liệu mang dấu ở CẢ tên dòng lẫn ngoặc đơn: luật cũ đã đủ
+
+**Chỗ sửa:** không sửa quy tắc nào. Mục này ghi lại một ca đã từng bị hiểu
+nhầm là ngoại lệ, để người sau khỏi mở lại.
+
+**Ca cụ thể.** `HNG_2025H1_TT200` lỗ trong kỳ, và báo cáo vừa đổi tên dòng
+thành *"**Lỗ** thuần từ hoạt động kinh doanh"* vừa in con số trong **ngoặc
+đơn**: `(154.594.725)`. Tức tài liệu mang dấu âm ở **hai chỗ cùng lúc** — một
+lần trong chữ, một lần trong ngoặc.
+
+**Ghi thế nào: theo NGOẶC ĐƠN, tức số ÂM.** Đây không phải quy tắc mới mà là
+mục 3.3 áp thẳng — chép nguyên văn con số như in, ngoặc đơn là âm — và cố ý
+KHÔNG đọc tên dòng như một dấu thứ hai. Lý do: tên dòng là **văn xuôi**, mỗi
+doanh nghiệp đặt một kiểu, còn ngoặc đơn là **ký hiệu kế toán** có nghĩa cố
+định. Cho tên dòng quyền lật dấu là mở cửa cho người gán nhãn diễn giải, đúng
+thứ mục 3.3 dựng lên để chặn.
+
+**Không tài liệu nào phải gán nhãn lại.** `HNG_2025H1_TT200` đã được người chủ
+trì kiểm lại tận mắt ngày 05/09/2026 và giá trị đang lưu là `-154.594.725.000`
+— đúng luật. Chín đẳng thức của nó cân chính xác, phần dư bằng 0.
+
+**Câu 14 của `HANDOFF.md` mục 0 đóng theo mục này.** Câu ấy viết ngày
+28/08/2026 dựa trên tiền đề rằng HNG in số **dương** dưới nhãn "Lỗ thuần", và
+kết luận rằng quy ước dấu của HNG ngược với phần còn lại của tập gold. Tiền đề
+sai: tờ giấy có ngoặc đơn. Không có xung đột quy ước nào giữa các tài liệu,
+nên **ràng buộc "chặn mọi phân tích gộp qua tài liệu" được gỡ**.
+
 ### 01/09/2026 (muộn hơn) — Chép NGUYÊN VĂN, và quy ước dấu thành một trường
 
 **Chỗ sửa:** mục 3.3 viết lại trọn; mục 8 đổi hai mục kiểm và thêm hai mục

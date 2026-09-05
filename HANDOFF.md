@@ -41,6 +41,15 @@ chép lại vào đây:
   tài liệu với tầng 2 TẮT (trước và sau phép xoay vùng), và một lượt H3 đủ ba
   phe trên 28 tài liệu. Mọi con số cũ đo trên 11 tài liệu của đợt nhãn CŨ đều
   đã lỗi thời — **đừng dẫn lại chúng**.
+- **SẢN PHẨM CHẠY CỦA CẢ BA LƯỢT ẤY KHÔNG CÒN TRÊN ĐĨA** (kiểm 05/09/2026).
+  Lần ghi cuối vào `data/output/` là **31/08 15:58**; không có `hai_phe_*.json`
+  nào, không có bản sao lưu `...2026-09-04-1239.json` mà bản bàn giao trước
+  dặn giữ, và `metrics.jsonl` không có dòng nào của 03–05/09. Đã tìm cả repo,
+  thư mục cha, `C:\Users\Danh` và toàn bộ scratchpad phiên cũ. Hệ quả: **không
+  còn mốc "trước"**, **không chấm lại offline được** (bộ số thô mà `014ffa1`
+  lưu nằm trong chính file đã mất), và **không mổ được `VHC_2025Q1`**. Số ở
+  `CHANGELOG.md` vì vậy là hồ sơ DUY NHẤT của ba lượt ấy, không tái dựng được
+  nếu không chạy lại. Người chủ trì đã quyết **khoan chạy lại** (05/09).
 
 ---
 
@@ -535,6 +544,12 @@ Ghi lại để phiên sau không "sửa ngược" theo spec.
    mới không có trong spec.** Cái đầu để trả lời câu hỏi thật của Mốc 1 bằng
    số thay vì cảm tính; cái sau để trả lời mục "engine OCR không được để
    trống" mà không phải chờ tập gold.
+11. **Baseline 7 (`src/repair/ged.py`) CỐ Ý không dùng interface `Diagnosis`.**
+   Spec chỉ đặc tả hai baseline "cùng interface" là 8 và 9, cả hai đều là tầng
+   SỬA. Baseline 7 là kiểm định ĐỊNH VỊ: nó trả bảng xếp hạng nghi ngờ cho
+   `localization_top_k`, không trả giá trị sửa. Ép nó vào `Diagnosis` là buộc
+   nó phải sửa, mà cho nó sửa thì nó thành baseline 8 dưới tên khác và H2 mất
+   đối chứng thuần định vị. **Đừng "sửa ngược" cho khớp spec.**
 
 ---
 
@@ -886,6 +901,9 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
 > - **Bảng điểm nay lưu cả BỘ SỐ THÔ** (`014ffa1`), nên mọi biến thể donor và
 >   mọi biến thể baseline chấm lại được offline, miễn phí. Hai phe đối thủ
 >   không cần đọc tài liệu — chỉ phe đề xuất mới phải chạy lại pipeline.
+>   **Nhưng khả năng đó hiện chưa dùng được:** cơ chế nằm trong code, còn bảng
+>   điểm chứa bộ số thô thì đã mất cùng ba lượt chạy (xem khối đầu file). Lượt
+>   chấm kế tiếp là lượt đầu tiên khả năng này thật sự dùng được.
 > - **Một lượt 70 tài liệu tốn ~9,5 giờ**, đo thật: 12:41 tới 22:06 ngày
 >   04/09, khoảng 8 phút một tài liệu. Thời gian nằm trọn ở hàng đợi API tầng
 >   miễn phí, không ở máy.
@@ -912,8 +930,16 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
 6. **Bước D của phương án C** — nhận diện chuẩn mẫu biểu (Phụ lục B). Cùng họ
    với việc 2: cả hai là "thứ cần đọc nằm ngoài vùng bảng đã cắt". Chạy lại
    `tieu_de_trong_vung_cat` trên 10 tài liệu thay vì một.
-7. **Ba baseline còn thiếu: 4, 5, 7.**
-8. **Bật `n_samples > 1`** — không có nó thì H1 không đo được (mục 20.6).
+7. **Còn thiếu baseline 4 và 5**; cả hai chặn bởi cùng một thứ — pipeline chưa
+   xuất confidence ở đâu cả, và baseline 4 còn tốn lượt gọi model. **Baseline 7
+   XONG 05/09/2026** (`src/repair/ged.py`, `2392e71`): kiểm định GED cổ điển,
+   parity space + GLR một-lỗi, trả bảng xếp hạng nghi ngờ chứ không sửa. Lý do
+   thiết kế nằm trong docstring của chính file, đừng chép lại ra đây.
+   **Chưa có runner H2**: `eval.metrics.localization_top_k` tới nay không chỗ
+   nào gọi ngoài test, nên baseline 7 có mà chưa sinh ra con số nào. Chỗ nối
+   tự nhiên là `src/eval/moc3.py` vì nó đã biết field nào bị tiêm lỗi.
+8. **Bật `n_samples > 1`** — không có nó thì H1 không đo được (mục 20.6), và
+   đây cũng là thứ mở khoá baseline 3 lẫn confidence cho baseline 5.
 9. Sau đó: **C3** (vòng lặp đọc lại) → **C4** (verdict) → chạy Mốc 3 TRÊN TẦNG
    GOLD → D2/D3/D4. **Chỉ bước đó mới đóng được Mốc 3.**
 

@@ -142,6 +142,11 @@ python chay_gan_nhan.py --pdf-dir data/bctc             # công cụ gán nhãn,
 # thoát mã 1 thì DỪNG, đừng chạy lệnh sau. Lệnh sau tốn tiền API, chạy hàng giờ.
 python .claude/skills/chay-tap-gold/tien_kiem.py
 PYTHONIOENCODING=utf-8 PYTHONPATH=src python src/eval/chay_tap_gold.py --chuan-tu-gold
+
+# ĐANG XẾP LỊCH — lượt H2 đủ trên tầng XBRL. KHÔNG tốn API, chạy offline,
+# nhưng chiếm máy khoảng 20 giờ (26 hồ sơ × 4 chế độ lỗi × 5 seed × 3 mức số
+# lỗi). Người chủ trì hoãn ngày 05/09/2026; chạy khi máy rảnh cả đêm.
+PYTHONIOENCODING=utf-8 PYTHONPATH=src python -u src/eval/moc3.py > data/output/moc3_h2.md
 ```
 
 Danh mục lệnh đầy đủ — chấm tập gold, đo luật dấu, tầng XBRL, đo độ phân giải

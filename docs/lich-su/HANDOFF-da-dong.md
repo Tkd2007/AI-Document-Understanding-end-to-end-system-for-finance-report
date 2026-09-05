@@ -1039,3 +1039,46 @@ duy nhất** ngay trước khi nộp, không tra liên tục.
 
 
 ---
+
+---
+
+## Câu 15 và Câu 8 — đã đóng 05/09/2026
+
+Nguyên văn hai câu hỏi lúc còn đang chờ, chuyển từ `HANDOFF.md` mục 0 sang
+đây khi người chủ trì trả lời. Giữ lại vì lập luận BÊNH và CHỐNG của từng
+phương án là thứ phải dựng lại được khi viết phần thảo luận của bài, và vì
+quyết định cuối cùng chỉ đọc được đúng nghĩa khi biết nó đã bác cái gì.
+
+**Quyết định:** Câu 15 — cho phép, bản hẹp theo `CO_THE_VANG_MAT`; câu phụ
+nâng trần `max_changes` lên 4, ngược với khuyến nghị giữ 2. Câu 8 — tiêm
+nhiều ô, quét `n ∈ {1, 2, 3}`. Cả hai đã ghi tu chính vào
+`PREREGISTRATION.md` ngày 05/09/2026 và đã thi công.
+
+**Câu 15 — MỚI: chỉ tiêu KHÔNG CÓ VÙNG trên trang thì ứng viên của nó có phải
+là 0 không?** Lượt H3 ngày 05/09 (`CHANGELOG.md`, mục đầu) tách 49 ô sai làm
+hai loại và cho thấy: trên 14 ô mà tờ giấy để TRỐNG còn máy bịa ra số, phe đề
+xuất chữa được **0 ô** — tất yếu, vì không đọc lại được một con số chưa từng
+in ra — và **cả 4 ô nó làm hỏng đều nằm ở đúng loại này**. Trạng thái neo của
+chúng là `khong_co_vung`.
+
+Đề xuất: khi một chỉ tiêu không neo được vào vùng nào, ứng viên duy nhất của
+nó là **0**, vì tờ giấy không in gì cho dòng ấy. Lập luận bênh: đó vẫn là một
+kết luận rút từ TỜ GIẤY (dòng trống là một quan sát), không phải mượn từ phân
+phối ngành. Lập luận chống: nó làm phe đề xuất bắt chước đúng cơ chế thắng của
+donor thô, và người phản biện có thể đọc là vay mượn.
+
+Kèm theo, câu phụ: **có nới trần `max_changes` từ 2 lên 3–4 không?** Đo được
+ngày 05/09: trần chỉ thực sự chặn ĐÚNG 2 tài liệu (`HPG_2022Q2` sai 3 ô,
+`HVG_2020Q1` sai 5 ô); 8 tài liệu còn lại phe đề xuất bỏ qua vì thiếu ứng viên
+chứ không vì trần. Nới trần vì vậy là khoản nhỏ, và mục 5.3 đã chốt trần là
+HẠN CHẾ CỦA PHƯƠNG PHÁP chứ không phải tham số tinh chỉnh.
+
+Cả hai đều là thay đổi thiết kế thí nghiệm nên phải vào mục Sửa đổi của
+`PREREGISTRATION.md` **TRƯỚC** khi chạy. *Chặn lượt H3 kế tiếp.*
+
+**Câu 8 — có tiêm nhiều hơn một lỗi mỗi lượt ở tầng XBRL không?** Phép đo
+`do_nghich_dao_mot_loi.py` cho thấy tầng XBRL tiêm đúng một lỗi mỗi lượt, mà lỗi
+đơn định vị được lại chính là ca bộ giải liên tục nghịch đảo trọn vẹn — tức
+thiết kế đang chọn **ca thuận lợi nhất cho baseline 9**. Đây là thay đổi thiết
+kế thí nghiệm nên phải vào mục Sửa đổi của `PREREGISTRATION.md` **TRƯỚC** khi
+chạy. Số đo và lập luận ở mục 13.3–13.4. *Chỉ chặn lượt chạy Mốc 3 kế tiếp.*

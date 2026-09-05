@@ -94,38 +94,25 @@ thì **hỏi lại đúng những câu dưới đây chứ đừng tự chọn**
 khoa học chứ không phải chi tiết cài đặt. Người dùng trả lời được bằng một tin
 nhắn duy nhất, dạng "Câu 8 chọn ...".
 
-**Đang chờ: Câu 3 (nội dung đã mất), Câu 8, Câu 14 (28/08), và Câu 15 (MỚI
-05/09).** Không câu nào chặn việc gán nhãn, nhưng **Câu 14 chặn mọi bảng kết
-quả gộp qua tài liệu**, còn **Câu 15 chặn lượt H3 kế tiếp**.
+**Đang chờ: Câu 3 (nội dung đã mất) và Câu 14 (28/08).** Câu 14 chặn mọi bảng
+kết quả gộp qua tài liệu.
 
-**Câu 15 — MỚI: chỉ tiêu KHÔNG CÓ VÙNG trên trang thì ứng viên của nó có phải
-là 0 không?** Lượt H3 ngày 05/09 (`CHANGELOG.md`, mục đầu) tách 49 ô sai làm
-hai loại và cho thấy: trên 14 ô mà tờ giấy để TRỐNG còn máy bịa ra số, phe đề
-xuất chữa được **0 ô** — tất yếu, vì không đọc lại được một con số chưa từng
-in ra — và **cả 4 ô nó làm hỏng đều nằm ở đúng loại này**. Trạng thái neo của
-chúng là `khong_co_vung`.
+**Câu 8 và Câu 15 ĐÃ ĐÓNG ngày 05/09/2026**, cả hai đã ghi tu chính vào
+`PREREGISTRATION.md` và đã thi công — nội dung nguyên văn của hai câu chuyển
+sang `docs/lich-su/HANDOFF-da-dong.md`, giữ nguyên số câu. Tóm tắt quyết định:
 
-Đề xuất: khi một chỉ tiêu không neo được vào vùng nào, ứng viên duy nhất của
-nó là **0**, vì tờ giấy không in gì cho dòng ấy. Lập luận bênh: đó vẫn là một
-kết luận rút từ TỜ GIẤY (dòng trống là một quan sát), không phải mượn từ phân
-phối ngành. Lập luận chống: nó làm phe đề xuất bắt chước đúng cơ chế thắng của
-donor thô, và người phản biện có thể đọc là vay mượn.
+- **Câu 15 — CHO PHÉP, bản hẹp.** Chỉ tiêu không neo được vào vùng nào VÀ nằm
+  trong `CO_THE_VANG_MAT` thì ứng viên duy nhất là `0`, thay thế năm nguồn
+  thường. Câu phụ: trần `max_changes` **nâng lên 4**, ngược với khuyến nghị
+  giữ 2 — quyết định của người chủ trì, đã ghi cả hai vào tu chính.
+- **Câu 8 — TIÊM NHIỀU Ô.** H2 quét `n ∈ {1, 2, 3}` lỗi đồng thời. H3 giữ
+  nguyên mức một lỗi, có phanh `h2.kiem_mau_so()` canh chuyện đó trong chính
+  đường chạy.
 
-Kèm theo, câu phụ: **có nới trần `max_changes` từ 2 lên 3–4 không?** Đo được
-ngày 05/09: trần chỉ thực sự chặn ĐÚNG 2 tài liệu (`HPG_2022Q2` sai 3 ô,
-`HVG_2020Q1` sai 5 ô); 8 tài liệu còn lại phe đề xuất bỏ qua vì thiếu ứng viên
-chứ không vì trần. Nới trần vì vậy là khoản nhỏ, và mục 5.3 đã chốt trần là
-HẠN CHẾ CỦA PHƯƠNG PHÁP chứ không phải tham số tinh chỉnh.
-
-Cả hai đều là thay đổi thiết kế thí nghiệm nên phải vào mục Sửa đổi của
-`PREREGISTRATION.md` **TRƯỚC** khi chạy. *Chặn lượt H3 kế tiếp.*
-
-**Câu 8 — có tiêm nhiều hơn một lỗi mỗi lượt ở tầng XBRL không?** Phép đo
-`do_nghich_dao_mot_loi.py` cho thấy tầng XBRL tiêm đúng một lỗi mỗi lượt, mà lỗi
-đơn định vị được lại chính là ca bộ giải liên tục nghịch đảo trọn vẹn — tức
-thiết kế đang chọn **ca thuận lợi nhất cho baseline 9**. Đây là thay đổi thiết
-kế thí nghiệm nên phải vào mục Sửa đổi của `PREREGISTRATION.md` **TRƯỚC** khi
-chạy. Số đo và lập luận ở mục 13.3–13.4. *Chỉ chặn lượt chạy Mốc 3 kế tiếp.*
+> **Câu 15 (dòng không neo được) và Câu 8 (số lỗi tiêm mỗi lượt) ĐÃ ĐÓNG
+> ngày 05/09/2026.** Nội dung nguyên văn — gồm cả lập luận bênh và chống
+> từng phương án — ở `docs/lich-su/HANDOFF-da-dong.md`, giữ nguyên số câu.
+> Quyết định và lý do đầy đủ ở hai mục 05/09/2026 của `PREREGISTRATION.md`.
 
 **Câu 14 — MỚI: quy ước dấu của HNG ngược với phần còn lại của tập gold.**
 `HNG_2025H1_TT200` lỗ, và báo cáo đổi tên dòng thành "Lỗ thuần từ hoạt động
@@ -935,8 +922,11 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
    và chỗ đo H2 XONG 05/09/2026** (`src/repair/ged.py`, `src/eval/h2.py`,
    `2392e71` và `60f0e49`). `moc3.py` nay đo cả bốn phương pháp. Lý do thiết
    kế nằm trong docstring của chính hai file, đừng chép lại ra đây.
-   **Việc còn lại: chạy `moc3.py` trọn 26 hồ sơ** — ước ~7 giờ, chạy offline
-   và không tốn API. Lượt thử 3 hồ sơ đã chạy xong, số ở mục 16.1.
+   **VIỆC ĐANG XẾP LỊCH: chạy `moc3.py` trọn 26 hồ sơ.** Người chủ trì hoãn
+   ngày 05/09/2026, chạy khi máy rảnh cả đêm. Lệnh nằm sẵn ở mục Lệnh hay dùng
+   của `CLAUDE.md`, không cần dựng lại. Ước **~20 giờ** sau khi Câu 8 chốt bộ
+   quét ba mức số lỗi — gấp ba lượt một-mức, vì mỗi mức là một lượt tiêm riêng.
+   Offline, không tốn lời gọi API nào. Lượt thử 3 hồ sơ đã chạy, số ở mục 16.1.
 8. **Bật `n_samples > 1`** — không có nó thì H1 không đo được (mục 20.6), và
    đây cũng là thứ mở khoá baseline 3 lẫn confidence cho baseline 5.
 9. Sau đó: **C3** (vòng lặp đọc lại) → **C4** (verdict) → chạy Mốc 3 TRÊN TẦNG

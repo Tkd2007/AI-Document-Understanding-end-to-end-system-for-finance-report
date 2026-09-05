@@ -31,6 +31,7 @@ Chạy:
 import re
 import sys
 from collections import Counter
+from itertools import product
 from pathlib import Path
 
 import numpy as np
@@ -70,19 +71,27 @@ CHE_DO_LOI = [ErrorType.DIGIT_SUB, ErrorType.ROW_SHIFT, ErrorType.COL_SHIFT, Err
 # ADDENDUM mục 5 liệt kê đây là một trong bốn nguồn phương sai.
 CAC_SEED = [0, 1, 2, 3, 4]
 
-# Số lỗi tiêm mỗi lượt.
+# Bộ quét số lỗi tiêm đồng thời — tu chính PREREGISTRATION.md 05/09/2026,
+# trả lời Câu 8.
 #
-# Để thành hằng số CÓ TÊN thay vì viết thẳng `n_errors=1` vào lời gọi, vì nó
-# là một tham số của THIẾT KẾ THÍ NGHIỆM đang chờ quyết (Câu 8, `HANDOFF.md`
-# mục 0) chứ không phải một chi tiết cài đặt. Nó đi thẳng vào bảng H2, nên
-# đổi nó ở đây là bảng tự khai con số mới — không có chỗ nào phải sửa theo.
+# VÌ SAO KHÔNG DỪNG Ở MỘT LỖI. Với đúng một trường sai, phần dư là `δ·a_j` và
+# thống kê GLR của baseline 7 thoả `T_i ≤ T_j` với mọi i theo Cauchy-Schwarz,
+# dấu bằng đúng khi hai cột tỷ lệ. Tức ở giao thức một-lỗi, baseline 7 KHÔNG
+# THỂ bị đánh bại bằng chất lượng thuật toán — nó chỉ trượt khi thông tin
+# không tồn tại. Bảng H2 khi đó đo trần định vị của hệ ràng buộc, không đo
+# phương pháp. Mệnh đề có test chốt ở `tests/test_ged.py` lớp 1.
 #
-# Vì sao con số này quan trọng với H2 hơn là với H3: với ĐÚNG MỘT lỗi, thống
-# kê GLR của baseline 7 có cận dưới chứng minh được bằng Cauchy-Schwarz — nó
-# không bao giờ xếp trường sai xuống dưới một trường có cột không tỷ lệ. Nên
-# ở giao thức một-lỗi, bảng H2 đo TRẦN ĐỊNH VỊ của hệ ràng buộc nhiều hơn là
-# đo độ giỏi của từng phương pháp.
-N_LOI_TIEM = 1
+# Với hai hoặc ba lỗi, phần dư là tổ hợp của nhiều cột nên chữ ký hướng nhoè
+# đi, cận trên kia không còn, và phép so mới tách được các phương pháp.
+#
+# QUÉT chứ không THAY THẾ: giữ 1 trong bộ để kết quả cũ còn so được, và vì
+# thứ đáng giá là ĐƯỜNG CONG suy giảm theo số lỗi chứ không phải một điểm.
+CAC_SO_LOI = (1, 2, 3)
+
+# Mức được dùng cho bảng H3. Giữ ở 1 vì đó là giao thức đã đăng ký cho H3;
+# trộn các lượt nhiều lỗi vào sẽ đổi con số đầu bảng của Mốc 3 mà không ai
+# thấy. Sửa đổi 05/09 CHỈ mở rộng H2.
+N_LOI_CHO_H3 = 1
 
 # Trần số trường được sửa RIÊNG cho tầng XBRL, không dùng mặc định toàn cục.
 #
@@ -470,7 +479,9 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
     # không vào bảng H3 vì chúng không sửa theo cùng ngân sách gọi model —
     # chúng không gọi model lần nào — nhưng chúng là đối chứng bắt buộc của H2.
     dem_h2: dict = {
-        p: h2.khung_dem() for p in ("de_xuat", "baseline9", "baseline8", "baseline7")
+        n: {p: h2.khung_dem()
+            for p in ("de_xuat", "baseline9", "baseline8", "baseline7")}
+        for n in CAC_SO_LOI
     }
 
     n_luot = 0
@@ -494,36 +505,41 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
         gia_tri_that = bang.values_cua_ky(ky)
         donor = _du_lieu_donor(ho_so, thu_tu, cik)
 
-        for che_do in CHE_DO_LOI:
-            for seed in CAC_SEED:
-                try:
-                    hong, ground_truth = inject(
-                        bang, che_do, n_errors=N_LOI_TIEM, seed=seed, period=ky
-                    )
-                except ValueError:
-                    bo_qua[f"khong_inject_duoc_{che_do.value}"] += 1
-                    continue
-
-                gia_tri_hong = hong.values_cua_ky(ky)
-                truong_hong = {e.concept for e in ground_truth}
-                ung_vien = _ung_vien_cho_bang(hong, gia_tri_hong, ky)
-
-                ket, dinh_vi = _do_mot_luot(
-                    gia_tri_hong, gia_tri_that, ung_vien, A, thu_tu, donor, truong_hong
+        for che_do, seed, so_loi in product(CHE_DO_LOI, CAC_SEED, CAC_SO_LOI):
+            try:
+                hong, ground_truth = inject(
+                    bang, che_do, n_errors=so_loi, seed=seed, period=ky
                 )
+            except ValueError:
+                # Ghi kèm SỐ LỖI vào khoá, vì "không tiêm được 3 lỗi" và
+                # "không tiêm được lỗi nào" là hai chuyện khác hẳn: cái đầu
+                # chỉ nói bảng không đủ ô hỏng được theo chế độ ấy.
+                bo_qua[f"khong_inject_duoc_{che_do.value}_n{so_loi}"] += 1
+                continue
+
+            gia_tri_hong = hong.values_cua_ky(ky)
+            truong_hong = {e.concept for e in ground_truth}
+            ung_vien = _ung_vien_cho_bang(hong, gia_tri_hong, ky)
+
+            ket, dinh_vi = _do_mot_luot(
+                gia_tri_hong, gia_tri_that, ung_vien, A, thu_tu, donor, truong_hong
+            )
+
+            # Bảng H3 CHỈ nhận mức đã đăng ký, không nhận cả bộ quét — trộn
+            # lượt nhiều lỗi vào sẽ đổi con số đầu bảng Mốc 3 mà không ai thấy.
+            if so_loi == N_LOI_CHO_H3:
                 n_luot += 1
                 n_luot_theo_che_do[che_do.value] += 1
-
                 for p, r in ket.items():
                     for t in (tong[p], theo_che_do[che_do.value][p]):
                         _cong_mot_luot(t, r, truong_hong)
 
-                for p, xep in dinh_vi["xep_hang"].items():
-                    h2.cong_mot_luot(
-                        dem_h2[p],
-                        h2.LuotDinhVi(xep, truong_hong, N_LOI_TIEM),
-                        dinh_vi["sinh_phan_du"],
-                    )
+            for p, xep in dinh_vi["xep_hang"].items():
+                h2.cong_mot_luot(
+                    dem_h2[so_loi][p],
+                    h2.LuotDinhVi(xep, truong_hong, so_loi),
+                    dinh_vi["sinh_phan_du"],
+                )
 
     thieu_ho_so = cac_cik_co_facts(thu_muc) - cik_da_gap
     if thieu_ho_so:
@@ -718,7 +734,13 @@ def bao_cao(kq: dict) -> str:
         dong.append("")
 
     if kq.get("h2"):
-        dong += ["", *h2.bang(kq["h2"])]
+        # Phanh chống hỏng im lặng: mẫu số H3 phải trùng khít mẫu số H2 ở mức
+        # đã đăng ký. Lệch nghĩa là bộ quét số lỗi đã rò vào bảng H3, và khi
+        # đó mọi con số đầu bảng Mốc 3 sai mà bảng vẫn in bình thường.
+        lech = h2.kiem_mau_so(n, kq["h2"], N_LOI_CHO_H3)
+        if lech:
+            dong += ["", f"> **CẢNH BÁO — SỐ LIỆU KHÔNG DÙNG ĐƯỢC:** {lech}."]
+        dong += ["", *h2.bang_quet(kq["h2"])]
 
     if kq["bo_qua"]:
         dong += ["", "Bỏ qua (ghi tường minh, không giấu):", ""]

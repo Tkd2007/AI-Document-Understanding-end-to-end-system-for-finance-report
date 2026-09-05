@@ -18,13 +18,16 @@ Ba thứ phải khoá, xếp theo hậu quả nếu hỏng.
 import numpy as np
 import pytest
 
+from eval import moc3
 from eval.h2 import (
     CAC_MUC_K,
     DongBang,
     LuotDinhVi,
     bang,
+    bang_quet,
     cong_mot_luot,
     khung_dem,
+    kiem_mau_so,
     xep_hang_ged,
     xep_hang_l1,
     xep_hang_roi_rac,
@@ -186,9 +189,9 @@ def test_im_lang_gan_het_thi_con_so_phu_len_1_va_ty_le_ra_tay_lo_ra():
 
 def test_bang_ghi_so_loi_tiem_moi_luot():
     """
-    Số lỗi tiêm mỗi lượt phải hiện trên bảng. Không có nó thì bảng H2 bị đọc
-    như đo độ giỏi của phương pháp, trong khi ở giao thức một-lỗi nó đang đo
-    trần định vị của hệ ràng buộc.
+    Số lỗi tiêm mỗi lượt phải hiện ngay trên tiêu đề bảng. Không có nó thì
+    bảng H2 bị đọc như đo độ giỏi của phương pháp, trong khi ở mức một lỗi nó
+    đang đo trần định vị của hệ ràng buộc.
     """
     dem = khung_dem()
     for _ in range(4):
@@ -196,8 +199,85 @@ def test_bang_ghi_so_loi_tiem_moi_luot():
 
     dong_bang = "\n".join(bang({"đề xuất": dem}))
 
-    assert "1.00** lỗi mỗi lượt" in dong_bang
-    assert "Câu 8" in dong_bang
+    assert "1 lỗi đồng thời" in dong_bang
+    assert "N = 4 lượt" in dong_bang
+
+
+def test_canh_bao_cauchy_schwarz_CHI_hien_o_muc_mot_loi():
+    """
+    Cảnh báo "bảng này đo trần chứ chưa đo phương pháp" chỉ đúng ở mức một
+    lỗi, vì cận trên Cauchy–Schwarz chỉ tồn tại khi đúng một trường sai. In
+    nó ở mức ba lỗi là tự bôi đen một kết quả thật.
+    """
+    mot = khung_dem()
+    cong_mot_luot(mot, LuotDinhVi(["a"], {"a"}, 1), sinh_phan_du=True)
+    ba = khung_dem()
+    cong_mot_luot(ba, LuotDinhVi(["a"], {"a", "b", "c"}, 3), sinh_phan_du=True)
+
+    assert "Cauchy" in "\n".join(bang({"x": mot}))
+    assert "Cauchy" not in "\n".join(bang({"x": ba}))
+
+
+def test_bang_quet_in_du_ba_muc_va_hai_canh_bao():
+    """
+    Bảng quét phải in TỪNG mức riêng, không gộp — gộp là trộn ba chế độ khó
+    khác hẳn nhau vào một con số. Và phải mang theo hai cảnh báo mà người dựng
+    bảng thống kê sau này cần: ba mức không độc lập nên kiểm định phải ghép
+    cặp, và trần `max_changes` chặn hai phe rời rạc ở Top-2.
+    """
+    quet = {}
+    for n in (1, 2, 3):
+        dem = khung_dem()
+        for _ in range(5):
+            cong_mot_luot(dem, LuotDinhVi(["a"], {"a"}, n), sinh_phan_du=True)
+        quet[n] = {"đề xuất": dem}
+
+    ra = "\n".join(bang_quet(quet))
+
+    for n in (1, 2, 3):
+        assert f"{n} lỗi đồng thời" in ra
+    # Kiểm CẢ CÂU chứ không chỉ hai chữ "GHÉP CẶP": đục thủng thử ngày 05/09
+    # cho thấy xoá dòng đầu của cảnh báo vẫn để lại cụm từ ở dòng sau, nên một
+    # khẳng định chỉ tìm cụm từ không bắt được việc cảnh báo bị cắt cụt.
+    assert "Ba mức không độc lập" in ra
+    assert "kiểm định GHÉP CẶP" in ra
+    assert "max_changes" in ra
+
+
+def test_bo_quet_phai_co_nhieu_hon_mot_muc():
+    """
+    Trả `CAC_SO_LOI` về một mức là quay lại đúng giao thức mà tu chính
+    05/09/2026 (muộn hơn) bác bỏ — và bác vì một CHỨNG MINH, không phải vì
+    sở thích: ở đúng một lỗi, cận trên Cauchy–Schwarz làm baseline 7 không
+    thể bị đánh bại bằng chất lượng thuật toán, nên bảng đo trần của hệ ràng
+    buộc chứ không đo phương pháp.
+
+    Đục thủng thử cho thấy không test nào bắt được việc thu bộ quét về một
+    mức, nên chốt thẳng vào hằng số.
+    """
+    assert len(moc3.CAC_SO_LOI) > 1
+    assert moc3.N_LOI_CHO_H3 in moc3.CAC_SO_LOI
+
+
+def test_mau_so_H3_lech_mau_so_H2_thi_BAO_DONG():
+    """
+    Phanh chống hỏng im lặng. Nếu bộ quét số lỗi rò vào bộ đếm H3 thì mọi con
+    số đầu bảng Mốc 3 đổi mà bảng vẫn in bình thường — đục thủng thử ngày
+    05/09 xác nhận không test nào bắt được. Nên phép kiểm nằm trong đường
+    chạy, và test này canh chính phép kiểm ấy.
+    """
+    dem = khung_dem()
+    for _ in range(5):
+        cong_mot_luot(dem, LuotDinhVi(["a"], {"a"}, 1), sinh_phan_du=True)
+    quet = {1: {"đề xuất": dem}}
+
+    assert kiem_mau_so(5, quet, 1) is None
+
+    lech = kiem_mau_so(15, quet, 1)
+    assert lech is not None
+    assert "mức lỗi khác" in lech
+
+    assert "không có mức" in kiem_mau_so(5, quet, 2)
 
 
 def test_bang_rong_khong_no():

@@ -186,21 +186,22 @@ def bang(dem_theo_phuong_phap: dict[str, dict]) -> list[str]:
     trung_binh_loi = tong_loi / (n_luot * len(cac_dong)) if n_luot and cac_dong else 0.0
 
     ra = [
-        "## H2 — định vị lỗi",
-        "",
-        f"N = **{n_luot}** lượt tiêm lỗi, trung bình **{trung_binh_loi:.2f}** lỗi mỗi lượt.",
-        "",
-        "> Giao thức hiện tiêm **một** lỗi mỗi lượt. Với một lỗi duy nhất, thống kê",
-        "> GLR của baseline 7 có cận dưới chứng minh được — nó không bao giờ xếp",
-        "> trường sai xuống dưới một trường có cột không tỷ lệ — nên bảng này đo",
-        "> **trần định vị của hệ ràng buộc** nhiều hơn là đo độ giỏi của từng",
-        "> phương pháp. Xem Câu 8, `HANDOFF.md` mục 0.",
+        f"### {trung_binh_loi:.0f} lỗi đồng thời — N = {n_luot} lượt",
         "",
     ]
 
+    if trung_binh_loi <= 1.0:
+        ra += [
+            "> Ở mức MỘT lỗi, thống kê GLR của baseline 7 có cận trên chứng minh được",
+            "> bằng Cauchy–Schwarz: không trường nào có cột không tỷ lệ xếp nổi lên",
+            "> trên trường sai. Nên bảng này đo **trần định vị của hệ ràng buộc**, chưa",
+            "> đo độ giỏi của phương pháp. Các mức lỗi cao hơn mới tách được chúng.",
+            "",
+        ]
+
     for k in CAC_MUC_K:
         ra += [
-            f"### Top-{k}",
+            f"**Top-{k}**",
             "",
             "| Phương pháp | CHÍNH: đúng/tổng | Tỷ lệ ra tay | Đúng/lượt ra tay "
             "| Đúng/lượt có phần dư |",
@@ -213,4 +214,68 @@ def bang(dem_theo_phuong_phap: dict[str, dict]) -> list[str]:
             )
         ra.append("")
 
+    return ra
+
+
+def kiem_mau_so(n_luot_h3: int, dem_theo_so_loi: dict, n_loi_cho_h3: int) -> str | None:
+    """
+    Mẫu số của bảng H3 có đúng bằng mẫu số H2 ở mức đã đăng ký không?
+
+    Trả câu mô tả sai lệch, hay `None` nếu khớp.
+
+    VÌ SAO PHANH NÀY TỒN TẠI. Tu chính 05/09/2026 (muộn hơn) chốt rằng bộ quét
+    số lỗi CHỈ mở rộng H2, còn H3 giữ nguyên mức một lỗi. Nếu một ngày vòng
+    lặp để các lượt nhiều lỗi rơi vào bộ đếm H3 thì mọi con số đầu bảng của
+    Mốc 3 đổi — tỷ lệ lỗi câm, chỉ số chống bịa, `luot_con_sai` — mà bảng vẫn
+    in ra bình thường và không ai biết phải nghi ngờ.
+
+    Đục thủng thử ngày 05/09 cho thấy không test nào bắt được chuyện đó, nên
+    phép kiểm phải nằm trong chính đường chạy chứ không chỉ nằm trong test:
+    mẫu số H3 phải trùng khít mẫu số H2 ở mức `n_loi_cho_h3`, vì hai bên đếm
+    đúng cùng một tập lượt chạy.
+    """
+    muc = dem_theo_so_loi.get(n_loi_cho_h3)
+    if not muc:
+        return f"không có mức {n_loi_cho_h3} lỗi trong bộ quét H2"
+
+    for ten, d in muc.items():
+        if d["n_luot"] != n_luot_h3:
+            return (
+                f"mẫu số H3 là {n_luot_h3} lượt nhưng H2 ở mức {n_loi_cho_h3} lỗi "
+                f"đếm {d['n_luot']} lượt cho `{ten}` — bảng H3 đang nhận lượt của "
+                f"mức lỗi khác"
+            )
+    return None
+
+
+def bang_quet(dem_theo_so_loi: dict[int, dict[str, dict]]) -> list[str]:
+    """
+    Bảng H2 cho cả BỘ QUÉT số lỗi — tu chính 05/09/2026 (muộn hơn).
+
+    In từng mức riêng chứ không gộp, vì gộp là trộn ba chế độ khó khác hẳn
+    nhau vào một con số. Thứ đáng đọc là ĐƯỜNG CONG: mỗi phương pháp tụt
+    nhanh chậm ra sao khi số lỗi tăng.
+
+    Ba mức KHÔNG độc lập với nhau — cùng `seed` thì `inject()` duyệt cùng một
+    danh sách đã xáo, nên tập lỗi mức 1 là tập con của mức 2 và mức 2 là tập
+    con của mức 3. Cảnh báo này in kèm bảng vì mọi kiểm định trên hiệu số
+    giữa các mức phải là kiểm định GHÉP CẶP, và người dựng bảng thống kê sau
+    này sẽ đọc bảng chứ không đọc tu chính.
+    """
+    ra = ["## H2 — định vị lỗi, quét theo số lỗi đồng thời", ""]
+
+    for so_loi in sorted(dem_theo_so_loi):
+        ra += bang(dem_theo_so_loi[so_loi])
+
+    ra += [
+        "> **Ba mức không độc lập.** Cùng `seed` thì tập lỗi mức 1 nằm trong mức 2,",
+        "> và mức 2 nằm trong mức 3. Mọi kiểm định trên hiệu số giữa các mức phải",
+        "> là kiểm định GHÉP CẶP.",
+        "",
+        "> **Trần `max_changes` chặn hai phe rời rạc ở 2 tên**, nên Top-3 của phương",
+        "> pháp đề xuất và baseline 9 không thể hơn Top-2 của chính chúng, trong khi",
+        "> baseline 7 và 8 luôn trả bảng xếp hạng đầy đủ. Một phần khoảng cách ở",
+        "> Top-3 vì vậy là hình dạng của phương pháp, không phải độ chính xác.",
+        "",
+    ]
     return ra

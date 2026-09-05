@@ -1265,6 +1265,19 @@ cộng thêm khoảng **5–10 giờ** vào một lượt 70 tài liệu vốn �
 Con số này phải được kiểm lại bằng một lượt thử vài tài liệu trước khi cam kết
 chạy trọn tập.
 
+**HẠ XUỐNG 3 CÙNG NGÀY, sau khi thấy bảng chi phí trên.** Người chủ trì chốt
+trần **3** thay vì 4. Ghi cả hai bước — nâng lên 4 rồi hạ xuống 3 trong cùng
+ngày 05/09/2026 — chứ không sửa đè con số cũ, vì lịch sử ấy chính là thứ giải
+thích vì sao trần không còn là 2: trần 3 mở được `HPG_2022Q2` (sai 3 ô) nên
+lấy được phần lớn cái mà việc nâng trần nhắm tới, trong khi chỉ cộng khoảng 7
+phút vào một lượt 70 tài liệu thay vì 5-10 giờ. `HVG_2020Q1` (sai 5 ô) vẫn
+ngoài tầm, nhưng nó ngoài tầm cả ở trần 4.
+
+`TIME_LIMIT_S` hạ theo, từ 2400 xuống **300 giây** — vẫn là biên hơn mười lần
+so với 26 giây đo được ở trần 3, nên `vo_nghiem` vẫn tới được. Hai hằng số này
+phải đi cùng nhau: một trần cao kèm giới hạn thời gian thấp sẽ biến mọi ca vô
+nghiệm thành `het_gio` và xoá sạch bằng chứng chống bịa.
+
 **Đường thoát nếu chi phí không chấp nhận được:** vòng tìm kiếm hiện duyệt vét
 cạn mọi tích ứng viên. Vì phần dư nằm trong `R^9`, một cài đặt gặp-ở-giữa
 (chia `k` làm hai nửa, băm nửa đầu rồi tra nửa sau) hạ 274 triệu tổ hợp xuống

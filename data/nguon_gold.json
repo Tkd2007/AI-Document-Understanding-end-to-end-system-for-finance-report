@@ -28,104 +28,47 @@
   "ngay_lap": "2026-08-26",
   "tai_lieu": [
     {
-      "doc_id": "HPG_2026Q2_TT99",
-      "ticker": "HPG",
-      "period": "2026Q2",
+      "doc_id": "BCM_2021Q1_TT200",
+      "ticker": "BCM",
+      "period": "2021Q1",
       "san": "HOSE",
-      "loai_bao_cao": "rieng",
-      "nganh": "Thép",
-      "quy_mo": "VN30",
-      "chuan_du_kien": "TT99",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
       "gan_nhan_doi": "loai_da_chay_pipeline",
-      "vai_tro": "Tài liệu nền: doanh nghiệp lớn, bản in sạch, đơn vị VND.",
-      "da_kiem": [
-        "tiêu đề 'BÁO CÁO TÌNH HÌNH TÀI CHÍNH CÔNG TY MẸ' — dấu hiệu TT99",
-        "cột số ghi VND",
-        "không có lớp text"
-      ],
-      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/HPG_Baocaotaichinh_Q2_2026_Congtyme.pdf?ver=fc4c80c2",
-      "do_phan_giai_dpi": {
-        "trung_vi": 200.0,
-        "nho_nhat": 200.0,
-        "lon_nhat": 200.0,
-        "so_trang_do_duoc": 25,
-        "so_trang_tong": 25
-      }
-    },
-    {
-      "doc_id": "VRE_2026Q1_TT99",
-      "ticker": "VRE",
-      "period": "2026Q1",
-      "san": "HOSE",
-      "loai_bao_cao": "rieng",
-      "nganh": "Bất động sản bán lẻ",
-      "quy_mo": "VN30",
-      "chuan_du_kien": "TT99",
-      "gan_nhan_doi": "loai_da_chay_pipeline",
-      "vai_tro": "Ca biên MỎ NEO SCALE: báo cáo không ghi bằng đồng.",
-      "da_kiem": [
-        "tiêu đề 'BÁO CÁO TÌNH HÌNH TÀI CHÍNH RIÊNG' — dấu hiệu TT99",
-        "dòng 'Đơn vị tính: Triệu VND' — hệ số 1.000.000",
-        "cột so sánh ghi '(trình bày lại)'"
-      ],
-      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY 1/VRE_Baocaotaichinh_Q1_2026_Congtyme.pdf",
-      "do_phan_giai_dpi": {
-        "trung_vi": 200.0,
-        "nho_nhat": 200.0,
-        "lon_nhat": 200.0,
-        "so_trang_do_duoc": 36,
-        "so_trang_tong": 36
-      }
-    },
-    {
-      "doc_id": "DLG_2026Q2_TT99",
-      "ticker": "DLG",
-      "period": "2026Q2",
-      "san": "HOSE",
-      "loai_bao_cao": "rieng",
-      "nganh": "Đa ngành / hạ tầng",
-      "quy_mo": "vốn hoá nhỏ",
-      "chuan_du_kien": "TT99",
-      "gan_nhan_doi": "loai_da_chay_pipeline",
-      "vai_tro": "Ca biên SỐ ÂM và BẢN SCAN KÉM: lỗ luỹ kế ghi trong ngoặc.",
-      "da_kiem": [
-        "tiêu đề 'BÁO CÁO TÌNH HÌNH TÀI CHÍNH' — dấu hiệu TT99",
-        "cột ghi (VND)",
-        "mã 420 lợi nhuận sau thuế chưa phân phối = (1.988.004.827.520)",
-        "trang quét hơi lệch và nhoè"
-      ],
-      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/DLG_Baocaotaichinh_Q2_2026_Congtyme.pdf?ver=763e9545",
-      "do_phan_giai_dpi": {
-        "trung_vi": 100.0,
-        "nho_nhat": 100.0,
-        "lon_nhat": 100.0,
-        "so_trang_do_duoc": 54,
-        "so_trang_tong": 54
-      }
-    },
-    {
-      "doc_id": "TTF_2026Q1_TT99",
-      "ticker": "TTF",
-      "period": "2026Q1",
-      "san": "HOSE",
-      "loai_bao_cao": "rieng",
-      "nganh": "Gỗ và nội thất",
-      "quy_mo": "vốn hoá nhỏ",
-      "chuan_du_kien": "TT99",
-      "gan_nhan_doi": "loai_da_chay_pipeline",
-      "vai_tro": "Ca biên DOANH NGHIỆP LỖ: lỗ luỹ kế ăn mòn phần lớn vốn điều lệ.",
-      "da_kiem": [
-        "không có lớp text"
-      ],
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
       "chua_kiem": [
-        "chuẩn mẫu biểu chưa mở ra xem tận mắt — suy từ kỳ báo cáo 2026",
-        "lỗ 60,42 tỷ quý 1/2026 lấy từ báo chí, chưa đối chiếu trên chính báo cáo, và con số đó là HỢP NHẤT trong khi đây là bản riêng"
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
       ],
-      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY 1/TTF_Baocaotaichinh_Q1_2026_Congtyme.pdf",
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2021/BCTC/VN/QUY%201/BCM_Baocaotaichinh_Q1_2021_Hopnhat.pdf",
       "do_phan_giai_dpi": {
         "trung_vi": 200.0,
         "nho_nhat": 200.0,
         "lon_nhat": 200.0,
+        "so_trang_do_duoc": 50,
+        "so_trang_tong": 50
+      }
+    },
+    {
+      "doc_id": "BKG_2026Q2_TT99",
+      "ticker": "BKG",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/BKG_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 130.0,
+        "nho_nhat": 130.0,
+        "lon_nhat": 130.0,
         "so_trang_do_duoc": 41,
         "so_trang_tong": 41
       }
@@ -155,6 +98,29 @@
       }
     },
     {
+      "doc_id": "BSR_2026Q2_TT99",
+      "ticker": "BSR",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/BSR_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 600.0,
+        "nho_nhat": 72.0,
+        "lon_nhat": 600.0,
+        "so_trang_do_duoc": 35,
+        "so_trang_tong": 35
+      }
+    },
+    {
       "doc_id": "DGC_2025Q2_TT200",
       "ticker": "DGC",
       "period": "2025Q2",
@@ -175,6 +141,380 @@
         "lon_nhat": 200.0,
         "so_trang_do_duoc": 37,
         "so_trang_tong": 37
+      }
+    },
+    {
+      "doc_id": "DGC_2026Q2_TT99",
+      "ticker": "DGC",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/DGC_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 43,
+        "so_trang_tong": 43
+      }
+    },
+    {
+      "doc_id": "DIG_2026Q2_TT99",
+      "ticker": "DIG",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/DIG_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 150.0,
+        "nho_nhat": 150.0,
+        "lon_nhat": 150.0,
+        "so_trang_do_duoc": 39,
+        "so_trang_tong": 39
+      }
+    },
+    {
+      "doc_id": "DLG_2026Q2_TT99",
+      "ticker": "DLG",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "rieng",
+      "nganh": "Đa ngành / hạ tầng",
+      "quy_mo": "vốn hoá nhỏ",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Ca biên SỐ ÂM và BẢN SCAN KÉM: lỗ luỹ kế ghi trong ngoặc.",
+      "da_kiem": [
+        "tiêu đề 'BÁO CÁO TÌNH HÌNH TÀI CHÍNH' — dấu hiệu TT99",
+        "cột ghi (VND)",
+        "mã 420 lợi nhuận sau thuế chưa phân phối = (1.988.004.827.520)",
+        "trang quét hơi lệch và nhoè"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/DLG_Baocaotaichinh_Q2_2026_Congtyme.pdf?ver=763e9545",
+      "do_phan_giai_dpi": {
+        "trung_vi": 100.0,
+        "nho_nhat": 100.0,
+        "lon_nhat": 100.0,
+        "so_trang_do_duoc": 54,
+        "so_trang_tong": 54
+      }
+    },
+    {
+      "doc_id": "DPM_2022Q3_TT200",
+      "ticker": "DPM",
+      "period": "2022Q3",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2022/BCTC/VN/QUY%203/DPM_Baocaotaichinh_Q3_2022_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 53,
+        "so_trang_tong": 53
+      }
+    },
+    {
+      "doc_id": "DRH_2026Q2_TT99",
+      "ticker": "DRH",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/DRH_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 300.0,
+        "nho_nhat": 300.0,
+        "lon_nhat": 300.0,
+        "so_trang_do_duoc": 20,
+        "so_trang_tong": 20
+      }
+    },
+    {
+      "doc_id": "DVD_2010Q4_TT200",
+      "ticker": "DVD",
+      "period": "2010Q4",
+      "san": "chua_xac_dinh",
+      "loai_bao_cao": "chua_xac_dinh",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "sàn niêm yết chưa xác định — URL nguồn không mang thông tin này",
+        "loại báo cáo (riêng / hợp nhất) chưa xác định từ URL",
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://cafef1.mediacdn.vn/Images/Uploaded/DuLieuDownload/2010/DVD_10Q4_BCTC_M.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 100.0,
+        "nho_nhat": 100.0,
+        "lon_nhat": 100.0,
+        "so_trang_do_duoc": 22,
+        "so_trang_tong": 22
+      }
+    },
+    {
+      "doc_id": "DXG_2026Q2_TT99",
+      "ticker": "DXG",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/DXG_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 130.0,
+        "nho_nhat": 130.0,
+        "lon_nhat": 130.0,
+        "so_trang_do_duoc": 60,
+        "so_trang_tong": 60
+      }
+    },
+    {
+      "doc_id": "FIT_2026Q2_TT99",
+      "ticker": "FIT",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/FIT_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 143.9,
+        "nho_nhat": 143.9,
+        "lon_nhat": 143.9,
+        "so_trang_do_duoc": 51,
+        "so_trang_tong": 51
+      }
+    },
+    {
+      "doc_id": "FLC_2021Q4_TT200",
+      "ticker": "FLC",
+      "period": "2021Q4",
+      "san": "chua_xac_dinh",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "sàn niêm yết chưa xác định — URL nguồn không mang thông tin này",
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://cafef1.mediacdn.vn/Images/Uploaded/DuLieuDownload/2021/FLC_21Q4_BCTC_HN.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 61,
+        "so_trang_tong": 61
+      }
+    },
+    {
+      "doc_id": "FPT_2023Q3_TT200",
+      "ticker": "FPT",
+      "period": "2023Q3",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2023/BCTC/VN/QUY%203/FPT_Baocaotaichinh_Q3_2023_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 46,
+        "so_trang_tong": 46
+      }
+    },
+    {
+      "doc_id": "GAS_2023Q1_TT200",
+      "ticker": "GAS",
+      "period": "2023Q1",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2023/BCTC/VN/QUY%201/GAS_Baocaotaichinh_Q1_2023_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 240.0,
+        "so_trang_do_duoc": 33,
+        "so_trang_tong": 33
+      }
+    },
+    {
+      "doc_id": "GEX_2026Q2_TT99",
+      "ticker": "GEX",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/GEX_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 150.0,
+        "nho_nhat": 150.0,
+        "lon_nhat": 155.5,
+        "so_trang_do_duoc": 54,
+        "so_trang_tong": 54
+      }
+    },
+    {
+      "doc_id": "GMD_2023Q3_TT200",
+      "ticker": "GMD",
+      "period": "2023Q3",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2023/BCTC/VN/QUY%203/GMD_Baocaotaichinh_Q3_2023_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 149.8,
+        "nho_nhat": 149.8,
+        "lon_nhat": 150.0,
+        "so_trang_do_duoc": 41,
+        "so_trang_tong": 41
+      }
+    },
+    {
+      "doc_id": "GVR_2026Q2_TT99",
+      "ticker": "GVR",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/GVR_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 250.0,
+        "nho_nhat": 150.0,
+        "lon_nhat": 250.0,
+        "so_trang_do_duoc": 105,
+        "so_trang_tong": 105
+      }
+    },
+    {
+      "doc_id": "HAG_2026Q2_TT99",
+      "ticker": "HAG",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/HAG_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.1,
+        "nho_nhat": 200.1,
+        "lon_nhat": 200.1,
+        "so_trang_do_duoc": 47,
+        "so_trang_tong": 47
+      }
+    },
+    {
+      "doc_id": "HDG_2026Q2_TT99",
+      "ticker": "HDG",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/HDG_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 43,
+        "so_trang_tong": 43
       }
     },
     {
@@ -201,6 +541,726 @@
         "lon_nhat": 300.0,
         "so_trang_do_duoc": 59,
         "so_trang_tong": 59
+      }
+    },
+    {
+      "doc_id": "HPG_2022Q2_TT200",
+      "ticker": "HPG",
+      "period": "2022Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2022/BCTC/VN/QUY%202/HPG_Baocaotaichinh_Q2_2022_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 149.9,
+        "nho_nhat": 149.9,
+        "lon_nhat": 149.9,
+        "so_trang_do_duoc": 33,
+        "so_trang_tong": 33
+      }
+    },
+    {
+      "doc_id": "HPG_2026Q2_TT99",
+      "ticker": "HPG",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "rieng",
+      "nganh": "Thép",
+      "quy_mo": "VN30",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu nền: doanh nghiệp lớn, bản in sạch, đơn vị VND.",
+      "da_kiem": [
+        "tiêu đề 'BÁO CÁO TÌNH HÌNH TÀI CHÍNH CÔNG TY MẸ' — dấu hiệu TT99",
+        "cột số ghi VND",
+        "không có lớp text"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/HPG_Baocaotaichinh_Q2_2026_Congtyme.pdf?ver=fc4c80c2",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 25,
+        "so_trang_tong": 25
+      }
+    },
+    {
+      "doc_id": "HQC_2026Q2_TT99",
+      "ticker": "HQC",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/HQC_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 150.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 49,
+        "so_trang_tong": 49
+      }
+    },
+    {
+      "doc_id": "HVG_2020Q1_TT200",
+      "ticker": "HVG",
+      "period": "2020Q1",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2020/BCTC/VN/QUY%201/HVG_Baocaotaichinh_Q1_2020_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 600.0,
+        "nho_nhat": 600.0,
+        "lon_nhat": 600.0,
+        "so_trang_do_duoc": 4,
+        "so_trang_tong": 33
+      }
+    },
+    {
+      "doc_id": "HVN_2026Q2_TT99",
+      "ticker": "HVN",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/HVN_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 240.0,
+        "nho_nhat": 240.0,
+        "lon_nhat": 318.7,
+        "so_trang_do_duoc": 33,
+        "so_trang_tong": 33
+      }
+    },
+    {
+      "doc_id": "IDC_2026Q1_TT99",
+      "ticker": "IDC",
+      "period": "2026Q1",
+      "san": "HNX",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HNX/2026/BCTC/VN/QUY%201/IDC_Baocaotaichinh_Q1_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 66,
+        "so_trang_tong": 66
+      }
+    },
+    {
+      "doc_id": "ITA_2026Q2_TT99",
+      "ticker": "ITA",
+      "period": "2026Q2",
+      "san": "UPCOM",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/UPCOM/2026/BCTC/VN/QUY%202/ITA_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 190.8,
+        "nho_nhat": 150.0,
+        "lon_nhat": 256.4,
+        "so_trang_do_duoc": 7,
+        "so_trang_tong": 76
+      }
+    },
+    {
+      "doc_id": "JVC_2020Q3_TT200",
+      "ticker": "JVC",
+      "period": "2020Q3",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2020/BCTC/VN/QUY%203/JVC_Baocaotaichinh_Q3_2020_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 300.0,
+        "nho_nhat": 300.0,
+        "lon_nhat": 300.0,
+        "so_trang_do_duoc": 32,
+        "so_trang_tong": 32
+      }
+    },
+    {
+      "doc_id": "KDH_2021Q2_TT200",
+      "ticker": "KDH",
+      "period": "2021Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2021/BCTC/VN/QUY%202/KDH_Baocaotaichinh_Q2_2021_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 100.0,
+        "nho_nhat": 100.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 41,
+        "so_trang_tong": 41
+      }
+    },
+    {
+      "doc_id": "LDG_2026Q2_TT99",
+      "ticker": "LDG",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/LDG_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 35,
+        "so_trang_tong": 35
+      }
+    },
+    {
+      "doc_id": "LIG_2026Q1_TT99",
+      "ticker": "LIG",
+      "period": "2026Q1",
+      "san": "HNX",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HNX/2026/BCTC/VN/QUY%201/LIG_Baocaotaichinh_Q1_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 299.0,
+        "so_trang_do_duoc": 33,
+        "so_trang_tong": 33
+      }
+    },
+    {
+      "doc_id": "MCH_2026Q2_TT99",
+      "ticker": "MCH",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/MCH_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 170.0,
+        "nho_nhat": 170.0,
+        "lon_nhat": 300.0,
+        "so_trang_do_duoc": 57,
+        "so_trang_tong": 57
+      }
+    },
+    {
+      "doc_id": "MSN_2020Q3_TT200",
+      "ticker": "MSN",
+      "period": "2020Q3",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2020/BCTC/VN/QUY%203/MSN_Baocaotaichinh_Q3_2020_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 300.0,
+        "nho_nhat": 150.0,
+        "lon_nhat": 300.0,
+        "so_trang_do_duoc": 63,
+        "so_trang_tong": 63
+      }
+    },
+    {
+      "doc_id": "MWG_2023Q4_TT200",
+      "ticker": "MWG",
+      "period": "2023Q4",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2023/BCTC/VN/QUY%204/MWG_Baocaotaichinh_Q4_2023_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 150.0,
+        "nho_nhat": 150.0,
+        "lon_nhat": 150.0,
+        "so_trang_do_duoc": 38,
+        "so_trang_tong": 38
+      }
+    },
+    {
+      "doc_id": "MWG_2025Q1_TT200",
+      "ticker": "MWG",
+      "period": "2025Q1",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "nganh": "Bán lẻ",
+      "quy_mo": "VN30",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Đối cực CHẤT LƯỢNG ẢNH: bản quét dày điểm ảnh nhất trong mười tài liệu (295,8 dpi), để đo chênh lệch so với SBT và DLG ở đầu kia của dải.",
+      "da_kiem": [
+        "không có lớp text"
+      ],
+      "chua_kiem": [
+        "chuẩn mẫu biểu chưa mở ra xem tận mắt — suy từ kỳ báo cáo 2025"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2025/BCTC/VN/QUY 1/MWG_Baocaotaichinh_Q1_2025_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 295.8,
+        "nho_nhat": 295.8,
+        "lon_nhat": 295.8,
+        "so_trang_do_duoc": 44,
+        "so_trang_tong": 44
+      }
+    },
+    {
+      "doc_id": "NLG_2021Q3_TT200",
+      "ticker": "NLG",
+      "period": "2021Q3",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2021/BCTC/VN/QUY%203/NLG_Baocaotaichinh_Q3_2021_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 144.0,
+        "nho_nhat": 144.0,
+        "lon_nhat": 144.0,
+        "so_trang_do_duoc": 45,
+        "so_trang_tong": 50
+      }
+    },
+    {
+      "doc_id": "NVL_2020Q1_TT200",
+      "ticker": "NVL",
+      "period": "2020Q1",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2020/BCTC/VN/QUY%201/NVL_Baocaotaichinh_Q1_2020_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 70,
+        "so_trang_tong": 70
+      }
+    },
+    {
+      "doc_id": "NVT_2026Q2_TT99",
+      "ticker": "NVT",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/NVT_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 30,
+        "so_trang_tong": 30
+      }
+    },
+    {
+      "doc_id": "OGC_2019Q4_TT200",
+      "ticker": "OGC",
+      "period": "2019Q4",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2019/BCTC/VN/QUY%204/OGC_Baocaotaichinh_Q4_2019_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 28,
+        "so_trang_tong": 28
+      }
+    },
+    {
+      "doc_id": "PLX_2026Q2_TT99",
+      "ticker": "PLX",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/PLX_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 148.4,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 36,
+        "so_trang_tong": 36
+      }
+    },
+    {
+      "doc_id": "PNJ_2023Q2_TT200",
+      "ticker": "PNJ",
+      "period": "2023Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2023/BCTC/VN/QUY%202/PNJ_Baocaotaichinh_Q2_2023_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 274.3,
+        "nho_nhat": 230.2,
+        "lon_nhat": 290.1,
+        "so_trang_do_duoc": 29,
+        "so_trang_tong": 29
+      }
+    },
+    {
+      "doc_id": "POW_2026Q2_TT99",
+      "ticker": "POW",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/POW_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 38,
+        "so_trang_tong": 38
+      }
+    },
+    {
+      "doc_id": "PVD_2023Q4_TT200",
+      "ticker": "PVD",
+      "period": "2023Q4",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2023/BCTC/VN/QUY%204/PVD_Baocaotaichinh_Q4_2023_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 61,
+        "so_trang_tong": 61
+      }
+    },
+    {
+      "doc_id": "PVS_2026Q1_TT99",
+      "ticker": "PVS",
+      "period": "2026Q1",
+      "san": "HNX",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HNX/2026/BCTC/VN/QUY%201/PVS_Baocaotaichinh_Q1_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 400.0,
+        "nho_nhat": 71.8,
+        "lon_nhat": 400.0,
+        "so_trang_do_duoc": 119,
+        "so_trang_tong": 119
+      }
+    },
+    {
+      "doc_id": "PVT_2022Q2_TT200",
+      "ticker": "PVT",
+      "period": "2022Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2022/BCTC/VN/QUY%202/PVT_Baocaotaichinh_Q2_2022_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 53,
+        "so_trang_tong": 53
+      }
+    },
+    {
+      "doc_id": "QCG_2026Q2_TT99",
+      "ticker": "QCG",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/QCG_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 150.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 33,
+        "so_trang_tong": 33
+      }
+    },
+    {
+      "doc_id": "REE_2023Q2_TT200",
+      "ticker": "REE",
+      "period": "2023Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2023/BCTC/VN/QUY%202/REE_Baocaotaichinh_Q2_2023_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 150.0,
+        "nho_nhat": 150.0,
+        "lon_nhat": 150.0,
+        "so_trang_do_duoc": 36,
+        "so_trang_tong": 36
+      }
+    },
+    {
+      "doc_id": "ROS_2021Q2_TT200",
+      "ticker": "ROS",
+      "period": "2021Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2021/BCTC/VN/QUY%202/ROS_Baocaotaichinh_Q2_2021_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 100.0,
+        "nho_nhat": 100.0,
+        "lon_nhat": 100.0,
+        "so_trang_do_duoc": 32,
+        "so_trang_tong": 32
+      }
+    },
+    {
+      "doc_id": "S12_2016Q1_TT200",
+      "ticker": "S12",
+      "period": "2016Q1",
+      "san": "chua_xac_dinh",
+      "loai_bao_cao": "chua_xac_dinh",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "sàn niêm yết chưa xác định — URL nguồn không mang thông tin này",
+        "loại báo cáo (riêng / hợp nhất) chưa xác định từ URL",
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://cafef1.mediacdn.vn/Images/Uploaded/DuLieuDownload/2016/S12_16Q1_BCTC.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 300.0,
+        "nho_nhat": 300.0,
+        "lon_nhat": 300.0,
+        "so_trang_do_duoc": 20,
+        "so_trang_tong": 20
+      }
+    },
+    {
+      "doc_id": "SAB_2020Q2_TT200",
+      "ticker": "SAB",
+      "period": "2020Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2020/BCTC/VN/QUY%202/SAB_Baocaotaichinh_Q2_2020_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 300.0,
+        "nho_nhat": 300.0,
+        "lon_nhat": 300.0,
+        "so_trang_do_duoc": 38,
+        "so_trang_tong": 38
+      }
+    },
+    {
+      "doc_id": "SAB_2026Q2_TT99",
+      "ticker": "SAB",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/SAB_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 400.0,
+        "so_trang_do_duoc": 41,
+        "so_trang_tong": 41
       }
     },
     {
@@ -231,29 +1291,192 @@
       }
     },
     {
-      "doc_id": "MWG_2025Q1_TT200",
-      "ticker": "MWG",
-      "period": "2025Q1",
-      "san": "HOSE",
+      "doc_id": "SD9_2022Q2_TT200",
+      "ticker": "SD9",
+      "period": "2022Q2",
+      "san": "chua_xac_dinh",
       "loai_bao_cao": "hop_nhat",
-      "nganh": "Bán lẻ",
-      "quy_mo": "VN30",
       "chuan_du_kien": "TT200",
       "gan_nhan_doi": "loai_da_chay_pipeline",
-      "vai_tro": "Đối cực CHẤT LƯỢNG ẢNH: bản quét dày điểm ảnh nhất trong mười tài liệu (295,8 dpi), để đo chênh lệch so với SBT và DLG ở đầu kia của dải.",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "sàn niêm yết chưa xác định — URL nguồn không mang thông tin này",
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://cafef1.mediacdn.vn/Images/Uploaded/DuLieuDownload/2022/SD9_22Q2_BCTC_HN.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 287.7,
+        "nho_nhat": 276.9,
+        "lon_nhat": 306.3,
+        "so_trang_do_duoc": 18,
+        "so_trang_tong": 18
+      }
+    },
+    {
+      "doc_id": "SIP_2026Q2_TT99",
+      "ticker": "SIP",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/SIP_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 47,
+        "so_trang_tong": 47
+      }
+    },
+    {
+      "doc_id": "TDH_2026Q2_TT99",
+      "ticker": "TDH",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/TDH_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 150.0,
+        "nho_nhat": 150.0,
+        "lon_nhat": 300.0,
+        "so_trang_do_duoc": 56,
+        "so_trang_tong": 56
+      }
+    },
+    {
+      "doc_id": "TNI_2026Q2_TT200",
+      "ticker": "TNI",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/TNI_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 34,
+        "so_trang_tong": 34
+      }
+    },
+    {
+      "doc_id": "TSC_2026Q2_TT99",
+      "ticker": "TSC",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/TSC_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 143.9,
+        "nho_nhat": 143.9,
+        "lon_nhat": 143.9,
+        "so_trang_do_duoc": 51,
+        "so_trang_tong": 51
+      }
+    },
+    {
+      "doc_id": "TTF_2021Q4_TT200",
+      "ticker": "TTF",
+      "period": "2021Q4",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2021/BCTC/VN/QUY%204/TTF_Baocaotaichinh_Q4_2021_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 233.2,
+        "nho_nhat": 233.1,
+        "lon_nhat": 233.4,
+        "so_trang_do_duoc": 4,
+        "so_trang_tong": 43
+      }
+    },
+    {
+      "doc_id": "TTF_2026Q1_TT99",
+      "ticker": "TTF",
+      "period": "2026Q1",
+      "san": "HOSE",
+      "loai_bao_cao": "rieng",
+      "nganh": "Gỗ và nội thất",
+      "quy_mo": "vốn hoá nhỏ",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Ca biên DOANH NGHIỆP LỖ: lỗ luỹ kế ăn mòn phần lớn vốn điều lệ.",
       "da_kiem": [
         "không có lớp text"
       ],
       "chua_kiem": [
-        "chuẩn mẫu biểu chưa mở ra xem tận mắt — suy từ kỳ báo cáo 2025"
+        "chuẩn mẫu biểu chưa mở ra xem tận mắt — suy từ kỳ báo cáo 2026",
+        "lỗ 60,42 tỷ quý 1/2026 lấy từ báo chí, chưa đối chiếu trên chính báo cáo, và con số đó là HỢP NHẤT trong khi đây là bản riêng"
       ],
-      "source_url": "https://static2.vietstock.vn/data/HOSE/2025/BCTC/VN/QUY 1/MWG_Baocaotaichinh_Q1_2025_Hopnhat.pdf",
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY 1/TTF_Baocaotaichinh_Q1_2026_Congtyme.pdf",
       "do_phan_giai_dpi": {
-        "trung_vi": 295.8,
-        "nho_nhat": 295.8,
-        "lon_nhat": 295.8,
-        "so_trang_do_duoc": 44,
-        "so_trang_tong": 44
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 41,
+        "so_trang_tong": 41
+      }
+    },
+    {
+      "doc_id": "VCG_2022Q4_TT200",
+      "ticker": "VCG",
+      "period": "2022Q4",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2022/BCTC/VN/QUY%204/VCG_Baocaotaichinh_Q4_2022_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 300.0,
+        "nho_nhat": 150.0,
+        "lon_nhat": 300.0,
+        "so_trang_do_duoc": 47,
+        "so_trang_tong": 47
       }
     },
     {
@@ -280,6 +1503,169 @@
         "lon_nhat": 200.0,
         "so_trang_do_duoc": 40,
         "so_trang_tong": 40
+      }
+    },
+    {
+      "doc_id": "VHM_2021Q4_TT200",
+      "ticker": "VHM",
+      "period": "2021Q4",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2021/BCTC/VN/QUY%204/VHM_Baocaotaichinh_Q4_2021_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 600.0,
+        "nho_nhat": 600.0,
+        "lon_nhat": 600.0,
+        "so_trang_do_duoc": 67,
+        "so_trang_tong": 67
+      }
+    },
+    {
+      "doc_id": "VJC_2022Q1_TT200",
+      "ticker": "VJC",
+      "period": "2022Q1",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2022/BCTC/VN/QUY%201/VJC_Baocaotaichinh_Q1_2022_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 102.3,
+        "nho_nhat": 102.2,
+        "lon_nhat": 102.4,
+        "so_trang_do_duoc": 4,
+        "so_trang_tong": 8
+      }
+    },
+    {
+      "doc_id": "VNM_2023Q2_TT200",
+      "ticker": "VNM",
+      "period": "2023Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2023/BCTC/VN/QUY%202/VNM_Baocaotaichinh_Q2_2023_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 62,
+        "so_trang_tong": 62
+      }
+    },
+    {
+      "doc_id": "VOS_2026Q2_TT99",
+      "ticker": "VOS",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/VOS_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 150.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 31,
+        "so_trang_tong": 31
+      }
+    },
+    {
+      "doc_id": "VRE_2026Q1_TT99",
+      "ticker": "VRE",
+      "period": "2026Q1",
+      "san": "HOSE",
+      "loai_bao_cao": "rieng",
+      "nganh": "Bất động sản bán lẻ",
+      "quy_mo": "VN30",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Ca biên MỎ NEO SCALE: báo cáo không ghi bằng đồng.",
+      "da_kiem": [
+        "tiêu đề 'BÁO CÁO TÌNH HÌNH TÀI CHÍNH RIÊNG' — dấu hiệu TT99",
+        "dòng 'Đơn vị tính: Triệu VND' — hệ số 1.000.000",
+        "cột so sánh ghi '(trình bày lại)'"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY 1/VRE_Baocaotaichinh_Q1_2026_Congtyme.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 36,
+        "so_trang_tong": 36
+      }
+    },
+    {
+      "doc_id": "VSF_2021Q3_TT200",
+      "ticker": "VSF",
+      "period": "2021Q3",
+      "san": "UPCOM",
+      "loai_bao_cao": "rieng",
+      "chuan_du_kien": "TT200",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/UPCOM/2021/BCTC/VN/QUY%203/VSF_Baocaotaichinh_Q3_2021_Congtyme.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 400.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 400.0,
+        "so_trang_do_duoc": 46,
+        "so_trang_tong": 46
+      }
+    },
+    {
+      "doc_id": "VTP_2026Q2_TT99",
+      "ticker": "VTP",
+      "period": "2026Q2",
+      "san": "HOSE",
+      "loai_bao_cao": "hop_nhat",
+      "chuan_du_kien": "TT99",
+      "gan_nhan_doi": "loai_da_chay_pipeline",
+      "vai_tro": "Tài liệu tập gold, khai vào danh mục ngày 05/09/2026 từ tên file gold và bảng nguồn của data/bctc/NGUON.md.",
+      "da_kiem": [],
+      "chua_kiem": [
+        "ngành và hạng quy mô chưa khai",
+        "chuẩn mẫu biểu chưa đối chiếu số hiệu thông tư in trong tài liệu"
+      ],
+      "source_url": "https://static2.vietstock.vn/data/HOSE/2026/BCTC/VN/QUY%202/VTP_Baocaotaichinh_Q2_2026_Hopnhat.pdf",
+      "do_phan_giai_dpi": {
+        "trung_vi": 200.0,
+        "nho_nhat": 200.0,
+        "lon_nhat": 200.0,
+        "so_trang_do_duoc": 35,
+        "so_trang_tong": 35
       }
     }
   ]

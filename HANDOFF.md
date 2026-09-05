@@ -1476,10 +1476,35 @@ mở tài liệu ra nhìn lập, miễn phí.
 
 Và chúng dính trực tiếp tới **luật dòng trống** vừa thi công 05/09: luật ấy
 nổ khi chỉ tiêu không neo được vào vùng nào. Sáu tài liệu này neo hỏng vì lý do
-KHÔNG liên quan gì tới việc dòng có trống hay không. Luật đã có ba lớp chặn
-(phải đã OCR vùng, phải thuộc `CO_THE_VANG_MAT`, không dòng tổng nào lọt), nên
-về lý thuyết an toàn — **nhưng chưa ai đo trên đúng sáu tài liệu này**. Đó là
-phép kiểm rẻ và đáng làm trước lượt chấm gold kế tiếp.
+KHÔNG liên quan gì tới việc dòng có trống hay không.
+
+**`DGC_2026Q2_TT99` là ca cụ thể nhất, và nó KHÔNG an toàn.** Ghi chú nói giấy
+in *mã 150 thay cho 160* và *270 thay cho 280* — tức B01 của nó dùng **hệ mã
+của TT200** trong khi tài liệu được chấm theo TT99. Vì `repair.neo` và
+`extract_baseline` tra theo chiều **field → mã số** rồi đi tìm mã ấy trong text
+OCR, chuỗi hỏng dựng lại được đầy đủ mà không cần chạy:
+
+| Chỉ tiêu | Đi tìm mã | Giấy in | Hậu quả |
+|---|---|---|---|
+| `tsnh_khac` | B01 mã 160 | 150 | trượt → coi là DÒNG VẮNG MẶT, mà nó **có** trong `CO_THE_VANG_MAT` nên **bị điền 0** trong khi thật là 215,3 tỷ |
+| `tong_tai_san` | B01 mã 280 | 270 | trượt → giữ `None`. An toàn, vì dòng tổng không bao giờ vào danh sách trắng |
+| `tai_san_sinh_hoc_ngan_han` | B01 mã 150 | 150 (nhưng là dòng khác!) | **TRÚNG NHẦM** → hút giá trị 215,3 tỷ của `tsnh_khac` |
+
+Ca này đúng bằng chế độ lỗi `PLX` mà bản vá 04/09 dựng lên để chặn, chỉ khác
+chỗ dòng tổng thoát được còn dòng chi tiết thì không — và mục 17.4 đã ghi sẵn
+rằng `tsnh_khac` với `ln_khac` là **hai ô cố ý để lại** trong danh sách trắng.
+`DGC` là ca thật đầu tiên của khoảng hở đó.
+
+**Ba việc rẻ, nên làm trước lượt chấm gold kế tiếp:**
+
+1. **Chạy pipeline trên đúng sáu tài liệu này** và xem `neo` với
+   `dien_dong_vang_mat` khai gì. Sáu tài liệu, không phải 70.
+2. **Kiểm xem `DGC_2026Q2` thật ra là TT200 hay TT99.** Nếu B01 của nó dùng hệ
+   mã TT200 thì `detect_standard` cũng có thể phân loại khác gold, và đó là
+   đúng câu hỏi của **bước D** (Phụ lục B) — nay có một ca thật để thử.
+3. **Cân nhắc dò mã số theo CẢ HAI hệ** khi nhận diện chuẩn chưa chắc chắn,
+   thay vì tin vào chuẩn đã khai. Đây là thay đổi cài đặt, không phải thiết kế
+   thí nghiệm, nên không cần tu chính.
 
 ## 20. Chấm pipeline trên tập gold — số thật đầu tiên, 26–27/08/2026
 

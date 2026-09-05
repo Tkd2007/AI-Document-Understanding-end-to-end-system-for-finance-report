@@ -1271,3 +1271,59 @@ cạn mọi tích ứng viên. Vì phần dư nằm trong `R^9`, một cài đ�
 cỡ hai lần 44 nghìn phép băm. Đó là thay đổi CÀI ĐẶT, không phải thay đổi
 thiết kế thí nghiệm, nên không cần tu chính — nhưng nó đụng vào thuật toán
 trung tâm của bài nên phải kèm test chứng minh cho ra cùng nghiệm.
+
+### 05/09/2026 (muộn hơn) — H2 đo trên 1, 2 và 3 lỗi đồng thời, không chỉ 1
+
+**Sửa đổi.** Giao thức tiêm lỗi của tầng XBRL chạy quét `n_errors ∈ {1, 2, 3}`
+thay vì cố định `n_errors = 1`. Mọi bảng H2 báo cáo **tách theo số lỗi tiêm**,
+không gộp. Đây là trả lời cho Câu 8, do người chủ trì quyết ngày 05/09/2026.
+
+**Lý do, và nó là một CHỨNG MINH chứ không phải một nghi ngờ.** Bản đăng ký
+trước chỉ nghi rằng giao thức một-lỗi chọn ca thuận lợi cho baseline 9. Với
+baseline 7 (`repair.ged`) thì chứng minh được:
+
+> Dưới giả thiết đúng MỘT trường sai, phần dư là `r = δ·a_j` với `a_j` là cột
+> của trường sai. Thống kê GLR `T_i = (a_iᵀr)²/(a_iᵀa_i)` khi đó thoả
+> `T_i ≤ T_j` với mọi `i`, theo bất đẳng thức Cauchy–Schwarz, và dấu bằng xảy
+> ra đúng khi `a_i` tỷ lệ với `a_j`.
+
+Nghĩa là ở giao thức một-lỗi, baseline 7 **không thể bị đánh bại bằng chất
+lượng thuật toán** — nó chỉ trượt khi hai cột không phân biệt được, tức khi
+thông tin không tồn tại. Một bảng H2 đo trên đúng một lỗi vì vậy đo **trần
+định vị của hệ ràng buộc**, không đo phương pháp. Mệnh đề này có test chốt
+trên ma trận ràng buộc thật của cả hai chuẩn (`tests/test_ged.py`, lớp 1).
+
+Với hai hoặc ba lỗi đồng thời, phần dư là tổ hợp tuyến tính của nhiều cột nên
+chữ ký hướng nhoè đi, cận trên kia không còn, và phép so mới tách được các
+phương pháp theo đúng thứ nó định tách.
+
+**QUÉT chứ không THAY THẾ.** Giữ nguyên `n = 1` trong bộ quét vì hai lý do:
+mọi kết quả đã đo trước ngày này vẫn so được, và cái đáng giá về mặt khoa học
+là **đường cong suy giảm** theo số lỗi — mỗi phương pháp tụt nhanh chậm ra sao
+— chứ không phải một điểm đơn lẻ ở `n = 3`.
+
+**H3 KHÔNG ĐỔI.** Bảng H3 và mọi chỉ số của nó (tỷ lệ lỗi câm, chỉ số chống
+bịa, `luot_con_sai`) vẫn chỉ tính trên `n = 1`, đúng giao thức đã đăng ký. Trộn
+các lượt nhiều lỗi vào đó sẽ đổi con số đầu bảng của Mốc 3 mà không ai thấy.
+Sửa đổi này vì vậy **chỉ mở rộng H2**.
+
+**Tính chất lồng nhau, ghi để người đọc khỏi tưởng ba lượt độc lập.** Với cùng
+`seed`, `inject()` duyệt cùng một danh sách đã xáo theo cùng thứ tự, nên tập
+lỗi của `n = 1` là tập con của `n = 2`, và tập của `n = 2` là tập con của
+`n = 3`. Ba mức vì vậy KHÔNG độc lập, và mọi phép kiểm định trên hiệu số giữa
+chúng phải là kiểm định GHÉP CẶP.
+
+**Giới hạn phải nêu trong bài.** Trần `max_changes` ở tầng XBRL là 2, nên khi
+tiêm 3 lỗi thì phương pháp đề xuất và baseline 9 **về cấu trúc không thể sửa
+hết**, và bảng Top-k của chúng bị chặn ở 2 tên trong khi baseline 7 và 8 luôn
+trả bảng đầy đủ. Khoảng cách ở Top-3 vì vậy có một phần là hình dạng của
+phương pháp chứ không phải độ chính xác. Bảng kết quả in kèm số lỗi tiêm và
+trần của từng phe để đọc được điều đó.
+
+**Chi phí.** Bộ quét ba mức làm số lượt chạy của tầng XBRL tăng gấp ba. Lượt
+`n = 1` đo được ngày 05/09 là ~7 giờ trên 26 hồ sơ, nên bộ quét đủ vào khoảng
+20 giờ, chạy offline và không tốn lời gọi API nào.
+
+**Phải chạy lại tầng XBRL** sau sửa đổi này. Kết quả H2 nào đo trước ngày
+05/09/2026 chỉ là điểm `n = 1` của bộ quét, và không được trình bày như kết
+quả H2 đầy đủ.

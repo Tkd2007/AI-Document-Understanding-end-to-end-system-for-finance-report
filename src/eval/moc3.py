@@ -42,6 +42,7 @@ if __name__ == "__main__":
     _thu_muc_script = str(Path(__file__).resolve().parent)
     sys.path[:] = [p for p in sys.path if Path(p).resolve() != Path(_thu_muc_script)]
 
+from eval import h2  # noqa: E402
 from eval.metrics import fabrication_rate, khop_so, silent_error_rate  # noqa: E402
 from eval.xbrl_tier.facts import build_table  # noqa: E402
 from eval.xbrl_tier.inject import ErrorType, inject  # noqa: E402
@@ -51,7 +52,12 @@ from eval.xbrl_tier.linkbase import (  # noqa: E402
     to_matrix,
 )
 from repair.candidates import generate  # noqa: E402
-from repair.diagnose import diagnose, diagnose_fellegi_holt_donor  # noqa: E402
+from repair.diagnose import (  # noqa: E402
+    diagnose,
+    diagnose_fellegi_holt_donor,
+    diagnose_l1_continuous,
+)
+from repair.ged import dinh_vi_ged  # noqa: E402
 
 THU_MUC_XBRL = Path("data/xbrl")
 
@@ -63,6 +69,57 @@ CHE_DO_LOI = [ErrorType.DIGIT_SUB, ErrorType.ROW_SHIFT, ErrorType.COL_SHIFT, Err
 # Nhiều seed vì bảng kết quả phải chịu được phương sai của bước inject —
 # ADDENDUM mục 5 liệt kê đây là một trong bốn nguồn phương sai.
 CAC_SEED = [0, 1, 2, 3, 4]
+
+# Số lỗi tiêm mỗi lượt.
+#
+# Để thành hằng số CÓ TÊN thay vì viết thẳng `n_errors=1` vào lời gọi, vì nó
+# là một tham số của THIẾT KẾ THÍ NGHIỆM đang chờ quyết (Câu 8, `HANDOFF.md`
+# mục 0) chứ không phải một chi tiết cài đặt. Nó đi thẳng vào bảng H2, nên
+# đổi nó ở đây là bảng tự khai con số mới — không có chỗ nào phải sửa theo.
+#
+# Vì sao con số này quan trọng với H2 hơn là với H3: với ĐÚNG MỘT lỗi, thống
+# kê GLR của baseline 7 có cận dưới chứng minh được bằng Cauchy-Schwarz — nó
+# không bao giờ xếp trường sai xuống dưới một trường có cột không tỷ lệ. Nên
+# ở giao thức một-lỗi, bảng H2 đo TRẦN ĐỊNH VỊ của hệ ràng buộc nhiều hơn là
+# đo độ giỏi của từng phương pháp.
+N_LOI_TIEM = 1
+
+# Trần số trường được sửa RIÊNG cho tầng XBRL, không dùng mặc định toàn cục.
+#
+# ĐO ĐƯỢC NGÀY 05/09/2026, và con số này là lý do trần ở đây phải tách khỏi
+# trần của tầng gold. Bảng XBRL dựng từ calculation linkbase của SEC nên nó có
+# 119-206 chỉ tiêu, gấp bảy lần tầng gold (26-27). Chi phí tìm kiếm tăng theo
+# luỹ thừa bậc k của số ứng viên, nên cùng một trần cho ra hai thế giới khác
+# hẳn nhau:
+#
+#              tầng gold (26 chỉ tiêu)      tầng XBRL (119-206 chỉ tiêu)
+#   trần 2     44 nghìn tổ hợp, 0,1 giây    2,4-7,3 triệu, 8-24 giây
+#   trần 4     274 triệu, 14,5 phút         1-8,7 NGHÌN TỶ, 1-11 THÁNG
+#
+# Trần 4 ở tầng này vì vậy không phải là chậm mà là KHÔNG CHẠY ĐƯỢC. Người
+# chủ trì quyết nâng trần lên 4 ngày 05/09 cho tầng gold; áp con số ấy sang
+# đây sẽ giết cả tầng, nên tầng XBRL giữ 2 và ghi rõ lý do tại chỗ.
+#
+# Điều kiện khoa học vẫn giữ: trần áp NHƯ NHAU cho mọi phương pháp TRONG một
+# tầng, nên phép so trong tầng vẫn ở cùng ngân sách. Cái không so được là
+# con số của tầng này với con số của tầng kia — mà điều đó vốn đã đúng từ
+# trước vì hai tầng khác cả ngôn ngữ lẫn miền.
+MAX_CHANGES_XBRL = 2
+
+# Trần thời gian RIÊNG cho tầng XBRL, cùng lý do như trần số trường.
+#
+# `repair.diagnose.TIME_LIMIT_S` nâng lên 2400 giây ngày 05/09 để trần 4 của
+# TẦNG GOLD còn chứng minh được `vo_nghiem`. Áp con số ấy sang đây thì mỗi lượt
+# được phép mài tới 40 phút, nhân 2 phương pháp × 20 lượt mỗi hồ sơ × 26 hồ sơ
+# là hàng chục ngày — đo được bằng cách chạy thử: hồ sơ đầu tiên không xong sau
+# 35 phút.
+#
+# 120 giây là TRẦN CHỐNG TREO, không phải tham số khoa học, và ở tầng này nó
+# không cắt mất kết luận nào: đo ngày 05/09, vét cạn k=2 tốn 8-24 giây trên 12
+# hồ sơ đầu, nên `vo_nghiem` vẫn tới được với biên hơn năm lần. Đó chính là
+# tính chất phải giữ — trần thời gian chỉ được cắt phần MÀI THÊM, không được
+# cắt phần chứng minh.
+TIME_LIMIT_XBRL_S = 120.0
 
 # Khoá `cik` nằm ngay đầu file companyfacts của SEC, nên đọc 512 byte đầu là
 # đủ. Đọc từ DỮ LIỆU chứ không suy từ tên file: tên file là quy ước của
@@ -286,13 +343,28 @@ def _con_sai(sau_sua, gia_tri_that, truong_hong) -> bool:
 
 
 def _do_mot_luot(gia_tri_hong, gia_tri_that, ung_vien, A, thu_tu, donor, truong_hong):
-    """Chạy cả hai phương pháp trên CÙNG một bộ số, cùng ngân sách."""
+    """
+    Chạy cả hai phương pháp SỬA trên CÙNG một bộ số, cùng ngân sách, rồi đo
+    thêm phần ĐỊNH VỊ cho bốn phương pháp.
+
+    Hai phần tách nhau vì chúng trả lời hai giả thuyết khác nhau. Phần sửa là
+    H3 và chỉ có hai phe tham gia. Phần định vị là H2 và có bốn: hai phe kia
+    cộng baseline 7 (kiểm định GED cổ điển, `PREREGISTRATION.md` gọi là
+    baseline bắt buộc) và baseline 8 (L1 liên tục). Hai baseline sau KHÔNG
+    được đưa vào bảng H3 vì chúng không cùng ngân sách gọi model theo cách
+    baseline 9 cùng — chúng không gọi model lần nào.
+    """
     ket = {}
+    xep_hang: dict[str, list[str]] = {}
+
     for ten, ham, kwargs in (
         ("de_xuat", diagnose, {}),
         ("baseline9", diagnose_fellegi_holt_donor, {"donor_values": donor}),
     ):
-        kq = ham(gia_tri_hong, ung_vien, A, thu_tu, **kwargs)
+        kq = ham(
+            gia_tri_hong, ung_vien, A, thu_tu,
+            max_changes=MAX_CHANGES_XBRL, time_limit_s=TIME_LIMIT_XBRL_S, **kwargs
+        )
         sau_sua = kq.gia_tri_sau_sua(gia_tri_hong)
         ket[ten] = {
             "verdict": kq.verdict,
@@ -303,7 +375,24 @@ def _do_mot_luot(gia_tri_hong, gia_tri_that, ung_vien, A, thu_tu, donor, truong_
             "bia": fabrication_rate(sau_sua, gia_tri_that, A, thu_tu),
             "luot_con_sai": _con_sai(sau_sua, gia_tri_that, truong_hong),
         }
-    return ket
+        xep_hang[ten] = h2.xep_hang_roi_rac(kq)
+
+    kq_l1 = diagnose_l1_continuous(
+        gia_tri_hong, ung_vien, A, thu_tu, time_limit_s=TIME_LIMIT_XBRL_S
+    )
+    xep_hang["baseline8"] = h2.xep_hang_l1(kq_l1)
+
+    kq_ged = dinh_vi_ged(gia_tri_hong, A, thu_tu)
+    xep_hang["baseline7"] = h2.xep_hang_ged(kq_ged)
+
+    return ket, {
+        "xep_hang": xep_hang,
+        # Lấy từ kiểm định toàn cục của baseline 7 chứ không suy từ verdict
+        # của phương pháp nào: đây là câu hỏi về HỆ RÀNG BUỘC — lỗi tiêm vào
+        # có sinh phần dư không — nên nó không được phụ thuộc vào việc phương
+        # pháp nào đó có ứng viên hay không.
+        "sinh_phan_du": kq_ged.phat_hien,
+    }
 
 
 def _cong_mot_luot(t: dict, r: dict, truong_hong: set) -> None:
@@ -377,6 +466,13 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
     }
     n_luot_theo_che_do: Counter = Counter()
 
+    # Bộ đếm H2 có BỐN phương pháp, nhiều hơn bảng H3 hai cái. Baseline 7 và 8
+    # không vào bảng H3 vì chúng không sửa theo cùng ngân sách gọi model —
+    # chúng không gọi model lần nào — nhưng chúng là đối chứng bắt buộc của H2.
+    dem_h2: dict = {
+        p: h2.khung_dem() for p in ("de_xuat", "baseline9", "baseline8", "baseline7")
+    }
+
     n_luot = 0
     bo_qua: Counter = Counter()
 
@@ -401,7 +497,9 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
         for che_do in CHE_DO_LOI:
             for seed in CAC_SEED:
                 try:
-                    hong, ground_truth = inject(bang, che_do, n_errors=1, seed=seed, period=ky)
+                    hong, ground_truth = inject(
+                        bang, che_do, n_errors=N_LOI_TIEM, seed=seed, period=ky
+                    )
                 except ValueError:
                     bo_qua[f"khong_inject_duoc_{che_do.value}"] += 1
                     continue
@@ -410,7 +508,7 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
                 truong_hong = {e.concept for e in ground_truth}
                 ung_vien = _ung_vien_cho_bang(hong, gia_tri_hong, ky)
 
-                ket = _do_mot_luot(
+                ket, dinh_vi = _do_mot_luot(
                     gia_tri_hong, gia_tri_that, ung_vien, A, thu_tu, donor, truong_hong
                 )
                 n_luot += 1
@@ -419,6 +517,13 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
                 for p, r in ket.items():
                     for t in (tong[p], theo_che_do[che_do.value][p]):
                         _cong_mot_luot(t, r, truong_hong)
+
+                for p, xep in dinh_vi["xep_hang"].items():
+                    h2.cong_mot_luot(
+                        dem_h2[p],
+                        h2.LuotDinhVi(xep, truong_hong, N_LOI_TIEM),
+                        dinh_vi["sinh_phan_du"],
+                    )
 
     thieu_ho_so = cac_cik_co_facts(thu_muc) - cik_da_gap
     if thieu_ho_so:
@@ -432,6 +537,7 @@ def chay(thu_muc: Path = THU_MUC_XBRL) -> dict:
         "bo_qua": bo_qua,
         "n_ho_so": len(ho_so),
         "n_cong_ty": len(cik_da_gap),
+        "h2": dem_h2,
     }
 
 
@@ -610,6 +716,9 @@ def bao_cao(kq: dict) -> str:
                 f"| {ty_le(md['ra_tay'], nl)} | {ty_le(mb['ra_tay'], nl)} |"
             )
         dong.append("")
+
+    if kq.get("h2"):
+        dong += ["", *h2.bang(kq["h2"])]
 
     if kq["bo_qua"]:
         dong += ["", "Bỏ qua (ghi tường minh, không giấu):", ""]

@@ -72,6 +72,7 @@ theo NỘI DUNG, dùng khi đã biết mình cần gì.
 | 17.2 | Quy mô tập gold — chưa cập nhật tài liệu | tránh làm lại việc đã quyết |
 | **17.4** | **Hai lượt chấm 70 tài liệu: kết quả, bốn bản vá, ba việc còn treo** | **đọc trước mọi việc khác** |
 | 19.3 | **Việc còn lại của tầng gold**, theo thứ tự chặn nhau | việc đang làm |
+| **19.7** | **Chất lượng nhãn gold — mã 62, lệch làm tròn, sáu ghi chú dự báo chỗ pipeline vấp** | **trước mọi lượt chấm gold** |
 | 20.6 · 20.8 | **Việc lượt chạy lộ ra, chưa làm** · đơn vị theo bảng | việc đang làm |
 | B | Phương án C, **bước D chưa làm** | làm tiếp nhận diện chuẩn |
 
@@ -94,7 +95,32 @@ thì **hỏi lại đúng những câu dưới đây chứ đừng tự chọn**
 khoa học chứ không phải chi tiết cài đặt. Người dùng trả lời được bằng một tin
 nhắn duy nhất, dạng "Câu 8 chọn ...".
 
-**Đang chờ: chỉ còn Câu 3 (nội dung đã mất), và nó không chặn việc gì.**
+**Đang chờ: Câu 16, Câu 17 (cả hai MỚI 05/09), và Câu 3 (nội dung đã mất).**
+Câu 16 chặn `VNM` và `PVD`; Câu 17 chặn lượt chấm gold kế tiếp; Câu 3 không
+chặn gì.
+
+**Câu 16 — MỚI: có thêm mã 62 của B03 vào bộ chỉ tiêu không?** B03 của báo cáo
+HỢP NHẤT có hai dòng tỷ giá, mã 61 *"Ảnh hưởng của thay đổi tỷ giá hối đoái
+quy đổi ngoại tệ"* và mã 62 *"Chênh lệch tỷ giá do chuyển đổi báo cáo"*. Bộ chỉ
+tiêu chỉ có mã 61, nên giá trị mã 62 không có chỗ điền và đẳng thức B03 thiếu
+một số hạng. Chứng minh trên `PVD_2023Q4`: thêm mã 62 thì đẳng thức khớp tới
+từng đồng — chi tiết ở mục 19.7 nhóm 1.
+
+Đây là thay đổi **bộ chỉ tiêu đã đăng ký** (27 với TT99, 26 với TT200, 9 đẳng
+thức, kịch bản E chốt ở `f1c2738`) nên phải vào mục Sửa đổi của
+`PREREGISTRATION.md` TRƯỚC khi sửa code. Lập luận bênh: đây là sửa một thiếu
+sót của bộ chỉ tiêu so với văn bản Thông tư, không phải thêm chỉ tiêu để lấy
+thêm ràng buộc — và không sửa thì `VNM` với `PVD` vĩnh viễn lệch. Lập luận
+chống: nó nâng số đẳng thức dùng được, tức đổi bảng identifiability và mọi con
+số H0 đã đo. *Chặn `VNM_2023Q2` và `PVD_2023Q4`.*
+
+**Câu 17 — MỚI: xử lý 15 tài liệu lệch cỡ làm tròn thế nào?** 22 chỗ, từ 10
+đồng tới 1 triệu đồng trên những bộ số cỡ nghìn tỷ. Chúng làm phần dư khác 0 ở
+**15 trong 70** tài liệu, nên mọi phương pháp sẽ đi tìm một ô sai không tồn tại
+— nhiễu rơi đúng vào chỗ H2 và H3 đo. Ba đường ra kèm đánh đổi từng cái ở mục
+19.7 nhóm 3: nới `RESIDUAL_TOL`, khai tường minh từng tài liệu, hoặc để nguyên
+và khai trong bài. *Chặn lượt chấm gold kế tiếp, vì đổi cách xử lý sau khi đã
+thấy kết quả là chọn cách xử lý theo kết quả.*
 
 **Câu 14 ĐÓNG ngày 05/09/2026 — tiền đề sai, không phải được giải quyết.** Nó
 cho rằng `HNG_2025H1` in số DƯƠNG dưới nhãn "Lỗ thuần", nên quy ước dấu của
@@ -1339,6 +1365,121 @@ không còn là việc *tìm* tài liệu nữa (đã có sẵn 70 file trên đ
 > quét — cách đo và cạm bẫy) đã chuyển sang
 > `docs/lich-su/HANDOFF-da-dong.md`,** giữ nguyên văn và nguyên số mục.
 > Độ phân giải là trục phân nhóm Stress thứ ba, tra ở đó khi dựng bảng.
+
+### 19.7 Chất lượng nhãn gold — ba nhóm vấn đề, phát hiện 05/09/2026
+
+Công cụ `src/eval/do_lech_gold.py` chấm chín đẳng thức trên cả 70 nhãn gold và
+in ra `docs/nhan-gold-khong-can.md`. Chạy lại sau MỖI lần sửa nhãn:
+
+```bash
+PYTHONIOENCODING=utf-8 PYTHONPATH=src \
+    python src/eval/do_lech_gold.py > docs/nhan-gold-khong-can.md
+```
+
+**ĐỌC `notes` CỦA FILE GOLD TRƯỚC KHI PHÂN TÍCH BẤT KỲ CHỖ LỆCH NÀO.** 10 trong
+70 file có ghi chú của người gán nhãn, và chúng giải thích sẵn **cả bốn** tài
+liệu lệch thật. Bản đầu của công cụ không in `notes` nên nó dựng ra một danh
+sách "phải đi kiểm" cho những thứ đã kiểm xong — đã sửa, nay `notes` in kèm
+từng mục.
+
+#### Nhóm 1 — THIẾU MÃ 62 CỦA B03 TRONG CODE. Chặn `VNM` và `PVD`.
+
+Ghi chú của `VNM_2023Q2_TT200` nói thẳng *"code thiếu mục 62 cho bảng b03"*, và
+`PVD_2023Q4_TT200` nói *"mã 61 còn để 2 giá trị trong cùng 1 mã"*. Cùng một
+chuyện: B03 của **báo cáo hợp nhất** có hai dòng tỷ giá chứ không phải một —
+
+- mã 61 *"Ảnh hưởng của thay đổi tỷ giá hối đoái quy đổi ngoại tệ"*
+- mã 62 *"Chênh lệch tỷ giá do chuyển đổi báo cáo"*
+
+Bộ chỉ tiêu chỉ có `anh_huong_ty_gia` cho mã 61, nên giá trị mã 62 không có chỗ
+điền. Đẳng thức đang là `70 = 50 + 60 + 61`, đúng ra phải là `70 = 50 + 60 + 61
++ 62` với báo cáo hợp nhất.
+
+**CHỨNG MINH trên `PVD`, khớp tới từng đồng:**
+
+```
+   115.994.552.493   mã 50
++ 2.078.586.541.400  mã 60
++       −51.772.851  mã 61  (giá trị đúng, người chủ trì sửa 05/09)
++    61.517.836.238  ← chính là mã 62, trước đó bị dồn nhầm vào mã 61
+= 2.256.047.157.280  = mã 110 trên B01
+```
+
+> **CẢNH BÁO TRẠNG THÁI: `PVD` hiện lệch NHIỀU HƠN trước.** Người chủ trì đã
+> chuyển 61.517.836.238 ra khỏi mã 61 ngày 05/09, nhưng chưa có mã 62 để nhận,
+> nên chênh lệch tăng từ 51,7 triệu lên **61,5 tỷ**. Đây là trạng thái TRUNG
+> GIAN có chủ đích, không phải hồi quy. Nó tự khỏi ngay khi mã 62 được thêm.
+> Đừng "sửa" bằng cách trả giá trị về mã 61.
+
+**Việc phải làm, theo thứ tự:** ghi tu chính `PREREGISTRATION.md` (bộ chỉ tiêu
+là tham số đã đăng ký) → thêm trường vào `fields_config` cho cả hai chuẩn →
+sửa đẳng thức B03 → điền mã 62 cho `VNM` và `PVD` (giá trị đã có sẵn, chỉ
+chuyển chỗ) → chạy lại `do_lech_gold.py`. **Chờ quyết định, xem mục 0.**
+
+#### Nhóm 2 — CHÍNH BÁO CÁO IN RA ĐÃ KHÔNG CÂN. `FLC` và `DVD`.
+
+- `FLC_2021Q4_TT200`, lệch **49,4 tỷ**: ghi chú nói *"mã 70 ở B03 không giống
+  với 110 trên B01, có vẻ không có ràng buộc"*.
+- `DVD_2010Q4_TT200`, lệch **560 triệu**: ghi chú nói *"52 đáng lẽ âm nhưng lại
+  ghi trong báo cáo là dương"*.
+
+**Nhãn đang chép ĐÚNG như in, không có gì để sửa.** Đây là hai tài liệu mà bản
+in vi phạm ràng buộc kế toán. Về mặt bài viết đó là điểm MẠNH — ràng buộc bắt
+được cả lỗi của người lập báo cáo, không riêng lỗi của máy đọc — nhưng khi chấm
+điểm thì phải loại chúng khỏi mẫu số, nếu không mọi phương pháp đều bị trừ oan.
+Chưa có cơ chế loại; hiện chưa khoá nào trong file gold khai ra rằng tài liệu
+này thuộc loại "bản in đã sai".
+
+#### Nhóm 3 — LỆCH CỠ LÀM TRÒN, chưa quyết xử lý. 15 tài liệu, 22 chỗ.
+
+Từ **10 đồng** (`BCM_2021Q1`) tới **1 triệu đồng** (`GAS_2023Q1`), trên những
+bộ số cỡ nghìn tỷ. Nhiều khả năng chính báo cáo đã làm tròn ở vài chữ số cuối
+chứ không phải chép sai.
+
+**Nhưng chúng vẫn làm phần dư khác 0**, nên tầng ràng buộc thấy tài liệu "không
+cân" và mọi phương pháp sẽ đi tìm một ô sai không tồn tại — ở 15 trong 70 tài
+liệu. Đây là nhiễu rơi đúng vào chỗ H2 và H3 đo, nên không bỏ qua được.
+
+Khoảng trống giữa hai nhóm rất rộng — nhóm này lớn nhất 1 triệu, nhóm lệch thật
+nhỏ nhất 51,7 triệu — nên ngưỡng phân loại không phải chuyện tinh chỉnh.
+`do_lech_gold.NGUONG_LAM_TRON` để 2 triệu, có test chốt nó nằm giữa hai số đo.
+
+Ba đường ra, **chưa chọn** (mục 0):
+
+1. **Nới `RESIDUAL_TOL`** để dung sai nuốt được mức làm tròn. Rẻ nhất, nhưng
+   nới dung sai là hạ độ nhạy của CẢ tầng phát hiện, tức mua yên tĩnh bằng
+   việc bỏ sót lỗi thật cỡ nhỏ ở mọi tài liệu khác.
+2. **Khai tường minh từng tài liệu** một khoá kiểu `lech_lam_tron_da_biet`, rồi
+   trừ đi khi chấm. Chính xác nhất, nhưng phải mở 15 tài liệu ra xác nhận từng
+   ca là làm tròn thật chứ không phải chép sai.
+3. **Để nguyên và khai trong bài** rằng 15/70 tài liệu có phần dư khác 0 ở mức
+   làm tròn. Trung thực nhất, nhưng để nhiễu nằm nguyên trong số đo.
+
+#### Nhóm 4 — sáu ghi chú KHÔNG phải lỗi nhãn, mà là DỰ BÁO chỗ pipeline sẽ vấp
+
+Sáu tài liệu có ghi chú nhưng nhãn **CÂN** cả chín đẳng thức. Ghi chú của chúng
+nói về **mã số dòng in trên giấy**, không nói về giá trị:
+
+| Tài liệu | Ghi chú | Biểu mẫu |
+|---|---|---|
+| `DGC_2026Q2_TT99` | mã 160 in thành 150, 280 in thành 270 | B01 |
+| `DIG_2026Q2_TT99` | mã 20 in nhầm thành 08 | B03 |
+| `PVS_2026Q1_TT99` | **không ghi mã cho từng mục** | B03 |
+| `TNI_2026Q2_TT200` | mã 50 bị lệch lên trên | B03 |
+| `VSF_2021Q3_TT200` | mã 270 không in thẳng ra | B01 |
+| `PNJ_2023Q2_TT200` | dấu mộc đè lên mã 61 | B03 |
+
+**Vì sao chúng đáng giá:** probe dò dòng của pipeline neo chỉ tiêu bằng cách
+tìm MÃ SỐ trong text OCR. Sáu tài liệu này là những ca mã số sai, thiếu, lệch
+hoặc bị che — tức **danh sách dự báo sẵn nơi khâu neo sẽ hỏng**, do người đã
+mở tài liệu ra nhìn lập, miễn phí.
+
+Và chúng dính trực tiếp tới **luật dòng trống** vừa thi công 05/09: luật ấy
+nổ khi chỉ tiêu không neo được vào vùng nào. Sáu tài liệu này neo hỏng vì lý do
+KHÔNG liên quan gì tới việc dòng có trống hay không. Luật đã có ba lớp chặn
+(phải đã OCR vùng, phải thuộc `CO_THE_VANG_MAT`, không dòng tổng nào lọt), nên
+về lý thuyết an toàn — **nhưng chưa ai đo trên đúng sáu tài liệu này**. Đó là
+phép kiểm rẻ và đáng làm trước lượt chấm gold kế tiếp.
 
 ## 20. Chấm pipeline trên tập gold — số thật đầu tiên, 26–27/08/2026
 

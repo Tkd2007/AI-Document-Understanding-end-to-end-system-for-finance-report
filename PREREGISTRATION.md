@@ -1152,3 +1152,122 @@ trước khi nhìn bảng kết quả tương ứng.
 Trang lệch, dấu mộc đè lên chữ số và in mờ lệch nét là những trục riêng, hiện
 chỉ ghi bằng lời chứ chưa đo được, nên một hệ số tương quan bằng 0 với dpi
 KHÔNG cho phép kết luận rằng chất lượng ảnh không ảnh hưởng.
+
+### 05/09/2026 — Dòng không neo được vào vùng nào: ứng viên duy nhất là `0`, và trần sửa nâng lên 4
+
+**Hai sửa đổi trong một mục vì chúng cùng đến từ một lượt chạy và cùng đổi
+hành vi của `diagnose()`.** Cả hai được người chủ trì quyết ngày 05/09/2026,
+**SAU khi đã thấy kết quả lượt H3 ngày 05/09**. Ghi rõ điều đó ở đây thay vì
+để người đọc tự phát hiện: đây là thời điểm xấu nhất để đổi thiết kế, nên
+gánh nặng biện minh nằm về phía hai sửa đổi này.
+
+#### Sửa đổi 1 — chỉ tiêu không neo được vào vùng nào thì ứng viên duy nhất là `0`
+
+**Phát biểu.** Khi một chỉ tiêu không neo được vào vùng bảng nào trên trang
+(trạng thái `khong_co_vung`) **và** tên nó nằm trong
+`fields_config.CO_THE_VANG_MAT`, tập ứng viên của nó là **đúng một phần tử:
+giá trị `0`**. Các nguồn ứng viên khác — biến thể nhầm chữ số, biến thể dấu,
+biến thể bậc đơn vị, phiếu VLM — bị **thay thế**, không phải bổ sung.
+
+**Vì sao thay thế chứ không bổ sung.** Không neo được vào vùng nào nghĩa là
+không có chỗ nào trên tờ giấy để đọc lại. Khi đó mọi ứng viên còn lại đều là
+phép biến đổi của một con số mà máy đã bịa ra từ hư không — lật dấu nó, đổi
+bậc nó, đọc lệch một chữ số của nó. Giữ chúng lại là cho phương pháp tiếp tục
+nặn một con số không có nguồn. Số đo ngày 05/09 cho thấy đúng điều đó: **cả 4
+ô mà phương pháp đề xuất làm hỏng** đều nằm ở loại lỗi này (2 ô
+`thue_tndn_hoan_lai`, 2 ô `thue_tndn_hien_hanh`), và không ô nào trong 14 ô
+cùng loại được nó chữa đúng.
+
+**Vì sao `0` vẫn là kết luận rút từ TỜ GIẤY.** Thông tư 99/2025 mục 1.2.3 cho
+phép miễn trình bày chỉ tiêu không có số liệu, nên một dòng vắng mặt trên
+biểu mẫu là **bằng không**, không phải *chưa biết*. Quy tắc này KHÔNG mới:
+tu chính 24/08/2026 đã chốt đúng nó cho phía gán nhãn tay, và
+`ANNOTATION-GUIDELINE.md` mục 3.4 đã áp dụng từ đó. Sửa đổi hôm nay chỉ đưa
+cùng một cách đọc sang phía pipeline. Đây là lập luận phân biệt nó với việc
+mượn phân phối ngành của baseline 9: dòng trống là một quan sát về tài liệu
+NÀY, không phải một con số vay từ tài liệu khác.
+
+**Vì sao hẹp theo `CO_THE_VANG_MAT` chứ không áp cho mọi chỉ tiêu.** Trạng
+thái `khong_co_vung` gộp hai chuyện khác hẳn nhau: dòng thật sự trống, và
+dòng CÓ IN mà khâu neo trượt. Áp cho mọi chỉ tiêu là dựng lại đúng khuyết tật
+đã đo được ngày 04/09, khi tin kết luận "không thấy dòng" một cách vô điều
+kiện đã điền `tong_tai_san = 0` cho `PLX_2026Q2_TT99` trong khi giá trị thật
+là 87.876 tỷ. `CO_THE_VANG_MAT` gồm tám dòng CHI TIẾT, chọn theo cấu trúc
+biểu mẫu, và có test bất biến chặn mọi dòng TỔNG lọt vào — dòng tổng là bộ
+xương biểu mẫu nên luôn được in.
+
+**ĐIỂM YẾU PHẢI NÊU TRONG BÀI, không được giấu.** Danh sách
+`CO_THE_VANG_MAT` tuy dựng theo tiêu chí cấu trúc nhưng đã được **mô phỏng
+đối chiếu với một lượt chạy** trước khi chốt ngày 04/09, nên nó không mù hoàn
+toàn với đáp án. Và quyết định tái sử dụng nó cho sửa đổi hôm nay đến sau khi
+biết rằng **cả bốn chỉ tiêu baseline 9 đang thắng ở loại lỗi này đều nằm
+trong danh sách**. Người phản biện có quyền đọc đây là chọn phạm vi theo kết
+quả. Phản biện lại được bằng ba điều, và bài phải nêu cả ba: tiêu chí là cấu
+trúc biểu mẫu chứ không phải tần suất lỗi; danh sách chốt TRƯỚC lượt H3 và
+không sửa sau đó; và hai ô sai đã biết là `tsnh_khac`, `ln_khac` vẫn được cố
+ý để nguyên trong danh sách thay vì gỡ ra cho đẹp số.
+
+**Chi phí ứng viên.** Nguồn mới `dong_trong` có xác suất tiên nghiệm `0,20`,
+bằng nguồn `sign` và **thấp hơn** `ocr_alt` (`0,35`). Đặt thấp hơn là có chủ
+đích và lệch về phía an toàn: nếu nó rẻ hơn mọi nguồn khác thì bộ giải sẽ
+thích xoá trắng một dòng hơn là sửa một chữ số đọc nhầm ở chỗ khác, mà xoá
+trắng một dòng CÓ IN chính là chế độ lỗi PLX ở trên. Sai theo chiều này thì
+chỉ tiêu không được sửa; sai theo chiều kia thì nó bị điền `0` một cách im
+lặng.
+
+**Áp cho ai.** Chỉ áp cho phương pháp đề xuất. Baseline 9 không dùng tập ứng
+viên sinh từ tài liệu nên khái niệm này không tồn tại ở đó, và baseline 8 sửa
+liên tục nên cũng không. Đây KHÔNG phải vi phạm ràng buộc cùng ngân sách: ngân
+sách tính bằng số lần gọi model, mà nguồn `dong_trong` không gọi model lần nào.
+
+#### Sửa đổi 2 — trần `max_changes` nâng từ 2 lên 4, và giới hạn thời gian nâng theo
+
+**Phát biểu.** `MAX_CHANGES_MAC_DINH` đổi từ `2` thành `4`. Trần vẫn áp cho
+**cả** `diagnose()` lẫn hai bản của baseline 9, đúng như tu chính 22/08/2026
+quy định, vì H3 so ở cùng ngân sách. Baseline 8 vẫn nằm ngoài.
+
+**Lý do.** Số đo ngày 05/09 cho thấy trần 2 thực sự chặn phương pháp ở đúng
+**hai** tài liệu — `HPG_2022Q2` sai 3 ô và `HVG_2020Q1` sai 5 ô. Tám tài liệu
+còn lại mà phương pháp bỏ qua là do thiếu ứng viên chứ không do trần. Trần 4
+mở được `HPG_2022Q2` và tiến sát `HVG_2020Q1`.
+
+**PHẢI NÓI RÕ: đây là quyết định của người chủ trì, ngược với khuyến nghị.**
+Phân tích đưa ra ngày 05/09 khuyến nghị GIỮ trần 2, với lý do khoản lợi nhỏ
+còn tu chính 22/08 đã chốt trần là *hạn chế của phương pháp* chứ không phải
+tham số tinh chỉnh. Người chủ trì quyết nâng lên 4. Ghi lại cả khuyến nghị lẫn
+quyết định để bài không trình bày trần 4 như thể nó luôn là thiết kế gốc.
+
+**Cái giá, đo được ngày 05/09 chứ không đoán.** Số tổ hợp phải duyệt là đa
+thức đối xứng sơ cấp bậc k của số ứng viên từng trường, đếm chính xác:
+
+| Trần | TT200 (26 chỉ tiêu) | TT99 (27 chỉ tiêu) |
+|---:|---:|---:|
+| 2 | 44 nghìn tổ hợp · 0,1 giây | 47 nghìn · 0,3 giây |
+| 3 | 4,1 triệu · 13 giây | 4,5 triệu · 26 giây |
+| 4 | **274 triệu · 14,5 phút** | **315 triệu · ~30 phút** |
+
+Chi phí này chỉ phải trả ở ca **VÔ NGHIỆM**, vì tìm kiếm dừng ở `k` đầu tiên
+có nghiệm. Nhưng ca vô nghiệm lại là ca thường gặp — tập ứng viên cố ý không
+đóng — và cũng chính là ca duy nhất đỡ được luận điểm chống bịa.
+
+**Hệ quả bắt buộc: `TIME_LIMIT_S` nâng từ 30 giây lên 2400 giây.** Không nâng
+thì mọi ca vô nghiệm ở trần 4 đều chạm giới hạn thời gian và trả `het_gio`
+thay vì `vo_nghiem`. Tu chính 22/08 đã chốt rằng chỉ `vo_nghiem` mới chứng
+minh được "không cách đọc nào của tài liệu này làm bảng cân đối được", còn
+`het_gio` không chứng minh gì cả. Nghĩa là trần 4 kèm giới hạn 30 giây sẽ
+**xoá sạch bằng chứng chống bịa** trong khi mọi con số khác trông vẫn bình
+thường — đúng loại hỏng hóc im lặng mà cơ chế phân loại `ma_ly_do` được dựng
+lên để bắt.
+
+**Ảnh hưởng tới lịch chạy, phải tính trước khi chạy.** Lượt H3 ngày 05/09 có
+20 trong 28 tài liệu khó rơi vào ABSTAIN. Nếu tỷ lệ ấy giữ nguyên thì trần 4
+cộng thêm khoảng **5–10 giờ** vào một lượt 70 tài liệu vốn đã tốn 9,5 giờ.
+Con số này phải được kiểm lại bằng một lượt thử vài tài liệu trước khi cam kết
+chạy trọn tập.
+
+**Đường thoát nếu chi phí không chấp nhận được:** vòng tìm kiếm hiện duyệt vét
+cạn mọi tích ứng viên. Vì phần dư nằm trong `R^9`, một cài đặt gặp-ở-giữa
+(chia `k` làm hai nửa, băm nửa đầu rồi tra nửa sau) hạ 274 triệu tổ hợp xuống
+cỡ hai lần 44 nghìn phép băm. Đó là thay đổi CÀI ĐẶT, không phải thay đổi
+thiết kế thí nghiệm, nên không cần tu chính — nhưng nó đụng vào thuật toán
+trung tâm của bài nên phải kèm test chứng minh cho ra cùng nghiệm.

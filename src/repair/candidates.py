@@ -1,9 +1,15 @@
 """
 Sinh tập ứng viên sửa lỗi từ chính tài liệu.
 
-Năm nguồn, mỗi nguồn bắt một chế độ lỗi khác nhau. Ba nguồn đầu cần
-provenance (bbox của vùng đã đọc), nguồn cuối cần các giá trị thua phiếu
-của bước self-consistency.
+Năm nguồn THÔNG THƯỜNG, mỗi nguồn bắt một chế độ lỗi khác nhau. Ba nguồn
+đầu cần provenance (bbox của vùng đã đọc), nguồn cuối cần các giá trị thua
+phiếu của bước self-consistency.
+
+Nguồn thứ sáu, `dong_trong`, đứng riêng vì nó **thay thế** cả năm nguồn kia
+chứ không cộng thêm vào — xem `tu_dong_trong()`. Nó chỉ nổ khi chỉ tiêu
+không neo được vào vùng nào trên trang, tức khi không còn chỗ nào để đọc
+lại, và khi đó năm nguồn kia đều chỉ là phép biến đổi của một con số máy đã
+bịa ra.
 
 VÌ SAO TẬP ỨNG VIÊN PHẢI ĐÓNG: nếu cho delta chạy tự do trong R^n thì bộ
 tối ưu LUÔN tìm được nghiệm thoả ràng buộc, kể cả khi nghiệm đó là bịa. Hệ
@@ -17,6 +23,7 @@ gian sửa không chứa số bịa.
 import math
 from dataclasses import dataclass, field
 
+from fields_config import CO_THE_VANG_MAT
 from nham_chu_so import N_CAP_UNG_VIEN, ung_vien_cho_chu_so
 
 # Xác suất tiên nghiệm của từng chế độ lỗi, dùng để tính cost.
@@ -32,6 +39,15 @@ XAC_SUAT_TIEN_NGHIEM = {
     "sign": 0.20,           # mất dấu ngoặc âm
     "scale": 0.10,          # sai đơn vị ở MỘT trường (sai toàn cục do mỏ neo lo)
     "vlm_vote": 0.05,       # model đã từng đọc ra giá trị này ở một mẫu khác
+    # Dòng trống trên biểu mẫu — tu chính PREREGISTRATION.md 05/09/2026.
+    #
+    # Đặt 0,20 (bằng `sign`, THẤP HƠN `ocr_alt`) là có chủ đích và lệch về
+    # phía an toàn. Cost thấp nghĩa là ưu tiên cao, nên nếu để nguồn này rẻ
+    # nhất thì bộ giải sẽ thích xoá trắng một dòng hơn là sửa một chữ số đọc
+    # nhầm ở chỗ khác — mà xoá trắng một dòng CÓ IN chính là chế độ lỗi đã
+    # điền `tong_tai_san = 0` cho PLX ngày 04/09. Sai theo chiều đắt thì chỉ
+    # tiêu không được sửa; sai theo chiều rẻ thì nó bị điền 0 một cách im lặng.
+    "dong_trong": 0.20,
 }
 
 # Cặp chữ số OCR hay đọc nhầm nay ĐO ĐƯỢC, không còn liệt kê tay.
@@ -321,6 +337,45 @@ def tu_o_lan_can(o_lan_can, bbox_dang_xet=None) -> list[Candidate]:
     return ung_vien
 
 
+def tu_dong_trong(field_name: str) -> list[Candidate]:
+    """
+    Ứng viên `0` cho chỉ tiêu không neo được vào vùng nào — tu chính 05/09/2026.
+
+    Trả về danh sách RỖNG nếu chỉ tiêu không nằm trong `CO_THE_VANG_MAT`, và
+    người gọi phải hiểu danh sách rỗng ở đây là "không áp dụng" chứ không phải
+    "đã áp dụng và không tìm được gì".
+
+    VÌ SAO `0` VẪN LÀ ĐỌC TỪ TỜ GIẤY. Thông tư 99/2025 mục 1.2.3 cho phép miễn
+    trình bày chỉ tiêu không có số liệu, nên một dòng vắng mặt trên biểu mẫu là
+    *bằng không*, không phải *chưa biết*. Tu chính 24/08/2026 đã chốt đúng cách
+    đọc này cho người gán nhãn tay; đây chỉ là đưa nó sang phía pipeline. Đó
+    cũng là chỗ phân biệt nó với baseline 9: dòng trống là quan sát về tài liệu
+    NÀY, không phải con số vay từ tài liệu khác.
+
+    VÌ SAO HẸP THEO `CO_THE_VANG_MAT`. Trạng thái `khong_co_vung` gộp hai
+    chuyện khác hẳn nhau — dòng thật sự trống, và dòng CÓ IN mà khâu neo trượt.
+    Danh sách trắng gồm tám dòng CHI TIẾT chọn theo cấu trúc biểu mẫu, và có
+    test bất biến chặn mọi dòng TỔNG lọt vào, vì dòng tổng là bộ xương biểu mẫu
+    nên luôn được in. Bỏ giới hạn này là dựng lại đúng ca `PLX_2026Q2_TT99` bị
+    điền `tong_tai_san = 0` trong khi giá trị thật là 87.876 tỷ.
+    """
+    if field_name not in CO_THE_VANG_MAT:
+        return []
+
+    return [
+        Candidate(
+            value=0,
+            source="dong_trong",
+            cost=_cost("dong_trong"),
+            evidence={
+                "ly_do": "không neo được vào vùng nào, và chỉ tiêu được phép "
+                         "vắng mặt trên biểu mẫu",
+                "can_cu": "TT99 mục 1.2.3",
+            },
+        )
+    ]
+
+
 def tu_phieu_vlm(votes: dict, gia_tri_thang) -> list[Candidate]:
     """
     Ứng viên từ các giá trị THUA phiếu của bước self-consistency.
@@ -396,12 +451,26 @@ def generate(
     o_lan_can=None,
     votes: dict | None = None,
     bbox_dang_xet=None,
+    khong_co_vung: bool = False,
 ) -> list[Candidate]:
     """
     Sinh tập ứng viên cho MỘT chỉ tiêu, đã khử trùng và cắt theo trần.
 
     current là FieldResult hoặc một con số trần. Nhận cả hai vì các
     baseline đối chứng chạy trên giá trị trần, không có confidence.
+
+    khong_co_vung: chỉ tiêu này KHÔNG neo được vào vùng bảng nào trên trang.
+    Cờ này phải truyền TƯỜNG MINH chứ không suy từ `o_lan_can` rỗng, vì rỗng
+    còn có nghĩa "có vùng nhưng vùng không bóc được ô số nào" — hai chuyện
+    khác hẳn nhau, và gộp chúng lại sẽ cho chỉ tiêu có vùng hưởng luật của
+    chỉ tiêu không có vùng.
+
+    Khi cờ này bật VÀ chỉ tiêu nằm trong `CO_THE_VANG_MAT`, tập ứng viên là
+    ĐÚNG MỘT phần tử `0` và năm nguồn thông thường bị THAY THẾ — xem tu chính
+    `PREREGISTRATION.md` 05/09/2026. Lý do thay vì cộng thêm: không có vùng
+    nghĩa là không còn chỗ nào trên giấy để đọc lại, nên mọi ứng viên còn lại
+    đều chỉ là phép biến đổi của một con số máy đã bịa ra từ hư không. Số đo
+    05/09 cho thấy cả 4 ô mà phương pháp làm hỏng đều sinh ra đúng như vậy.
 
     o_lan_can: danh sách (giá trị, bbox) các ô số trong cùng vùng bảng,
     đã OCR sẵn. None nghĩa là chưa OCR vùng — nguồn giá trị nhất bị tắt,
@@ -417,6 +486,11 @@ def generate(
     gia_tri = getattr(current, "value", current)
     if gia_tri is None:
         return []
+
+    if khong_co_vung:
+        thay_the = tu_dong_trong(field_name)
+        if thay_the:
+            return _khu_trung_va_cat(thay_the, gia_tri)
 
     phieu = votes if votes is not None else getattr(current, "votes", {})
 

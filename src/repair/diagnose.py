@@ -52,10 +52,21 @@ RESIDUAL_TOL = 1e-9
 
 # Trần thời gian giải mặc định, tính bằng giây.
 #
-# Hết giờ thì trả ABSTAIN chứ không treo. Một tài liệu không chẩn đoán
-# được trong 30 giây là một tài liệu cần người xem, và treo cả lượt chạy
-# 60 tài liệu vì một ca khó là đánh đổi tệ.
-TIME_LIMIT_S = 30.0
+# Hết giờ thì trả ABSTAIN chứ không treo. Treo cả lượt chạy 70 tài liệu vì
+# một ca khó là đánh đổi tệ.
+#
+# NÂNG TỪ 30 LÊN 2400 NGÀY 05/09/2026, và đây KHÔNG phải nới lỏng cho êm:
+# nó là hệ quả bắt buộc của việc nâng `MAX_CHANGES_MAC_DINH` lên 4. Đo được
+# cùng ngày, ca VÔ NGHIỆM ở trần 4 phải duyệt 274 triệu tổ hợp với TT200 và
+# 315 triệu với TT99, tức 15-30 phút. Giữ giới hạn 30 giây thì MỌI ca vô
+# nghiệm đều chạm giờ và trả `het_gio` thay vì `vo_nghiem`.
+#
+# Vì sao điều đó là hỏng chứ không phải chậm: tu chính 22/08/2026 chốt rằng
+# chỉ `vo_nghiem` mới chứng minh được "không cách đọc nào của tài liệu này
+# làm bảng cân đối được", còn `het_gio` không chứng minh gì cả. Trần 4 kèm
+# giới hạn cũ vì vậy xoá sạch bằng chứng chống bịa trong khi mọi con số khác
+# trông vẫn bình thường.
+TIME_LIMIT_S = 2400.0
 
 # Trọng số mặc định khi không biết confidence.
 #
@@ -84,7 +95,26 @@ LAMBDA = 1.0
 # xuất chứ không phải khâu sửa. Nhưng đây KHÔNG phải tham số tinh chỉnh: nó
 # chặn cứng số lỗi đồng thời mà phương pháp có thể sửa, nên đã ghi vào mục
 # Sửa đổi của PREREGISTRATION.md kèm ngày và lý do.
-MAX_CHANGES_MAC_DINH = 2
+#
+# NÂNG 2 → 4 NGÀY 05/09/2026, quyết định của người chủ trì, NGƯỢC với khuyến
+# nghị giữ nguyên. Lý do nâng: trần 2 chặn thật ở đúng hai tài liệu của lượt
+# 05/09 (`HPG_2022Q2` sai 3 ô, `HVG_2020Q1` sai 5 ô). Lý do khuyến nghị giữ:
+# khoản lợi nhỏ, và trần đã được đăng ký là hạn chế của phương pháp.
+#
+# Trần áp cho CẢ hai bản baseline 9 — chúng dùng chung hằng số này — vì H3 so
+# ở cùng ngân sách. Baseline 8 nằm ngoài, mặc định `None`, và lý do ở đó.
+#
+# CÁI GIÁ, đo ngày 05/09 chứ không đoán. Số tổ hợp phải duyệt là đa thức đối
+# xứng sơ cấp bậc k của số ứng viên từng trường:
+#
+#   trần 2 → 44 nghìn tổ hợp, 0,1 giây
+#   trần 3 → 4,1 triệu,       13 giây
+#   trần 4 → 274 triệu,       14,5 phút   (TT99: 315 triệu, ~30 phút)
+#
+# Chỉ ca VÔ NGHIỆM phải trả giá đó, vì tìm kiếm dừng ở k đầu tiên có nghiệm.
+# Nhưng ca vô nghiệm là ca thường gặp, và nó cũng là ca duy nhất đỡ được luận
+# điểm chống bịa — nên phải trả, và `TIME_LIMIT_S` đã nâng theo.
+MAX_CHANGES_MAC_DINH = 4
 
 # Phân loại lý do ABSTAIN, tập ĐÓNG.
 #

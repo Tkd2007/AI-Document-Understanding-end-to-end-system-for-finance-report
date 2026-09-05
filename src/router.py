@@ -882,6 +882,22 @@ def chay_tang_repair(
             o_lan_can=[] if vung is None else vung["o_so"],
             votes=getattr(result.get(k), "votes", {}),
             bbox_dang_xet=bbox,
+            # Luật dòng trống chỉ được áp khi ĐÃ OCR vùng mà vẫn không neo
+            # được chỉ tiêu này vào vùng nào. Ba ca phải tách bạch, và gộp
+            # bất kỳ hai ca nào cũng cho ra lỗi câm:
+            #
+            #   (a) `vung_theo_khoa` rỗng — CHƯA HỀ OCR vùng nào. Khi đó mọi
+            #       chỉ tiêu đều `vung is None`, và kết luận "tám dòng này
+            #       trống" là kết luận rút từ việc ta đã không nhìn. Đây đúng
+            #       là ca mà test tầng repair bắt được ngày 05/09.
+            #   (b) đã OCR vùng, nhưng chỉ tiêu này không nằm trong vùng nào —
+            #       ca DUY NHẤT luật dòng trống được áp.
+            #   (c) có vùng nhưng vùng không bóc được ô số nào — `o_lan_can`
+            #       rỗng mà `vung` khác None, nên cờ này tắt.
+            #
+            # Truyền tường minh thay vì để `sinh_ung_vien` suy từ `o_lan_can`
+            # rỗng, vì suy như vậy sẽ gộp (b) với (c).
+            khong_co_vung=vung is None and bool(vung_theo_khoa),
         )
     do = diagnose(
         gia_tri,

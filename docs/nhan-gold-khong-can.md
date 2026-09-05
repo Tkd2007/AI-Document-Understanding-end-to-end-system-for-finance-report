@@ -1,12 +1,12 @@
 # Nhãn gold không cân — bảng tra để kiểm tay
 
-Sinh bởi scratchpad/bao_lech_gold.py. Cột **nhãn** là số đang ghi trong
+Sinh bởi `src/eval/do_lech_gold.py`. Cột **nhãn** là số đang ghi trong
 `data/gold/`; cột **đẳng thức đòi** là số suy ra từ các dòng còn lại.
 
 ## Tóm tắt
 
 - Tập gold: **70** tài liệu.
-- **4** tài liệu lệch THẬT (từ 2,000,000 đồng trở lên), tổng 4 chỗ. Đây là phần phải kiểm tay.
+- **4** tài liệu lệch THẬT (từ 2,000,000 đồng trở lên), tổng 4 chỗ.
 - **15** tài liệu lệch cỡ làm tròn, tổng 22 chỗ.
 
 Mức lệch cỡ làm tròn nhiều khả năng là chính báo cáo in ra đã làm tròn,
@@ -16,13 +16,19 @@ tại — vì vậy vẫn phải quyết xử lý thế nào, không bỏ qua đ
 
 Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_2023Q2_TT200`
 
+**4/4 chỗ lệch thật đã có ghi chú của người gán
+nhãn giải thích nguyên nhân.** Ghi chú in kèm từng mục bên dưới. ĐỌC NÓ
+trước khi mở tài liệu ra kiểm — phần lớn đã được kiểm rồi.
 
-## LỆCH THẬT — phải kiểm (4 chỗ)
+
+## LỆCH THẬT (4 chỗ)
 
 ### `DVD_2010Q4_TT200` — lệch +560,145,542 đồng
 
 *B02 dạng trừ: Mã 60 = Mã 50 − Mã 51 − Mã 52*  
 Đơn vị nhân 1, quy ước dấu `tru`.
+
+> **Người gán nhãn đã ghi chú:** bản TT200 năm 2010 này, 52 đáng lẽ âm nhưng lại ghi trong báo cáo là dương.
 
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
@@ -38,6 +44,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 *B03: Mã số 70 = Mã số 50 + Mã số 60 + Mã số 61, và mã 70 ≡ mã 110 trên B01 — LIÊN KẾT CHÉO GIỮA HAI BIỂU MẪU*  
 Đơn vị nhân 1, quy ước dấu `tru`.
 
+> **Người gán nhãn đã ghi chú:** mã 70 ở B03 trong tài liệu này không giống với 110 trên B01, có vẻ không có rằng buộc.
+
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
 | thành phần | B03 | 50 | `lctt_thuan` | -1,088,277,618,328 |
@@ -47,24 +55,28 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 
 **Đẳng thức đòi `tien_va_tuong_duong_tien` = 225,560,211,861**, nhãn ghi 176,150,718,255 — lệch -49,409,493,606.
 
-### `PVD_2023Q4_TT200` — lệch +51,772,851 đồng
+### `PVD_2023Q4_TT200` — lệch -61,517,836,238 đồng
 
 *B03: Mã số 70 = Mã số 50 + Mã số 60 + Mã số 61, và mã 70 ≡ mã 110 trên B01 — LIÊN KẾT CHÉO GIỮA HAI BIỂU MẪU*  
 Đơn vị nhân 1, quy ước dấu `tru`.
+
+> **Người gán nhãn đã ghi chú:** mã 61 bảng b03 vẫn chưa được hoàn toàn tính ra, còn để 2 giá trị trong cùng 1 mã : "Ảnh hưởng của thay đổi tỷ giá hối đoái quy đổi ngoại tệ" và "Chênh lệch tỷ giá do chuyển đổi báo cáo"
 
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
 | thành phần | B03 | 50 | `lctt_thuan` | 115,994,552,493 |
 | thành phần | B03 | 60 | `tien_dau_ky` | 2,078,586,541,400 |
-| thành phần | B03 | 61 | `anh_huong_ty_gia` | 61,517,836,238 |
+| thành phần | B03 | 61 | `anh_huong_ty_gia` | -51,772,851 |
 | **tổng** | **B01** | **110** | **`tien_va_tuong_duong_tien`** | **2,256,047,157,280** |
 
-**Đẳng thức đòi `tien_va_tuong_duong_tien` = 2,255,995,384,429**, nhãn ghi 2,256,047,157,280 — lệch +51,772,851.
+**Đẳng thức đòi `tien_va_tuong_duong_tien` = 2,317,564,993,518**, nhãn ghi 2,256,047,157,280 — lệch -61,517,836,238.
 
 ### `VNM_2023Q2_TT200` — lệch -309,483,038 đồng
 
 *B03: Mã số 70 = Mã số 50 + Mã số 60 + Mã số 61, và mã 70 ≡ mã 110 trên B01 — LIÊN KẾT CHÉO GIỮA HAI BIỂU MẪU*  
 Đơn vị nhân 1, quy ước dấu `tru`.
+
+> **Người gán nhãn đã ghi chú:** code thiếu mục 62 cho bảng b03
 
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
@@ -83,6 +95,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 *B02 dạng trừ: Mã 60 = Mã 50 − Mã 51 − Mã 52*  
 Đơn vị nhân 1, quy ước dấu `tru`.
 
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
+
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
 | thành phần | B02 | 60 | `loi_nhuan_sau_thue` | 467,901,654,073 |
@@ -97,6 +111,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 *Nợ phải trả + Vốn chủ sở hữu phải bằng Tổng cộng nguồn vốn (mã 440)*  
 Đơn vị nhân 1, quy ước dấu `tru`.
 
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
+
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
 | thành phần | B01 | 300 | `no_phai_tra` | 609,699,918,525 |
@@ -109,6 +125,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 
 *Nợ phải trả + Vốn chủ sở hữu phải bằng Tổng cộng nguồn vốn (mã 440)*  
 Đơn vị nhân 1, quy ước dấu `tru`.
+
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
 
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
@@ -123,6 +141,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 *B02 dạng trừ: Mã 20 = Mã 10 − Mã 11*  
 Đơn vị nhân 1, quy ước dấu `tru`.
 
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
+
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
 | thành phần | B02 | 11 | `gia_von_hang_ban` | 23,030,541,730 |
@@ -135,6 +155,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 
 *Tài sản ngắn hạn + Tài sản dài hạn phải bằng Tổng tài sản*  
 Đơn vị nhân 1, quy ước dấu `tru`.
+
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
 
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
@@ -149,6 +171,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 *Tổng cộng nguồn vốn phải bằng Tổng cộng tài sản*  
 Đơn vị nhân 1, quy ước dấu `tru`.
 
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
+
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
 | thành phần | B01 | 440 | `tong_nguon_von` | 16,762,541,735,289 |
@@ -160,6 +184,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 
 *B02 dạng trừ: Mã 60 = Mã 50 − Mã 51 − Mã 52*  
 Đơn vị nhân 1, quy ước dấu `tru`.
+
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
 
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
@@ -175,6 +201,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 *Tài sản ngắn hạn + Tài sản dài hạn phải bằng Tổng tài sản*  
 Đơn vị nhân 1, quy ước dấu `tru`.
 
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
+
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
 | thành phần | B01 | 100 | `tai_san_ngan_han` | 57,952,012,334,363 |
@@ -187,6 +215,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 
 *B03: Mã số 70 = Mã số 50 + Mã số 60 + Mã số 61, và mã 70 ≡ mã 110 trên B01 — LIÊN KẾT CHÉO GIỮA HAI BIỂU MẪU*  
 Đơn vị nhân 1, quy ước dấu `tru`.
+
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
 
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
@@ -201,6 +231,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 
 *Các thành phần tài sản ngắn hạn phải cộng bằng Tài sản ngắn hạn (TT200: mã 100 = 110+120+130+140+150)*  
 Đơn vị nhân 1, quy ước dấu `tru`.
+
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
 
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
@@ -218,6 +250,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 *B03: Mã số 50 = Mã số 20 + Mã số 30 + Mã số 40*  
 Đơn vị nhân 1, quy ước dấu `tru`.
 
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
+
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
 | thành phần | B03 | 20 | `lctt_hdkd` | 1,237,838,816,060 |
@@ -231,6 +265,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 
 *Các thành phần tài sản ngắn hạn phải cộng bằng Tài sản ngắn hạn (TT200: mã 100 = 110+120+130+140+150)*  
 Đơn vị nhân 1, quy ước dấu `tru`.
+
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
 
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
@@ -248,6 +284,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 *Tài sản ngắn hạn + Tài sản dài hạn phải bằng Tổng tài sản*  
 Đơn vị nhân 1, quy ước dấu `tru`.
 
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
+
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
 | thành phần | B01 | 100 | `tai_san_ngan_han` | 37,897,604,212,888 |
@@ -260,6 +298,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 
 *B03: Mã số 70 = Mã số 50 + Mã số 60 + Mã số 61, và mã 70 ≡ mã 110 trên B01 — LIÊN KẾT CHÉO GIỮA HAI BIỂU MẪU*  
 Đơn vị nhân 1, quy ước dấu `tru`.
+
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
 
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
@@ -275,6 +315,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 *B02 dạng trừ: Mã 60 = Mã 50 − Mã 51 − Mã 52*  
 Đơn vị nhân 1, quy ước dấu `tru`.
 
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
+
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
 | thành phần | B02 | 60 | `loi_nhuan_sau_thue` | -606,237,636,293 |
@@ -289,6 +331,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 *Lợi nhuận thuần từ HĐKD + Lợi nhuận khác phải bằng Lợi nhuận trước thuế*  
 Đơn vị nhân 1, quy ước dấu `tru`.
 
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
+
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
 | thành phần | B02 | 30 | `ln_thuan_hdkd` | 36,317,758,838 |
@@ -301,6 +345,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 
 *Nợ phải trả + Vốn chủ sở hữu phải bằng Tổng cộng nguồn vốn (mã 440)*  
 Đơn vị nhân 1, quy ước dấu `tong`.
+
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
 
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
@@ -315,6 +361,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 *B03: Mã số 50 = Mã số 20 + Mã số 30 + Mã số 40*  
 Đơn vị nhân 1, quy ước dấu `tong`.
 
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
+
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
 | thành phần | B03 | 20 | `lctt_hdkd` | 1,064,760,705,585 |
@@ -328,6 +376,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 
 *Các thành phần tài sản ngắn hạn phải cộng bằng Tài sản ngắn hạn (TT200: mã 100 = 110+120+130+140+150)*  
 Đơn vị nhân 1, quy ước dấu `tong`.
+
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
 
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
@@ -345,6 +395,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 *Các thành phần tài sản ngắn hạn phải cộng bằng Tài sản ngắn hạn (TT200: mã 100 = 110+120+130+140+150)*  
 Đơn vị nhân 1, quy ước dấu `tong`.
 
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
+
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
 | thành phần | B01 | 110 | `tien_va_tuong_duong_tien` | 625,992,781,298 |
@@ -361,6 +413,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 *B03: Mã số 50 = Mã số 20 + Mã số 30 + Mã số 40*  
 Đơn vị nhân 1, quy ước dấu `tru`.
 
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
+
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|
 | thành phần | B03 | 20 | `lctt_hdkd` | 166,662,964,986 |
@@ -374,6 +428,8 @@ Lệch thật: `DVD_2010Q4_TT200`, `FLC_2021Q4_TT200`, `PVD_2023Q4_TT200`, `VNM_
 
 *B03: Mã số 70 = Mã số 50 + Mã số 60 + Mã số 61, và mã 70 ≡ mã 110 trên B01 — LIÊN KẾT CHÉO GIỮA HAI BIỂU MẪU*  
 Đơn vị nhân 1, quy ước dấu `tru`.
+
+> Tài liệu này KHÔNG có ghi chú của người gán nhãn.
 
 | Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |
 |---|---|---:|---|---:|

@@ -11,6 +11,14 @@ bốn lệch ở CÙNG một đẳng thức — cái nối B03 với B01.
 In BIỂU MẪU, MÃ SỐ dòng, giá trị nhãn đang ghi và giá trị đẳng thức đòi, để mở
 tờ giấy ra là so được ngay mà không phải tự tính.
 
+VÀ IN KÈM `notes` CỦA CHÍNH TÀI LIỆU ĐÓ — đây là phần quan trọng nhất, không
+phải phần trang trí. Người gán nhãn dùng `notes` để ghi lại nguyên nhân của
+những chỗ bất thường HỌ ĐÃ NHÌN THẤY trên tờ giấy, và tính tới 05/09/2026 nó
+đã giải thích sẵn CẢ BỐN tài liệu lệch thật. Bản đầu của công cụ này
+không in `notes`, nên nó dựng ra một danh sách "phải đi kiểm" cho những thứ đã
+kiểm xong từ lâu. Một bảng bất thường không kèm lời giải thích sẵn có là bảng
+bắt người đọc làm lại việc.
+
 Chạy:
 
     PYTHONIOENCODING=utf-8 PYTHONPATH=src \
@@ -55,7 +63,7 @@ NGUONG_LAM_TRON = 2_000_000
 
 def main():
     print("# Nhãn gold không cân — bảng tra để kiểm tay\n")
-    print("Sinh bởi scratchpad/bao_lech_gold.py. Cột **nhãn** là số đang ghi trong")
+    print("Sinh bởi `src/eval/do_lech_gold.py`. Cột **nhãn** là số đang ghi trong")
     print("`data/gold/`; cột **đẳng thức đòi** là số suy ra từ các dòng còn lại.\n")
 
     nang, nhe = [], []
@@ -79,6 +87,7 @@ def main():
                 continue
             muc = {
                 "doc": f.stem,
+                "notes": (d.get("notes") or "").strip(),
                 "don_vi": d["unit_multiplier"],
                 "quy_uoc": d["quy_uoc_dau"],
                 "msg": msg,
@@ -96,7 +105,7 @@ def main():
     print()
     print(f"- Tập gold: **{tong_doc}** tài liệu.")
     print(f"- **{len(doc_nang)}** tài liệu lệch THẬT (từ {NGUONG_LAM_TRON:,} đồng trở lên), "
-          f"tổng {len(nang)} chỗ. Đây là phần phải kiểm tay.")
+          f"tổng {len(nang)} chỗ.")
     print(f"- **{len(doc_nhe)}** tài liệu lệch cỡ làm tròn, tổng {len(nhe)} chỗ.")
     print()
     print("Mức lệch cỡ làm tròn nhiều khả năng là chính báo cáo in ra đã làm tròn,")
@@ -106,8 +115,13 @@ def main():
     print()
     print(f"Lệch thật: {', '.join('`' + d + '`' for d in doc_nang)}")
     print()
+    co_ghi_chu = sum(1 for m in nang if m["notes"])
+    print(f"**{co_ghi_chu}/{len(nang)} chỗ lệch thật đã có ghi chú của người gán")
+    print("nhãn giải thích nguyên nhân.** Ghi chú in kèm từng mục bên dưới. ĐỌC NÓ")
+    print("trước khi mở tài liệu ra kiểm — phần lớn đã được kiểm rồi.")
+    print()
 
-    for ten, nhom in (("LỆCH THẬT — phải kiểm", nang),
+    for ten, nhom in (("LỆCH THẬT", nang),
                       ("LỆCH CỠ LÀM TRÒN — nhiều khả năng vô hại", nhe)):
         print(f"\n## {ten} ({len(nhom)} chỗ)\n")
         for m in nhom:
@@ -116,6 +130,10 @@ def main():
             print(f"### `{m['doc']}` — lệch {m['lech']:+,.0f} đồng")
             print(f"\n*{m['msg']}*  \n"
                   f"Đơn vị nhân {m['don_vi']}, quy ước dấu `{m['quy_uoc']}`.\n")
+            if m["notes"]:
+                print(f"> **Người gán nhãn đã ghi chú:** {m['notes']}\n")
+            else:
+                print("> Tài liệu này KHÔNG có ghi chú của người gán nhãn.\n")
             print("| Vai trò | Biểu mẫu | Mã số | Chỉ tiêu | Nhãn đang ghi |")
             print("|---|---|---:|---|---:|")
             for t, (bm, mma), gt in m["parts"]:

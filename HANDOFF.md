@@ -932,16 +932,40 @@ python src/eval/xbrl_tier/fetch.py --cik 0000320193 --n 3 --dry-run
    `tieu_de_trong_vung_cat` trên 10 tài liệu thay vì một.
 7. **Còn thiếu baseline 4 và 5**; cả hai chặn bởi cùng một thứ — pipeline chưa
    xuất confidence ở đâu cả, và baseline 4 còn tốn lượt gọi model. **Baseline 7
-   XONG 05/09/2026** (`src/repair/ged.py`, `2392e71`): kiểm định GED cổ điển,
-   parity space + GLR một-lỗi, trả bảng xếp hạng nghi ngờ chứ không sửa. Lý do
-   thiết kế nằm trong docstring của chính file, đừng chép lại ra đây.
-   **Chưa có runner H2**: `eval.metrics.localization_top_k` tới nay không chỗ
-   nào gọi ngoài test, nên baseline 7 có mà chưa sinh ra con số nào. Chỗ nối
-   tự nhiên là `src/eval/moc3.py` vì nó đã biết field nào bị tiêm lỗi.
+   và chỗ đo H2 XONG 05/09/2026** (`src/repair/ged.py`, `src/eval/h2.py`,
+   `2392e71` và `60f0e49`). `moc3.py` nay đo cả bốn phương pháp. Lý do thiết
+   kế nằm trong docstring của chính hai file, đừng chép lại ra đây.
+   **Việc còn lại: chạy `moc3.py` trọn 26 hồ sơ** — ước ~7 giờ, chạy offline
+   và không tốn API. Lượt thử 3 hồ sơ đã chạy xong, số ở mục 16.1.
 8. **Bật `n_samples > 1`** — không có nó thì H1 không đo được (mục 20.6), và
    đây cũng là thứ mở khoá baseline 3 lẫn confidence cho baseline 5.
 9. Sau đó: **C3** (vòng lặp đọc lại) → **C4** (verdict) → chạy Mốc 3 TRÊN TẦNG
    GOLD → D2/D3/D4. **Chỉ bước đó mới đóng được Mốc 3.**
+
+### 16.1 Lượt thử chỗ đo H2 — 3 hồ sơ, 60 lượt, 05/09/2026
+
+**Đây là lượt THỬ để xác nhận chỗ đo chạy, KHÔNG phải kết quả H2.** Ba hồ sơ
+trong 26, và donor mỏng vì chỉ có ba công ty. Đừng dẫn lại như số của bài.
+
+| Phương pháp | Top-1 (chính) | Top-3 (chính) | Tỷ lệ ra tay | Top-1 khi ra tay |
+|---|---:|---:|---:|---:|
+| đề xuất | **0,300** | 0,300 | 0,317 | **0,947** |
+| baseline 9 | 0,233 | 0,233 | 0,750 | 0,311 |
+| baseline 8 | 0,233 | 0,233 | 0,750 | 0,311 |
+| baseline 7 | 0,250 | **0,550** | 0,750 | 0,333 |
+
+Ba điều đáng chú ý, cần kiểm lại trên lượt đủ:
+
+- **Ở Top-1 phe đề xuất dẫn**, và cơ chế lộ ra ở cột cuối: nó chỉ lên tiếng
+  31,7% số lượt nhưng gần như luôn đúng khi lên tiếng (0,947). Đúng hình dạng
+  mà tu chính 25/08 dựng bốn con số để nhìn thấy.
+- **Ở Top-3 baseline 7 thắng đậm**, và một phần là lý do CẤU TRÚC chứ không
+  phải độ chính xác: nó luôn trả bảng xếp hạng đầy đủ, còn họ rời rạc bị trần
+  `max_changes` chặn ở 2 tên nên Top-3 của chúng không thể hơn Top-2. Bài phải
+  nói ra điều này, nếu không khoảng cách bị đọc nhầm.
+- **Baseline 8 và baseline 9 trùng khít nhau ở mọi con số.** Trên 60 lượt thì
+  có thể là trùng hợp, nhưng cũng có thể hai bên đang hành xử như một. Phải
+  xem lại trên lượt đủ trước khi tin.
 
 ### Ngân sách tầng gold, đối chiếu với số đo thật
 
